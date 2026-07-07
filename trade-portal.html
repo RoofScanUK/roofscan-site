@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>Trade Account — RoofScan UK</title>
+<style>
+:root{--n:#1C2B4A;--s:#1E4080;--g:#C9A84C;--bg:#F8F6F0;--cd:#FFF;--br:#E8E4D8;--mu:#6B7A8D;--gr:#27AE60;--am:#E67E22;--rd:#C0392B;--gbg:#E8F8EF;--abg:#FEF3E2;--rbg:#FDECEA;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--n);min-height:100vh;max-width:520px;margin:0 auto;}
+.hdr{background:linear-gradient(135deg,var(--n) 0%,#2C3E6A 100%);padding:24px 18px 20px;}
+.logo{font-size:12px;font-weight:700;color:var(--g);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;}
+.hdr-title{color:white;font-size:24px;font-weight:800;}
+.hdr-sub{color:rgba(255,255,255,0.45);font-size:13px;margin-top:3px;}
+.tabs{display:flex;border-bottom:1px solid rgba(255,255,255,0.1);margin-top:14px;}
+.tb{padding:9px 16px;font-size:13px;font-weight:600;color:rgba(255,255,255,0.45);background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;font-family:inherit;}
+.tb.active{color:var(--g);border-bottom-color:var(--g);}
+main{padding:14px;}
+.tc{display:none;}.tc.active{display:block;}
+
+/* LOGIN */
+.login-card{background:var(--cd);border:1px solid var(--br);border-radius:14px;padding:20px;margin-bottom:16px;}
+.login-title{font-size:16px;font-weight:700;margin-bottom:4px;}
+.login-sub{font-size:13px;color:var(--mu);margin-bottom:14px;line-height:1.5;}
+.inp{width:100%;border:1px solid var(--br);border-radius:8px;padding:11px 14px;font-size:15px;color:var(--n);outline:none;margin-bottom:10px;font-family:inherit;background:white;}
+.inp:focus{border-color:var(--s);}
+.inp-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+.inp-label{font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;}
+.primary-btn{width:100%;background:var(--n);color:var(--g);border:none;border-radius:8px;padding:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;}
+.primary-btn:disabled{opacity:0.6;}
+.err{font-size:13px;color:var(--rd);margin-top:8px;text-align:center;}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin 0.7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* ACCOUNT HEADER */
+.acct-banner{background:var(--n);border-radius:12px;padding:14px 16px;margin-bottom:12px;}
+.acct-name{font-size:18px;font-weight:800;color:white;margin-bottom:2px;}
+.acct-email{font-size:12px;color:rgba(255,255,255,0.45);margin-bottom:10px;}
+.acct-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.as-val{font-size:20px;font-weight:800;}
+.as-label{font-size:10px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:.05em;margin-top:2px;}
+.tier-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(201,168,76,0.2);border:1px solid rgba(201,168,76,0.4);border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700;color:var(--g);margin-bottom:10px;}
+
+/* JOB CARDS */
+.job-card{background:var(--cd);border:1px solid var(--br);border-radius:12px;padding:14px;margin-bottom:10px;}
+.job-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;}
+.job-addr{font-size:14px;font-weight:700;color:var(--n);}
+.job-type{font-size:11px;color:var(--mu);margin-top:1px;}
+.job-right{text-align:right;}
+.job-date{font-size:12px;color:var(--mu);}
+.status-pill{display:inline-block;font-size:11px;font-weight:700;padding:2px 10px;border-radius:20px;margin-top:3px;}
+.status-pill.Booked{background:#EAF4FB;color:#2980B9;}
+.status-pill.Complete{background:var(--abg);color:var(--am);}
+.status-pill.Report.Sent{background:var(--gbg);color:var(--gr);}
+.status-pill.Paid{background:#D5F5E3;color:#1D8348;}
+.score-badge{font-size:13px;font-weight:700;margin-top:4px;}
+.report-dl{display:inline-block;margin-top:8px;background:var(--n);color:var(--g);border:none;border-radius:7px;padding:6px 14px;font-size:12px;font-weight:700;text-decoration:none;cursor:pointer;}
+.report-dl.locked{background:var(--br);color:var(--mu);cursor:default;}
+
+/* SUBMIT JOB FORM */
+.form-card{background:var(--cd);border:1px solid var(--br);border-radius:12px;padding:16px;margin-bottom:12px;}
+.form-title{font-size:14px;font-weight:700;color:var(--n);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--br);}
+.field{margin-bottom:10px;}
+.field-label{font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;}
+.field-note{font-size:11px;color:var(--mu);margin-top:4px;line-height:1.4;}
+.sel{width:100%;border:1px solid var(--br);border-radius:8px;padding:11px 14px;font-size:14px;color:var(--n);outline:none;background:white;font-family:inherit;}
+.submit-btn{width:100%;background:var(--g);color:var(--n);border:none;border-radius:8px;padding:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:4px;}
+.submit-btn:disabled{opacity:0.6;}
+.submit-result{font-size:13px;text-align:center;margin-top:8px;min-height:18px;}
+
+/* INVOICES */
+.inv-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--br);font-size:13px;}
+.inv-row:last-child{border-bottom:none;}
+.inv-month{font-weight:600;color:var(--n);}
+.inv-jobs{color:var(--mu);}
+.inv-amount{font-weight:700;color:var(--n);}
+.inv-paid{font-size:11px;font-weight:700;color:var(--gr);}
+.inv-due{font-size:11px;font-weight:700;color:var(--am);}
+
+.sec-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--mu);margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+.sec-label::after{content:'';flex:1;height:1px;background:var(--br);}
+.empty{text-align:center;color:var(--mu);font-size:13px;padding:20px;}
+.logout-btn{background:none;border:none;color:var(--mu);font-size:12px;cursor:pointer;text-align:center;display:block;margin:16px auto;text-decoration:underline;font-family:inherit;}
+.spacer{height:20px;}
+
+/* ═══ VISUAL UPGRADE: typography, depth, motion ═══ */
+*{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
+.card,.job-card,.tool-primary,.tool-sm,.today-card,.action-card,.exp-row,.banner,.client-info-card,.job-picker-card,.rs-card,.at-connect{
+  box-shadow:0 1px 3px rgba(28,43,74,0.06),0 1px 2px rgba(28,43,74,0.04);
+}
+.tool-primary,.tool-sm,.today-card,.action-card{transition:transform 0.15s ease,box-shadow 0.15s ease;}
+.tool-primary:active,.tool-sm:active,.today-card:active,.action-card:active{transform:scale(0.97);box-shadow:0 1px 2px rgba(28,43,74,0.08);}
+.job-card{transition:box-shadow 0.2s ease;}
+@keyframes rsCountUp{from{opacity:0;transform:scale(0.85);}to{opacity:1;transform:scale(1);}}
+.rs-number,.score-num,.bval{animation:rsCountUp 0.4s cubic-bezier(.34,1.56,.64,1);}
+@keyframes rsFadeSlide{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+.job-card,.tool-primary,.tool-sm{animation:rsFadeSlide 0.3s ease backwards;}
+
+/* OFFLINE BANNER */
+.offline-banner{display:none;position:fixed;top:0;left:0;right:0;z-index:2000;align-items:center;justify-content:center;gap:8px;padding:9px 16px;font-size:12px;font-weight:600;color:white;max-width:520px;margin:0 auto;}
+.offline-banner.offline{background:#C0392B;}
+.offline-banner.syncing{background:#E67E22;}
+.offline-banner .ob-dot{width:7px;height:7px;border-radius:50%;background:white;animation:obPulse 1.2s ease-in-out infinite;}
+@keyframes obPulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
+
+/* VOICE BUTTON */
+.voice-btn{background:#F8F6F0;border:1px solid #E8E4D8;border-radius:8px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;flex-shrink:0;transition:all 0.15s;}
+.voice-btn.listening{background:#FDECEA;border-color:#C0392B;animation:voicePulse 1s ease-in-out infinite;}
+@keyframes voicePulse{0%,100%{box-shadow:0 0 0 0 rgba(192,57,43,0.4);}50%{box-shadow:0 0 0 6px rgba(192,57,43,0);}}
+.field-with-voice{display:flex;gap:8px;align-items:flex-start;}
+.field-with-voice textarea,.field-with-voice input{flex:1;}
+
+/* PUSH OPT-IN PROMPT */
+.push-prompt{background:#1C2B4A;border-radius:12px;padding:14px 16px;margin-bottom:12px;display:none;align-items:center;gap:12px;}
+.push-prompt.show{display:flex;}
+.push-prompt-icon{font-size:24px;}
+.push-prompt-text{flex:1;}
+.push-prompt-title{font-size:13px;font-weight:700;color:white;}
+.push-prompt-sub{font-size:11px;color:rgba(255,255,255,0.5);margin-top:1px;}
+.push-prompt-btn{background:#C9A84C;color:#1C2B4A;border:none;border-radius:7px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;}
+.push-prompt-dismiss{background:none;border:none;color:rgba(255,255,255,0.4);font-size:18px;cursor:pointer;padding:0 4px;}
+
+
+.skeleton{background:linear-gradient(90deg,#EFEBE2 25%,#F5F2EA 50%,#EFEBE2 75%);background-size:200% 100%;animation:skeletonShine 1.4s ease-in-out infinite;border-radius:12px;}
+@keyframes skeletonShine{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
+.skeleton-card{height:130px;margin-bottom:10px;}
+
+
+.filter-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
+.filter-btn{padding:5px 12px;border:1px solid var(--br);border-radius:20px;font-size:12px;font-weight:600;background:var(--cd);color:var(--mu);cursor:pointer;font-family:inherit;}
+.filter-btn.active{background:var(--n);color:var(--g);border-color:var(--n);}
+
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
+<script src="app-shell.js" defer></script>
+</head>
+<body>
+<div class="hdr">
+  <div class="logo">RoofScan UK</div>
+  <div class="hdr-title">Trade Account</div>
+  <div class="hdr-sub">Agent portal</div>
+  <div class="tabs" id="portal-tabs" style="display:none;">
+    <button class="tb active" onclick="showTab('jobs',this)">Jobs</button>
+    <button class="tb" onclick="showTab('submit',this)">+ Submit job</button>
+    <button class="tb" onclick="showTab('invoices',this)">Invoices</button>
+  </div>
+</div>
+<main>
+
+<!-- LOGIN -->
+<div id="login-section">
+  <div class="login-card">
+    <div class="login-title">Trade Account Login</div>
+    <div class="login-sub">Enter your portal email address to access your account.</div>
+    <input type="email" id="login-email" class="inp" placeholder="your@company.com" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="primary-btn" id="login-btn" onclick="doLogin()">Access my account →</button>
+    <div class="err" id="login-err"></div>
+  </div>
+  <div style="text-align:center;font-size:12px;color:var(--mu);">Don't have a Trade Account? <a href="mailto:info@roofscanuk.co.uk" style="color:var(--s);">Contact us →</a></div>
+</div>
+
+<!-- PORTAL -->
+<div id="portal-section" style="display:none;">
+
+  <!-- ACCOUNT BANNER -->
+  <div class="acct-banner">
+    <div class="acct-name" id="acct-name">Loading...</div>
+    <div class="acct-email" id="acct-email"></div>
+    <div class="tier-badge" id="tier-badge">⭐ Standard</div>
+    <div class="acct-stats">
+      <div><div class="as-val" id="stat-this-month" style="color:var(--g);">0</div><div class="as-label">This month</div></div>
+      <div><div class="as-val" id="stat-total" style="color:rgba(255,255,255,0.7);">0</div><div class="as-label">All time</div></div>
+      <div><div class="as-val" id="stat-discount" style="color:var(--am);">0%</div><div class="as-label">Discount</div></div>
+    </div>
+  </div>
+
+  <!-- JOBS TAB -->
+  <div class="tc active" id="tab-jobs">
+    <div class="sec-label">Your jobs</div>
+    <div id="jobs-list"><div class="empty"><span class="spinner"></span></div></div>
+    <div class="spacer"></div>
+  </div>
+
+  <!-- SUBMIT JOB TAB -->
+  <div class="tc" id="tab-submit">
+    <div class="form-card">
+      <div class="form-title">Submit a new inspection</div>
+      <div class="field">
+        <div class="field-label">Property address *</div>
+        <input type="text" id="sub-address" class="inp" placeholder="12 Example Street, Brighton, BN1 1AB">
+      </div>
+      <div class="inp-row">
+        <div class="field">
+          <div class="field-label">Property type *</div>
+          <select id="sub-type" class="sel">
+            <option value="">Select...</option>
+            <option>Terrace</option>
+            <option>Semi-detached</option>
+            <option>Detached</option>
+            <option>Large detached</option>
+          </select>
+        </div>
+        <div class="field">
+          <div class="field-label">Preferred date</div>
+          <input type="date" id="sub-date" class="inp">
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label">Client email address *</div>
+        <input type="email" id="sub-client-email" class="inp" placeholder="client@email.com">
+        <div class="field-note">The report will be emailed here automatically once complete. You'll also receive it on your account.</div>
+      </div>
+      <div class="field">
+        <div class="field-label">Client name</div>
+        <input type="text" id="sub-client-name" class="inp" placeholder="Property owner's name">
+      </div>
+      <div class="field">
+        <div class="field-label">Access notes</div>
+        <input type="text" id="sub-notes" class="inp" placeholder="Gate code, parking, contact on site...">
+      </div>
+      <button class="submit-btn" id="submit-btn" onclick="submitJob()">Submit inspection request →</button>
+      <div class="submit-result" id="submit-result"></div>
+    </div>
+    <div class="spacer"></div>
+  </div>
+
+  <!-- INVOICES TAB -->
+  <div class="tc" id="tab-invoices">
+    <div class="sec-label">Invoice history</div>
+    <div class="form-card">
+      <div id="invoices-list"><div class="empty">Invoice history will appear here once your first monthly invoice is raised.</div></div>
+    </div>
+    <div style="font-size:12px;color:var(--mu);text-align:center;padding:8px;">Invoices are raised on the last working day of each month. Payment due within 14 days.</div>
+    <div class="spacer"></div>
+  </div>
+
+  <button class="logout-btn" onclick="doLogout()">Sign out</button>
+</div>
+
+</main>
+<script>
+var BASE = 'https://api.airtable.com/v0/appPATYbyCttGeTCL';
+var TOKEN = 'YOUR_AIRTABLE_PAT'; // Set by Jude on deployment
+
+var JOBS_TABLE = 'tbldFSer2uWycCZ0z';
+var TRADE_TABLE = 'tblewRzIhi4HReWmE';
+var QUOTES_TABLE = 'tblGiVdQ8s6tq8u3a';
+
+var JF = {
+  client:'fld8R0gd2hcYSnmi5', address:'fldk2TDM0kE3BJkc3', email:'fldz2TUtjkaWlhxUA',
+  phone:'fldGmegM4b4IQ6R5a', propType:'fldTecfNE5C0HTUYP', status:'fldhm3oLpNvtD8Thc',
+  date:'fldmMdTOz2ieZ74e3', roofscore:'fldCWxHxCghBnjemX', report:'fldenMqINAf6DcCO7',
+  total:'fldXzq5NYyyG0m33G', notes:'fldvym9yUybOyvoq4', company:'fldkibwZ0z68rPMAl',
+  referred:'fldtHVPeC3haY3gRy'
+};
+
+var _account = null;
+var _email = '';
+
+function hdrs(){ return {headers:{'Authorization':'Bearer '+TOKEN,'Content-Type':'application/json'}}; }
+function fmtDate(d){ return d?new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'—'; }
+function scoreColor(s){ return s>=90?'#27AE60':s>=70?'#2980B9':s>=50?'#E67E22':'#C0392B'; }
+
+function showTab(id,btn){
+  document.querySelectorAll('.tc').forEach(function(e){e.classList.remove('active');});
+  document.querySelectorAll('.tb').forEach(function(e){e.classList.remove('active');});
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+
+async function findTradeAccount(email){
+  var formula = encodeURIComponent("OR({Portal Login Email}='"+email+"',{Email}='"+email+"')");
+  var url = BASE+'/'+TRADE_TABLE+'?filterByFormula='+formula;
+  var res = await fetch(url, hdrs());
+  var data = await res.json();
+  return data.records&&data.records.length?data.records[0]:null;
+}
+
+async function fetchTradeJobs(company){
+  var formula = encodeURIComponent("{Company}='"+company.replace(/'/g,"\\'")+ "'");
+  var url = BASE+'/'+JOBS_TABLE+'?filterByFormula='+formula+'&sort[0][field]='+JF.date+'&sort[0][direction]=desc';
+  var res = await fetch(url, hdrs());
+  var data = await res.json();
+  return data.records||[];
+}
+
+async function doLogin(){
+  var email = document.getElementById('login-email').value.trim().toLowerCase();
+  if(!email||!email.includes('@')){ document.getElementById('login-err').textContent='Please enter a valid email.'; return; }
+  var btn = document.getElementById('login-btn');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span>';
+  document.getElementById('login-err').textContent='';
+
+  // Optimistic skeleton loading
+  document.getElementById('login-section').style.display='none';
+  document.getElementById('portal-section').style.display='block';
+  document.getElementById('portal-tabs').style.display='flex';
+  document.getElementById('acct-name').textContent='Loading your account...';
+  document.getElementById('acct-email').textContent='';
+  document.getElementById('jobs-list').innerHTML='<div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div>';
+  try{
+    var acct = await findTradeAccount(email);
+    if(!acct){
+      document.getElementById('portal-section').style.display='none';
+      document.getElementById('portal-tabs').style.display='none';
+      document.getElementById('login-section').style.display='block';
+      document.getElementById('login-err').innerHTML='No Trade Account found for that email.<br><a href="mailto:info@roofscanuk.co.uk" style="color:var(--s);font-weight:600;">Contact us</a> to set up your account.';
+      btn.disabled=false; btn.textContent='Access my account →'; return;
+    }
+    _account=acct; _email=email;
+    try{localStorage.setItem('rs_trade_email',email);}catch(e){}
+    showPortal(acct);
+  }catch(e){
+    document.getElementById('portal-section').style.display='none';
+    document.getElementById('portal-tabs').style.display='none';
+    document.getElementById('login-section').style.display='block';
+    document.getElementById('login-err').textContent='Something went wrong. Please try again.';
+    btn.disabled=false; btn.textContent='Access my account →';
+  }
+}
+
+async function showPortal(acct){
+  var f = acct.fields;
+  var company = f['Company']||f['fldkibwZ0z68rPMAl']||'Your Company';
+  var discount = f['Discount']||f['fld9discount']||0;
+  var jobsThisMonth = f['Current Month Jobs']||f['fldMonthJobs']||0;
+  var totalJobs = f['Total Jobs']||f['fldTotalJobs']||0;
+
+  document.getElementById('login-section').style.display='none';
+  document.getElementById('portal-section').style.display='block';
+  document.getElementById('portal-tabs').style.display='flex';
+  document.getElementById('acct-name').textContent=company;
+  document.getElementById('acct-email').textContent=_email;
+  document.getElementById('stat-this-month').textContent=jobsThisMonth;
+  document.getElementById('stat-total').textContent=totalJobs;
+  document.getElementById('stat-discount').textContent=discount+'%';
+
+  var tier = discount>=20?'💛 Premium':discount>=15?'🥈 Gold':discount>=10?'🥉 Silver':discount>=5?'⬆ Growing':'⭐ Standard';
+  document.getElementById('tier-badge').textContent=tier;
+
+  // Load jobs
+  var jobs = await fetchTradeJobs(company);
+  _allTradeJobs = jobs;
+  renderJobs(jobs);
+}
+
+var _allTradeJobs = [];
+var _tradeJobFilter = '';
+
+function filterTradeJobs(btn, status){
+  document.querySelectorAll('#trade-jobs-filters .filter-btn').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  _tradeJobFilter = status;
+  var filtered = status ? _allTradeJobs.filter(function(j){
+    var s = j.fields[JF.status]?(j.fields[JF.status].name||j.fields[JF.status]):'Booked';
+    return s === status;
+  }) : _allTradeJobs;
+  renderJobs(filtered);
+}
+
+function renderJobs(jobs){
+  var list = document.getElementById('jobs-list');
+  if(!jobs.length){
+    var msg = _tradeJobFilter ? 'No jobs with status \'' + _tradeJobFilter + '\'.' : 'No jobs yet. Use "Submit job" to request your first inspection.';
+    list.innerHTML='<div class="empty">'+msg+'</div>'; return;
+  }
+  list.innerHTML = jobs.map(function(j){
+    var f=j.fields;
+    var status=f[JF.status]?f[JF.status].name||f[JF.status]:'Booked';
+    var score=f[JF.roofscore];
+    var report=f[JF.report];
+    var statusClass=status.replace(' ','.');
+    return '<div class="job-card">'
+      +'<div class="job-header">'
+      +'<div><div class="job-addr">'+(f[JF.address]||'—')+'</div>'
+      +'<div class="job-type">'+(f[JF.propType]?f[JF.propType].name||f[JF.propType]:'—')+'</div></div>'
+      +'<div class="job-right"><div class="job-date">'+fmtDate(f[JF.date])+'</div>'
+      +'<div class="status-pill '+status+'">'+status+'</div></div></div>'
+      +(score?'<div class="score-badge" style="color:'+scoreColor(score)+';">RoofScore: '+score+'/100</div>':'')
+      +(report?'<a href="'+report+'" target="_blank" class="report-dl">📄 Download report</a>':'<span class="report-dl locked">'+( status==='Paid'?'Report unavailable':'Awaiting completion')+'</span>')
+      +'</div>';
+  }).join('');
+}
+
+async function submitJob(){
+  var addr=document.getElementById('sub-address').value.trim();
+  var type=document.getElementById('sub-type').value;
+  var clientEmail=document.getElementById('sub-client-email').value.trim();
+  var clientName=document.getElementById('sub-client-name').value.trim();
+  var date=document.getElementById('sub-date').value;
+  var notes=document.getElementById('sub-notes').value.trim();
+  var result=document.getElementById('submit-result');
+
+  if(!addr||!type||!clientEmail){ result.style.color='var(--rd)'; result.textContent='Please fill in address, property type and client email.'; return; }
+  if(!clientEmail.includes('@')){ result.style.color='var(--rd)'; result.textContent='Please enter a valid client email address.'; return; }
+
+  var btn=document.getElementById('submit-btn');
+  btn.disabled=true; btn.textContent='Submitting...';
+  result.textContent='';
+
+  var company=_account&&(_account.fields['Company']||_account.fields['fldkibwZ0z68rPMAl'])||'';
+  var fields={};
+  fields[JF.address]=addr;
+  fields[JF.propType]=type;
+  fields[JF.email]=clientEmail;
+  if(clientName) fields[JF.client]=clientName;
+  if(date) fields[JF.date]=date;
+  if(notes) fields[JF.notes]=notes;
+  if(company) fields[JF.company]=company;
+  fields[JF.status]='Booked';
+  fields['flds1il9ogOw9WPnc']='Trade';
+
+  try{
+    var res=await fetch(BASE+'/'+JOBS_TABLE,{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+TOKEN,'Content-Type':'application/json'},
+      body:JSON.stringify({fields:fields})
+    });
+    if(!res.ok){ var err=await res.json(); throw new Error(err.error&&err.error.message||'API error'); }
+    result.style.color='var(--gr)';
+    result.textContent='✅ Job submitted. We\'ll be in touch to confirm the inspection date.';
+    document.getElementById('sub-address').value='';
+    document.getElementById('sub-type').value='';
+    document.getElementById('sub-client-email').value='';
+    document.getElementById('sub-client-name').value='';
+    document.getElementById('sub-date').value='';
+    document.getElementById('sub-notes').value='';
+    // Refresh jobs list
+    var jobs=await fetchTradeJobs(company);
+    _allTradeJobs=jobs;
+    renderJobs(_tradeJobFilter ? jobs.filter(function(j){var s=j.fields[JF.status]?(j.fields[JF.status].name||j.fields[JF.status]):'Booked';return s===_tradeJobFilter;}) : jobs);
+  }catch(e){
+    result.style.color='var(--rd)';
+    result.textContent='Error: '+e.message;
+  }
+  btn.disabled=false; btn.textContent='Submit inspection request →';
+}
+
+function doLogout(){
+  try{localStorage.removeItem('rs_trade_email');}catch(e){}
+  _account=null; _email='';
+  document.getElementById('login-section').style.display='block';
+  document.getElementById('portal-section').style.display='none';
+  document.getElementById('portal-tabs').style.display='none';
+  document.getElementById('login-email').value='';
+  document.getElementById('login-btn').disabled=false;
+  document.getElementById('login-btn').textContent='Access my account →';
+  document.getElementById('login-err').textContent='';
+}
+
+// Auto-login for returning agents — skip retyping every visit
+try{
+  var saved=localStorage.getItem('rs_trade_email');
+  if(saved){
+    document.getElementById('login-email').value=saved;
+    doLogin();
+  } else {
+    setTimeout(function(){ document.getElementById('login-email').focus(); }, 300);
+  }
+}catch(e){}
+</script>
+</body>
+</html>

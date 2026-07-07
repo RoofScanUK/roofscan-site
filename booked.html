@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>You're booked — RoofScan UK</title>
+<style>
+:root{--n:#1C2B4A;--g:#C9A84C;--bg:#F8F6F0;--cd:#FFF;--br:#E8E4D8;--mu:#6B7A8D;--gr:#27AE60;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--n);min-height:100vh;max-width:520px;margin:0 auto;}
+.hdr{background:linear-gradient(135deg,var(--n) 0%,#2C3E6A 100%);padding:32px 20px 28px;text-align:center;}
+.tick{width:64px;height:64px;background:rgba(39,174,96,0.2);border:2px solid #27AE60;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:28px;}
+.hdr-title{color:white;font-size:26px;font-weight:800;margin-bottom:4px;}
+.hdr-sub{color:rgba(255,255,255,0.55);font-size:14px;line-height:1.5;}
+main{padding:16px;}
+.card{background:var(--cd);border:1px solid var(--br);border-radius:14px;padding:16px 18px;margin-bottom:12px;}
+.card-title{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mu);margin-bottom:10px;}
+.step{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--br);}
+.step:last-child{border-bottom:none;}
+.step-num{width:28px;height:28px;background:var(--n);color:var(--g);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;margin-top:1px;}
+.step-text{flex:1;}
+.step-title{font-size:14px;font-weight:700;color:var(--n);margin-bottom:2px;}
+.step-detail{font-size:12px;color:var(--mu);line-height:1.5;}
+.info-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--br);font-size:13px;}
+.info-row:last-child{border-bottom:none;}
+.info-label{color:var(--mu);}
+.info-val{font-weight:600;color:var(--n);}
+.portal-card{background:var(--n);border-radius:14px;padding:16px 18px;margin-bottom:12px;text-align:center;}
+.portal-title{color:var(--g);font-size:14px;font-weight:700;margin-bottom:4px;}
+.portal-text{color:rgba(255,255,255,0.6);font-size:12px;line-height:1.5;margin-bottom:12px;}
+.portal-btn{display:inline-block;background:var(--g);color:var(--n);border-radius:8px;padding:10px 20px;font-size:14px;font-weight:700;text-decoration:none;}
+.contact{text-align:center;padding:16px;color:var(--mu);font-size:13px;line-height:1.8;}
+.contact a{color:var(--n);font-weight:600;text-decoration:none;}
+
+/* ═══ VISUAL UPGRADE: typography, depth, motion ═══ */
+*{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
+.card,.job-card,.tool-primary,.tool-sm,.today-card,.action-card,.exp-row,.banner,.client-info-card,.job-picker-card,.rs-card,.at-connect{
+  box-shadow:0 1px 3px rgba(28,43,74,0.06),0 1px 2px rgba(28,43,74,0.04);
+}
+.tool-primary,.tool-sm,.today-card,.action-card{transition:transform 0.15s ease,box-shadow 0.15s ease;}
+.tool-primary:active,.tool-sm:active,.today-card:active,.action-card:active{transform:scale(0.97);box-shadow:0 1px 2px rgba(28,43,74,0.08);}
+.job-card{transition:box-shadow 0.2s ease;}
+@keyframes rsCountUp{from{opacity:0;transform:scale(0.85);}to{opacity:1;transform:scale(1);}}
+.rs-number,.score-num,.bval{animation:rsCountUp 0.4s cubic-bezier(.34,1.56,.64,1);}
+@keyframes rsFadeSlide{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+.job-card,.tool-primary,.tool-sm{animation:rsFadeSlide 0.3s ease backwards;}
+
+/* OFFLINE BANNER */
+.offline-banner{display:none;position:fixed;top:0;left:0;right:0;z-index:2000;align-items:center;justify-content:center;gap:8px;padding:9px 16px;font-size:12px;font-weight:600;color:white;max-width:520px;margin:0 auto;}
+.offline-banner.offline{background:#C0392B;}
+.offline-banner.syncing{background:#E67E22;}
+.offline-banner .ob-dot{width:7px;height:7px;border-radius:50%;background:white;animation:obPulse 1.2s ease-in-out infinite;}
+@keyframes obPulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
+
+/* VOICE BUTTON */
+.voice-btn{background:#F8F6F0;border:1px solid #E8E4D8;border-radius:8px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;flex-shrink:0;transition:all 0.15s;}
+.voice-btn.listening{background:#FDECEA;border-color:#C0392B;animation:voicePulse 1s ease-in-out infinite;}
+@keyframes voicePulse{0%,100%{box-shadow:0 0 0 0 rgba(192,57,43,0.4);}50%{box-shadow:0 0 0 6px rgba(192,57,43,0);}}
+.field-with-voice{display:flex;gap:8px;align-items:flex-start;}
+.field-with-voice textarea,.field-with-voice input{flex:1;}
+
+/* PUSH OPT-IN PROMPT */
+.push-prompt{background:#1C2B4A;border-radius:12px;padding:14px 16px;margin-bottom:12px;display:none;align-items:center;gap:12px;}
+.push-prompt.show{display:flex;}
+.push-prompt-icon{font-size:24px;}
+.push-prompt-text{flex:1;}
+.push-prompt-title{font-size:13px;font-weight:700;color:white;}
+.push-prompt-sub{font-size:11px;color:rgba(255,255,255,0.5);margin-top:1px;}
+.push-prompt-btn{background:#C9A84C;color:#1C2B4A;border:none;border-radius:7px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;}
+.push-prompt-dismiss{background:none;border:none;color:rgba(255,255,255,0.4);font-size:18px;cursor:pointer;padding:0 4px;}
+
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
+<script src="app-shell.js" defer></script>
+</head>
+<body>
+<div class="hdr">
+  <div class="tick">✓</div>
+  <div class="hdr-title">You're booked!</div>
+  <div class="hdr-sub">Your roof inspection is confirmed.<br>Here's what happens next.</div>
+</div>
+<main>
+
+  <div class="card">
+    <div class="card-title">What happens next</div>
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-text">
+        <div class="step-title">Deposit payment</div>
+        <div class="step-detail">A £50 deposit link is on its way to your email. Once paid, your booking is fully confirmed and in the diary.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-text">
+        <div class="step-title">Day-before reminder</div>
+        <div class="step-detail">We'll email you the evening before your inspection with a reminder and any on-the-day information.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-text">
+        <div class="step-title">The inspection</div>
+        <div class="step-detail">We'll arrive at the agreed time. The inspection takes around 45 minutes. You don't need to be present — but if you are, we'll brief you on arrival.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-text">
+        <div class="step-title">Balance payment & report</div>
+        <div class="step-detail">Within 48 hours of the inspection, we'll send a balance payment link. Once your payment is received, your full report with RoofScore is delivered within 48 hours.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Good to know</div>
+    <div class="info-row"><span class="info-label">Deposit</span><span class="info-val">£50 — secures your booking</span></div>
+    <div class="info-row"><span class="info-label">Report turnaround</span><span class="info-val">48hrs after payment</span></div>
+    <div class="info-row"><span class="info-label">Do you need to be home?</span><span class="info-val">No — but pets indoors please</span></div>
+    <div class="info-row"><span class="info-label">Weather cancellation?</span><span class="info-val">We'll rebook at no extra cost</span></div>
+    <div class="info-row"><span class="info-label">Cancel or reschedule?</span><span class="info-val">Free with 48hrs notice</span></div>
+  </div>
+
+  <div class="portal-card">
+    <div class="portal-title">Track your inspection</div>
+    <div class="portal-text">Log in to your RoofScan portal to see exactly where your inspection is, download reports and book again in the future.</div>
+    <a href="/my-roof" class="portal-btn">View my roof →</a>
+  </div>
+
+  <div class="contact">
+    Any questions?<br>
+    <a href="tel:07498364197">07498 364197</a> &nbsp;·&nbsp; <a href="mailto:info@roofscanuk.co.uk">info@roofscanuk.co.uk</a><br>
+    <a href="https://roofscanuk.co.uk">roofscanuk.co.uk</a>
+  </div>
+
+</main>
+</body>
+</html>

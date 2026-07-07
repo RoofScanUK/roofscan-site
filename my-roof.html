@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>My Roof — RoofScan UK</title>
+<style>
+:root{--n:#1C2B4A;--s:#1E4080;--g:#C9A84C;--bg:#F8F6F0;--cd:#FFF;--br:#E8E4D8;--mu:#6B7A8D;--gr:#27AE60;--am:#E67E22;--rd:#C0392B;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--n);min-height:100vh;max-width:520px;margin:0 auto;}
+.hdr{background:linear-gradient(135deg,var(--n) 0%,#2C3E6A 100%);padding:24px 18px 20px;}
+.logo{font-size:12px;font-weight:700;color:var(--g);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;}
+.hdr-title{color:white;font-size:24px;font-weight:800;}
+.hdr-sub{color:rgba(255,255,255,0.45);font-size:13px;margin-top:3px;}
+main{padding:16px;}
+
+/* LOGIN */
+.login-card{background:var(--cd);border:1px solid var(--br);border-radius:14px;padding:20px;margin-bottom:16px;}
+.login-title{font-size:16px;font-weight:700;color:var(--n);margin-bottom:4px;}
+.login-sub{font-size:13px;color:var(--mu);margin-bottom:14px;line-height:1.5;}
+.email-inp{width:100%;border:1px solid var(--br);border-radius:8px;padding:11px 14px;font-size:15px;color:var(--n);outline:none;margin-bottom:10px;font-family:inherit;}
+.email-inp:focus{border-color:var(--s);}
+.login-btn{width:100%;background:var(--n);color:var(--g);border:none;border-radius:8px;padding:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;}
+.login-btn:disabled{opacity:0.6;}
+.login-error{font-size:13px;color:var(--rd);margin-top:8px;text-align:center;}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin 0.7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* LOGGED IN */
+.welcome{font-size:18px;font-weight:800;color:var(--n);margin-bottom:4px;}
+.welcome-sub{font-size:13px;color:var(--mu);margin-bottom:16px;}
+
+/* PROPERTY CARD */
+.prop-card{background:var(--cd);border:1px solid var(--br);border-radius:14px;margin-bottom:12px;overflow:hidden;}
+.prop-header{padding:14px 16px;border-bottom:1px solid var(--br);}
+.prop-addr{font-size:15px;font-weight:700;color:var(--n);}
+.prop-type{font-size:12px;color:var(--mu);margin-top:2px;}
+.prop-score-row{display:flex;align-items:center;gap:10px;margin-top:10px;}
+.score-circle{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.score-num{font-size:16px;font-weight:800;color:white;}
+.score-info{flex:1;}
+.score-label{font-size:13px;font-weight:700;}
+.score-date{font-size:11px;color:var(--mu);margin-top:1px;}
+
+/* STATUS TRACKER */
+.status-tracker{padding:14px 16px;background:#F8F6F0;}
+.tracker-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mu);margin-bottom:10px;}
+.tracker-steps{display:flex;align-items:flex-start;gap:0;position:relative;}
+.tracker-step{flex:1;text-align:center;position:relative;}
+.tracker-step::before{content:'';position:absolute;top:11px;left:50%;right:-50%;height:2px;background:var(--br);z-index:0;}
+.tracker-step:last-child::before{display:none;}
+.tracker-dot{width:22px;height:22px;border-radius:50%;background:var(--br);border:2px solid var(--br);display:flex;align-items:center;justify-content:center;margin:0 auto 5px;position:relative;z-index:1;font-size:10px;}
+.tracker-dot.done{background:var(--gr);border-color:var(--gr);}
+.tracker-dot.done::after{content:'✓';color:white;font-size:11px;font-weight:700;}
+.tracker-dot.current{background:var(--g);border-color:var(--g);}
+.tracker-dot.current::after{content:'●';color:var(--n);font-size:8px;}
+.tracker-label{font-size:10px;color:var(--mu);line-height:1.3;}
+.tracker-label.done{color:var(--gr);font-weight:600;}
+.tracker-label.current{color:#8B6914;font-weight:700;}
+
+/* INSPECTIONS */
+.insp-list{padding:0 16px 14px;}
+.insp-item{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--br);}
+.insp-item:last-child{border-bottom:none;}
+.insp-date{font-size:13px;font-weight:600;color:var(--n);}
+.insp-sub{font-size:11px;color:var(--mu);margin-top:1px;}
+.insp-right{display:flex;align-items:center;gap:8px;}
+.insp-score{font-size:14px;font-weight:700;}
+.dl-btn{background:var(--n);color:var(--g);border:none;border-radius:6px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer;text-decoration:none;display:inline-block;font-family:inherit;}
+.dl-btn.disabled{background:var(--br);color:var(--mu);cursor:not-allowed;}
+
+/* BOOK BUTTON */
+.book-section{padding:14px 16px;border-top:1px solid var(--br);}
+.book-btn{width:100%;background:var(--g);color:var(--n);border:none;border-radius:8px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;text-decoration:none;display:block;text-align:center;}
+
+/* NEW PROPERTY */
+.new-prop-btn{width:100%;background:var(--cd);border:1px dashed var(--br);border-radius:14px;padding:14px;font-size:14px;font-weight:600;color:var(--mu);cursor:pointer;text-align:center;margin-bottom:12px;font-family:inherit;}
+
+/* REFERRAL */
+.ref-card{background:#FBF0D0;border:1px solid #F0C040;border-radius:12px;padding:14px 16px;margin-bottom:12px;}
+.ref-title{font-size:13px;font-weight:700;color:#8B6914;margin-bottom:4px;}
+.ref-text{font-size:12px;color:#7A5814;line-height:1.5;margin-bottom:8px;}
+.ref-link{background:var(--n);color:var(--g);border:none;border-radius:7px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;}
+
+.logout-btn{background:none;border:none;color:var(--mu);font-size:12px;cursor:pointer;text-align:center;display:block;margin:16px auto;text-decoration:underline;font-family:inherit;}
+.spacer{height:20px;}
+
+/* ═══ VISUAL UPGRADE: typography, depth, motion ═══ */
+*{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
+.card,.job-card,.tool-primary,.tool-sm,.today-card,.action-card,.exp-row,.banner,.client-info-card,.job-picker-card,.rs-card,.at-connect{
+  box-shadow:0 1px 3px rgba(28,43,74,0.06),0 1px 2px rgba(28,43,74,0.04);
+}
+.tool-primary,.tool-sm,.today-card,.action-card{transition:transform 0.15s ease,box-shadow 0.15s ease;}
+.tool-primary:active,.tool-sm:active,.today-card:active,.action-card:active{transform:scale(0.97);box-shadow:0 1px 2px rgba(28,43,74,0.08);}
+.job-card{transition:box-shadow 0.2s ease;}
+@keyframes rsCountUp{from{opacity:0;transform:scale(0.85);}to{opacity:1;transform:scale(1);}}
+.rs-number,.score-num,.bval{animation:rsCountUp 0.4s cubic-bezier(.34,1.56,.64,1);}
+@keyframes rsFadeSlide{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+.job-card,.tool-primary,.tool-sm{animation:rsFadeSlide 0.3s ease backwards;}
+
+/* OFFLINE BANNER */
+.offline-banner{display:none;position:fixed;top:0;left:0;right:0;z-index:2000;align-items:center;justify-content:center;gap:8px;padding:9px 16px;font-size:12px;font-weight:600;color:white;max-width:520px;margin:0 auto;}
+.offline-banner.offline{background:#C0392B;}
+.offline-banner.syncing{background:#E67E22;}
+.offline-banner .ob-dot{width:7px;height:7px;border-radius:50%;background:white;animation:obPulse 1.2s ease-in-out infinite;}
+@keyframes obPulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
+
+/* VOICE BUTTON */
+.voice-btn{background:#F8F6F0;border:1px solid #E8E4D8;border-radius:8px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;flex-shrink:0;transition:all 0.15s;}
+.voice-btn.listening{background:#FDECEA;border-color:#C0392B;animation:voicePulse 1s ease-in-out infinite;}
+@keyframes voicePulse{0%,100%{box-shadow:0 0 0 0 rgba(192,57,43,0.4);}50%{box-shadow:0 0 0 6px rgba(192,57,43,0);}}
+.field-with-voice{display:flex;gap:8px;align-items:flex-start;}
+.field-with-voice textarea,.field-with-voice input{flex:1;}
+
+/* PUSH OPT-IN PROMPT */
+.push-prompt{background:#1C2B4A;border-radius:12px;padding:14px 16px;margin-bottom:12px;display:none;align-items:center;gap:12px;}
+.push-prompt.show{display:flex;}
+.push-prompt-icon{font-size:24px;}
+.push-prompt-text{flex:1;}
+.push-prompt-title{font-size:13px;font-weight:700;color:white;}
+.push-prompt-sub{font-size:11px;color:rgba(255,255,255,0.5);margin-top:1px;}
+.push-prompt-btn{background:#C9A84C;color:#1C2B4A;border:none;border-radius:7px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;}
+.push-prompt-dismiss{background:none;border:none;color:rgba(255,255,255,0.4);font-size:18px;cursor:pointer;padding:0 4px;}
+
+
+.skeleton{background:linear-gradient(90deg,#EFEBE2 25%,#F5F2EA 50%,#EFEBE2 75%);background-size:200% 100%;animation:skeletonShine 1.4s ease-in-out infinite;border-radius:14px;}
+@keyframes skeletonShine{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
+.skeleton-card{height:180px;margin-bottom:12px;}
+
+
+.due-reminder{background:#EAF4FB;border:1px solid #AED6F1;border-radius:9px;padding:10px 12px;margin:10px 16px 0;font-size:12px;color:#1A5276;display:flex;align-items:center;gap:8px;}
+.due-reminder-icon{font-size:16px;flex-shrink:0;}
+
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
+<script src="app-shell.js" defer></script>
+</head>
+<body>
+<div class="hdr">
+  <div class="logo">RoofScan UK</div>
+  <div class="hdr-title">My Roof</div>
+  <div class="hdr-sub">Your inspection history & reports</div>
+</div>
+<main>
+
+  <!-- LOGIN -->
+  <div id="login-section">
+    <div class="login-card">
+      <div class="login-title">View your inspections</div>
+      <div class="login-sub">Enter the email address you used to book your inspection. We'll show all your properties and reports in one place.</div>
+      <input type="email" id="login-email" class="email-inp" placeholder="your@email.com" onkeydown="if(event.key==='Enter')doLogin()">
+      <button class="login-btn" id="login-btn" onclick="doLogin()">View my roof →</button>
+      <div class="login-error" id="login-error"></div>
+    </div>
+  </div>
+
+  <!-- LOGGED IN -->
+  <div id="portal-section" style="display:none;">
+    <div class="welcome" id="welcome-name">Welcome back</div>
+    <div class="welcome-sub" id="welcome-sub">Your inspection history</div>
+    <div id="properties-list"></div>
+    <button class="new-prop-btn" onclick="bookNew()">+ Book inspection for a new property</button>
+    <div class="ref-card" id="ref-card" style="display:none;">
+      <div class="ref-title">💛 Know someone who needs a roof inspection?</div>
+      <div class="ref-text">Share your referral link and they'll get £20 off their first inspection. We'll let you know when they book.</div>
+      <button class="ref-link" onclick="copyRef()">Copy referral link</button>
+    </div>
+    <button class="logout-btn" onclick="doLogout()">Sign out</button>
+    <div class="spacer"></div>
+  </div>
+
+</main>
+
+<script>
+var BASE = 'https://api.airtable.com/v0/appPATYbyCttGeTCL';
+var TOKEN = 'YOUR_AIRTABLE_PAT'; // Set by Jude on deployment
+
+var JOB_FIELDS = {
+  client:'fld8R0gd2hcYSnmi5', address:'fldk2TDM0kE3BJkc3', email:'fldz2TUtjkaWlhxUA',
+  propType:'fldTecfNE5C0HTUYP', status:'fldhm3oLpNvtD8Thc', date:'fldmMdTOz2ieZ74e3',
+  roofscore:'fldCWxHxCghBnjemX', report:'fldenMqINAf6DcCO7', total:'fldXzq5NYyyG0m33G'
+};
+
+var _currentEmail = '';
+var _jobs = [];
+
+
+// ═══ 12-MONTH REMINDER (item: due for re-inspection) ═══════════════
+function isDueForReinspection(lastInspDate) {
+  if(!lastInspDate) return false;
+  var last = new Date(lastInspDate);
+  var now = new Date();
+  var monthsSince = (now.getFullYear()-last.getFullYear())*12 + (now.getMonth()-last.getMonth());
+  return monthsSince >= 12;
+}
+
+function statusSteps(status) {
+  var steps = ['Booked','Complete','Report Sent','Paid'];
+  var labels = ['Booked','Inspected','Payment due','Report ready'];
+  var idx = steps.indexOf(status);
+  if(idx < 0) idx = 0;
+  return steps.map(function(s,i){ return {label:labels[i], state:i<idx?'done':i===idx?'current':''}; });
+}
+
+function scoreColor(s){ return s>=90?'#27AE60':s>=70?'#2980B9':s>=50?'#E67E22':'#C0392B'; }
+function scoreDesc(s){ return s>=90?'Excellent':s>=70?'Good':s>=50?'Fair':'Needs attention'; }
+function fmtDate(d){ if(!d) return '—'; return new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'}); }
+
+async function fetchJobs(email) {
+  var formula = encodeURIComponent("{Client Email}='" + email.replace(/'/g,"\\'") + "'");
+  var fields = Object.values(JOB_FIELDS).map(function(f){return'fields[]='+f;}).join('&');
+  var url = BASE + '/tbldFSer2uWycCZ0z?' + fields + '&filterByFormula=' + formula + '&sort[0][field]=' + JOB_FIELDS.date + '&sort[0][direction]=desc';
+  var res = await fetch(url, {headers:{'Authorization':'Bearer '+TOKEN}});
+  if(!res.ok) throw new Error('API error '+res.status);
+  var data = await res.json();
+  return data.records || [];
+}
+
+async function doLogin() {
+  var email = document.getElementById('login-email').value.trim().toLowerCase();
+  if(!email || !email.includes('@')) { document.getElementById('login-error').textContent = 'Please enter a valid email address.'; return; }
+  var btn = document.getElementById('login-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>';
+  document.getElementById('login-error').textContent = '';
+
+  // Show skeleton loading state immediately for a snappier feel
+  document.getElementById('login-section').style.display = 'none';
+  document.getElementById('portal-section').style.display = 'block';
+  document.getElementById('welcome-name').textContent = 'Loading your roof...';
+  document.getElementById('welcome-sub').textContent = '';
+  document.getElementById('properties-list').innerHTML = '<div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card" style="height:120px;"></div>';
+  try {
+    var jobs = await fetchJobs(email);
+    if(!jobs.length) {
+      document.getElementById('portal-section').style.display = 'none';
+      document.getElementById('login-section').style.display = 'block';
+      document.getElementById('login-error').innerHTML = 'No inspections found for that email.<br>Double check it\'s the exact email you booked with, or <a href="mailto:info@roofscanuk.co.uk" style="color:var(--s);font-weight:600;">contact us</a> for help.';
+      btn.disabled = false; btn.textContent = 'View my roof →'; return;
+    }
+    _currentEmail = email;
+    _jobs = jobs;
+    try { localStorage.setItem('rs_portal_email', email); } catch(e) {}
+    showPortal(email, jobs);
+  } catch(e) {
+    document.getElementById('portal-section').style.display = 'none';
+    document.getElementById('login-section').style.display = 'block';
+    document.getElementById('login-error').textContent = 'Something went wrong. Please try again.';
+    btn.disabled = false; btn.textContent = 'View my roof →';
+  }
+}
+
+function showPortal(email, jobs) {
+  document.getElementById('login-section').style.display = 'none';
+  document.getElementById('portal-section').style.display = 'block';
+  var firstName = '';
+  if(jobs.length) { var name = jobs[0].fields[JOB_FIELDS.client]||''; firstName = name.split(' ')[0]; }
+  document.getElementById('welcome-name').textContent = firstName ? 'Hi '+firstName+',' : 'Welcome back,';
+  document.getElementById('welcome-sub').textContent = jobs.length+' inspection'+(jobs.length>1?'s':'')+' on record for '+email;
+
+  // Group by address
+  var byAddr = {};
+  jobs.forEach(function(j){
+    var addr = j.fields[JOB_FIELDS.address]||'Unknown address';
+    if(!byAddr[addr]) byAddr[addr]=[];
+    byAddr[addr].push(j);
+  });
+
+  var html = '';
+  Object.keys(byAddr).forEach(function(addr){
+    var propJobs = byAddr[addr];
+    var latest = propJobs[0];
+    var lf = latest.fields;
+    var status = lf[JOB_FIELDS.status]?lf[JOB_FIELDS.status].name||lf[JOB_FIELDS.status]:'Booked';
+    var score = lf[JOB_FIELDS.roofscore];
+    var propType = lf[JOB_FIELDS.propType]?lf[JOB_FIELDS.propType].name||lf[JOB_FIELDS.propType]:'';
+    var steps = statusSteps(status);
+    var col = score?scoreColor(score):'#6B7A8D';
+
+    html += '<div class="prop-card">';
+    html += '<div class="prop-header">';
+    html += '<div class="prop-addr">'+addr+'</div>';
+    if(propType) html += '<div class="prop-type">'+propType+'</div>';
+    if(score) {
+      html += '<div class="prop-score-row">'
+        +'<div class="score-circle" style="background:'+col+';"><span class="score-num">'+score+'</span></div>'
+        +'<div class="score-info"><div class="score-label" style="color:'+col+';">'+scoreDesc(score)+'</div>'
+        +'<div class="score-date">RoofScore from '+fmtDate(lf[JOB_FIELDS.date])+'</div></div>'
+        +'</div>';
+    }
+    html += '</div>';
+
+    // Status tracker
+    html += '<div class="status-tracker"><div class="tracker-title">Current status</div><div class="tracker-steps">';
+    steps.forEach(function(step){
+      html += '<div class="tracker-step">'
+        +'<div class="tracker-dot '+step.state+'"></div>'
+        +'<div class="tracker-label '+step.state+'">'+step.label+'</div>'
+        +'</div>';
+    });
+    html += '</div></div>';
+
+    // 12-month reminder — only show if last inspection was Paid and 12+ months ago
+    if(status === 'Paid' && isDueForReinspection(lf[JOB_FIELDS.date])) {
+      html += '<div class="due-reminder"><span class="due-reminder-icon">🗓️</span><span>It\'s been over a year since your last inspection here — worth booking a check-up to catch any new issues early.</span></div>';
+    }
+
+    // Inspection history
+    if(propJobs.length > 0) {
+      html += '<div class="insp-list">';
+      propJobs.forEach(function(j){
+        var f = j.fields;
+        var jStatus = f[JOB_FIELDS.status]?f[JOB_FIELDS.status].name||f[JOB_FIELDS.status]:'Booked';
+        var jScore = f[JOB_FIELDS.roofscore];
+        var jReport = f[JOB_FIELDS.report];
+        var paid = jStatus === 'Paid';
+        html += '<div class="insp-item">'
+          +'<div><div class="insp-date">'+fmtDate(f[JOB_FIELDS.date])+'</div>'
+          +'<div class="insp-sub">'+jStatus+'</div></div>'
+          +'<div class="insp-right">'
+          +(jScore?'<span class="insp-score" style="color:'+scoreColor(jScore)+';">'+jScore+'/100</span>':'')
+          +(paid&&jReport?'<a href="'+jReport+'" target="_blank" class="dl-btn">Download</a>':'<span class="dl-btn disabled">'+(paid?'Preparing...':'Awaiting payment')+'</span>')
+          +'</div></div>';
+      });
+      html += '</div>';
+    }
+
+    // Book again
+    var bookUrl = 'https://cal.com/roofscanuk/inspection?email='+encodeURIComponent(email)+'&notes=Re-inspection+of+'+encodeURIComponent(addr);
+    html += '<div class="book-section"><a href="'+bookUrl+'" target="_blank" class="book-btn">📅 Book another inspection for this property</a></div>';
+    html += '</div>';
+  });
+
+  document.getElementById('properties-list').innerHTML = html;
+
+  // Show referral card if they've had a paid inspection
+  var hasPaid = jobs.some(function(j){var s=j.fields[JOB_FIELDS.status];return(s&&s.name?s.name:s)==='Paid';});
+  if(hasPaid) document.getElementById('ref-card').style.display = 'block';
+}
+
+function bookNew(){
+  var url = 'https://cal.com/roofscanuk/inspection' + (_currentEmail?'?email='+encodeURIComponent(_currentEmail):'');
+  window.open(url,'_blank');
+}
+
+function copyRef(){
+  var refLink = 'https://roofscanuk.co.uk/book?ref='+btoa(_currentEmail).replace(/=/g,'');
+  navigator.clipboard.writeText(refLink).then(function(){
+    var btn = document.querySelector('.ref-link');
+    btn.textContent = '✅ Copied!';
+    setTimeout(function(){btn.textContent='Copy referral link';},2000);
+  }).catch(function(){ prompt('Your referral link:', refLink); });
+}
+
+function doLogout(){
+  try{localStorage.removeItem('rs_portal_email');}catch(e){}
+  _currentEmail='';_jobs=[];
+  document.getElementById('login-section').style.display='block';
+  document.getElementById('portal-section').style.display='none';
+  document.getElementById('login-email').value='';
+  document.getElementById('login-btn').disabled=false;
+  document.getElementById('login-btn').textContent='View my roof →';
+}
+
+// Auto-login if remembered — skip the typing entirely for returning visitors
+try{
+  var saved=localStorage.getItem('rs_portal_email');
+  if(saved){
+    document.getElementById('login-email').value=saved;
+    doLogin(); // returning visitor — go straight in, no need to tap again
+  } else {
+    setTimeout(function(){ document.getElementById('login-email').focus(); }, 300);
+  }
+}catch(e){}
+</script>
+</body>
+</html>
