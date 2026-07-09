@@ -137,7 +137,6 @@ main{padding:14px;}
     <div class="today-eyebrow">Today</div>
     <div class="today-title" id="today-title"><span class="spinner"></span></div>
     <div class="today-detail" id="today-detail"></div>
-    <a class="today-btn" id="today-btn" href="ops.html">Open Ops →</a>
   </div>
   <a id="action-card" class="action-card" href="reports.html">
     <div class="action-icon" id="action-icon">📋</div>
@@ -169,91 +168,56 @@ main{padding:14px;}
 <script>
 const hr=new Date().getHours();
 document.getElementById('greeting').textContent=(hr<12?'Good morning ☀️':hr<17?'Good afternoon 👋':hr<21?'Good evening 🌆':'Working late 🌙')+', Takhy';
-function connectAT(){if(typeof AT==='undefined'){alert('Airtable connection script failed to load.');return;}var t=document.getElementById('at-token').value.trim();if(!t||!t.startsWith('pat')){alert('Token must start with "pat"');return;}AT.setToken(t);
-// ─── PUSH OPT-IN ──────────────────────────────────────────────────
-function checkPushPrompt(){
-  if(!RSPush.isSupported()) return;
-  var state = RSPush.getPermissionState();
-  var dismissed = localStorage.getItem('rs_push_dismissed');
-  if(state === 'default' && !dismissed){
-    document.getElementById('push-prompt').classList.add('show');
-  }
+function connectAT(){
+  if(typeof AT==='undefined'){alert('Airtable connection script failed to load.');return;}
+  var t=document.getElementById('at-token').value.trim();
+  if(!t||!t.startsWith('pat')){alert('Token must start with "pat"');return;}
+  AT.setToken(t);
+  initHub();
 }
-async function enablePush(){
-  var result = await RSPush.requestPermission();
-  document.getElementById('push-prompt').classList.remove('show');
-  if(result === 'granted'){
-    RSPush.showLocalAlert('RoofScan UK', 'Notifications are on. You\'ll be alerted for new bookings and overdue reports.');
-  }
-}
-function dismissPush(){
-  try{localStorage.setItem('rs_push_dismissed','1');}catch(e){}
-  document.getElementById('push-prompt').classList.remove('show');
-}
-setTimeout(checkPushPrompt, 1200);
 
-initHub();}
 async function initHub(){
   if(!AT.hasToken()){document.getElementById('at-connect-section').style.display='block';showToday(null,null);return;}
   document.getElementById('at-connect-section').style.display='none';
   try{
     var[today,active,alerts]=await Promise.all([AT.getTodaysJobs(),AT.getActiveJobs(),AT.getAlerts()]);
     showToday(today,active);showAction(today,alerts,active);
-  }catch(e){showToday(null,null);if(e.message&&e.message.includes('401')){AT.setToken('');
-// ─── PUSH OPT-IN ──────────────────────────────────────────────────
-function checkPushPrompt(){
-  if(!RSPush.isSupported()) return;
-  var state = RSPush.getPermissionState();
-  var dismissed = localStorage.getItem('rs_push_dismissed');
-  if(state === 'default' && !dismissed){
-    document.getElementById('push-prompt').classList.add('show');
+  }catch(e){
+    showToday(null,null);
+    if(e.message&&e.message.includes('401')){AT.setToken('');}
   }
 }
-async function enablePush(){
-  var result = await RSPush.requestPermission();
-  document.getElementById('push-prompt').classList.remove('show');
-  if(result === 'granted'){
-    RSPush.showLocalAlert('RoofScan UK', 'Notifications are on. You\'ll be alerted for new bookings and overdue reports.');
-  }
-}
-function dismissPush(){
-  try{localStorage.setItem('rs_push_dismissed','1');}catch(e){}
-  document.getElementById('push-prompt').classList.remove('show');
-}
-setTimeout(checkPushPrompt, 1200);
 
-initHub();}}
-}
 function showToday(today,active){
-  var card=document.getElementById('today-card'),title=document.getElementById('today-title'),detail=document.getElementById('today-detail'),btn=document.getElementById('today-btn');
+  var card=document.getElementById('today-card'),title=document.getElementById('today-title'),detail=document.getElementById('today-detail');
   if(today&&today.length>0){
     var f=today[0].fields,client=f['fld8R0gd2hcYSnmi5']||'Client',addr=f['fldk2TDM0kE3BJkc3']||'',type=f['fldTecfNE5C0HTUYP']?f['fldTecfNE5C0HTUYP'].name||f['fldTecfNE5C0HTUYP']:'';
     card.className='today-card has-job';title.textContent=client;
     detail.textContent=addr+(type?' · '+type:'')+(today.length>1?' +'+(today.length-1)+' more':'');
-    btn.textContent='View job →';
   }else if(!AT.hasToken()){
-    card.className='today-card no-job';title.textContent='Connect Airtable above';detail.textContent='See live jobs and today\'s schedule';btn.textContent='Open Ops →';
+    card.className='today-card no-job';title.textContent='Connect Airtable above';detail.textContent='See live jobs and today\'s schedule';
   }else{
     card.className='today-card no-job';title.textContent='No inspections today';
     var pending=active?active.filter(function(j){var s=j.fields['fldhm3oLpNvtD8Thc'];return(s&&s.name?s.name:s)==='Report Sent';}).length:0;
-    detail.textContent=pending>0?pending+' job'+(pending>1?'s':'')+' awaiting payment':'All clear';btn.textContent='View all jobs →';
+    detail.textContent=pending>0?pending+' job'+(pending>1?'s':'')+' awaiting payment':'All clear';
   }
 }
 function showAction(today,alerts,active){
   var card=document.getElementById('action-card'),icon=document.getElementById('action-icon'),eyebrow=document.getElementById('action-eyebrow'),title=document.getElementById('action-title'),detail=document.getElementById('action-detail');
   var overdue=alerts&&alerts.find(function(a){return a.type==='overdue';});
-  if(overdue){card.href='reports.html?job='+overdue.id;icon.textContent='⚠️';eyebrow.textContent='Report overdue';title.textContent=overdue.client+' — write report now';detail.textContent='Inspection was '+overdue.date+' — write the report to request payment';}
+  if(overdue){card.style.display='flex';card.href='reports.html?job='+overdue.id;icon.textContent='⚠️';eyebrow.textContent='Report overdue';title.textContent=overdue.client+' — write report now';detail.textContent='Inspection was '+overdue.date+' — write the report to request payment';}
   else if(active&&active.find(function(j){var s=j.fields['fldhm3oLpNvtD8Thc'];return(s&&s.name?s.name:s)==='Complete';})){
     var c=active.find(function(j){var s=j.fields['fldhm3oLpNvtD8Thc'];return(s&&s.name?s.name:s)==='Complete';});
-    card.href='reports.html?job='+c.id;icon.textContent='📋';eyebrow.textContent='Ready to write';title.textContent='Write report — '+(c.fields['fld8R0gd2hcYSnmi5']||'Client');detail.textContent='Inspection complete · pre-fills automatically';
+    card.style.display='flex';card.href='reports.html?job='+c.id;icon.textContent='📋';eyebrow.textContent='Ready to write';title.textContent='Write report — '+(c.fields['fld8R0gd2hcYSnmi5']||'Client');detail.textContent='Inspection complete · pre-fills automatically';
   }else if(today&&today.length>0){
-    card.href='ops.html';icon.textContent='✈️';eyebrow.textContent='Job today';title.textContent='Check your daily flow';detail.textContent='Pre-flight checklist · on-site steps';
+    card.style.display='flex';card.href='ops.html';icon.textContent='✈️';eyebrow.textContent='Job today';title.textContent='Check your daily flow';detail.textContent='Pre-flight checklist · on-site steps';
   }else{
-    card.href='reports.html';icon.textContent='📋';eyebrow.textContent='Daily tool';title.textContent='Open Report Generator';detail.textContent='Pre-fills from Airtable · auto RoofScore';
+    // Nothing distinct to flag right now — Report Generator tile below covers this, so skip the duplicate.
+    card.style.display='none';
   }
 }
 
-// ─── PUSH OPT-IN ──────────────────────────────────────────────────
+// ─── PUSH OPT-IN ────────────────────────
 function checkPushPrompt(){
   if(!RSPush.isSupported()) return;
   var state = RSPush.getPermissionState();
