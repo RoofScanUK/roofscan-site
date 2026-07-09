@@ -155,11 +155,24 @@ main{padding:14px;}
 <!-- LOGIN -->
 <div id="login-section">
   <div class="login-card">
-    <div class="login-title">Trade Account Login</div>
-    <div class="login-sub">Enter your portal email address to access your account.</div>
-    <input type="email" id="login-email" class="inp" placeholder="your@company.com" onkeydown="if(event.key==='Enter')doLogin()">
-    <button class="primary-btn" id="login-btn" onclick="doLogin()">Access my account →</button>
-    <div class="err" id="login-err"></div>
+    <div id="login-step-email">
+      <div class="login-title">Trade Account Login</div>
+      <div class="login-sub">Enter your portal email address. We'll email you a 6-digit code to confirm it's you.</div>
+      <input type="email" id="login-email" class="inp" placeholder="your@company.com" onkeydown="if(event.key==='Enter')requestCode()">
+      <button class="primary-btn" id="request-code-btn" onclick="requestCode()">Send me a code →</button>
+      <div class="err" id="login-err"></div>
+    </div>
+    <div id="login-step-code" style="display:none;">
+      <div class="login-title">Enter your code</div>
+      <div class="login-sub">We sent a 6-digit code to <span id="code-sent-to" style="font-weight:700;color:var(--n);"></span>. It expires in 10 minutes.</div>
+      <input type="text" inputmode="numeric" maxlength="6" id="login-code" class="inp" placeholder="123456" onkeydown="if(event.key==='Enter')verifyCode()">
+      <button class="primary-btn" id="verify-code-btn" onclick="verifyCode()">Verify & access account →</button>
+      <div class="err" id="code-err"></div>
+      <div style="display:flex;justify-content:space-between;margin-top:10px;">
+        <button class="logout-btn" style="margin:0;" onclick="backToEmail()">Use a different email</button>
+        <button class="logout-btn" style="margin:0;" onclick="requestCode(true)">Resend code</button>
+      </div>
+    </div>
   </div>
   <div style="text-align:center;font-size:12px;color:var(--mu);">Don't have a Trade Account? <a href="mailto:info@roofscanuk.co.uk" style="color:var(--s);">Contact us →</a></div>
 </div>
@@ -248,6 +261,8 @@ var API_BASE = 'https://roofscan-api.tiny-voice-ac40.workers.dev';
 
 var _account = null;
 var _email = '';
+var _pendingEmail = '';
+var _token = '';
 
 function fmtDate(d){ return d?new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'—'; }
 function scoreColor(s){ return s>=90?'#27AE60':s>=70?'#2980B9':s>=50?'#E67E22':'#C0392B'; }
@@ -259,27 +274,83 @@ function showTab(id,btn){
   btn.classList.add('active');
 }
 
-async function findTradeAccount(email){
-  var res = await fetch(API_BASE+'/trade-account?email='+encodeURIComponent(email));
+async function findTradeAccount(email, token){
+  var res = await fetch(API_BASE+'/trade-account?email='+encodeURIComponent(email), {
+    headers: { 'Authorization': 'Bearer ' + token }
+  });
   if(!res.ok) return null;
   return res.json();
 }
 
-async function fetchTradeJobs(email){
-  var res = await fetch(API_BASE+'/trade-jobs?email='+encodeURIComponent(email));
+async function fetchTradeJobs(email, token){
+  var res = await fetch(API_BASE+'/trade-jobs?email='+encodeURIComponent(email), {
+    headers: { 'Authorization': 'Bearer ' + token }
+  });
   if(!res.ok) return [];
   var data = await res.json();
   return data.records||[];
 }
 
-async function doLogin(){
+async function requestCode(isResend){
   var email = document.getElementById('login-email').value.trim().toLowerCase();
-  if(!email||!email.includes('@')){ document.getElementById('login-err').textContent='Please enter a valid email.'; return; }
-  var btn = document.getElementById('login-btn');
-  btn.disabled=true; btn.innerHTML='<span class="spinner"></span>';
+  if(!isResend){
+    if(!email||!email.includes('@')){ document.getElementById('login-err').textContent='Please enter a valid email.'; return; }
+  } else {
+    email = _pendingEmail;
+  }
+  var btn = isResend ? null : document.getElementById('request-code-btn');
+  if(btn){ btn.disabled=true; btn.innerHTML='<span class="spinner"></span>'; }
   document.getElementById('login-err').textContent='';
+  document.getElementById('code-err').textContent='';
+  try{
+    var res = await fetch(API_BASE+'/request-code', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({email: email})
+    });
+    if(!res.ok) throw new Error('API error '+res.status);
+    _pendingEmail = email;
+    document.getElementById('code-sent-to').textContent = email;
+    document.getElementById('login-step-email').style.display='none';
+    document.getElementById('login-step-code').style.display='block';
+    document.getElementById('login-code').value='';
+    document.getElementById('login-code').focus();
+    if(isResend){ document.getElementById('code-err').style.color='var(--gr)'; document.getElementById('code-err').textContent='Code resent.'; }
+  }catch(e){
+    document.getElementById('login-err').textContent='Something went wrong. Please try again.';
+  }
+  if(btn){ btn.disabled=false; btn.textContent='Send me a code →'; }
+}
 
-  // Optimistic skeleton loading
+function backToEmail(){
+  document.getElementById('login-step-code').style.display='none';
+  document.getElementById('login-step-email').style.display='block';
+  document.getElementById('code-err').textContent='';
+}
+
+async function verifyCode(){
+  var code = document.getElementById('login-code').value.trim();
+  if(!code){ document.getElementById('code-err').textContent='Enter the 6-digit code.'; return; }
+  var btn = document.getElementById('verify-code-btn');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span>';
+  document.getElementById('code-err').textContent='';
+  try{
+    var res = await fetch(API_BASE+'/verify-code', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({email:_pendingEmail, code:code})
+    });
+    var body = await res.json();
+    if(!res.ok||!body.token){ throw new Error(body.error||'Incorrect or expired code.'); }
+    try{ localStorage.setItem('rs_trade_email', _pendingEmail); localStorage.setItem('rs_trade_token', body.token); }catch(e){}
+    await loadPortal(_pendingEmail, body.token);
+  }catch(e){
+    document.getElementById('code-err').textContent = e.message || 'Incorrect or expired code.';
+    btn.disabled=false; btn.textContent='Verify & access account →';
+  }
+}
+
+async function loadPortal(email, token){
   document.getElementById('login-section').style.display='none';
   document.getElementById('portal-section').style.display='block';
   document.getElementById('portal-tabs').style.display='flex';
@@ -287,23 +358,27 @@ async function doLogin(){
   document.getElementById('acct-email').textContent='';
   document.getElementById('jobs-list').innerHTML='<div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div>';
   try{
-    var acct = await findTradeAccount(email);
+    var acct = await findTradeAccount(email, token);
     if(!acct){
       document.getElementById('portal-section').style.display='none';
       document.getElementById('portal-tabs').style.display='none';
       document.getElementById('login-section').style.display='block';
+      document.getElementById('login-step-code').style.display='none';
+      document.getElementById('login-step-email').style.display='block';
       document.getElementById('login-err').innerHTML='No Trade Account found for that email.<br><a href="mailto:info@roofscanuk.co.uk" style="color:var(--s);font-weight:600;">Contact us</a> to set up your account.';
-      btn.disabled=false; btn.textContent='Access my account →'; return;
+      try{ localStorage.removeItem('rs_trade_email'); localStorage.removeItem('rs_trade_token'); }catch(e){}
+      return;
     }
-    _account=acct; _email=email;
-    try{localStorage.setItem('rs_trade_email',email);}catch(e){}
+    _account=acct; _email=email; _token=token;
     showPortal(acct);
   }catch(e){
     document.getElementById('portal-section').style.display='none';
     document.getElementById('portal-tabs').style.display='none';
     document.getElementById('login-section').style.display='block';
-    document.getElementById('login-err').textContent='Something went wrong. Please try again.';
-    btn.disabled=false; btn.textContent='Access my account →';
+    document.getElementById('login-step-code').style.display='none';
+    document.getElementById('login-step-email').style.display='block';
+    document.getElementById('login-err').textContent='Session expired or something went wrong. Please log in again.';
+    try{ localStorage.removeItem('rs_trade_email'); localStorage.removeItem('rs_trade_token'); }catch(e){}
   }
 }
 
@@ -326,7 +401,7 @@ async function showPortal(acct){
   document.getElementById('tier-badge').textContent=tier;
 
   // Load jobs
-  var jobs = await fetchTradeJobs(_email);
+  var jobs = await fetchTradeJobs(_email, _token);
   _allTradeJobs = jobs;
   renderJobs(jobs);
 }
@@ -385,7 +460,7 @@ async function submitJob(){
   try{
     var res=await fetch(API_BASE+'/trade-submit',{
       method:'POST',
-      headers:{'Content-Type':'application/json'},
+      headers:{'Content-Type':'application/json', 'Authorization':'Bearer '+_token},
       body:JSON.stringify({email:_email, address:addr, propType:type, clientEmail:clientEmail, clientName:clientName, date:date, notes:notes})
     });
     var body=await res.json();
@@ -399,7 +474,7 @@ async function submitJob(){
     document.getElementById('sub-date').value='';
     document.getElementById('sub-notes').value='';
     // Refresh jobs list
-    var jobs=await fetchTradeJobs(_email);
+    var jobs=await fetchTradeJobs(_email, _token);
     _allTradeJobs=jobs;
     renderJobs(_tradeJobFilter ? jobs.filter(function(j){return (j.status||'Booked')===_tradeJobFilter;}) : jobs);
   }catch(e){
@@ -410,23 +485,25 @@ async function submitJob(){
 }
 
 function doLogout(){
-  try{localStorage.removeItem('rs_trade_email');}catch(e){}
-  _account=null; _email='';
+  try{localStorage.removeItem('rs_trade_email');localStorage.removeItem('rs_trade_token');}catch(e){}
+  _account=null; _email=''; _token=''; _pendingEmail='';
   document.getElementById('login-section').style.display='block';
   document.getElementById('portal-section').style.display='none';
   document.getElementById('portal-tabs').style.display='none';
+  document.getElementById('login-step-code').style.display='none';
+  document.getElementById('login-step-email').style.display='block';
   document.getElementById('login-email').value='';
-  document.getElementById('login-btn').disabled=false;
-  document.getElementById('login-btn').textContent='Access my account →';
+  document.getElementById('request-code-btn').disabled=false;
+  document.getElementById('request-code-btn').textContent='Send me a code →';
   document.getElementById('login-err').textContent='';
 }
 
-// Auto-login for returning agents — skip retyping every visit
+// Auto-login for returning agents with a valid saved session token — skip retyping every visit
 try{
-  var saved=localStorage.getItem('rs_trade_email');
-  if(saved){
-    document.getElementById('login-email').value=saved;
-    doLogin();
+  var savedEmail=localStorage.getItem('rs_trade_email');
+  var savedToken=localStorage.getItem('rs_trade_token');
+  if(savedEmail && savedToken){
+    loadPortal(savedEmail, savedToken);
   } else {
     setTimeout(function(){ document.getElementById('login-email').focus(); }, 300);
   }

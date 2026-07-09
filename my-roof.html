@@ -151,11 +151,24 @@ main{padding:16px;}
   <!-- LOGIN -->
   <div id="login-section">
     <div class="login-card">
-      <div class="login-title">View your inspections</div>
-      <div class="login-sub">Enter the email address you used to book your inspection. We'll show all your properties and reports in one place.</div>
-      <input type="email" id="login-email" class="email-inp" placeholder="your@email.com" onkeydown="if(event.key==='Enter')doLogin()">
-      <button class="login-btn" id="login-btn" onclick="doLogin()">View my roof →</button>
-      <div class="login-error" id="login-error"></div>
+      <div id="login-step-email">
+        <div class="login-title">View your inspections</div>
+        <div class="login-sub">Enter the email address you used to book your inspection. We'll email you a 6-digit code to confirm it's you.</div>
+        <input type="email" id="login-email" class="email-inp" placeholder="your@email.com" onkeydown="if(event.key==='Enter')requestCode()">
+        <button class="login-btn" id="request-code-btn" onclick="requestCode()">Send me a code →</button>
+        <div class="login-error" id="login-error"></div>
+      </div>
+      <div id="login-step-code" style="display:none;">
+        <div class="login-title">Enter your code</div>
+        <div class="login-sub">We sent a 6-digit code to <span id="code-sent-to" style="font-weight:700;color:var(--n);"></span>. It expires in 10 minutes.</div>
+        <input type="text" inputmode="numeric" maxlength="6" id="login-code" class="email-inp" placeholder="123456" onkeydown="if(event.key==='Enter')verifyCode()">
+        <button class="login-btn" id="verify-code-btn" onclick="verifyCode()">Verify & view my roof →</button>
+        <div class="login-error" id="code-error"></div>
+        <div style="display:flex;justify-content:space-between;margin-top:10px;">
+          <button class="logout-btn" style="margin:0;" onclick="backToEmail()">Use a different email</button>
+          <button class="logout-btn" style="margin:0;" onclick="requestCode(true)">Resend code</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -181,6 +194,8 @@ var API_BASE = 'https://roofscan-api.tiny-voice-ac40.workers.dev';
 
 var _currentEmail = '';
 var _jobs = [];
+var _pendingEmail = '';
+var _token = '';
 
 
 // ═══ 12-MONTH REMINDER (item: due for re-inspection) ═══════════════
@@ -204,44 +219,102 @@ function scoreColor(s){ return s>=90?'#27AE60':s>=70?'#2980B9':s>=50?'#E67E22':'
 function scoreDesc(s){ return s>=90?'Excellent':s>=70?'Good':s>=50?'Fair':'Needs attention'; }
 function fmtDate(d){ if(!d) return '—'; return new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'}); }
 
-async function fetchJobs(email) {
-  var res = await fetch(API_BASE + '/homeowner?email=' + encodeURIComponent(email));
+async function fetchJobs(email, token) {
+  var res = await fetch(API_BASE + '/homeowner?email=' + encodeURIComponent(email), {
+    headers: { 'Authorization': 'Bearer ' + token }
+  });
   if(!res.ok) throw new Error('API error '+res.status);
   var data = await res.json();
   return data.records || [];
 }
 
-async function doLogin() {
+async function requestCode(isResend) {
   var email = document.getElementById('login-email').value.trim().toLowerCase();
-  if(!email || !email.includes('@')) { document.getElementById('login-error').textContent = 'Please enter a valid email address.'; return; }
-  var btn = document.getElementById('login-btn');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span>';
+  if(!isResend) {
+    if(!email || !email.includes('@')) { document.getElementById('login-error').textContent = 'Please enter a valid email address.'; return; }
+  } else {
+    email = _pendingEmail;
+  }
+  var btn = isResend ? null : document.getElementById('request-code-btn');
+  if(btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>'; }
   document.getElementById('login-error').textContent = '';
+  document.getElementById('code-error').textContent = '';
+  try {
+    var res = await fetch(API_BASE + '/request-code', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({email: email})
+    });
+    if(!res.ok) throw new Error('API error '+res.status);
+    _pendingEmail = email;
+    document.getElementById('code-sent-to').textContent = email;
+    document.getElementById('login-step-email').style.display = 'none';
+    document.getElementById('login-step-code').style.display = 'block';
+    document.getElementById('login-code').value = '';
+    document.getElementById('login-code').focus();
+    if(isResend) { document.getElementById('code-error').style.color = 'var(--gr)'; document.getElementById('code-error').textContent = 'Code resent.'; }
+  } catch(e) {
+    document.getElementById('login-error').textContent = 'Something went wrong. Please try again.';
+  }
+  if(btn) { btn.disabled = false; btn.textContent = 'Send me a code →'; }
+}
 
-  // Show skeleton loading state immediately for a snappier feel
+function backToEmail() {
+  document.getElementById('login-step-code').style.display = 'none';
+  document.getElementById('login-step-email').style.display = 'block';
+  document.getElementById('code-error').textContent = '';
+}
+
+async function verifyCode() {
+  var code = document.getElementById('login-code').value.trim();
+  if(!code) { document.getElementById('code-error').textContent = 'Enter the 6-digit code.'; return; }
+  var btn = document.getElementById('verify-code-btn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+  document.getElementById('code-error').textContent = '';
+  try {
+    var res = await fetch(API_BASE + '/verify-code', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({email: _pendingEmail, code: code})
+    });
+    var body = await res.json();
+    if(!res.ok || !body.token) { throw new Error(body.error || 'Incorrect or expired code.'); }
+    try { localStorage.setItem('rs_portal_email', _pendingEmail); localStorage.setItem('rs_portal_token', body.token); } catch(e) {}
+    await loadPortal(_pendingEmail, body.token);
+  } catch(e) {
+    document.getElementById('code-error').textContent = e.message || 'Incorrect or expired code.';
+    btn.disabled = false; btn.textContent = 'Verify & view my roof →';
+  }
+}
+
+async function loadPortal(email, token) {
   document.getElementById('login-section').style.display = 'none';
   document.getElementById('portal-section').style.display = 'block';
   document.getElementById('welcome-name').textContent = 'Loading your roof...';
   document.getElementById('welcome-sub').textContent = '';
   document.getElementById('properties-list').innerHTML = '<div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card" style="height:120px;"></div>';
   try {
-    var jobs = await fetchJobs(email);
+    var jobs = await fetchJobs(email, token);
     if(!jobs.length) {
       document.getElementById('portal-section').style.display = 'none';
       document.getElementById('login-section').style.display = 'block';
+      document.getElementById('login-step-code').style.display = 'none';
+      document.getElementById('login-step-email').style.display = 'block';
       document.getElementById('login-error').innerHTML = 'No inspections found for that email.<br>Double check it\'s the exact email you booked with, or <a href="mailto:info@roofscanuk.co.uk" style="color:var(--s);font-weight:600;">contact us</a> for help.';
-      btn.disabled = false; btn.textContent = 'View my roof →'; return;
+      try { localStorage.removeItem('rs_portal_email'); localStorage.removeItem('rs_portal_token'); } catch(e) {}
+      return;
     }
     _currentEmail = email;
+    _token = token;
     _jobs = jobs;
-    try { localStorage.setItem('rs_portal_email', email); } catch(e) {}
     showPortal(email, jobs);
   } catch(e) {
     document.getElementById('portal-section').style.display = 'none';
     document.getElementById('login-section').style.display = 'block';
-    document.getElementById('login-error').textContent = 'Something went wrong. Please try again.';
-    btn.disabled = false; btn.textContent = 'View my roof →';
+    document.getElementById('login-step-code').style.display = 'none';
+    document.getElementById('login-step-email').style.display = 'block';
+    document.getElementById('login-error').textContent = 'Session expired or something went wrong. Please log in again.';
+    try { localStorage.removeItem('rs_portal_email'); localStorage.removeItem('rs_portal_token'); } catch(e) {}
   }
 }
 
@@ -346,21 +419,23 @@ function copyRef(){
 }
 
 function doLogout(){
-  try{localStorage.removeItem('rs_portal_email');}catch(e){}
-  _currentEmail='';_jobs=[];
+  try{localStorage.removeItem('rs_portal_email');localStorage.removeItem('rs_portal_token');}catch(e){}
+  _currentEmail='';_jobs=[];_token='';_pendingEmail='';
   document.getElementById('login-section').style.display='block';
   document.getElementById('portal-section').style.display='none';
+  document.getElementById('login-step-code').style.display='none';
+  document.getElementById('login-step-email').style.display='block';
   document.getElementById('login-email').value='';
-  document.getElementById('login-btn').disabled=false;
-  document.getElementById('login-btn').textContent='View my roof →';
+  document.getElementById('request-code-btn').disabled=false;
+  document.getElementById('request-code-btn').textContent='Send me a code →';
 }
 
-// Auto-login if remembered — skip the typing entirely for returning visitors
+// Auto-login if we still have a valid saved session token — skip the email+code entirely for returning visitors
 try{
-  var saved=localStorage.getItem('rs_portal_email');
-  if(saved){
-    document.getElementById('login-email').value=saved;
-    doLogin(); // returning visitor — go straight in, no need to tap again
+  var savedEmail=localStorage.getItem('rs_portal_email');
+  var savedToken=localStorage.getItem('rs_portal_token');
+  if(savedEmail && savedToken){
+    loadPortal(savedEmail, savedToken); // returning visitor with valid session — go straight in
   } else {
     setTimeout(function(){ document.getElementById('login-email').focus(); }, 300);
   }
