@@ -1,9 +1,9 @@
 // ═══ RoofScan UK — Shared App Shell: SW registration, offline queue, push ═══
 
-// ─── REGISTER SERVICE WORKER ─────────────────────────────────────
+// ─── REGISTER SERVICE WORKER ─────────────────
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function() {
-    navigator.serviceWorker.register('/sw.js').then(function(reg) {
+    navigator.serviceWorker.register('sw.js').then(function(reg) {
       console.log('SW registered');
     }).catch(function(err) {
       console.log('SW registration failed:', err);
@@ -89,7 +89,7 @@ window.addEventListener('online', function() { RSOffline.updateBanner(); RSOffli
 window.addEventListener('offline', function() { RSOffline.updateBanner(); });
 document.addEventListener('DOMContentLoaded', function() { RSOffline.updateBanner(); });
 
-// ─── PUSH NOTIFICATIONS ──────────────────────────────────────────
+// ─── PUSH NOTIFICATIONS ────────────────────────
 var RSPush = {
   isSupported: function() {
     return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
@@ -116,15 +116,15 @@ var RSPush = {
       navigator.serviceWorker.ready.then(function(reg) {
         reg.showNotification(title, {
           body: body,
-          icon: '/icons/icon-192.png',
-          badge: '/icons/icon-192.png'
+          icon: 'icons/icon-192.png',
+          badge: 'icons/icon-192.png'
         });
       });
     }
   }
 };
 
-// ─── VOICE NOTES (Web Speech API) ────────────────────────────────
+// ─── VOICE NOTES (Web Speech API) ────────────────────
 var RSVoice = {
   recognition: null,
   activeField: null,
