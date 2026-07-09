@@ -244,25 +244,11 @@ main{padding:14px;}
 
 </main>
 <script>
-var BASE = 'https://api.airtable.com/v0/appPATYbyCttGeTCL';
-var TOKEN = 'YOUR_AIRTABLE_PAT'; // Set by Jude on deployment
-
-var JOBS_TABLE = 'tbldFSer2uWycCZ0z';
-var TRADE_TABLE = 'tblewRzIhi4HReWmE';
-var QUOTES_TABLE = 'tblGiVdQ8s6tq8u3a';
-
-var JF = {
-  client:'fld8R0gd2hcYSnmi5', address:'fldk2TDM0kE3BJkc3', email:'fldz2TUtjkaWlhxUA',
-  phone:'fldGmegM4b4IQ6R5a', propType:'fldTecfNE5C0HTUYP', status:'fldhm3oLpNvtD8Thc',
-  date:'fldmMdTOz2ieZ74e3', roofscore:'fldCWxHxCghBnjemX', report:'fldenMqINAf6DcCO7',
-  total:'fldXzq5NYyyG0m33G', notes:'fldvym9yUybOyvoq4', company:'fldkibwZ0z68rPMAl',
-  referred:'fldtHVPeC3haY3gRy'
-};
+var API_BASE = 'https://roofscan-api.tiny-voice-ac40.workers.dev';
 
 var _account = null;
 var _email = '';
 
-function hdrs(){ return {headers:{'Authorization':'Bearer '+TOKEN,'Content-Type':'application/json'}}; }
 function fmtDate(d){ return d?new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'—'; }
 function scoreColor(s){ return s>=90?'#27AE60':s>=70?'#2980B9':s>=50?'#E67E22':'#C0392B'; }
 
@@ -274,17 +260,14 @@ function showTab(id,btn){
 }
 
 async function findTradeAccount(email){
-  var formula = encodeURIComponent("OR({Portal Login Email}='"+email+"',{Email}='"+email+"')");
-  var url = BASE+'/'+TRADE_TABLE+'?filterByFormula='+formula;
-  var res = await fetch(url, hdrs());
-  var data = await res.json();
-  return data.records&&data.records.length?data.records[0]:null;
+  var res = await fetch(API_BASE+'/trade-account?email='+encodeURIComponent(email));
+  if(!res.ok) return null;
+  return res.json();
 }
 
-async function fetchTradeJobs(company){
-  var formula = encodeURIComponent("{Company}='"+company.replace(/'/g,"\\'")+ "'");
-  var url = BASE+'/'+JOBS_TABLE+'?filterByFormula='+formula+'&sort[0][field]='+JF.date+'&sort[0][direction]=desc';
-  var res = await fetch(url, hdrs());
+async function fetchTradeJobs(email){
+  var res = await fetch(API_BASE+'/trade-jobs?email='+encodeURIComponent(email));
+  if(!res.ok) return [];
   var data = await res.json();
   return data.records||[];
 }
@@ -325,11 +308,10 @@ async function doLogin(){
 }
 
 async function showPortal(acct){
-  var f = acct.fields;
-  var company = f['Company']||f['fldkibwZ0z68rPMAl']||'Your Company';
-  var discount = f['Discount']||f['fld9discount']||0;
-  var jobsThisMonth = f['Current Month Jobs']||f['fldMonthJobs']||0;
-  var totalJobs = f['Total Jobs']||f['fldTotalJobs']||0;
+  var company = acct.company||'Your Company';
+  var discount = acct.discount||0;
+  var jobsThisMonth = acct.currentMonthJobs||0;
+  var totalJobs = (acct.currentMonthJobs||0) + (acct.previousMonthJobs||0);
 
   document.getElementById('login-section').style.display='none';
   document.getElementById('portal-section').style.display='block';
@@ -344,7 +326,7 @@ async function showPortal(acct){
   document.getElementById('tier-badge').textContent=tier;
 
   // Load jobs
-  var jobs = await fetchTradeJobs(company);
+  var jobs = await fetchTradeJobs(_email);
   _allTradeJobs = jobs;
   renderJobs(jobs);
 }
@@ -357,8 +339,7 @@ function filterTradeJobs(btn, status){
   btn.classList.add('active');
   _tradeJobFilter = status;
   var filtered = status ? _allTradeJobs.filter(function(j){
-    var s = j.fields[JF.status]?(j.fields[JF.status].name||j.fields[JF.status]):'Booked';
-    return s === status;
+    return (j.status||'Booked') === status;
   }) : _allTradeJobs;
   renderJobs(filtered);
 }
@@ -370,16 +351,14 @@ function renderJobs(jobs){
     list.innerHTML='<div class="empty">'+msg+'</div>'; return;
   }
   list.innerHTML = jobs.map(function(j){
-    var f=j.fields;
-    var status=f[JF.status]?f[JF.status].name||f[JF.status]:'Booked';
-    var score=f[JF.roofscore];
-    var report=f[JF.report];
-    var statusClass=status.replace(' ','.');
+    var status=j.status||'Booked';
+    var score=j.roofScore;
+    var report=j.reportLink;
     return '<div class="job-card">'
       +'<div class="job-header">'
-      +'<div><div class="job-addr">'+(f[JF.address]||'—')+'</div>'
-      +'<div class="job-type">'+(f[JF.propType]?f[JF.propType].name||f[JF.propType]:'—')+'</div></div>'
-      +'<div class="job-right"><div class="job-date">'+fmtDate(f[JF.date])+'</div>'
+      +'<div><div class="job-addr">'+(j.address||'—')+'</div>'
+      +'<div class="job-type">'+(j.propertyType||'—')+'</div></div>'
+      +'<div class="job-right"><div class="job-date">'+fmtDate(j.date)+'</div>'
       +'<div class="status-pill '+status+'">'+status+'</div></div></div>'
       +(score?'<div class="score-badge" style="color:'+scoreColor(score)+';">RoofScore: '+score+'/100</div>':'')
       +(report?'<a href="'+report+'" target="_blank" class="report-dl">📄 Download report</a>':'<span class="report-dl locked">'+( status==='Paid'?'Report unavailable':'Awaiting completion')+'</span>')
@@ -403,25 +382,14 @@ async function submitJob(){
   btn.disabled=true; btn.textContent='Submitting...';
   result.textContent='';
 
-  var company=_account&&(_account.fields['Company']||_account.fields['fldkibwZ0z68rPMAl'])||'';
-  var fields={};
-  fields[JF.address]=addr;
-  fields[JF.propType]=type;
-  fields[JF.email]=clientEmail;
-  if(clientName) fields[JF.client]=clientName;
-  if(date) fields[JF.date]=date;
-  if(notes) fields[JF.notes]=notes;
-  if(company) fields[JF.company]=company;
-  fields[JF.status]='Booked';
-  fields['flds1il9ogOw9WPnc']='Trade';
-
   try{
-    var res=await fetch(BASE+'/'+JOBS_TABLE,{
+    var res=await fetch(API_BASE+'/trade-submit',{
       method:'POST',
-      headers:{'Authorization':'Bearer '+TOKEN,'Content-Type':'application/json'},
-      body:JSON.stringify({fields:fields})
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({email:_email, address:addr, propType:type, clientEmail:clientEmail, clientName:clientName, date:date, notes:notes})
     });
-    if(!res.ok){ var err=await res.json(); throw new Error(err.error&&err.error.message||'API error'); }
+    var body=await res.json();
+    if(!res.ok){ throw new Error(body.error||'API error'); }
     result.style.color='var(--gr)';
     result.textContent='✅ Job submitted. We\'ll be in touch to confirm the inspection date.';
     document.getElementById('sub-address').value='';
@@ -431,9 +399,9 @@ async function submitJob(){
     document.getElementById('sub-date').value='';
     document.getElementById('sub-notes').value='';
     // Refresh jobs list
-    var jobs=await fetchTradeJobs(company);
+    var jobs=await fetchTradeJobs(_email);
     _allTradeJobs=jobs;
-    renderJobs(_tradeJobFilter ? jobs.filter(function(j){var s=j.fields[JF.status]?(j.fields[JF.status].name||j.fields[JF.status]):'Booked';return s===_tradeJobFilter;}) : jobs);
+    renderJobs(_tradeJobFilter ? jobs.filter(function(j){return (j.status||'Booked')===_tradeJobFilter;}) : jobs);
   }catch(e){
     result.style.color='var(--rd)';
     result.textContent='Error: '+e.message;

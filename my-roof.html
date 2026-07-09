@@ -177,14 +177,7 @@ main{padding:16px;}
 </main>
 
 <script>
-var BASE = 'https://api.airtable.com/v0/appPATYbyCttGeTCL';
-var TOKEN = 'YOUR_AIRTABLE_PAT'; // Set by Jude on deployment
-
-var JOB_FIELDS = {
-  client:'fld8R0gd2hcYSnmi5', address:'fldk2TDM0kE3BJkc3', email:'fldz2TUtjkaWlhxUA',
-  propType:'fldTecfNE5C0HTUYP', status:'fldhm3oLpNvtD8Thc', date:'fldmMdTOz2ieZ74e3',
-  roofscore:'fldCWxHxCghBnjemX', report:'fldenMqINAf6DcCO7', total:'fldXzq5NYyyG0m33G'
-};
+var API_BASE = 'https://roofscan-api.tiny-voice-ac40.workers.dev';
 
 var _currentEmail = '';
 var _jobs = [];
@@ -212,10 +205,7 @@ function scoreDesc(s){ return s>=90?'Excellent':s>=70?'Good':s>=50?'Fair':'Needs
 function fmtDate(d){ if(!d) return '—'; return new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'}); }
 
 async function fetchJobs(email) {
-  var formula = encodeURIComponent("{Client Email}='" + email.replace(/'/g,"\\'") + "'");
-  var fields = Object.values(JOB_FIELDS).map(function(f){return'fields[]='+f;}).join('&');
-  var url = BASE + '/tbldFSer2uWycCZ0z?' + fields + '&filterByFormula=' + formula + '&sort[0][field]=' + JOB_FIELDS.date + '&sort[0][direction]=desc';
-  var res = await fetch(url, {headers:{'Authorization':'Bearer '+TOKEN}});
+  var res = await fetch(API_BASE + '/homeowner?email=' + encodeURIComponent(email));
   if(!res.ok) throw new Error('API error '+res.status);
   var data = await res.json();
   return data.records || [];
@@ -259,14 +249,14 @@ function showPortal(email, jobs) {
   document.getElementById('login-section').style.display = 'none';
   document.getElementById('portal-section').style.display = 'block';
   var firstName = '';
-  if(jobs.length) { var name = jobs[0].fields[JOB_FIELDS.client]||''; firstName = name.split(' ')[0]; }
+  if(jobs.length) { var name = jobs[0].clientName||''; firstName = name.split(' ')[0]; }
   document.getElementById('welcome-name').textContent = firstName ? 'Hi '+firstName+',' : 'Welcome back,';
   document.getElementById('welcome-sub').textContent = jobs.length+' inspection'+(jobs.length>1?'s':'')+' on record for '+email;
 
   // Group by address
   var byAddr = {};
   jobs.forEach(function(j){
-    var addr = j.fields[JOB_FIELDS.address]||'Unknown address';
+    var addr = j.address||'Unknown address';
     if(!byAddr[addr]) byAddr[addr]=[];
     byAddr[addr].push(j);
   });
@@ -275,10 +265,9 @@ function showPortal(email, jobs) {
   Object.keys(byAddr).forEach(function(addr){
     var propJobs = byAddr[addr];
     var latest = propJobs[0];
-    var lf = latest.fields;
-    var status = lf[JOB_FIELDS.status]?lf[JOB_FIELDS.status].name||lf[JOB_FIELDS.status]:'Booked';
-    var score = lf[JOB_FIELDS.roofscore];
-    var propType = lf[JOB_FIELDS.propType]?lf[JOB_FIELDS.propType].name||lf[JOB_FIELDS.propType]:'';
+    var status = latest.status||'Booked';
+    var score = latest.roofScore;
+    var propType = latest.propertyType||'';
     var steps = statusSteps(status);
     var col = score?scoreColor(score):'#6B7A8D';
 
@@ -290,7 +279,7 @@ function showPortal(email, jobs) {
       html += '<div class="prop-score-row">'
         +'<div class="score-circle" style="background:'+col+';"><span class="score-num">'+score+'</span></div>'
         +'<div class="score-info"><div class="score-label" style="color:'+col+';">'+scoreDesc(score)+'</div>'
-        +'<div class="score-date">RoofScore from '+fmtDate(lf[JOB_FIELDS.date])+'</div></div>'
+        +'<div class="score-date">RoofScore from '+fmtDate(latest.date)+'</div></div>'
         +'</div>';
     }
     html += '</div>';
@@ -306,7 +295,7 @@ function showPortal(email, jobs) {
     html += '</div></div>';
 
     // 12-month reminder — only show if last inspection was Paid and 12+ months ago
-    if(status === 'Paid' && isDueForReinspection(lf[JOB_FIELDS.date])) {
+    if(status === 'Paid' && isDueForReinspection(latest.date)) {
       html += '<div class="due-reminder"><span class="due-reminder-icon">🗓️</span><span>It\'s been over a year since your last inspection here — worth booking a check-up to catch any new issues early.</span></div>';
     }
 
@@ -314,13 +303,12 @@ function showPortal(email, jobs) {
     if(propJobs.length > 0) {
       html += '<div class="insp-list">';
       propJobs.forEach(function(j){
-        var f = j.fields;
-        var jStatus = f[JOB_FIELDS.status]?f[JOB_FIELDS.status].name||f[JOB_FIELDS.status]:'Booked';
-        var jScore = f[JOB_FIELDS.roofscore];
-        var jReport = f[JOB_FIELDS.report];
+        var jStatus = j.status||'Booked';
+        var jScore = j.roofScore;
+        var jReport = j.reportLink;
         var paid = jStatus === 'Paid';
         html += '<div class="insp-item">'
-          +'<div><div class="insp-date">'+fmtDate(f[JOB_FIELDS.date])+'</div>'
+          +'<div><div class="insp-date">'+fmtDate(j.date)+'</div>'
           +'<div class="insp-sub">'+jStatus+'</div></div>'
           +'<div class="insp-right">'
           +(jScore?'<span class="insp-score" style="color:'+scoreColor(jScore)+';">'+jScore+'/100</span>':'')
@@ -339,7 +327,7 @@ function showPortal(email, jobs) {
   document.getElementById('properties-list').innerHTML = html;
 
   // Show referral card if they've had a paid inspection
-  var hasPaid = jobs.some(function(j){var s=j.fields[JOB_FIELDS.status];return(s&&s.name?s.name:s)==='Paid';});
+  var hasPaid = jobs.some(function(j){return j.status==='Paid';});
   if(hasPaid) document.getElementById('ref-card').style.display = 'block';
 }
 
