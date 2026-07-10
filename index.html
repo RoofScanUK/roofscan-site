@@ -270,7 +270,7 @@ textarea{resize:vertical;}
         <p>Professional drone roof inspections across Sussex. Answer a few quick questions and get an instant, no-obligation price — no call needed. Full written report with condition ratings, delivered within 48 hours.</p>
         <div class="hero-ctas">
           <button class="btn" onclick="go('book')">Get your instant quote →</button>
-          <a class="textlink" href="#" onclick="event.preventDefault();go('services')">See how it works</a>
+          <a class="textlink" href="#" onclick="event.preventDefault();document.getElementById('how-it-works').scrollIntoView({behavior:'smooth'});">See how it works</a>
         </div>
         <div class="fact-strip">
           <div class="fact"><div class="v">£199</div><div class="l">From</div></div>
@@ -305,14 +305,14 @@ textarea{resize:vertical;}
     </div>
   </section>
 
-  <section class="pad reveal">
+  <section class="pad reveal" id="how-it-works">
     <div class="wrap">
       <div class="section-head center">
         <div class="eyebrow">Simple process</div>
-        <h2 class="section-title">Three steps to a full roof report</h2>
+        <h2 class="section-title">From quote to report, in three steps</h2>
       </div>
       <div class="timeline">
-        <div class="tl-item tl-expand" onclick="this.classList.toggle('open')"><div class="tl-num">01</div><h3>Tell us about your property</h3><p>Property type, location, and any roof features. No prices shown during selection — just your requirements.</p><p class="tl-more">You'll answer a few quick questions about the building — nothing technical required. We work out the details on our end once we're on site.</p></div>
+        <div class="tl-item tl-expand" onclick="this.classList.toggle('open')"><div class="tl-num">01</div><h3>Get your instant quote</h3><p>Answer a few quick questions about the property — type, location, and any roof features — and see your price straight away. No call needed.</p><p class="tl-more">Takes about a minute. Pay a £50 deposit online to lock in your date; the balance is due once the job's done.</p></div>
         <div class="tl-item tl-expand" onclick="this.classList.toggle('open')"><div class="tl-num">02</div><h3>We fly and inspect</h3><p>Our CAA-licensed pilot captures high-resolution imagery of every element — chimneys, ridges, flashings, gutters.</p><p class="tl-more">Most inspections take under an hour on site, including setup and safety checks. You don't need to be home unless you'd like to be.</p></div>
         <div class="tl-item tl-expand" onclick="this.classList.toggle('open')"><div class="tl-num">03</div><h3>Receive your report</h3><p>A fully written condition report with photos, ratings, and a contractor-ready Schedule of Works, within 48 hours.</p><p class="tl-more">Delivered as a PDF you can forward to a contractor, solicitor, or insurer — no login required to view it.</p></div>
       </div>
