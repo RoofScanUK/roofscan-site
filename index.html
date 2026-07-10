@@ -739,17 +739,24 @@ textarea{resize:vertical;}
 </footer>
 
 <script>
-function go(page){
+const VALID_PAGES = ['home','pricing','services','about','contact','book'];
+function renderPage(page){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page-'+page).classList.add('active');
   window.scrollTo(0,0);
-  location.hash = page;
   setTimeout(checkReveals, 30);
 }
+function go(page){
+  renderPage(page);
+  location.hash = page;
+}
+window.addEventListener('hashchange', ()=>{
+  const h = location.hash.replace('#','');
+  renderPage(VALID_PAGES.includes(h) ? h : 'home');
+});
 window.addEventListener('DOMContentLoaded', ()=>{
   const h = location.hash.replace('#','');
-  const valid = ['home','pricing','services','about','contact','book'];
-  go(valid.includes(h) ? h : 'home');
+  renderPage(VALID_PAGES.includes(h) ? h : 'home');
   initBooking();
   checkReveals();
 });
