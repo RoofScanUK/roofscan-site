@@ -667,11 +667,12 @@ textarea{resize:vertical;}
 
         <div id="book-step-4" style="display:none;">
           <h2 style="font-size:1.15rem;margin:0 0 6px;">Your details</h2>
-          <p class="muted" style="font-size:13px;margin:0 0 22px;line-height:1.6;">We'll use these to confirm your booking. You'll confirm the exact property address when you pick your date on the next page.</p>
+          <p class="muted" style="font-size:13px;margin:0 0 22px;line-height:1.6;">We'll use these to confirm your booking and deliver your report.</p>
           <div class="contact-fields">
             <input id="c-name" placeholder="Full name" oninput="checkContactFields()">
             <input id="c-email" placeholder="Email address" oninput="checkContactFields()">
             <input id="c-phone" placeholder="Phone number" oninput="checkContactFields()">
+            <input id="c-address" placeholder="Property address (including postcode)" oninput="checkContactFields()">
           </div>
           <div class="row-btns">
             <button class="back-btn" onclick="goStep(3)">← Back</button>
@@ -799,7 +800,7 @@ const SL=["Property","Features","Location","Details","Your price","Book"];
 
 let bstep=1, prop=null, town=null;
 let counts={chimneys:0,extensions:0,dormers:0,outbuildings:0};
-let contact={name:"",email:"",phone:""};
+let contact={name:"",email:"",phone:"",address:""};
 
 function fmt(n){ return "£"+n.toLocaleString("en-GB"); }
 
@@ -886,6 +887,7 @@ function checkContactFields(){
   contact.name = document.getElementById('c-name').value;
   contact.email = document.getElementById('c-email').value;
   contact.phone = document.getElementById('c-phone').value;
+  contact.address = document.getElementById('c-address').value;
 }
 
 function goStep(n){
@@ -907,7 +909,7 @@ function goStep(n){
 function nextFromStep(n){
   if(n===1 && !prop){ alert('Please select a property type.'); return; }
   if(n===3 && !town){ alert('Please select your town.'); return; }
-  if(n===4 && !(contact.name && contact.email && contact.phone)){ alert('Please fill in all fields.'); return; }
+  if(n===4 && !(contact.name && contact.email && contact.phone && contact.address)){ alert('Please fill in all fields.'); return; }
   goStep(n+1);
 }
 
@@ -925,7 +927,7 @@ function renderPrice(){
   document.getElementById('total-lines').innerHTML = lines.map(([l,v])=>
     `<div class="total-row"><span class="l">${l}</span><span class="v">${fmt(v)}</span></div>`).join('');
 
-  document.getElementById('book-cta-link').href = 'https://cal.com/roofscanuk/inspection?total='+total+'&name='+encodeURIComponent(contact.name||'')+'&email='+encodeURIComponent(contact.email||'')+'&smsReminderNumber='+encodeURIComponent(contact.phone||'');
+  document.getElementById('book-cta-link').href = 'https://cal.com/roofscanuk/inspection?total='+total;
   document.getElementById('balance-note').innerHTML = 'Balance of '+fmt(Math.max(0,total-50))+' due on completion · <a href="terms.html" class="muted">Terms &amp; Conditions</a>';
 }
 </script>
