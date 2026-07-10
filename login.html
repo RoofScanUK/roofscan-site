@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>Portal Login — RoofScan UK</title>
+<style>
+:root{--n:#1C2B4A;--s:#1E4080;--g:#C9A84C;--bg:#F8F6F0;--cd:#FFF;--br:#E8E4D8;--mu:#6B7A8D;--gr:#27AE60;--am:#E67E22;--rd:#C0392B;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--n);min-height:100vh;max-width:520px;margin:0 auto;}
+.hdr{background:linear-gradient(135deg,var(--n) 0%,#2C3E6A 100%);padding:24px 18px 20px;}
+.logo{font-size:12px;font-weight:700;color:var(--g);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;}
+.hdr-title{color:white;font-size:24px;font-weight:800;}
+.hdr-sub{color:rgba(255,255,255,0.45);font-size:13px;margin-top:3px;}
+main{padding:16px;}
+
+.login-card{background:var(--cd);border:1px solid var(--br);border-radius:14px;padding:20px;margin-bottom:16px;box-shadow:0 1px 3px rgba(28,43,74,0.06),0 1px 2px rgba(28,43,74,0.04);}
+.login-title{font-size:16px;font-weight:700;color:var(--n);margin-bottom:4px;}
+.login-sub{font-size:13px;color:var(--mu);margin-bottom:14px;line-height:1.5;}
+.email-inp{width:100%;border:1px solid var(--br);border-radius:8px;padding:11px 14px;font-size:15px;color:var(--n);outline:none;margin-bottom:10px;font-family:inherit;}
+.email-inp:focus{border-color:var(--s);}
+.login-btn{width:100%;background:var(--n);color:var(--g);border:none;border-radius:8px;padding:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;}
+.login-btn:disabled{opacity:0.6;}
+.login-btn.gold{background:var(--g);color:var(--n);}
+.login-error{font-size:13px;color:var(--rd);margin-top:8px;text-align:center;line-height:1.6;}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin 0.7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.logout-btn{background:none;border:none;color:var(--mu);font-size:12px;cursor:pointer;text-align:center;display:block;margin:16px auto 0;text-decoration:underline;font-family:inherit;}
+
+.checking{text-align:center;padding:20px 0;}
+.checking .spinner{width:22px;height:22px;border-color:rgba(28,43,74,0.15);border-top-color:var(--n);margin-bottom:12px;}
+.checking p{font-size:13px;color:var(--mu);}
+
+.choose-row{display:grid;gap:10px;margin-top:6px;}
+.choose-btn{width:100%;background:var(--bg);border:1px solid var(--br);border-radius:10px;padding:14px;font-size:14px;font-weight:700;color:var(--n);cursor:pointer;font-family:inherit;text-align:left;}
+.choose-btn .d{font-size:11.5px;color:var(--mu);font-weight:500;margin-top:2px;}
+
+.back-home{display:block;text-align:center;font-size:12.5px;color:var(--mu);margin-top:18px;}
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
+</head>
+<body>
+<div class="hdr">
+  <div class="logo">RoofScan UK</div>
+  <div class="hdr-title">Portal Login</div>
+  <div class="hdr-sub">My Roof & Trade Accounts — one login for both</div>
+</div>
+<main>
+
+  <div id="login-section">
+    <div class="login-card">
+
+      <div id="login-step-email">
+        <div class="login-title">Sign in to your account</div>
+        <div class="login-sub">Enter the email address you used to book an inspection, or your trade account email. We'll email you a 6-digit code to confirm it's you — and take you straight to the right place.</div>
+        <input type="email" id="login-email" class="email-inp" placeholder="your@email.com" onkeydown="if(event.key==='Enter')requestCode()">
+        <button class="login-btn" id="request-code-btn" onclick="requestCode()">Send me a code →</button>
+        <div class="login-error" id="login-error"></div>
+      </div>
+
+      <div id="login-step-code" style="display:none;">
+        <div class="login-title">Enter your code</div>
+        <div class="login-sub">We sent a 6-digit code to <span id="code-sent-to" style="font-weight:700;color:var(--n);"></span>. It expires in 10 minutes.</div>
+        <input type="text" inputmode="numeric" maxlength="6" id="login-code" class="email-inp" placeholder="123456" onkeydown="if(event.key==='Enter')verifyCode()">
+        <button class="login-btn" id="verify-code-btn" onclick="verifyCode()">Verify & continue →</button>
+        <div class="login-error" id="code-error"></div>
+        <div style="display:flex;justify-content:space-between;margin-top:10px;">
+          <button class="logout-btn" style="margin:0;" onclick="backToEmail()">Use a different email</button>
+          <button class="logout-btn" style="margin:0;" onclick="requestCode(true)">Resend code</button>
+        </div>
+      </div>
+
+      <div id="login-step-checking" style="display:none;">
+        <div class="checking">
+          <span class="spinner"></span>
+          <p>Checking your account...</p>
+        </div>
+      </div>
+
+      <div id="login-step-choose" style="display:none;">
+        <div class="login-title">Which account would you like to open?</div>
+        <div class="login-sub">This email is linked to both a homeowner and a trade account.</div>
+        <div class="choose-row">
+          <button class="choose-btn" onclick="goToPortal('homeowner')">My Roof<div class="d">Your inspection history & reports</div></button>
+          <button class="choose-btn" onclick="goToPortal('trade')">Trade Account<div class="d">Jobs, invoices & submissions</div></button>
+        </div>
+      </div>
+
+      <div id="login-step-notfound" style="display:none;">
+        <div class="login-title">No account found</div>
+        <div class="login-sub" id="notfound-msg"></div>
+        <button class="login-btn" onclick="backToEmail()">Try a different email</button>
+      </div>
+
+    </div>
+    <a class="back-home" href="index.html">← Back to homepage</a>
+  </div>
+
+</main>
+<script>
+var API_BASE = 'https://roofscan-api.tiny-voice-ac40.workers.dev';
+var _pendingEmail = '';
+var _pendingToken = '';
+
+function showStep(id){
+  ['login-step-email','login-step-code','login-step-checking','login-step-choose','login-step-notfound'].forEach(function(s){
+    document.getElementById(s).style.display = (s===id) ? 'block' : 'none';
+  });
+}
+
+async function requestCode(isResend){
+  var email = document.getElementById('login-email').value.trim().toLowerCase();
+  if(!isResend){
+    if(!email || !email.includes('@')){ document.getElementById('login-error').textContent = 'Please enter a valid email address.'; return; }
+  } else {
+    email = _pendingEmail;
+  }
+  var btn = isResend ? null : document.getElementById('request-code-btn');
+  if(btn){ btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>'; }
+  document.getElementById('login-error').textContent = '';
+  document.getElementById('code-error').textContent = '';
+  try{
+    var res = await fetch(API_BASE + '/request-code', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({email: email})
+    });
+    if(!res.ok) throw new Error('API error '+res.status);
+    _pendingEmail = email;
+    document.getElementById('code-sent-to').textContent = email;
+    showStep('login-step-code');
+    document.getElementById('login-code').value = '';
+    document.getElementById('login-code').focus();
+    if(isResend){ document.getElementById('code-error').style.color = 'var(--gr)'; document.getElementById('code-error').textContent = 'Code resent.'; }
+  } catch(e){
+    document.getElementById('login-error').textContent = 'Something went wrong. Please try again.';
+  }
+  if(btn){ btn.disabled = false; btn.textContent = 'Send me a code →'; }
+}
+
+function backToEmail(){
+  showStep('login-step-email');
+  document.getElementById('code-error').textContent = '';
+}
+
+async function verifyCode(){
+  var code = document.getElementById('login-code').value.trim();
+  if(!code){ document.getElementById('code-error').textContent = 'Enter the 6-digit code.'; return; }
+  var btn = document.getElementById('verify-code-btn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+  document.getElementById('code-error').textContent = '';
+  try{
+    var res = await fetch(API_BASE + '/verify-code', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({email: _pendingEmail, code: code})
+    });
+    var body = await res.json();
+    if(!res.ok || !body.token) throw new Error(body.error || 'Incorrect or expired code.');
+    _pendingToken = body.token;
+    showStep('login-step-checking');
+    await routeToAccount(_pendingEmail, _pendingToken);
+  } catch(e){
+    document.getElementById('code-error').textContent = e.message || 'Incorrect or expired code.';
+    btn.disabled = false; btn.textContent = 'Verify & continue →';
+  }
+}
+
+async function checkHomeowner(email, token){
+  try{
+    var res = await fetch(API_BASE + '/homeowner?email=' + encodeURIComponent(email), {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if(!res.ok) return false;
+    var data = await res.json();
+    return !!(data.records && data.records.length);
+  } catch(e){ return false; }
+}
+
+async function checkTrade(email, token){
+  try{
+    var res = await fetch(API_BASE + '/trade-account?email=' + encodeURIComponent(email), {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    return res.ok;
+  } catch(e){ return false; }
+}
+
+function saveHomeownerSession(email, token){
+  try{ localStorage.setItem('rs_portal_email', email); localStorage.setItem('rs_portal_token', token); }catch(e){}
+}
+function saveTradeSession(email, token){
+  try{ localStorage.setItem('rs_trade_email', email); localStorage.setItem('rs_trade_token', token); }catch(e){}
+}
+
+function goToPortal(which){
+  if(which==='homeowner'){ saveHomeownerSession(_pendingEmail, _pendingToken); window.location.href = 'my-roof.html'; }
+  else { saveTradeSession(_pendingEmail, _pendingToken); window.location.href = 'trade-portal.html'; }
+}
+
+async function routeToAccount(email, token){
+  var results = await Promise.all([checkHomeowner(email, token), checkTrade(email, token)]);
+  var isHomeowner = results[0], isTrade = results[1];
+
+  if(isHomeowner && isTrade){
+    showStep('login-step-choose');
+    return;
+  }
+  if(isHomeowner){
+    saveHomeownerSession(email, token);
+    window.location.href = 'my-roof.html';
+    return;
+  }
+  if(isTrade){
+    saveTradeSession(email, token);
+    window.location.href = 'trade-portal.html';
+    return;
+  }
+  document.getElementById('notfound-msg').innerHTML = 'We couldn\'t find a homeowner or trade account for <strong>'+email+'</strong>.<br><br>Double check it\'s the exact email you used, or <a href="mailto:info@roofscanuk.co.uk" style="color:var(--s);font-weight:600;">contact us</a> for help.<br><br>New here? <a href="index.html#book" style="color:var(--s);font-weight:600;">Book an inspection →</a>';
+  showStep('login-step-notfound');
+}
+
+setTimeout(function(){ document.getElementById('login-email').focus(); }, 300);
+</script>
+</body>
+</html>
