@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="RoofScan">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1C2B4A">
+<title>RoofScan UK</title>
+<script src="airtable-api.js"></script>
+<style>
+:root{--n:#1C2B4A;--s:#1E4080;--g:#C9A84C;--bg:#F8F6F0;--card:#FFF;--border:#E8E4D8;--muted:#6B7A8D;--green:#27AE60;--amber:#E67E22;--red:#C0392B;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--n);min-height:100vh;max-width:520px;margin:0 auto;}
+.hdr{background:linear-gradient(135deg,var(--n) 0%,#2C3E6A 100%);padding:20px 18px 22px;}
+.greeting{color:rgba(255,255,255,0.5);font-size:13px;margin-bottom:3px;}
+.title{color:white;font-size:28px;font-weight:800;}
+.sub{color:rgba(255,255,255,0.4);font-size:12px;margin-top:2px;}
+main{padding:14px;}
+.today-card{border-radius:14px;padding:14px 16px;margin-bottom:14px;}
+.today-card.has-job{background:linear-gradient(135deg,var(--s),#3D6AA8);}
+.today-card.no-job{background:var(--card);border:1px solid var(--border);}
+.today-eyebrow{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;}
+.today-card.has-job .today-eyebrow{color:rgba(255,255,255,0.5);}
+.today-card.no-job .today-eyebrow{color:var(--muted);}
+.today-title{font-size:18px;font-weight:800;margin-bottom:2px;}
+.today-card.has-job .today-title{color:white;}
+.today-card.no-job .today-title{color:var(--n);}
+.today-detail{font-size:12px;margin-bottom:10px;}
+.today-card.has-job .today-detail{color:rgba(255,255,255,0.6);}
+.today-card.no-job .today-detail{color:var(--muted);}
+.today-btn{display:inline-block;background:var(--g);color:var(--n);border-radius:8px;padding:8px 16px;font-size:13px;font-weight:700;text-decoration:none;}
+.today-card.no-job .today-btn{background:var(--n);color:var(--g);}
+.action-card{background:var(--n);border-radius:14px;padding:14px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px;text-decoration:none;}
+.action-icon{font-size:24px;flex-shrink:0;}
+.action-text{flex:1;}
+.action-eyebrow{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--g);margin-bottom:3px;}
+.action-title{font-size:15px;font-weight:700;color:white;line-height:1.3;}
+.action-detail{font-size:11px;color:rgba(255,255,255,0.45);margin-top:2px;}
+.action-arrow{color:var(--g);font-size:20px;flex-shrink:0;}
+.tool-primary{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:10px;text-decoration:none;display:flex;align-items:center;gap:14px;position:relative;overflow:hidden;}
+.tool-primary::before{content:'';position:absolute;top:0;left:0;bottom:0;width:4px;border-radius:14px 0 0 14px;background:var(--red);}
+.tool-primary.ops-card::before{background:#3D6AA8;}
+.tool-primary:active{transform:scale(0.98);}
+.tp-icon{font-size:30px;flex-shrink:0;}
+.tp-name{font-size:16px;font-weight:800;color:var(--n);margin-bottom:2px;}
+.tp-desc{font-size:12px;color:var(--muted);line-height:1.4;}
+.tp-arrow{color:var(--muted);font-size:20px;margin-left:auto;}
+.tool-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.tool-sm{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 12px;text-decoration:none;position:relative;overflow:hidden;display:block;}
+.tool-sm.ops::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:12px 12px 0 0;background:#3D6AA8;}
+.tool-sm.finance::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:12px 12px 0 0;background:var(--green);}
+.tool-sm:active{transform:scale(0.97);}
+.ts-icon{font-size:24px;margin-bottom:6px;}
+.ts-name{font-size:14px;font-weight:700;color:var(--n);}
+.ts-desc{font-size:11px;color:var(--muted);margin-top:2px;line-height:1.4;}
+.at-connect{background:var(--card);border:1px dashed var(--border);border-radius:12px;padding:14px;margin-bottom:14px;}
+.at-connect-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:6px;}
+.at-input{width:100%;border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:13px;color:var(--n);outline:none;font-family:monospace;background:white;}
+.at-btn{width:100%;background:var(--n);color:var(--g);border:none;border-radius:8px;padding:9px;font-size:13px;font-weight:700;cursor:pointer;margin-top:6px;font-family:inherit;}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(0,0,0,0.15);border-top-color:var(--n);border-radius:50%;animation:spin 0.7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.spacer{height:20px;}
+
+/* ═══ VISUAL UPGRADE: typography, depth, motion ═══ */
+*{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
+.card,.job-card,.tool-primary,.tool-sm,.today-card,.action-card,.exp-row,.banner,.client-info-card,.job-picker-card,.rs-card,.at-connect{
+  box-shadow:0 1px 3px rgba(28,43,74,0.06),0 1px 2px rgba(28,43,74,0.04);
+}
+.tool-primary,.tool-sm,.today-card,.action-card{transition:transform 0.15s ease,box-shadow 0.15s ease;}
+.tool-primary:active,.tool-sm:active,.today-card:active,.action-card:active{transform:scale(0.97);box-shadow:0 1px 2px rgba(28,43,74,0.08);}
+.job-card{transition:box-shadow 0.2s ease;}
+@keyframes rsCountUp{from{opacity:0;transform:scale(0.85);}to{opacity:1;transform:scale(1);}}
+.rs-number,.score-num,.bval{animation:rsCountUp 0.4s cubic-bezier(.34,1.56,.64,1);}
+@keyframes rsFadeSlide{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+.job-card,.tool-primary,.tool-sm{animation:rsFadeSlide 0.3s ease backwards;}
+
+/* OFFLINE BANNER */
+.offline-banner{display:none;position:fixed;top:0;left:0;right:0;z-index:2000;align-items:center;justify-content:center;gap:8px;padding:9px 16px;font-size:12px;font-weight:600;color:white;max-width:520px;margin:0 auto;}
+.offline-banner.offline{background:#C0392B;}
+.offline-banner.syncing{background:#E67E22;}
+.offline-banner .ob-dot{width:7px;height:7px;border-radius:50%;background:white;animation:obPulse 1.2s ease-in-out infinite;}
+@keyframes obPulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
+
+/* VOICE BUTTON */
+.voice-btn{background:#F8F6F0;border:1px solid #E8E4D8;border-radius:8px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;flex-shrink:0;transition:all 0.15s;}
+.voice-btn.listening{background:#FDECEA;border-color:#C0392B;animation:voicePulse 1s ease-in-out infinite;}
+@keyframes voicePulse{0%,100%{box-shadow:0 0 0 0 rgba(192,57,43,0.4);}50%{box-shadow:0 0 0 6px rgba(192,57,43,0);}}
+.field-with-voice{display:flex;gap:8px;align-items:flex-start;}
+.field-with-voice textarea,.field-with-voice input{flex:1;}
+
+/* PUSH OPT-IN PROMPT */
+.push-prompt{background:#1C2B4A;border-radius:12px;padding:14px 16px;margin-bottom:12px;display:none;align-items:center;gap:12px;}
+.push-prompt.show{display:flex;}
+.push-prompt-icon{font-size:24px;}
+.push-prompt-text{flex:1;}
+.push-prompt-title{font-size:13px;font-weight:700;color:white;}
+.push-prompt-sub{font-size:11px;color:rgba(255,255,255,0.5);margin-top:1px;}
+.push-prompt-btn{background:#C9A84C;color:#1C2B4A;border:none;border-radius:7px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;}
+.push-prompt-dismiss{background:none;border:none;color:rgba(255,255,255,0.4);font-size:18px;cursor:pointer;padding:0 4px;}
+
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
+<script src="app-shell.js" defer></script>
+</head>
+<body>
+<div class="hdr">
+  <div class="greeting" id="greeting">Good morning</div>
+  <div class="title">RoofScan UK</div>
+  <div class="sub">Takhy Ndiaye Marrero</div>
+</div>
+<main>
+  
+  <div class="push-prompt" id="push-prompt">
+    <div class="push-prompt-icon">🔔</div>
+    <div class="push-prompt-text">
+      <div class="push-prompt-title">Get notified instantly</div>
+      <div class="push-prompt-sub">New bookings & trade jobs, even with the app closed</div>
+    </div>
+    <button class="push-prompt-btn" onclick="enablePush()">Enable</button>
+    <button class="push-prompt-dismiss" onclick="dismissPush()">×</button>
+  </div>
+
+  <div id="at-connect-section" class="at-connect" style="display:none;">
+    <div class="at-connect-label">Connect Airtable to see live jobs</div>
+    <input type="password" id="at-token" class="at-input" placeholder="patXXXXXXXXXXXXXXXXXXXXXXXX">
+    <button class="at-btn" onclick="connectAT()">Connect →</button>
+  </div>
+  <div id="today-card" class="today-card no-job">
+    <div class="today-eyebrow">Today</div>
+    <div class="today-title" id="today-title"><span class="spinner"></span></div>
+    <div class="today-detail" id="today-detail"></div>
+  </div>
+  <a id="action-card" class="action-card" href="reports.html">
+    <div class="action-icon" id="action-icon">📋</div>
+    <div class="action-text">
+      <div class="action-eyebrow" id="action-eyebrow">Daily tool</div>
+      <div class="action-title" id="action-title">Open Report Generator</div>
+      <div class="action-detail" id="action-detail">Pre-fills from Airtable · auto RoofScore</div>
+    </div>
+    <div class="action-arrow">›</div>
+  </a>
+  <a class="tool-primary" href="reports.html">
+    <div class="tp-icon">📋</div>
+    <div>
+      <div class="tp-name">Report Generator</div>
+      <div class="tp-desc">Load job · findings bank · auto RoofScore · download</div>
+    </div>
+    <div class="tp-arrow">›</div>
+  </a>
+  <a class="tool-primary ops-card" href="ops.html">
+    <div class="tp-icon">⚙️</div>
+    <div>
+      <div class="tp-name">Operations</div>
+      <div class="tp-desc">Live jobs · update status · daily checklist</div>
+    </div>
+    <div class="tp-arrow">›</div>
+  </a>
+  <div class="spacer"></div>
+</main>
+<script>
+const hr=new Date().getHours();
+document.getElementById('greeting').textContent=(hr<12?'Good morning ☀️':hr<17?'Good afternoon 👋':hr<21?'Good evening 🌆':'Working late 🌙')+', Takhy';
+function connectAT(){
+  if(typeof AT==='undefined'){alert('Airtable connection script failed to load.');return;}
+  var t=document.getElementById('at-token').value.trim();
+  if(!t||!t.startsWith('pat')){alert('Token must start with "pat"');return;}
+  AT.setToken(t);
+  initHub();
+}
+
+async function initHub(){
+  if(!AT.hasToken()){document.getElementById('at-connect-section').style.display='block';showToday(null,null);return;}
+  document.getElementById('at-connect-section').style.display='none';
+  try{
+    var[today,active,alerts]=await Promise.all([AT.getTodaysJobs(),AT.getActiveJobs(),AT.getAlerts()]);
+    showToday(today,active);showAction(today,alerts,active);
+  }catch(e){
+    showToday(null,null);
+    if(e.message&&e.message.includes('401')){AT.setToken('');}
+  }
+}
+
+function showToday(today,active){
+  var card=document.getElementById('today-card'),title=document.getElementById('today-title'),detail=document.getElementById('today-detail');
+  if(today&&today.length>0){
+    var f=today[0].fields,client=f['fld8R0gd2hcYSnmi5']||'Client',addr=f['fldk2TDM0kE3BJkc3']||'',type=f['fldTecfNE5C0HTUYP']?f['fldTecfNE5C0HTUYP'].name||f['fldTecfNE5C0HTUYP']:'';
+    card.className='today-card has-job';title.textContent=client;
+    detail.textContent=addr+(type?' · '+type:'')+(today.length>1?' +'+(today.length-1)+' more':'');
+  }else if(!AT.hasToken()){
+    card.className='today-card no-job';title.textContent='Connect Airtable above';detail.textContent='See live jobs and today\'s schedule';
+  }else{
+    card.className='today-card no-job';title.textContent='No inspections today';
+    var pending=active?active.filter(function(j){var s=j.fields['fldhm3oLpNvtD8Thc'];return(s&&s.name?s.name:s)==='Report Sent';}).length:0;
+    detail.textContent=pending>0?pending+' job'+(pending>1?'s':'')+' awaiting payment':'All clear';
+  }
+}
+function showAction(today,alerts,active){
+  var card=document.getElementById('action-card'),icon=document.getElementById('action-icon'),eyebrow=document.getElementById('action-eyebrow'),title=document.getElementById('action-title'),detail=document.getElementById('action-detail');
+  var overdue=alerts&&alerts.find(function(a){return a.type==='overdue';});
+  if(overdue){card.style.display='flex';card.href='reports.html?job='+overdue.id;icon.textContent='⚠️';eyebrow.textContent='Report overdue';title.textContent=overdue.client+' — write report now';detail.textContent='Inspection was '+overdue.date+' — write the report to request payment';}
+  else if(active&&active.find(function(j){var s=j.fields['fldhm3oLpNvtD8Thc'];return(s&&s.name?s.name:s)==='Complete';})){
+    var c=active.find(function(j){var s=j.fields['fldhm3oLpNvtD8Thc'];return(s&&s.name?s.name:s)==='Complete';});
+    card.style.display='flex';card.href='reports.html?job='+c.id;icon.textContent='📋';eyebrow.textContent='Ready to write';title.textContent='Write report — '+(c.fields['fld8R0gd2hcYSnmi5']||'Client');detail.textContent='Inspection complete · pre-fills automatically';
+  }else if(today&&today.length>0){
+    card.style.display='flex';card.href='ops.html';icon.textContent='✈️';eyebrow.textContent='Job today';title.textContent='Check your daily flow';detail.textContent='Pre-flight checklist · on-site steps';
+  }else{
+    // Nothing distinct to flag right now — Report Generator tile below covers this, so skip the duplicate.
+    card.style.display='none';
+  }
+}
+
+// ─── PUSH OPT-IN ─────────────────────────────────────────
+function checkPushPrompt(){
+  if(!RSPush.isSupported()) return;
+  var state = RSPush.getPermissionState();
+  var dismissed = localStorage.getItem('rs_push_dismissed');
+  if(state === 'default' && !dismissed){
+    document.getElementById('push-prompt').classList.add('show');
+  }
+}
+async function enablePush(){
+  var result = await RSPush.requestPermission();
+  document.getElementById('push-prompt').classList.remove('show');
+  if(result === 'granted'){
+    RSPush.showLocalAlert('RoofScan UK', 'Notifications are on. You\'ll be alerted for new bookings and overdue reports.');
+  }
+}
+function dismissPush(){
+  try{localStorage.setItem('rs_push_dismissed','1');}catch(e){}
+  document.getElementById('push-prompt').classList.remove('show');
+}
+setTimeout(checkPushPrompt, 1200);
+
+initHub();
+</script>
+</body>
+</html>

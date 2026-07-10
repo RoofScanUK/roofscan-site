@@ -1,7 +1,7 @@
 // ═══ RoofScan UK Service Worker — Offline + Push ═══
 const CACHE_NAME = 'roofscan-v1';
 const APP_SHELL = [
-  'index.html',
+  'hub.html',
   'ops.html',
   'reports.html',
   'airtable-api.js',
@@ -85,7 +85,7 @@ self.addEventListener('fetch', function(e) {
   }
 });
 
-// ─── PUSH NOTIFICATIONS ─────────────────────
+// ─── PUSH NOTIFICATIONS ─────────────────────────
 self.addEventListener('push', function(e) {
   var data = {};
   try { data = e.data ? e.data.json() : {}; } catch(err) { data = {title: 'RoofScan UK', body: e.data ? e.data.text() : 'New update'}; }
@@ -95,7 +95,7 @@ self.addEventListener('push', function(e) {
     body: data.body || 'You have a new update',
     icon: 'icons/icon-192.png',
     badge: 'icons/icon-192.png',
-    data: { url: data.url || 'index.html' },
+    data: { url: data.url || 'hub.html' },
     vibrate: [100, 50, 100]
   };
 
@@ -105,7 +105,7 @@ self.addEventListener('push', function(e) {
 // Click on notification — open or focus the relevant page
 self.addEventListener('notificationclick', function(e) {
   e.notification.close();
-  var url = (e.notification.data && e.notification.data.url) || 'index.html';
+  var url = (e.notification.data && e.notification.data.url) || 'hub.html';
   e.waitUntil(
     clients.matchAll({type: 'window', includeUncontrolled: true}).then(function(clientList) {
       for (var i = 0; i < clientList.length; i++) {
@@ -118,7 +118,7 @@ self.addEventListener('notificationclick', function(e) {
   );
 });
 
-// ─── BACKGROUND SYNC for offline checklist/status changes ───
+// ─── BACKGROUND SYNC for offline checklist/status changes ─────────
 self.addEventListener('sync', function(e) {
   if (e.tag === 'roofscan-sync') {
     e.waitUntil(syncPendingChanges());

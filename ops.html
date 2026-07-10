@@ -115,7 +115,7 @@ main{padding:14px;}
 <body>
 <div class="hdr">
   <div class="hdr-top">
-    <a class="back" href="index.html">Hub</a>
+    <a class="back" href="hub.html">Hub</a>
     <div><div class="ht">Operations</div><div class="hs">RoofScan UK</div></div>
   </div>
   <div class="tabs">
@@ -194,7 +194,7 @@ function showTab(id,btn){
   if(id==='jobs') initJobs();
 }
 
-// ─── CHECKLIST ────────────────────────────────────────────────────
+// ─── CHECKLIST ──────────────────────────────────────
 function tick(el){
   el.classList.toggle('done');
   var id=el.dataset.id;
@@ -222,7 +222,7 @@ document.querySelectorAll('[data-id]').forEach(function(el){
 });
 updateProg();
 
-// ─── LIVE JOBS ────────────────────────────────────────────────────
+// ─── LIVE JOBS ──────────────────────────────────────
 var _allJobs=[],_filter='';
 
 function jobsConnect(){
