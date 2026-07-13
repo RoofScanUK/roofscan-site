@@ -700,9 +700,14 @@ textarea{resize:vertical;}
           <h2 style="font-size:1.15rem;margin:0 0 6px;">Pick your inspection date</h2>
           <p class="muted" style="font-size:13px;margin:0 0 22px;line-height:1.6;">Choose an available slot, then pay your £50 deposit to confirm your booking.</p>
           <div id="slot-loading" class="muted" style="font-size:13px;">Loading available times…</div>
-          <div id="slot-days" style="display:none;flex-wrap:wrap;gap:8px;margin-bottom:16px;"></div>
-          <div id="slot-times" style="display:none;flex-wrap:wrap;gap:8px;margin-bottom:8px;"></div>
-          <div id="slot-empty" class="muted" style="display:none;font-size:13px;">No slots in this window — try a later date range.</div>
+          <div id="slot-nav" style="display:none;align-items:center;justify-content:space-between;margin-bottom:14px;">
+            <button class="back-btn" style="flex:none;padding:8px 14px;font-size:12px;" onclick="shiftWeek(-1)" id="week-prev">← Earlier</button>
+            <div class="muted" id="week-label" style="font-size:13px;font-weight:600;"></div>
+            <button class="back-btn" style="flex:none;padding:8px 14px;font-size:12px;" onclick="shiftWeek(1)" id="week-next">Later →</button>
+          </div>
+          <div id="slot-days" style="display:none;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:4px;"></div>
+          <div id="slot-times-wrap" style="display:none;margin-top:8px;"></div>
+          <div id="slot-empty" class="muted" style="display:none;font-size:13px;margin-top:10px;">No available times this week — try Later →.</div>
 
           <div id="payment-section" style="display:none;margin-top:24px;">
             <div class="total-card" style="margin-bottom:18px;">
@@ -981,21 +986,43 @@ function initBookingStep(){
   }
 }
 
-async function loadSlots(){
+let weekOffset = 0;
+let slotsByDay = {};
+
+function windowDates(offset){
   const start = new Date();
-  const end = new Date();
-  end.setDate(end.getDate() + 14);
+  start.setHours(0,0,0,0);
+  start.setDate(start.getDate() + offset*7);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 7);
+  return {start, end};
+}
+
+async function loadSlots(){
+  document.getElementById('slot-loading').style.display = 'block';
+  document.getElementById('slot-loading').textContent = 'Loading available times…';
+  document.getElementById('slot-empty').style.display = 'none';
+  document.getElementById('slot-nav').style.display = 'none';
+  document.getElementById('slot-days').style.display = 'none';
+  document.getElementById('slot-times-wrap').style.display = 'none';
+  const {start, end} = windowDates(weekOffset);
   try{
     const res = await fetch(`${API_BASE}/available-slots?start=${encodeURIComponent(start.toISOString())}&end=${encodeURIComponent(end.toISOString())}`);
     const data = await res.json();
-    renderSlots(data.slots || {});
+    renderSlots(data.slots || {}, start, end);
   }catch(e){
     document.getElementById('slot-loading').textContent = 'Could not load availability — please refresh and try again.';
   }
 }
 
-let slotsByDay = {};
-function renderSlots(raw){
+function shiftWeek(dir){
+  const next = weekOffset + dir;
+  if(next < 0) return;
+  weekOffset = next;
+  loadSlots();
+}
+
+function renderSlots(raw, start, end){
   document.getElementById('slot-loading').style.display = 'none';
   slotsByDay = {};
   if(Array.isArray(raw)){
@@ -1009,36 +1036,68 @@ function renderSlots(raw){
       slotsByDay[day] = (raw[day]||[]).map(s => s.start || s.time || s);
     });
   }
-  const days = Object.keys(slotsByDay).sort();
-  if(!days.length){
-    document.getElementById('slot-empty').style.display = 'block';
-    return;
+
+  const nav = document.getElementById('slot-nav');
+  nav.style.display = 'flex';
+  const prevBtn = document.getElementById('week-prev');
+  prevBtn.disabled = weekOffset === 0;
+  prevBtn.style.opacity = weekOffset === 0 ? '0.4' : '1';
+  const endLabel = new Date(end); endLabel.setDate(endLabel.getDate()-1);
+  document.getElementById('week-label').textContent = start.toLocaleDateString('en-GB',{day:'numeric',month:'short'}) + ' – ' + endLabel.toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+
+  const days = [];
+  for(let d = new Date(start); d < end; d.setDate(d.getDate()+1)){
+    days.push(d.toISOString().slice(0,10));
   }
+
   const dayEl = document.getElementById('slot-days');
-  dayEl.style.display = 'flex';
+  dayEl.style.display = 'grid';
   dayEl.innerHTML = days.map(d=>{
     const dt = new Date(d+'T00:00:00');
-    const label = dt.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
-    return `<button class="back-btn" style="flex:none;padding:9px 14px;font-size:13px;" onclick="showTimesForDay('${d}')" id="day-${d}">${label}</button>`;
+    const has = (slotsByDay[d]||[]).length > 0;
+    const wd = dt.toLocaleDateString('en-GB',{weekday:'short'});
+    const dn = dt.toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+    return `<button class="back-btn" ${has?'':'disabled'} style="flex:none;padding:10px 4px;font-size:12px;text-align:center;line-height:1.5;${has?'':'opacity:.35;cursor:default;'}" onclick="${has?`showTimesForDay('${d}')`:''}" id="day-${d}"><div style="font-weight:600;">${wd}</div><div style="font-size:11px;">${dn}</div></button>`;
   }).join('');
-  showTimesForDay(days[0]);
+
+  const firstWithSlots = days.find(d => (slotsByDay[d]||[]).length > 0);
+  if(firstWithSlots){
+    showTimesForDay(firstWithSlots);
+  } else {
+    document.getElementById('slot-times-wrap').style.display = 'none';
+    document.getElementById('slot-empty').style.display = 'block';
+  }
 }
 
 function showTimesForDay(day){
+  document.getElementById('slot-empty').style.display = 'none';
   document.querySelectorAll('[id^="day-"]').forEach(b=>b.classList.remove('sel'));
   const dayBtn = document.getElementById('day-'+day);
   if(dayBtn) dayBtn.classList.add('sel');
-  const timesEl = document.getElementById('slot-times');
-  timesEl.style.display = 'flex';
-  timesEl.innerHTML = (slotsByDay[day]||[]).map(iso=>{
-    const t = new Date(iso).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/London'});
-    return `<button class="back-btn" style="flex:none;padding:9px 14px;font-size:13px;" onclick="selectSlot('${iso}', this)">${t}</button>`;
-  }).join('');
+
+  const times = (slotsByDay[day]||[]).map(iso => ({
+    iso,
+    label: new Date(iso).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/London'}),
+    hour: parseInt(new Date(iso).toLocaleTimeString('en-GB',{hour:'2-digit',hour12:false,timeZone:'Europe/London'}),10)
+  }));
+  const morning = times.filter(t=>t.hour<12);
+  const afternoon = times.filter(t=>t.hour>=12);
+
+  const renderGroup = (label, list) => {
+    if(!list.length) return '';
+    const btns = list.map(t=>`<button class="back-btn" style="flex:none;padding:9px 14px;font-size:13px;" onclick="selectSlot('${t.iso}', this)">${t.label}</button>`).join('');
+    return `<div class="muted" style="font-size:12px;margin:12px 0 6px;text-transform:uppercase;letter-spacing:.04em;">${label}</div><div style="display:flex;flex-wrap:wrap;gap:8px;">${btns}</div>`;
+  };
+
+  document.getElementById('slot-times-wrap').style.display = 'block';
+  document.getElementById('slot-times-wrap').innerHTML = renderGroup('Morning', morning) + renderGroup('Afternoon', afternoon);
+  document.getElementById('payment-section').style.display = 'none';
+  selectedSlot = null;
 }
 
 function selectSlot(iso, btn){
   selectedSlot = iso;
-  document.querySelectorAll('#slot-times .back-btn').forEach(b=>b.classList.remove('sel'));
+  document.querySelectorAll('#slot-times-wrap .back-btn').forEach(b=>b.classList.remove('sel'));
   btn.classList.add('sel');
   document.getElementById('payment-section').style.display = 'block';
 }
