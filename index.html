@@ -721,7 +721,8 @@ textarea{resize:vertical;}
 
           <div id="booking-confirmed" style="display:none;text-align:center;padding:32px 0;">
             <h2 style="font-size:1.3rem;margin:0 0 10px;">You're booked!</h2>
-            <p class="muted" style="font-size:14px;line-height:1.7;">A confirmation has been sent to your email. We'll see you then — no scaffolding, no disruption.</p>
+            <p style="font-size:15px;font-weight:600;margin:0 0 14px;" id="confirmed-slot-line"></p>
+            <p class="muted" style="font-size:14px;line-height:1.7;">A confirmation has been sent to your email. Our CAA-licensed pilot will fly the property on the day — the drone survey takes about 30–45 minutes and you don't need to be home. No scaffolding, no disruption. Your full written report follows within 48 hours of the balance payment, which is due on completion.</p>
           </div>
 
           <div style="margin-top:22px;"><button class="back-btn" id="step6-back" style="width:auto;padding:9px 18px;font-size:12px;" onclick="goStep(5)">← Back</button></div>
@@ -1147,9 +1148,14 @@ async function submitPayment(){
     const data = await res.json();
     if(!res.ok) throw new Error(data.error || 'booking failed');
     document.getElementById('payment-section').style.display = 'none';
+    document.getElementById('slot-nav').style.display = 'none';
     document.getElementById('slot-days').style.display = 'none';
-    document.getElementById('slot-times').style.display = 'none';
+    document.getElementById('slot-times-wrap').style.display = 'none';
     document.getElementById('step6-back').style.display = 'none';
+    const bookedDt = new Date(selectedSlot);
+    const dateLabel = bookedDt.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
+    const timeLabel = bookedDt.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/London'});
+    document.getElementById('confirmed-slot-line').textContent = `Inspection booked for ${dateLabel} at ${timeLabel}.`;
     document.getElementById('booking-confirmed').style.display = 'block';
   }catch(e){
     document.getElementById('card-errors').textContent = 'Payment succeeded but booking could not be confirmed — please contact us at info@roofscanuk.co.uk with your payment reference: ' + piId;
