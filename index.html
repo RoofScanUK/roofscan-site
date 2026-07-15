@@ -637,7 +637,7 @@ textarea{resize:vertical;}
     </section>
     <section style="padding:0 24px 72px;">
       <div class="wrap-b">
-        <div class="progress">
+        <div class="progress" id="progress-wrap">
           <div class="progress-row" id="progress-row"></div>
         </div>
 
@@ -697,8 +697,10 @@ textarea{resize:vertical;}
         </div>
 
         <div id="book-step-6" style="display:none;">
+          <div id="step6-intro">
           <h2 style="font-size:1.15rem;margin:0 0 6px;">Pick your inspection date</h2>
           <p class="muted" style="font-size:13px;margin:0 0 22px;line-height:1.6;">Choose an available slot, then pay your £50 deposit to confirm your booking.</p>
+          </div>
           <div id="slot-loading" class="muted" style="font-size:13px;">Loading available times…</div>
           <div id="slot-nav" style="display:none;align-items:center;justify-content:space-between;margin-bottom:14px;">
             <button class="back-btn" style="flex:none;padding:8px 14px;font-size:12px;" onclick="shiftWeek(-1)" id="week-prev">← Earlier</button>
@@ -1152,6 +1154,10 @@ async function submitPayment(){
     document.getElementById('slot-days').style.display = 'none';
     document.getElementById('slot-times-wrap').style.display = 'none';
     document.getElementById('step6-back').style.display = 'none';
+    document.getElementById('step6-intro').style.display = 'none';
+    document.getElementById('progress-wrap').style.display = 'none';
+    document.getElementById('book-step-title').textContent = 'Booking confirmed';
+    document.getElementById('book-step-sub').textContent = "Thanks \u2014 here's what happens next.";
     const bookedDt = new Date(selectedSlot);
     const dateLabel = bookedDt.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
     const timeLabel = bookedDt.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/London'});
