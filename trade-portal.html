@@ -240,9 +240,9 @@ main{padding:14px;}
         <div class="field-note" id="selected-slot-note" style="display:none;color:var(--gr);font-weight:700;"></div>
       </div>
       <div class="field">
-        <div class="field-label">Client email address *</div>
+        <div class="field-label">Client email address (optional)</div>
         <input type="email" id="sub-client-email" class="inp" placeholder="client@email.com">
-        <div class="field-note">The report will be emailed here automatically once complete. You'll also receive it on your account.</div>
+        <div class="field-note">The report always comes to your trade account. Add your client's email here too if you'd like them to also receive a copy directly.</div>
       </div>
       <div class="field">
         <div class="field-label">Client name</div>
@@ -591,8 +591,8 @@ async function submitJob(){
   var notes=document.getElementById('sub-notes').value.trim();
   var result=document.getElementById('submit-result');
 
-  if(!addr||!type||!clientEmail){ result.style.color='var(--rd)'; result.textContent='Please fill in address, property type and client email.'; return; }
-  if(!clientEmail.includes('@')){ result.style.color='var(--rd)'; result.textContent='Please enter a valid client email address.'; return; }
+  if(!addr||!type){ result.style.color='var(--rd)'; result.textContent='Please fill in address and property type.'; return; }
+  if(clientEmail && !clientEmail.includes('@')){ result.style.color='var(--rd)'; result.textContent='Please enter a valid client email address, or leave it blank.'; return; }
   if(!selectedSlot){ result.style.color='var(--rd)'; result.textContent='Please pick an inspection date and time.'; return; }
 
   var btn=document.getElementById('submit-btn');
