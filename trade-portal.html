@@ -68,6 +68,15 @@ main{padding:14px;}
 .submit-btn:disabled{opacity:0.6;}
 .submit-result{font-size:13px;text-align:center;margin-top:8px;min-height:18px;}
 
+/* SLOT PICKER */
+.slot-day-btn{padding:8px 4px;border:1px solid var(--br);border-radius:8px;font-size:11px;font-weight:600;background:var(--cd);color:var(--n);cursor:pointer;font-family:inherit;text-align:center;line-height:1.4;}
+.slot-day-btn.sel{background:var(--n);color:var(--g);border-color:var(--n);}
+.slot-day-btn:disabled{opacity:.35;cursor:default;}
+.slot-time-btn{padding:7px 12px;border:1px solid var(--br);border-radius:8px;font-size:12px;font-weight:600;background:var(--cd);color:var(--n);cursor:pointer;font-family:inherit;}
+.slot-time-btn.sel{background:var(--n);color:var(--g);border-color:var(--n);}
+.nav-btn{padding:6px 12px;border:1px solid var(--br);border-radius:8px;font-size:11px;font-weight:600;background:var(--cd);color:var(--n);cursor:pointer;font-family:inherit;}
+.nav-btn:disabled{opacity:.4;cursor:default;}
+
 /* INVOICES */
 .inv-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--br);font-size:13px;}
 .inv-row:last-child{border-bottom:none;}
@@ -207,21 +216,28 @@ main{padding:14px;}
         <div class="field-label">Property address *</div>
         <input type="text" id="sub-address" class="inp" placeholder="12 Example Street, Brighton, BN1 1AB">
       </div>
-      <div class="inp-row">
-        <div class="field">
-          <div class="field-label">Property type *</div>
-          <select id="sub-type" class="sel">
-            <option value="">Select...</option>
-            <option>Terrace</option>
-            <option>Semi-detached</option>
-            <option>Detached</option>
-            <option>Large detached</option>
-          </select>
+      <div class="field">
+        <div class="field-label">Property type *</div>
+        <select id="sub-type" class="sel">
+          <option value="">Select...</option>
+          <option>Terrace</option>
+          <option>Semi-detached</option>
+          <option>Detached</option>
+          <option>Large detached</option>
+        </select>
+      </div>
+      <div class="field">
+        <div class="field-label">Inspection date *</div>
+        <div id="slot-loading" class="field-note">Loading available times…</div>
+        <div id="slot-nav" style="display:none;align-items:center;justify-content:space-between;margin:8px 0;">
+          <button type="button" class="nav-btn" onclick="shiftWeek(-1)" id="week-prev">← Earlier</button>
+          <div class="field-note" id="week-label" style="margin:0;font-weight:700;color:var(--n);"></div>
+          <button type="button" class="nav-btn" onclick="shiftWeek(1)" id="week-next">Later →</button>
         </div>
-        <div class="field">
-          <div class="field-label">Preferred date</div>
-          <input type="date" id="sub-date" class="inp">
-        </div>
+        <div id="slot-days" style="display:none;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:4px;"></div>
+        <div id="slot-times-wrap" style="display:none;margin-top:8px;"></div>
+        <div id="slot-empty" class="field-note" style="display:none;">No available times this week — try Later →.</div>
+        <div class="field-note" id="selected-slot-note" style="display:none;color:var(--gr);font-weight:700;"></div>
       </div>
       <div class="field">
         <div class="field-label">Client email address *</div>
@@ -272,6 +288,7 @@ function showTab(id,btn){
   document.querySelectorAll('.tb').forEach(function(e){e.classList.remove('active');});
   document.getElementById('tab-'+id).classList.add('active');
   btn.classList.add('active');
+  if(id==='submit') ensureSlotsLoaded();
 }
 
 async function findTradeAccount(email, token){
@@ -441,17 +458,142 @@ function renderJobs(jobs){
   }).join('');
 }
 
+/* ---- Slot picker (reuses the same /available-slots Cal.com proxy as the retail booking flow) ---- */
+var weekOffset = 0;
+var slotsByDay = {};
+var selectedSlot = null;
+var _slotsLoaded = false;
+
+function ensureSlotsLoaded(){
+  if(_slotsLoaded) return;
+  _slotsLoaded = true;
+  loadSlots();
+}
+
+function windowDates(offset){
+  var start = new Date(); start.setHours(0,0,0,0); start.setDate(start.getDate()+offset*7);
+  var end = new Date(start); end.setDate(end.getDate()+7);
+  return {start:start, end:end};
+}
+
+async function loadSlots(){
+  document.getElementById('slot-loading').style.display='block';
+  document.getElementById('slot-loading').textContent='Loading available times…';
+  document.getElementById('slot-empty').style.display='none';
+  document.getElementById('slot-nav').style.display='none';
+  document.getElementById('slot-days').style.display='none';
+  document.getElementById('slot-times-wrap').style.display='none';
+  var w = windowDates(weekOffset);
+  try{
+    var res = await fetch(API_BASE+'/available-slots?start='+encodeURIComponent(w.start.toISOString())+'&end='+encodeURIComponent(w.end.toISOString()));
+    var data = await res.json();
+    renderSlots(data.slots||{}, w.start, w.end);
+  }catch(e){
+    document.getElementById('slot-loading').textContent='Could not load availability — please refresh and try again.';
+  }
+}
+
+function shiftWeek(dir){
+  var next = weekOffset+dir;
+  if(next<0) return;
+  weekOffset = next;
+  loadSlots();
+}
+
+function renderSlots(raw, start, end){
+  document.getElementById('slot-loading').style.display='none';
+  slotsByDay = {};
+  if(Array.isArray(raw)){
+    raw.forEach(function(s){
+      var iso = s.start||s.time||s;
+      var day = iso.slice(0,10);
+      (slotsByDay[day]=slotsByDay[day]||[]).push(iso);
+    });
+  } else {
+    Object.keys(raw).forEach(function(day){
+      slotsByDay[day] = (raw[day]||[]).map(function(s){ return s.start||s.time||s; });
+    });
+  }
+
+  var nav = document.getElementById('slot-nav');
+  nav.style.display='flex';
+  var prevBtn = document.getElementById('week-prev');
+  prevBtn.disabled = weekOffset===0;
+  prevBtn.style.opacity = weekOffset===0?'0.4':'1';
+  var endLabel = new Date(end); endLabel.setDate(endLabel.getDate()-1);
+  document.getElementById('week-label').textContent = start.toLocaleDateString('en-GB',{day:'numeric',month:'short'})+' – '+endLabel.toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+
+  var days=[];
+  for(var d=new Date(start); d<end; d.setDate(d.getDate()+1)){ days.push(d.toISOString().slice(0,10)); }
+
+  var dayEl = document.getElementById('slot-days');
+  dayEl.style.display='grid';
+  dayEl.innerHTML = days.map(function(d){
+    var dt = new Date(d+'T00:00:00');
+    var has = (slotsByDay[d]||[]).length>0;
+    var wd = dt.toLocaleDateString('en-GB',{weekday:'short'});
+    var dn = dt.toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+    return '<button type="button" class="slot-day-btn" '+(has?'':'disabled')+' onclick="'+(has?"showTimesForDay('"+d+"')":'')+'" id="day-'+d+'"><div>'+wd+'</div><div>'+dn+'</div></button>';
+  }).join('');
+
+  var firstWithSlots = days.find(function(d){ return (slotsByDay[d]||[]).length>0; });
+  if(firstWithSlots){
+    showTimesForDay(firstWithSlots);
+  } else {
+    document.getElementById('slot-times-wrap').style.display='none';
+    document.getElementById('slot-empty').style.display='block';
+  }
+}
+
+function showTimesForDay(day){
+  document.getElementById('slot-empty').style.display='none';
+  document.querySelectorAll('[id^="day-"]').forEach(function(b){b.classList.remove('sel');});
+  var dayBtn = document.getElementById('day-'+day);
+  if(dayBtn) dayBtn.classList.add('sel');
+
+  var times = (slotsByDay[day]||[]).map(function(iso){
+    return {
+      iso: iso,
+      label: new Date(iso).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/London'}),
+      hour: parseInt(new Date(iso).toLocaleTimeString('en-GB',{hour:'2-digit',hour12:false,timeZone:'Europe/London'}),10)
+    };
+  });
+  var morning = times.filter(function(t){return t.hour<12;});
+  var afternoon = times.filter(function(t){return t.hour>=12;});
+
+  function renderGroup(label, list){
+    if(!list.length) return '';
+    var btns = list.map(function(t){ return '<button type="button" class="slot-time-btn" onclick="selectSlot(\''+t.iso+'\', this)">'+t.label+'</button>'; }).join('');
+    return '<div class="field-note" style="text-transform:uppercase;letter-spacing:.04em;margin:8px 0 4px;">'+label+'</div><div style="display:flex;flex-wrap:wrap;gap:6px;">'+btns+'</div>';
+  }
+
+  document.getElementById('slot-times-wrap').style.display='block';
+  document.getElementById('slot-times-wrap').innerHTML = renderGroup('Morning', morning)+renderGroup('Afternoon', afternoon);
+  document.getElementById('selected-slot-note').style.display='none';
+  selectedSlot = null;
+}
+
+function selectSlot(iso, btn){
+  selectedSlot = iso;
+  document.querySelectorAll('#slot-times-wrap .slot-time-btn').forEach(function(b){b.classList.remove('sel');});
+  btn.classList.add('sel');
+  var note = document.getElementById('selected-slot-note');
+  var dt = new Date(iso);
+  note.textContent = '✓ Selected: '+dt.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'})+' at '+dt.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/London'});
+  note.style.display='block';
+}
+
 async function submitJob(){
   var addr=document.getElementById('sub-address').value.trim();
   var type=document.getElementById('sub-type').value;
   var clientEmail=document.getElementById('sub-client-email').value.trim();
   var clientName=document.getElementById('sub-client-name').value.trim();
-  var date=document.getElementById('sub-date').value;
   var notes=document.getElementById('sub-notes').value.trim();
   var result=document.getElementById('submit-result');
 
   if(!addr||!type||!clientEmail){ result.style.color='var(--rd)'; result.textContent='Please fill in address, property type and client email.'; return; }
   if(!clientEmail.includes('@')){ result.style.color='var(--rd)'; result.textContent='Please enter a valid client email address.'; return; }
+  if(!selectedSlot){ result.style.color='var(--rd)'; result.textContent='Please pick an inspection date and time.'; return; }
 
   var btn=document.getElementById('submit-btn');
   btn.disabled=true; btn.textContent='Submitting...';
@@ -461,18 +603,21 @@ async function submitJob(){
     var res=await fetch(API_BASE+'/trade-submit',{
       method:'POST',
       headers:{'Content-Type':'application/json', 'Authorization':'Bearer '+_token},
-      body:JSON.stringify({email:_email, address:addr, propType:type, clientEmail:clientEmail, clientName:clientName, date:date, notes:notes})
+      body:JSON.stringify({email:_email, address:addr, propType:type, clientEmail:clientEmail, clientName:clientName, slotStart:selectedSlot, notes:notes})
     });
     var body=await res.json();
     if(!res.ok){ throw new Error(body.error||'API error'); }
     result.style.color='var(--gr)';
-    result.textContent='✅ Job submitted. We\'ll be in touch to confirm the inspection date.';
+    result.textContent='✅ Job submitted and inspection booked.';
     document.getElementById('sub-address').value='';
     document.getElementById('sub-type').value='';
     document.getElementById('sub-client-email').value='';
     document.getElementById('sub-client-name').value='';
-    document.getElementById('sub-date').value='';
     document.getElementById('sub-notes').value='';
+    selectedSlot=null;
+    _slotsLoaded=false;
+    weekOffset=0;
+    ensureSlotsLoaded();
     // Refresh jobs list
     var jobs=await fetchTradeJobs(_email, _token);
     _allTradeJobs=jobs;
