@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agent Partner Signup — RoofScan UK</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<style>
+:root{
+  --navy:#1C2B4A; --navy-2:#233658; --gold:#B8945F; --ink:#20262F;
+  --paper:#FBFAF7; --line:#DEDACE; --muted:#71716C; --white:#FFFFFF;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Inter',-apple-system,sans-serif;background:var(--paper);color:var(--ink);min-height:100vh;font-size:16px;line-height:1.5;}
+h1,h2{font-family:'Fraunces',Georgia,serif;font-weight:500;letter-spacing:-0.01em;color:var(--navy);}
+.muted{color:var(--muted);}
+.wrap{max-width:560px;margin:0 auto;padding:56px 24px 80px;}
+.eyebrow{color:var(--gold);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.14em;margin-bottom:14px;}
+h1{font-size:2rem;margin-bottom:10px;}
+.lede{color:var(--muted);font-size:15px;margin-bottom:36px;line-height:1.6;}
+.card{background:var(--white);border:1px solid var(--line);border-radius:6px;padding:32px;}
+.field{margin-bottom:18px;}
+label{display:block;font-size:13px;font-weight:600;color:var(--navy);margin-bottom:6px;}
+.hint{font-size:12px;color:var(--muted);margin-top:4px;}
+input{width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:4px;font-family:inherit;font-size:15px;color:var(--ink);background:var(--paper);}
+input:focus{outline:none;border-color:var(--gold);}
+.section-label{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:28px 0 14px;padding-top:18px;border-top:1px solid var(--line);}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.btn{display:block;width:100%;background:var(--navy);color:var(--paper);border:1px solid var(--navy);border-radius:4px;padding:14px 26px;font-size:15px;font-weight:600;letter-spacing:.01em;cursor:pointer;font-family:inherit;margin-top:8px;}
+.btn:disabled{opacity:.5;cursor:default;}
+.error{color:#B33A3A;font-size:13px;margin-top:12px;display:none;}
+.success{display:none;text-align:center;}
+.success .check{width:52px;height:52px;border-radius:50%;background:var(--navy);color:var(--white);display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 20px;}
+.link-box{background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:16px;margin:20px 0;word-break:break-all;font-size:14px;color:var(--navy);font-weight:600;}
+.copy-btn{background:var(--gold);color:var(--navy);border:none;border-radius:4px;padding:11px 20px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;}
+footer{text-align:center;margin-top:40px;font-size:12.5px;color:var(--muted);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">RoofScan UK Partner Program</div>
+  <h1>Get your referral link</h1>
+  <p class="lede">Every landlord you refer gets £25 off their first inspection. You get £50 once their inspection is booked and paid. Fill in your details below and your personal link is generated instantly.</p>
+
+  <div class="card">
+    <form id="signup-form">
+      <div class="field">
+        <label for="f-name">Your full name</label>
+        <input type="text" id="f-name" required autocomplete="name">
+      </div>
+      <div class="field">
+        <label for="f-branch">Branch / office</label>
+        <input type="text" id="f-branch" required placeholder="e.g. Brighton">
+      </div>
+      <div class="field">
+        <label for="f-agency">Agency name</label>
+        <input type="text" id="f-agency" placeholder="e.g. Smith & Co Lettings">
+      </div>
+      <div class="field">
+        <label for="f-email">Work email</label>
+        <input type="email" id="f-email" required autocomplete="email">
+      </div>
+      <div class="field">
+        <label for="f-phone">Phone (optional)</label>
+        <input type="tel" id="f-phone" autocomplete="tel">
+      </div>
+
+      <div class="section-label">Where should we pay your £50?</div>
+      <div class="field">
+        <label for="f-acct-name">Account name</label>
+        <input type="text" id="f-acct-name" required>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label for="f-sort">Sort code</label>
+          <input type="text" id="f-sort" required placeholder="12-34-56">
+        </div>
+        <div class="field">
+          <label for="f-acct-num">Account number</label>
+          <input type="text" id="f-acct-num" required placeholder="12345678">
+        </div>
+      </div>
+      <div class="hint">Only used to pay your referral fee — never shared with clients or shown publicly.</div>
+
+      <button type="submit" class="btn" id="submit-btn">Get my referral link →</button>
+      <div class="error" id="form-error"></div>
+    </form>
+
+    <div class="success" id="success-block">
+      <div class="check">✓</div>
+      <h2>You're all set</h2>
+      <p class="muted" style="margin-top:8px;">Share this link with landlords — they'll get £25 off, and you'll get £50 once their inspection is booked and paid.</p>
+      <div class="link-box" id="result-link"></div>
+      <button class="copy-btn" onclick="copyLink()">Copy link</button>
+      <p class="muted" style="margin-top:16px;font-size:13px;">We've also emailed this link to you for safekeeping.</p>
+    </div>
+  </div>
+
+  <footer>Questions? <a href="mailto:info@roofscanuk.co.uk" style="color:var(--navy);">info@roofscanuk.co.uk</a></footer>
+</div>
+
+<script>
+const API_BASE = 'https://roofscan-api.tiny-voice-ac40.workers.dev';
+let generatedLink = '';
+
+document.getElementById('signup-form').addEventListener('submit', async function(e){
+  e.preventDefault();
+  const btn = document.getElementById('submit-btn');
+  const errEl = document.getElementById('form-error');
+  errEl.style.display = 'none';
+  btn.disabled = true;
+  btn.textContent = 'Setting up your link…';
+
+  const payload = {
+    name: document.getElementById('f-name').value.trim(),
+    branch: document.getElementById('f-branch').value.trim(),
+    agency: document.getElementById('f-agency').value.trim(),
+    email: document.getElementById('f-email').value.trim(),
+    phone: document.getElementById('f-phone').value.trim(),
+    accountName: document.getElementById('f-acct-name').value.trim(),
+    sortCode: document.getElementById('f-sort').value.trim(),
+    accountNumber: document.getElementById('f-acct-num').value.trim(),
+  };
+
+  try{
+    const res = await fetch(`${API_BASE}/agent-signup`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error || 'Something went wrong — please try again.');
+    generatedLink = data.link;
+    document.getElementById('result-link').textContent = data.link;
+    document.getElementById('signup-form').style.display = 'none';
+    document.getElementById('success-block').style.display = 'block';
+  }catch(err){
+    errEl.textContent = err.message;
+    errEl.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Get my referral link →';
+  }
+});
+
+function copyLink(){
+  navigator.clipboard.writeText(generatedLink).then(function(){
+    event.target.textContent = 'Copied!';
+    setTimeout(function(){ event.target.textContent = 'Copy link'; }, 2000);
+  }).catch(function(){ prompt('Your referral link:', generatedLink); });
+}
+</script>
+</body>
+</html>
