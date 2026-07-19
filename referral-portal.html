@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>Referral Portal — RoofScan UK</title>
+<style>
+:root{--n:#1C2B4A;--s:#1E4080;--g:#C9A84C;--bg:#F8F6F0;--cd:#FFF;--br:#E8E4D8;--mu:#6B7A8D;--gr:#27AE60;--am:#E67E22;--rd:#C0392B;--gbg:#E8F8EF;--abg:#FEF3E2;--rbg:#FDECEA;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--n);min-height:100vh;max-width:520px;margin:0 auto;}
+.hdr{background:linear-gradient(135deg,var(--n) 0%,#2C3E6A 100%);padding:24px 18px 20px;}
+.logo{font-size:12px;font-weight:700;color:var(--g);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;}
+.hdr-title{color:white;font-size:24px;font-weight:800;}
+.hdr-sub{color:rgba(255,255,255,0.45);font-size:13px;margin-top:3px;}
+main{padding:14px;}
+
+/* LOGIN */
+.login-card{background:var(--cd);border:1px solid var(--br);border-radius:14px;padding:20px;margin-bottom:16px;}
+.login-title{font-size:16px;font-weight:700;margin-bottom:4px;}
+.login-sub{font-size:13px;color:var(--mu);margin-bottom:14px;line-height:1.5;}
+.inp{width:100%;border:1px solid var(--br);border-radius:8px;padding:11px 14px;font-size:15px;color:var(--n);outline:none;margin-bottom:10px;font-family:inherit;background:white;}
+.inp:focus{border-color:var(--s);}
+.primary-btn{width:100%;background:var(--n);color:var(--g);border:none;border-radius:8px;padding:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;}
+.primary-btn:disabled{opacity:0.6;}
+.err{font-size:13px;color:var(--rd);margin-top:8px;text-align:center;}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin 0.7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* ACCOUNT HEADER */
+.acct-banner{background:var(--n);border-radius:12px;padding:14px 16px;margin-bottom:12px;}
+.acct-name{font-size:18px;font-weight:800;color:white;margin-bottom:2px;}
+.acct-sub{font-size:12px;color:rgba(255,255,255,0.45);margin-bottom:10px;}
+.acct-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.as-val{font-size:19px;font-weight:800;}
+.as-label{font-size:10px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:.05em;margin-top:2px;}
+
+/* LINK CARD */
+.link-card{background:var(--cd);border:1px solid var(--br);border-radius:12px;padding:14px 16px;margin-bottom:12px;}
+.link-label{font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;}
+.link-value{font-size:13px;color:var(--n);font-weight:600;word-break:break-all;margin-bottom:10px;}
+.copy-btn{background:var(--g);color:var(--n);border:none;border-radius:7px;padding:8px 16px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;}
+
+/* JOB CARDS */
+.job-card{background:var(--cd);border:1px solid var(--br);border-radius:12px;padding:14px;margin-bottom:10px;}
+.job-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;}
+.job-addr{font-size:14px;font-weight:700;color:var(--n);}
+.job-type{font-size:11px;color:var(--mu);margin-top:1px;}
+.job-right{text-align:right;}
+.job-date{font-size:12px;color:var(--mu);}
+.status-pill{display:inline-block;font-size:11px;font-weight:700;padding:2px 10px;border-radius:20px;margin-top:3px;}
+.status-pill.Booked{background:#EAF4FB;color:#2980B9;}
+.status-pill.Complete{background:var(--abg);color:var(--am);}
+.status-pill.Report.Sent{background:var(--gbg);color:var(--gr);}
+.status-pill.Paid{background:#D5F5E3;color:#1D8348;}
+
+.sec-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--mu);margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+.sec-label::after{content:'';flex:1;height:1px;background:var(--br);}
+.empty{text-align:center;color:var(--mu);font-size:13px;padding:20px;}
+.logout-btn{background:none;border:none;color:var(--mu);font-size:12px;cursor:pointer;text-align:center;display:block;margin:16px auto;text-decoration:underline;font-family:inherit;}
+.spacer{height:20px;}
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
+</head>
+<body>
+<div class="hdr">
+  <div class="logo">RoofScan UK</div>
+  <div class="hdr-title">Referral Portal</div>
+  <div class="hdr-sub">Track your referrals and earnings</div>
+</div>
+<main>
+
+<!-- LOGIN -->
+<div id="login-section">
+  <div class="login-card">
+    <div id="login-step-email">
+      <div class="login-title">Referral Portal Login</div>
+      <div class="login-sub">Enter the email address you signed up with. We'll email you a 6-digit code to confirm it's you.</div>
+      <input type="email" id="login-email" class="inp" placeholder="your@email.com" onkeydown="if(event.key==='Enter')requestCode()">
+      <button class="primary-btn" id="request-code-btn" onclick="requestCode()">Send me a code →</button>
+      <div class="err" id="login-err"></div>
+    </div>
+    <div id="login-step-code" style="display:none;">
+      <div class="login-title">Enter your code</div>
+      <div class="login-sub">We sent a 6-digit code to <span id="code-sent-to" style="font-weight:700;color:var(--n);"></span>. It expires in 10 minutes.</div>
+      <input type="text" inputmode="numeric" maxlength="6" id="login-code" class="inp" placeholder="123456" onkeydown="if(event.key==='Enter')verifyCode()">
+      <button class="primary-btn" id="verify-code-btn" onclick="verifyCode()">Verify & view my referrals →</button>
+      <div class="err" id="code-err"></div>
+      <div style="display:flex;justify-content:space-between;margin-top:10px;">
+        <button class="logout-btn" style="margin:0;" onclick="backToEmail()">Use a different email</button>
+        <button class="logout-btn" style="margin:0;" onclick="requestCode(true)">Resend code</button>
+      </div>
+    </div>
+  </div>
+  <div style="text-align:center;font-size:12px;color:var(--mu);">Not signed up yet? <a href="agent-signup.html" style="color:var(--s);">Get your referral link →</a></div>
+</div>
+
+<!-- PORTAL -->
+<div id="portal-section" style="display:none;">
+
+  <!-- ACCOUNT BANNER -->
+  <div class="acct-banner">
+    <div class="acct-name" id="acct-name">Loading...</div>
+    <div class="acct-sub" id="acct-sub"></div>
+    <div class="acct-stats">
+      <div><div class="as-val" id="stat-referrals" style="color:var(--g);">0</div><div class="as-label">Referrals</div></div>
+      <div><div class="as-val" id="stat-paid" style="color:rgba(255,255,255,0.7);">£0</div><div class="as-label">Paid out</div></div>
+      <div><div class="as-val" id="stat-owed" style="color:var(--am);">£0</div><div class="as-label">Owed</div></div>
+    </div>
+  </div>
+
+  <div class="link-card">
+    <div class="link-label">Your referral link</div>
+    <div class="link-value" id="referral-link-value">—</div>
+    <button class="copy-btn" onclick="copyReferralLink()">Copy link</button>
+  </div>
+
+  <div class="sec-label">Your referrals</div>
+  <div id="jobs-list"><div class="empty"><span class="spinner"></span></div></div>
+  <div class="spacer"></div>
+
+  <button class="logout-btn" onclick="doLogout()">Sign out</button>
+</div>
+
+</main>
+<script>
+var API_BASE = 'https://roofscan-api.tiny-voice-ac40.workers.dev';
+var _pendingEmail = '';
+var _referralLink = '';
+
+function fmtDate(d){ return d?new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'—'; }
+function fmtMoney(n){ return '£'+(n||0).toLocaleString('en-GB'); }
+function statusClass(s){ return String(s||'Booked').replace(/\s+/g,'.'); }
+
+async function fetchAgentAccount(email, token){
+  var res = await fetch(API_BASE+'/agent-account?email='+encodeURIComponent(email), {
+    headers: { 'Authorization': 'Bearer ' + token }
+  });
+  if(!res.ok) return null;
+  return res.json();
+}
+
+async function fetchAgentJobs(email, token){
+  var res = await fetch(API_BASE+'/agent-jobs?email='+encodeURIComponent(email), {
+    headers: { 'Authorization': 'Bearer ' + token }
+  });
+  if(!res.ok) return [];
+  var data = await res.json();
+  return data.records||[];
+}
+
+async function requestCode(isResend){
+  var email = document.getElementById('login-email').value.trim().toLowerCase();
+  if(!isResend){
+    if(!email||!email.includes('@')){ document.getElementById('login-err').textContent='Please enter a valid email.'; return; }
+  } else {
+    email = _pendingEmail;
+  }
+  var btn = isResend ? null : document.getElementById('request-code-btn');
+  if(btn){ btn.disabled=true; btn.innerHTML='<span class="spinner"></span>'; }
+  document.getElementById('login-err').textContent='';
+  document.getElementById('code-err').textContent='';
+  try{
+    var res = await fetch(API_BASE+'/request-code', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({email: email})
+    });
+    if(!res.ok) throw new Error('API error '+res.status);
+    _pendingEmail = email;
+    document.getElementById('code-sent-to').textContent = email;
+    document.getElementById('login-step-email').style.display='none';
+    document.getElementById('login-step-code').style.display='block';
+    document.getElementById('login-code').value='';
+    document.getElementById('login-code').focus();
+    if(isResend){ document.getElementById('code-err').style.color='var(--gr)'; document.getElementById('code-err').textContent='Code resent.'; }
+  }catch(e){
+    document.getElementById('login-err').textContent='Something went wrong. Please try again.';
+  }
+  if(btn){ btn.disabled=false; btn.textContent='Send me a code →'; }
+}
+
+function backToEmail(){
+  document.getElementById('login-step-code').style.display='none';
+  document.getElementById('login-step-email').style.display='block';
+  document.getElementById('code-err').textContent='';
+}
+
+async function verifyCode(){
+  var code = document.getElementById('login-code').value.trim();
+  if(!code){ document.getElementById('code-err').textContent='Enter the 6-digit code.'; return; }
+  var btn = document.getElementById('verify-code-btn');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span>';
+  document.getElementById('code-err').textContent='';
+  try{
+    var res = await fetch(API_BASE+'/verify-code', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({email:_pendingEmail, code:code})
+    });
+    var body = await res.json();
+    if(!res.ok||!body.token){ throw new Error(body.error||'Incorrect or expired code.'); }
+    try{ localStorage.setItem('rs_referral_email', _pendingEmail); localStorage.setItem('rs_referral_token', body.token); }catch(e){}
+    await loadPortal(_pendingEmail, body.token);
+  }catch(e){
+    document.getElementById('code-err').textContent = e.message || 'Incorrect or expired code.';
+    btn.disabled=false; btn.textContent='Verify & view my referrals →';
+  }
+}
+
+async function loadPortal(email, token){
+  document.getElementById('login-section').style.display='none';
+  document.getElementById('portal-section').style.display='block';
+  document.getElementById('acct-name').textContent='Loading your account...';
+  document.getElementById('acct-sub').textContent='';
+  document.getElementById('jobs-list').innerHTML='<div class="empty"><span class="spinner"></span></div>';
+  try{
+    var acct = await fetchAgentAccount(email, token);
+    if(!acct || acct.error){
+      showLoginError('No referral account found for that email.<br><a href="agent-signup.html" style="color:var(--s);font-weight:600;">Sign up here</a> to get your link.');
+      return;
+    }
+    showPortal(acct, email);
+    var jobs = await fetchAgentJobs(email, token);
+    renderJobs(jobs);
+  }catch(e){
+    showLoginError('Session expired or something went wrong. Please log in again.');
+  }
+}
+
+function showLoginError(msg){
+  document.getElementById('portal-section').style.display='none';
+  document.getElementById('login-section').style.display='block';
+  document.getElementById('login-step-code').style.display='none';
+  document.getElementById('login-step-email').style.display='block';
+  document.getElementById('login-err').innerHTML=msg;
+  try{ localStorage.removeItem('rs_referral_email'); localStorage.removeItem('rs_referral_token'); }catch(e){}
+}
+
+function showPortal(acct, email){
+  document.getElementById('login-section').style.display='none';
+  document.getElementById('portal-section').style.display='block';
+  document.getElementById('acct-name').textContent=acct.name||'Your account';
+  document.getElementById('acct-sub').textContent=[acct.agency, acct.branch].filter(Boolean).join(' · ') || email;
+  document.getElementById('stat-referrals').textContent=acct.totalReferrals||0;
+  document.getElementById('stat-paid').textContent=fmtMoney(acct.totalPaid);
+  document.getElementById('stat-owed').textContent=fmtMoney(acct.totalOwed);
+  _referralLink = acct.referralLink||'';
+  document.getElementById('referral-link-value').textContent=_referralLink||'—';
+}
+
+function renderJobs(jobs){
+  var el = document.getElementById('jobs-list');
+  if(!jobs.length){
+    el.innerHTML='<div class="empty">No referrals yet. Share your link above to get started.</div>';
+    return;
+  }
+  el.innerHTML = jobs.map(function(j){
+    return '<div class="job-card">'+
+      '<div class="job-header">'+
+        '<div><div class="job-addr">'+(j.address||'Property')+'</div><div class="job-type">'+(j.propertyType||'')+'</div></div>'+
+        '<div class="job-right"><div class="job-date">'+fmtDate(j.date)+'</div><span class="status-pill '+statusClass(j.status)+'">'+(j.status||'Booked')+'</span></div>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
+function copyReferralLink(){
+  if(!_referralLink) return;
+  navigator.clipboard.writeText(_referralLink).then(function(){
+    event.target.textContent = 'Copied!';
+    setTimeout(function(){ event.target.textContent = 'Copy link'; }, 2000);
+  }).catch(function(){ prompt('Your referral link:', _referralLink); });
+}
+
+function doLogout(){
+  try{ localStorage.removeItem('rs_referral_email'); localStorage.removeItem('rs_referral_token'); }catch(e){}
+  document.getElementById('portal-section').style.display='none';
+  document.getElementById('login-section').style.display='block';
+  document.getElementById('login-step-code').style.display='none';
+  document.getElementById('login-step-email').style.display='block';
+  document.getElementById('login-email').value='';
+}
+
+(function tryAutoLogin(){
+  try{
+    var email = localStorage.getItem('rs_referral_email');
+    var token = localStorage.getItem('rs_referral_token');
+    if(email && token) loadPortal(email, token);
+  }catch(e){}
+})();
+</script>
+</body>
+</html>
