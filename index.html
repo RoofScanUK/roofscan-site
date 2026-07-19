@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>RoofScan UK — Drone Roof Inspections, Sussex</title>
-<meta name="description" content="Professional drone roof inspections across Sussex. A full written report with condition ratings and a Schedule of Works, within 48 hours. No scaffolding.">
+<meta name="description" content="Professional drone roof inspections across Sussex. Get an instant online quote in under a minute — full written report with condition ratings and Schedule of Works within 48 hours. No scaffolding.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -638,6 +638,7 @@ textarea{resize:vertical;}
     <section style="padding:0 24px 72px;">
       <div class="wrap-b">
         <div id="agent-referral-banner" style="display:none;background:#FBF0D0;border:1px solid #F0C040;border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:13.5px;color:#7A5814;font-weight:600;"></div>
+        <div id="roofcare-banner" style="display:none;background:#EAF4FB;border:1px solid #AED6F1;border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:13.5px;color:#1A5276;font-weight:600;"></div>
         <div class="progress" id="progress-wrap">
           <div class="progress-row" id="progress-row"></div>
         </div>
@@ -949,6 +950,7 @@ function nextFromStep(n){
   if(n===1 && !prop){ alert('Please select a property type.'); return; }
   if(n===3 && !town){ alert('Please select your town.'); return; }
   if(n===4 && !(contact.name && contact.email && contact.phone && contact.address)){ alert('Please fill in all fields.'); return; }
+  if(n===4 && typeof checkRoofCareStatus === 'function' && !roofCareMember){ checkRoofCareStatus(contact.email); }
   goStep(n+1);
 }
  
@@ -963,11 +965,15 @@ function renderPrice(){
   if(trav.add>0) lines.push(['Travel — '+(town?town.name:''), trav.add]);
   AD.forEach(a=>{ if(counts[a.id]>0) lines.push([a.label+' ×'+counts[a.id], counts[a.id]*a.unit]); });
  
-  if(agentInfo){
+  if(roofCareMember){
+    const rcDiscount = Math.round(total * 0.15);
+    total = total - rcDiscount;
+    lines.push(['Returning client discount (15%)', -rcDiscount]);
+  } else if(agentInfo){
     total = Math.max(0, total - 25);
     lines.push(['Referral discount', -25]);
   }
- 
+
   document.getElementById('total-amt').textContent = fmt(total);
   document.getElementById('total-lines').innerHTML = lines.map(([l,v])=>
     `<div class="total-row"><span class="l">${l}</span><span class="v">${v<0?'-':''}${fmt(Math.abs(v))}</span></div>`).join('');
@@ -1004,6 +1010,37 @@ let agentInfo = null;
     })
     .catch(()=>{});
 })();
+
+// ---- Roof Care Plan: returning-client 15% discount, matched by email ----
+let roofCareMember = false;
+function checkRoofCareStatus(email){
+  if(!email || !email.includes('@')) return;
+  fetch(`${API_BASE}/roofcare-status?email=${encodeURIComponent(email)}`)
+    .then(r=>r.json())
+    .then(data=>{
+      roofCareMember = !!data.isMember;
+      const banner = document.getElementById('roofcare-banner');
+      const agentBanner = document.getElementById('agent-referral-banner');
+      if(roofCareMember && banner){
+        banner.textContent = '🔧 Welcome back — 15% returning-client discount is already included.';
+        banner.style.display = 'block';
+        if(agentBanner) agentBanner.style.display = 'none';
+      }
+      if(typeof bstep !== 'undefined' && bstep===5) renderPrice();
+    })
+    .catch(()=>{});
+}
+// Pre-fill from a portal "book again" link, e.g. index.html?email=...
+(function initRoofCarePrefill(){
+  const params = new URLSearchParams(window.location.search);
+  const email = params.get('email');
+  if(!email) return;
+  const emailInput = document.getElementById('c-email');
+  if(emailInput) emailInput.value = email;
+  contact.email = email;
+  checkRoofCareStatus(email);
+})();
+
 let stripeClient = null, cardElement = null, selectedSlot = null, piClientSecret = null, piId = null, step6Inited = false;
  
 function initBookingStep(){
@@ -1208,5 +1245,3 @@ async function submitPayment(){
  
 </body>
 </html>
- 
-
