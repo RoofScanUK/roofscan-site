@@ -76,11 +76,13 @@ main{padding:16px;}
 /* NEW PROPERTY */
 .new-prop-btn{width:100%;background:var(--cd);border:1px dashed var(--br);border-radius:14px;padding:14px;font-size:14px;font-weight:600;color:var(--mu);cursor:pointer;text-align:center;margin-bottom:12px;font-family:inherit;}
 
-/* REFERRAL */
-.ref-card{background:#FBF0D0;border:1px solid #F0C040;border-radius:12px;padding:14px 16px;margin-bottom:12px;}
-.ref-title{font-size:13px;font-weight:700;color:#8B6914;margin-bottom:4px;}
-.ref-text{font-size:12px;color:#7A5814;line-height:1.5;margin-bottom:8px;}
-.ref-link{background:var(--n);color:var(--g);border:none;border-radius:7px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;}
+/* ROOF CARE PLAN */
+.rc-card{background:#EAF4FB;border:1px solid #AED6F1;border-radius:12px;padding:14px 16px;margin-bottom:12px;}
+.rc-title{font-size:13px;font-weight:700;color:#1A5276;margin-bottom:4px;}
+.rc-text{font-size:12px;color:#1A5276;line-height:1.5;margin-bottom:8px;}
+.rc-btn{background:var(--n);color:var(--g);border:none;border-radius:7px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;}
+.rc-btn:disabled{opacity:0.6;cursor:default;}
+.rc-member{font-size:12px;font-weight:700;color:#1D8348;}
 
 .logout-btn{background:none;border:none;color:var(--mu);font-size:12px;cursor:pointer;text-align:center;display:block;margin:16px auto;text-decoration:underline;font-family:inherit;}
 .spacer{height:20px;}
@@ -178,10 +180,10 @@ main{padding:16px;}
     <div class="welcome-sub" id="welcome-sub">Your inspection history</div>
     <div id="properties-list"></div>
     <button class="new-prop-btn" onclick="bookNew()">+ Book inspection for a new property</button>
-    <div class="ref-card" id="ref-card" style="display:none;">
-      <div class="ref-title">💛 Know someone who needs a roof inspection?</div>
-      <div class="ref-text">Share your referral link and they'll get £20 off their first inspection. We'll let you know when they book.</div>
-      <button class="ref-link" onclick="copyRef()">Copy referral link</button>
+    <div class="rc-card" id="rc-card" style="display:none;">
+      <div class="rc-title">🔧 Roof Care Plan</div>
+      <div class="rc-text" id="rc-text">Join free and get 15% off every future inspection at this property — plus a reminder email when your next one's due.</div>
+      <button class="rc-btn" id="rc-btn" onclick="joinRoofCare()">Join Roof Care Plan</button>
     </div>
     <button class="logout-btn" onclick="doLogout()">Sign out</button>
     <div class="spacer"></div>
@@ -391,31 +393,55 @@ function showPortal(email, jobs) {
       html += '</div>';
     }
 
-    // Book again
-    var bookUrl = 'https://cal.com/roofscanuk/inspection?email='+encodeURIComponent(email)+'&notes=Re-inspection+of+'+encodeURIComponent(addr);
+    // Book again — routed through the real booking flow so deposit/Stripe/discounts all apply
+    var bookUrl = 'index.html?email='+encodeURIComponent(email);
     html += '<div class="book-section"><a href="'+bookUrl+'" target="_blank" class="book-btn">📅 Book another inspection for this property</a></div>';
     html += '</div>';
   });
 
   document.getElementById('properties-list').innerHTML = html;
 
-  // Show referral card if they've had a paid inspection
+  // Show Roof Care Plan card if they've had a paid inspection
   var hasPaid = jobs.some(function(j){return j.status==='Paid';});
-  if(hasPaid) document.getElementById('ref-card').style.display = 'block';
+  if(hasPaid) showRoofCareCard(email);
 }
 
 function bookNew(){
-  var url = 'https://cal.com/roofscanuk/inspection' + (_currentEmail?'?email='+encodeURIComponent(_currentEmail):'');
+  var url = 'index.html' + (_currentEmail?'?email='+encodeURIComponent(_currentEmail):'');
   window.open(url,'_blank');
 }
 
-function copyRef(){
-  var refLink = 'https://roofscanuk.co.uk/book?ref='+btoa(_currentEmail).replace(/=/g,'');
-  navigator.clipboard.writeText(refLink).then(function(){
-    var btn = document.querySelector('.ref-link');
-    btn.textContent = '✅ Copied!';
-    setTimeout(function(){btn.textContent='Copy referral link';},2000);
-  }).catch(function(){ prompt('Your referral link:', refLink); });
+// ═══ ROOF CARE PLAN — opt-in card + join action ═══════════════
+async function showRoofCareCard(email){
+  var card = document.getElementById('rc-card');
+  try{
+    var res = await fetch(API_BASE + '/roofcare-status?email=' + encodeURIComponent(email));
+    var data = await res.json();
+    card.style.display = 'block';
+    if(data.isMember){
+      document.getElementById('rc-text').innerHTML = '<span class="rc-member">✓ You\'re a member</span> — 15% off is applied automatically whenever you rebook, and we\'ll email you when your next inspection is due.';
+      document.getElementById('rc-btn').style.display = 'none';
+    }
+  }catch(e){}
+}
+
+async function joinRoofCare(){
+  var btn = document.getElementById('rc-btn');
+  btn.disabled = true; btn.textContent = 'Joining...';
+  try{
+    var res = await fetch(API_BASE + '/roofcare-join', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json', 'Authorization': 'Bearer ' + _token},
+      body: JSON.stringify({email: _currentEmail})
+    });
+    var data = await res.json();
+    if(!res.ok) throw new Error(data.error || 'Something went wrong.');
+    document.getElementById('rc-text').innerHTML = '<span class="rc-member">✓ You\'re a member</span> — 15% off is applied automatically whenever you rebook, and we\'ll email you when your next inspection is due.';
+    btn.style.display = 'none';
+  }catch(e){
+    btn.disabled = false; btn.textContent = 'Join Roof Care Plan';
+    alert(e.message || 'Something went wrong — please try again.');
+  }
 }
 
 function doLogout(){
