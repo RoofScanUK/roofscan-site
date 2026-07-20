@@ -1,594 +1,687 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
-<title>My Roof — RoofScan UK</title>
-<script src="https://js.stripe.com/v3/"></script>
-<style>
-:root{--n:#1C2B4A;--s:#1E4080;--g:#C9A84C;--bg:#F8F6F0;--cd:#FFF;--br:#E8E4D8;--mu:#6B7A8D;--gr:#27AE60;--am:#E67E22;--rd:#C0392B;}
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--n);min-height:100vh;max-width:520px;margin:0 auto;}
-.hdr{background:linear-gradient(135deg,var(--n) 0%,#2C3E6A 100%);padding:24px 18px 20px;}
-.logo{font-size:12px;font-weight:700;color:var(--g);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;}
-.hdr-title{color:white;font-size:24px;font-weight:800;}
-.hdr-sub{color:rgba(255,255,255,0.45);font-size:13px;margin-top:3px;}
-main{padding:16px;}
+export default {
+  async fetch(request, env) {
+    const url = new URL(request.url);
+    const origin = request.headers.get('Origin') || '';
+    const allowedOrigins = ['https://roofscanuk.github.io', 'https://roofscanuk.co.uk', 'https://www.roofscanuk.co.uk'];
+    const corsHeaders = {
+      'Access-Control-Allow-Origin': allowedOrigins.includes(origin) ? origin : allowedOrigins[0],
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    };
+    if (request.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
-/* LOGIN */
-.login-card{background:var(--cd);border:1px solid var(--br);border-radius:14px;padding:20px;margin-bottom:16px;}
-.login-title{font-size:16px;font-weight:700;color:var(--n);margin-bottom:4px;}
-.login-sub{font-size:13px;color:var(--mu);margin-bottom:14px;line-height:1.5;}
-.email-inp{width:100%;border:1px solid var(--br);border-radius:8px;padding:11px 14px;font-size:15px;color:var(--n);outline:none;margin-bottom:10px;font-family:inherit;}
-.email-inp:focus{border-color:var(--s);}
-.login-btn{width:100%;background:var(--n);color:var(--g);border:none;border-radius:8px;padding:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;}
-.login-btn:disabled{opacity:0.6;}
-.login-error{font-size:13px;color:var(--rd);margin-top:8px;text-align:center;}
-.spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin 0.7s linear infinite;}
-@keyframes spin{to{transform:rotate(360deg);}}
+    const BASE = 'https://api.airtable.com/v0/appPATYbyCttGeTCL';
+    const JOBS = 'tbldFSer2uWycCZ0z';
+    const TRADE = 'tblewRzIhi4HReWmE';
+    const AGENTS = 'tblAMcuDewEzv4fD4';
+    const AGENT_REFERRALS = 'tbljHwzTRkbzRyUeN';
+    const ROOFCARE = 'tblQbtLYU2WR6ZlzK';
+    const TOKEN = await env.AIRTABLE_TOKEN.get();
+    const SIGNING_SECRET = 'a36f2cae44724bc13264379f3001b21a84a9fdac61cf5f1560c149f4f205b626';
+    const OTP_WEBHOOK = 'https://hooks.zapier.com/hooks/catch/27940155/4u8scsb/';
 
-/* LOGGED IN */
-.welcome{font-size:18px;font-weight:800;color:var(--n);margin-bottom:4px;}
-.welcome-sub{font-size:13px;color:var(--mu);margin-bottom:16px;}
+    const CAL_EVENT_TYPE_ID = 5953256;
+    const CAL_API_VERSION = '2024-08-13';
+    const DEPOSIT_PENCE = 50; // TEMP for prebook testing — MUST revert to 5000 before real clients use booking or prebook
+    const AGENT_REFERRAL_DISCOUNT = 25;
+    const ROOFCARE_DISCOUNT_PCT = 0.15;
 
-/* PROPERTY CARD */
-.prop-card{background:var(--cd);border:1px solid var(--br);border-radius:14px;margin-bottom:12px;overflow:hidden;}
-.prop-header{padding:14px 16px;border-bottom:1px solid var(--br);}
-.prop-addr{font-size:15px;font-weight:700;color:var(--n);}
-.prop-type{font-size:12px;color:var(--mu);margin-top:2px;}
-.prop-score-row{display:flex;align-items:center;gap:10px;margin-top:10px;}
-.score-circle{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-.score-num{font-size:16px;font-weight:800;color:white;}
-.score-info{flex:1;}
-.score-label{font-size:13px;font-weight:700;}
-.score-date{font-size:11px;color:var(--mu);margin-top:1px;}
+    const PT = {
+      terrace: { atName: 'Terrace', base: 199 },
+      semi: { atName: 'Semi-detached', base: 219 },
+      detached: { atName: 'Detached', base: 249 },
+      large_detached: { atName: 'Large detached', base: 299 },
+    };
+    const AD = {
+      chimneys: { unit: 35, max: 6 },
+      extensions: { unit: 30, max: 5 },
+      dormers: { unit: 20, max: 8 },
+      outbuildings: { unit: 40, max: 5 },
+    };
+    const TB = { local: 0, mid: 10, far: 20 };
 
-/* STATUS TRACKER */
-.status-tracker{padding:14px 16px;background:#F8F6F0;}
-.tracker-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mu);margin-bottom:10px;}
-.tracker-steps{display:flex;align-items:flex-start;gap:0;position:relative;}
-.tracker-step{flex:1;text-align:center;position:relative;}
-.tracker-step::before{content:'';position:absolute;top:11px;left:50%;right:-50%;height:2px;background:var(--br);z-index:0;}
-.tracker-step:last-child::before{display:none;}
-.tracker-dot{width:22px;height:22px;border-radius:50%;background:var(--br);border:2px solid var(--br);display:flex;align-items:center;justify-content:center;margin:0 auto 5px;position:relative;z-index:1;font-size:10px;}
-.tracker-dot.done{background:var(--gr);border-color:var(--gr);}
-.tracker-dot.done::after{content:'✓';color:white;font-size:11px;font-weight:700;}
-.tracker-dot.current{background:var(--g);border-color:var(--g);}
-.tracker-dot.current::after{content:'●';color:var(--n);font-size:8px;}
-.tracker-label{font-size:10px;color:var(--mu);line-height:1.3;}
-.tracker-label.done{color:var(--gr);font-weight:600;}
-.tracker-label.current{color:#8B6914;font-weight:700;}
+    function esc(s){ return String(s).replace(/'/g, "\\'"); }
+    function json(obj, status){ return new Response(JSON.stringify(obj), {status, headers:{...corsHeaders,'Content-Type':'application/json'}}); }
+    function tierDiscount(jobs){ if(jobs>=5) return 20; if(jobs===4) return 15; if(jobs===3) return 10; if(jobs===2) return 5; return 0; }
+    function fieldVal(v){ return (v && typeof v === 'object' && 'name' in v) ? v.name : v; }
+    function genCode(){ return String(Math.floor(100000 + Math.random()*900000)); }
+    function b64url(str){ return btoa(str).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
+    function b64urlDecode(str){ return atob(str.replace(/-/g,'+').replace(/_/g,'/')); }
+    function slugify(s){ return String(s||'').replace(/[^a-zA-Z0-9]/g,'').toUpperCase(); }
 
-/* INSPECTIONS */
-.insp-list{padding:0 16px 14px;}
-.insp-item{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--br);}
-.insp-item:last-child{border-bottom:none;}
-.insp-date{font-size:13px;font-weight:600;color:var(--n);}
-.insp-sub{font-size:11px;color:var(--mu);margin-top:1px;}
-.insp-right{display:flex;align-items:center;gap:8px;}
-.insp-score{font-size:14px;font-weight:700;}
-.dl-btn{background:var(--n);color:var(--g);border:none;border-radius:6px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer;text-decoration:none;display:inline-block;font-family:inherit;}
-.dl-btn.disabled{background:var(--br);color:var(--mu);cursor:not-allowed;}
-
-/* BOOK BUTTON */
-.book-section{padding:14px 16px;border-top:1px solid var(--br);}
-.book-btn{width:100%;background:var(--g);color:var(--n);border:none;border-radius:8px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;text-decoration:none;display:block;text-align:center;}
-
-/* NEW PROPERTY */
-.new-prop-btn{width:100%;background:var(--cd);border:1px dashed var(--br);border-radius:14px;padding:14px;font-size:14px;font-weight:600;color:var(--mu);cursor:pointer;text-align:center;margin-bottom:12px;font-family:inherit;}
-
-/* ROOF CARE PLAN */
-.rc-card{background:#EAF4FB;border:1px solid #AED6F1;border-radius:12px;padding:14px 16px;margin-bottom:12px;}
-.rc-title{font-size:13px;font-weight:700;color:#1A5276;margin-bottom:4px;}
-.rc-text{font-size:12px;color:#1A5276;line-height:1.5;margin-bottom:8px;}
-.rc-btn{background:var(--n);color:var(--g);border:none;border-radius:7px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;}
-.rc-btn:disabled{opacity:0.6;cursor:default;}
-.rc-member{font-size:12px;font-weight:700;color:#1D8348;}
-.rc-price{font-size:13px;font-weight:800;color:#1A5276;margin-bottom:8px;}
-.rc-price s{opacity:.55;font-weight:600;margin-right:6px;}
-.rc-pay{display:none;margin-top:10px;}
-#rc-card-element{background:#fff;border:1px solid #AED6F1;border-radius:8px;padding:11px 12px;margin-bottom:8px;}
-.rc-errors{font-size:12px;color:#C0392B;min-height:16px;margin-bottom:6px;}
-.rc-small{font-size:11px;color:#1A5276;opacity:.75;line-height:1.5;margin-top:8px;}
-.rc-countdown{display:inline-block;background:#FBEEE0;color:#B9560A;font-size:11px;font-weight:800;padding:3px 9px;border-radius:20px;margin-bottom:8px;}
-.rc-inline{padding:14px 16px;border-top:1px solid var(--br);background:#EAF4FB;}
-.rc-inline .rc-title{margin-bottom:6px;}
-
-/* TABS */
-.tabs{display:flex;gap:4px;background:var(--cd);border:1px solid var(--br);border-radius:12px;padding:4px;margin-bottom:14px;}
-.tab-btn{flex:1;background:none;border:none;padding:9px 6px;font-size:13px;font-weight:700;color:var(--mu);border-radius:9px;cursor:pointer;font-family:inherit;}
-.tab-btn.active{background:var(--n);color:var(--g);}
-.reports-empty{text-align:center;color:var(--mu);font-size:13px;padding:30px 10px;}
-.report-row{background:var(--cd);border:1px solid var(--br);border-radius:12px;padding:13px 15px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:10px;}
-.report-addr{font-size:13.5px;font-weight:700;color:var(--n);}
-.report-date{font-size:11.5px;color:var(--mu);margin-top:2px;}
-
-.logout-btn{background:none;border:none;color:var(--mu);font-size:12px;cursor:pointer;text-align:center;display:block;margin:16px auto;text-decoration:underline;font-family:inherit;}
-.spacer{height:20px;}
-
-/* ═══ VISUAL UPGRADE: typography, depth, motion ═══ */
-*{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
-.card,.job-card,.tool-primary,.tool-sm,.today-card,.action-card,.exp-row,.banner,.client-info-card,.job-picker-card,.rs-card,.at-connect{
-  box-shadow:0 1px 3px rgba(28,43,74,0.06),0 1px 2px rgba(28,43,74,0.04);
-}
-.tool-primary,.tool-sm,.today-card,.action-card{transition:transform 0.15s ease,box-shadow 0.15s ease;}
-.tool-primary:active,.tool-sm:active,.today-card:active,.action-card:active{transform:scale(0.97);box-shadow:0 1px 2px rgba(28,43,74,0.08);}
-.job-card{transition:box-shadow 0.2s ease;}
-@keyframes rsCountUp{from{opacity:0;transform:scale(0.85);}to{opacity:1;transform:scale(1);}}
-.rs-number,.score-num,.bval{animation:rsCountUp 0.4s cubic-bezier(.34,1.56,.64,1);}
-@keyframes rsFadeSlide{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
-.job-card,.tool-primary,.tool-sm{animation:rsFadeSlide 0.3s ease backwards;}
-
-/* OFFLINE BANNER */
-.offline-banner{display:none;position:fixed;top:0;left:0;right:0;z-index:2000;align-items:center;justify-content:center;gap:8px;padding:9px 16px;font-size:12px;font-weight:600;color:white;max-width:520px;margin:0 auto;}
-.offline-banner.offline{background:#C0392B;}
-.offline-banner.syncing{background:#E67E22;}
-.offline-banner .ob-dot{width:7px;height:7px;border-radius:50%;background:white;animation:obPulse 1.2s ease-in-out infinite;}
-@keyframes obPulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
-
-/* VOICE BUTTON */
-.voice-btn{background:#F8F6F0;border:1px solid #E8E4D8;border-radius:8px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;flex-shrink:0;transition:all 0.15s;}
-.voice-btn.listening{background:#FDECEA;border-color:#C0392B;animation:voicePulse 1s ease-in-out infinite;}
-@keyframes voicePulse{0%,100%{box-shadow:0 0 0 0 rgba(192,57,43,0.4);}50%{box-shadow:0 0 0 6px rgba(192,57,43,0);}}
-.field-with-voice{display:flex;gap:8px;align-items:flex-start;}
-.field-with-voice textarea,.field-with-voice input{flex:1;}
-
-/* PUSH OPT-IN PROMPT */
-.push-prompt{background:#1C2B4A;border-radius:12px;padding:14px 16px;margin-bottom:12px;display:none;align-items:center;gap:12px;}
-.push-prompt.show{display:flex;}
-.push-prompt-icon{font-size:24px;}
-.push-prompt-text{flex:1;}
-.push-prompt-title{font-size:13px;font-weight:700;color:white;}
-.push-prompt-sub{font-size:11px;color:rgba(255,255,255,0.5);margin-top:1px;}
-.push-prompt-btn{background:#C9A84C;color:#1C2B4A;border:none;border-radius:7px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;}
-.push-prompt-dismiss{background:none;border:none;color:rgba(255,255,255,0.4);font-size:18px;cursor:pointer;padding:0 4px;}
-
-
-.skeleton{background:linear-gradient(90deg,#EFEBE2 25%,#F5F2EA 50%,#EFEBE2 75%);background-size:200% 100%;animation:skeletonShine 1.4s ease-in-out infinite;border-radius:14px;}
-@keyframes skeletonShine{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
-.skeleton-card{height:180px;margin-bottom:12px;}
-
-
-.due-reminder{background:#EAF4FB;border:1px solid #AED6F1;border-radius:9px;padding:10px 12px;margin:10px 16px 0;font-size:12px;color:#1A5276;display:flex;align-items:center;gap:8px;}
-.due-reminder-icon{font-size:16px;flex-shrink:0;}
-
-</style>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
-<script src="app-shell.js" defer></script>
-</head>
-<body>
-<div class="hdr">
-  <div class="logo">RoofScan UK</div>
-  <div class="hdr-title">My Roof</div>
-  <div class="hdr-sub">Your inspection history & reports</div>
-</div>
-<main>
-
-  <!-- LOGIN -->
-  <div id="login-section">
-    <div class="login-card">
-      <div id="login-step-email">
-        <div class="login-title">View your inspections</div>
-        <div class="login-sub">Enter the email address you used to book your inspection. We'll email you a 6-digit code to confirm it's you.</div>
-        <input type="email" id="login-email" class="email-inp" placeholder="your@email.com" onkeydown="if(event.key==='Enter')requestCode()">
-        <button class="login-btn" id="request-code-btn" onclick="requestCode()">Send me a code →</button>
-        <div class="login-error" id="login-error"></div>
-      </div>
-      <div id="login-step-code" style="display:none;">
-        <div class="login-title">Enter your code</div>
-        <div class="login-sub">We sent a 6-digit code to <span id="code-sent-to" style="font-weight:700;color:var(--n);"></span>. It expires in 10 minutes.</div>
-        <input type="text" inputmode="numeric" maxlength="6" id="login-code" class="email-inp" placeholder="123456" onkeydown="if(event.key==='Enter')verifyCode()">
-        <button class="login-btn" id="verify-code-btn" onclick="verifyCode()">Verify & view my roof →</button>
-        <div class="login-error" id="code-error"></div>
-        <div style="display:flex;justify-content:space-between;margin-top:10px;">
-          <button class="logout-btn" style="margin:0;" onclick="backToEmail()">Use a different email</button>
-          <button class="logout-btn" style="margin:0;" onclick="requestCode(true)">Resend code</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- LOGGED IN -->
-  <div id="portal-section" style="display:none;">
-    <div class="welcome" id="welcome-name">Welcome back</div>
-    <div class="welcome-sub" id="welcome-sub">Your inspection history</div>
-    <div class="tabs">
-      <button class="tab-btn active" id="tab-btn-props" onclick="switchTab('props')">Properties</button>
-      <button class="tab-btn" id="tab-btn-reports" onclick="switchTab('reports')">Reports</button>
-    </div>
-    <div id="tab-props">
-      <div id="properties-list"></div>
-      <button class="new-prop-btn" onclick="bookNew()">+ Book inspection for a new property</button>
-    </div>
-    <div id="tab-reports" style="display:none;">
-      <div id="reports-list"></div>
-    </div>
-    <button class="logout-btn" onclick="doLogout()">Sign out</button>
-    <div class="spacer"></div>
-  </div>
-
-</main>
-
-<script>
-var API_BASE = 'https://roofscan-api.tiny-voice-ac40.workers.dev';
-
-var _currentEmail = '';
-var _jobs = [];
-var _pendingEmail = '';
-var _token = '';
-
-
-// ═══ 12-MONTH REMINDER (item: due for re-inspection) ═══════════════
-function isDueForReinspection(lastInspDate) {
-  if(!lastInspDate) return false;
-  var last = new Date(lastInspDate);
-  var now = new Date();
-  var monthsSince = (now.getFullYear()-last.getFullYear())*12 + (now.getMonth()-last.getMonth());
-  return monthsSince >= 12;
-}
-
-function statusSteps(status) {
-  var steps = ['Booked','Complete','Report Sent','Paid'];
-  var labels = ['Booked','Inspected','Payment due','Report ready'];
-  var idx = steps.indexOf(status);
-  if(idx < 0) idx = 0;
-  return steps.map(function(s,i){ return {label:labels[i], state:i<idx?'done':i===idx?'current':''}; });
-}
-
-function scoreColor(s){ return s>=90?'#27AE60':s>=70?'#2980B9':s>=50?'#E67E22':'#C0392B'; }
-function scoreDesc(s){ return s>=90?'Excellent':s>=70?'Good':s>=50?'Fair':'Needs attention'; }
-function fmtDate(d){ if(!d) return '—'; return new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'}); }
-
-async function fetchJobs(email, token) {
-  var res = await fetch(API_BASE + '/homeowner?email=' + encodeURIComponent(email), {
-    headers: { 'Authorization': 'Bearer ' + token }
-  });
-  if(!res.ok) throw new Error('API error '+res.status);
-  var data = await res.json();
-  return data.records || [];
-}
-
-async function requestCode(isResend) {
-  var email = document.getElementById('login-email').value.trim().toLowerCase();
-  if(!isResend) {
-    if(!email || !email.includes('@')) { document.getElementById('login-error').textContent = 'Please enter a valid email address.'; return; }
-  } else {
-    email = _pendingEmail;
-  }
-  var btn = isResend ? null : document.getElementById('request-code-btn');
-  if(btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>'; }
-  document.getElementById('login-error').textContent = '';
-  document.getElementById('code-error').textContent = '';
-  try {
-    var res = await fetch(API_BASE + '/request-code', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({email: email})
-    });
-    if(!res.ok) throw new Error('API error '+res.status);
-    _pendingEmail = email;
-    document.getElementById('code-sent-to').textContent = email;
-    document.getElementById('login-step-email').style.display = 'none';
-    document.getElementById('login-step-code').style.display = 'block';
-    document.getElementById('login-code').value = '';
-    document.getElementById('login-code').focus();
-    if(isResend) { document.getElementById('code-error').style.color = 'var(--gr)'; document.getElementById('code-error').textContent = 'Code resent.'; }
-  } catch(e) {
-    document.getElementById('login-error').textContent = 'Something went wrong. Please try again.';
-  }
-  if(btn) { btn.disabled = false; btn.textContent = 'Send me a code →'; }
-}
-
-function backToEmail() {
-  document.getElementById('login-step-code').style.display = 'none';
-  document.getElementById('login-step-email').style.display = 'block';
-  document.getElementById('code-error').textContent = '';
-}
-
-async function verifyCode() {
-  var code = document.getElementById('login-code').value.trim();
-  if(!code) { document.getElementById('code-error').textContent = 'Enter the 6-digit code.'; return; }
-  var btn = document.getElementById('verify-code-btn');
-  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
-  document.getElementById('code-error').textContent = '';
-  try {
-    var res = await fetch(API_BASE + '/verify-code', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({email: _pendingEmail, code: code})
-    });
-    var body = await res.json();
-    if(!res.ok || !body.token) { throw new Error(body.error || 'Incorrect or expired code.'); }
-    try { localStorage.setItem('rs_portal_email', _pendingEmail); localStorage.setItem('rs_portal_token', body.token); } catch(e) {}
-    await loadPortal(_pendingEmail, body.token);
-  } catch(e) {
-    document.getElementById('code-error').textContent = e.message || 'Incorrect or expired code.';
-    btn.disabled = false; btn.textContent = 'Verify & view my roof →';
-  }
-}
-
-async function loadPortal(email, token) {
-  document.getElementById('login-section').style.display = 'none';
-  document.getElementById('portal-section').style.display = 'block';
-  document.getElementById('welcome-name').textContent = 'Loading your roof...';
-  document.getElementById('welcome-sub').textContent = '';
-  document.getElementById('properties-list').innerHTML = '<div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card" style="height:120px;"></div>';
-  try {
-    var jobs = await fetchJobs(email, token);
-    if(!jobs.length) {
-      document.getElementById('portal-section').style.display = 'none';
-      document.getElementById('login-section').style.display = 'block';
-      document.getElementById('login-step-code').style.display = 'none';
-      document.getElementById('login-step-email').style.display = 'block';
-      document.getElementById('login-error').innerHTML = 'No inspections found for that email.<br>Double check it\'s the exact email you booked with, or <a href="mailto:info@roofscanuk.co.uk" style="color:var(--s);font-weight:600;">contact us</a> for help.';
-      try { localStorage.removeItem('rs_portal_email'); localStorage.removeItem('rs_portal_token'); } catch(e) {}
-      return;
+    async function hmacSign(data){
+      const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(SIGNING_SECRET), {name:'HMAC', hash:'SHA-256'}, false, ['sign']);
+      const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(data));
+      return b64url(String.fromCharCode(...new Uint8Array(sig)));
     }
-    _currentEmail = email;
-    _token = token;
-    _jobs = jobs;
-    await showPortal(email, jobs);
-    renderReportsTab(jobs);
-  } catch(e) {
-    document.getElementById('portal-section').style.display = 'none';
-    document.getElementById('login-section').style.display = 'block';
-    document.getElementById('login-step-code').style.display = 'none';
-    document.getElementById('login-step-email').style.display = 'block';
-    document.getElementById('login-error').textContent = 'Session expired or something went wrong. Please log in again.';
-    try { localStorage.removeItem('rs_portal_email'); localStorage.removeItem('rs_portal_token'); } catch(e) {}
-  }
-}
-
-async function showPortal(email, jobs) {
-  document.getElementById('login-section').style.display = 'none';
-  document.getElementById('portal-section').style.display = 'block';
-  var firstName = '';
-  if(jobs.length) { var name = jobs[0].clientName||''; firstName = name.split(' ')[0]; }
-  document.getElementById('welcome-name').textContent = firstName ? 'Hi '+firstName+',' : 'Welcome back,';
-  document.getElementById('welcome-sub').textContent = jobs.length+' inspection'+(jobs.length>1?'s':'')+' on record for '+email;
-
-  // Group by address
-  var byAddr = {};
-  jobs.forEach(function(j){
-    var addr = j.address||'Unknown address';
-    if(!byAddr[addr]) byAddr[addr]=[];
-    byAddr[addr].push(j);
-  });
-
-  // Per-property Roof Care prebook eligibility — each address gets its own offer/countdown
-  var prebookStatus = {};
-  try{
-    var psRes = await fetch(API_BASE + '/prebook-status?email=' + encodeURIComponent(email), {
-      headers: { 'Authorization': 'Bearer ' + _token }
-    });
-    var psData = await psRes.json();
-    if(psRes.ok) prebookStatus = psData.properties || {};
-  }catch(e){}
-
-  var html = '';
-  Object.keys(byAddr).forEach(function(addr){
-    var propJobs = byAddr[addr];
-    var latest = propJobs[0];
-    var status = latest.status||'Booked';
-    var score = latest.roofScore;
-    var propType = latest.propertyType||'';
-    var steps = statusSteps(status);
-    var col = score?scoreColor(score):'#6B7A8D';
-
-    html += '<div class="prop-card">';
-    html += '<div class="prop-header">';
-    html += '<div class="prop-addr">'+addr+'</div>';
-    if(propType) html += '<div class="prop-type">'+propType+'</div>';
-    if(score) {
-      html += '<div class="prop-score-row">'
-        +'<div class="score-circle" style="background:'+col+';"><span class="score-num">'+score+'</span></div>'
-        +'<div class="score-info"><div class="score-label" style="color:'+col+';">'+scoreDesc(score)+'</div>'
-        +'<div class="score-date">RoofScore from '+fmtDate(latest.date)+'</div></div>'
-        +'</div>';
+    async function makeToken(email){
+      const payload = b64url(unescape(encodeURIComponent(JSON.stringify({email, exp: Date.now() + 1000*60*60*24*30}))));
+      const sig = await hmacSign(payload);
+      return payload + '.' + sig;
     }
-    html += '</div>';
-
-    // Status tracker
-    html += '<div class="status-tracker"><div class="tracker-title">Current status</div><div class="tracker-steps">';
-    steps.forEach(function(step){
-      html += '<div class="tracker-step">'
-        +'<div class="tracker-dot '+step.state+'"></div>'
-        +'<div class="tracker-label '+step.state+'">'+step.label+'</div>'
-        +'</div>';
-    });
-    html += '</div></div>';
-
-    // 12-month reminder — only show if last inspection was Paid and 12+ months ago
-    if(status === 'Paid' && isDueForReinspection(latest.date)) {
-      html += '<div class="due-reminder"><span class="due-reminder-icon">🗓️</span><span>It\'s been over a year since your last inspection here — worth booking a check-up to catch any new issues early.</span></div>';
+    async function verifyToken(token, expectedEmail){
+      if(!token) return false;
+      const parts = token.split('.');
+      if(parts.length !== 2) return false;
+      const [payloadB64, sig] = parts;
+      const expectedSig = await hmacSign(payloadB64);
+      if(sig !== expectedSig) return false;
+      let payload;
+      try { payload = JSON.parse(decodeURIComponent(escape(b64urlDecode(payloadB64)))); } catch(e){ return false; }
+      if(!payload.email || !payload.exp) return false;
+      if(Date.now() > payload.exp) return false;
+      if(payload.email.toLowerCase() !== expectedEmail.toLowerCase()) return false;
+      return true;
+    }
+    async function requireAuth(request, email){
+      const authHeader = request.headers.get('Authorization')||'';
+      const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : (new URL(request.url)).searchParams.get('token')||'';
+      return await verifyToken(token, email);
     }
 
-    // Inspection history
-    if(propJobs.length > 0) {
-      html += '<div class="insp-list">';
-      propJobs.forEach(function(j){
-        var jStatus = j.status||'Booked';
-        var jScore = j.roofScore;
-        var jReport = j.reportLink;
-        var paid = jStatus === 'Paid';
-        var prebooked = jStatus === 'Prebooked';
-        var badge = paid ? (jReport ? '' : 'Preparing...') : (prebooked ? 'Deposit paid' : 'Awaiting payment');
-        html += '<div class="insp-item">'
-          +'<div><div class="insp-date">'+(prebooked?'Next year':fmtDate(j.date))+'</div>'
-          +'<div class="insp-sub">'+(prebooked?'Prebooked — date to be arranged':jStatus)+'</div></div>'
-          +'<div class="insp-right">'
-          +(jScore?'<span class="insp-score" style="color:'+scoreColor(jScore)+';">'+jScore+'/100</span>':'')
-          +(paid&&jReport?'<a href="'+jReport+'" target="_blank" class="dl-btn">Download</a>':'<span class="dl-btn disabled">'+badge+'</span>')
-          +'</div></div>';
+    async function atFetch(path) {
+      const res = await fetch(BASE + '/' + path, { headers: { Authorization: 'Bearer ' + TOKEN } });
+      if (!res.ok) throw new Error('Airtable error ' + res.status);
+      return res.json();
+    }
+    async function atPost(path, body) {
+      const res = await fetch(BASE + '/' + path, {
+        method: 'POST',
+        headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
       });
-      html += '</div>';
+      if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error((e.error && e.error.message) || 'Airtable error ' + res.status); }
+      return res.json();
+    }
+    async function atPatch(path, body) {
+      const res = await fetch(BASE + '/' + path, {
+        method: 'PATCH',
+        headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error((e.error && e.error.message) || 'Airtable error ' + res.status); }
+      return res.json();
     }
 
-    // Book-again slot: normal button, OR the prebook offer (with countdown) while eligible,
-    // OR a "prebooked" confirmation if they've already locked it in for this property.
-    var bookUrl = 'index.html?email='+encodeURIComponent(email);
-    var slug = addrSlug(addr);
-    var ps = prebookStatus[addr];
-    _addrBySlug[slug] = addr;
-    if(ps && ps.alreadyPrebooked){
-      html += '<div class="rc-inline" id="rc-inline-'+slug+'">'
-        +'<div class="rc-title">🔧 Next inspection prebooked</div>'
-        +'<div class="rc-text"><span class="rc-member">✓ Booked in</span> — £50 deposit paid, 15% off locked in. Balance due after that inspection, as normal. We\'ll email you '+rcScheduleLabel(ps.scheduleDue)+' to pick your date.</div>'
-        +'</div>';
-    } else if(ps && ps.eligible){
-      html += '<div class="rc-inline" id="rc-inline-'+slug+'">'
-        +'<div class="rc-countdown">⏳ '+ps.daysLeft+' day'+(ps.daysLeft===1?'':'s')+' left to lock in 15% off</div>'
-        +'<div class="rc-title">🔧 Prebook next year\'s inspection</div>'
-        +'<div class="rc-price">Just pay your £50 deposit today to lock in 15% off</div>'
-        +'<button class="rc-btn" id="rc-btn-'+slug+'" onclick="startPrebook(\''+slug+'\')">Prebook — pay £50 deposit</button>'
-        +'<div class="rc-pay" id="rc-pay-'+slug+'">'
-        +'<div id="rc-card-element-'+slug+'"></div>'
-        +'<div class="rc-errors" id="rc-errors-'+slug+'"></div>'
-        +'<button class="rc-btn" id="rc-pay-btn-'+slug+'" onclick="submitPrebook(\''+slug+'\')">Confirm £50 deposit →</button>'
-        +'</div>'
-        +'<div class="rc-small">£50 comes off your total and is non-refundable after 14 days — your date stays freely reschedulable. Once the countdown ends, this reverts to a normal booking.</div>'
-        +'</div>';
-    } else {
-      html += '<div class="book-section"><a href="'+bookUrl+'" target="_blank" class="book-btn">📅 Book another inspection for this property</a></div>';
+    async function findAgentByCode(code) {
+      if (!code) return null;
+      const qs = new URLSearchParams({ filterByFormula: `AND({Referral Code}='${esc(code)}', {Status}='Active')` });
+      const data = await atFetch(`${AGENTS}?${qs.toString()}`);
+      if (!data.records || !data.records.length) return null;
+      const f = data.records[0].fields;
+      return { id: data.records[0].id, name: f['Agent Name']||'', agency: f['Agency']||'' };
     }
-    html += '</div>';
-  });
 
-  document.getElementById('properties-list').innerHTML = html;
-}
+    // ---- Prebook helpers (Roof Care Plan v2: pay £50 deposit now, 15% off, schedule ~11 months later) ----
+    // Everything here is per-property (per Property Address), not per-account — a client with
+    // multiple properties gets an independent offer/countdown for each one.
+    const PREBOOK_WINDOW_DAYS = 30;
 
-function renderReportsTab(jobs){
-  var wrap = document.getElementById('reports-list');
-  if(!jobs || !jobs.length){ wrap.innerHTML = '<div class="reports-empty">No reports yet.</div>'; return; }
-  var sorted = jobs.slice().sort(function(a,b){ return new Date(b.date||0) - new Date(a.date||0); });
-  var html = '';
-  sorted.forEach(function(j){
-    var paid = j.status === 'Paid';
-    var prebooked = j.status === 'Prebooked';
-    if(prebooked) return; // nothing to report on yet — shown on the Properties tab instead
-    var badge = paid ? (j.reportLink ? '' : 'Preparing...') : 'Awaiting payment';
-    html += '<div class="report-row">'
-      +'<div><div class="report-addr">'+(j.address||'—')+'</div>'
-      +'<div class="report-date">'+fmtDate(j.date)+(j.roofScore?' · <span style="color:'+scoreColor(j.roofScore)+';font-weight:700;">'+j.roofScore+'/100</span>':'')+'</div></div>'
-      +(paid && j.reportLink ? '<a href="'+j.reportLink+'" target="_blank" class="dl-btn">Download</a>' : '<span class="dl-btn disabled">'+badge+'</span>')
-      +'</div>';
-  });
-  wrap.innerHTML = html;
-}
+    async function findPrebookedJob(email, address) {
+      if (!email || !address) return null;
+      const qs = new URLSearchParams({ filterByFormula: `AND({Client Email}='${esc(email)}', {Property Address}='${esc(address)}', {Status}='Prebooked')` });
+      const data = await atFetch(`${JOBS}?${qs.toString()}`);
+      if (!data.records || !data.records.length) return null;
+      return data.records[0];
+    }
+    async function findAllQualifyingJobs(email) {
+      if (!email) return [];
+      // Only jobs the client has actually fully received qualify for the prebook upsell.
+      // The portal's own status stepper (see statusSteps() in my-roof.html) treats "Report
+      // Sent" as still mid-flow ("Payment due") and only "Paid" as the final "Report ready"
+      // milestone — so this must match that definition exactly, not a looser one. "Complete"
+      // (just inspected) and "Invoiced" (billed but not yet settled) must not qualify either.
+      // NOTE: deliberately NOT checking Balance Due here — that field's formula is
+      // Quote Total minus the flat £50 booking deposit only ({Job Type}='Trade' aside), so it
+      // never reflects whether the final balance was actually paid; it'll show positive for
+      // basically every real job regardless of payment status. Status='Paid' (which the
+      // portal itself also treats as the sole source of truth — see the `paid` checks in
+      // my-roof.html) is the only reliable signal here.
+      const qs = new URLSearchParams({
+        filterByFormula: `AND({Client Email}='${esc(email)}', {Status}='Paid')`,
+        'sort[0][field]': 'Inspection Date', 'sort[0][direction]': 'desc',
+      });
+      const data = await atFetch(`${JOBS}?${qs.toString()}`);
+      return data.records || [];
+    }
+    async function findLatestQualifyingJob(email, address) {
+      const all = await findAllQualifyingJobs(email);
+      return all.find(r => (r.fields['Property Address']||'') === address) || null;
+    }
+    // Reconstruct the undiscounted price from a past job so discounts never stack
+    function fullPriceFromJob(rec) {
+      const f = rec.fields;
+      let qt = f['Quote Total'] || 0;
+      if (f['Prebook Schedule Due']) return Math.round(qt / (1 - ROOFCARE_DISCOUNT_PCT)); // was itself a 15%-off prebook
+      if (f['Referring Agent'] && f['Referring Agent'].length) return qt + AGENT_REFERRAL_DISCOUNT; // agent £25 was deducted
+      return qt;
+    }
+    // Anchor for the countdown: prefer the stable "Report Sent Date" stamp (set once by Zap 39);
+    // fall back to Inspection Date for older jobs that predate that field.
+    function offerExpiryFromJob(rec) {
+      const f = rec.fields;
+      const anchor = f['Report Sent Date'] || f['Inspection Date'];
+      if (!anchor) return null;
+      const expires = new Date(anchor + 'T00:00:00Z');
+      expires.setUTCDate(expires.getUTCDate() + PREBOOK_WINDOW_DAYS);
+      return expires;
+    }
 
-function switchTab(name){
-  var isProps = name === 'props';
-  document.getElementById('tab-props').style.display = isProps ? 'block' : 'none';
-  document.getElementById('tab-reports').style.display = isProps ? 'none' : 'block';
-  document.getElementById('tab-btn-props').classList.toggle('active', isProps);
-  document.getElementById('tab-btn-reports').classList.toggle('active', !isProps);
-}
+    try {
+      if (url.pathname === '/request-code' && request.method === 'POST') {
+        const body = await request.json();
+        const email = (body.email||'').trim().toLowerCase();
+        if (!email || !email.includes('@')) return json({error:'valid email required'}, 400);
+        const code = genCode();
+        await env.OTP_CODES.put('otp:'+email, JSON.stringify({code, exp: Date.now()+10*60*1000}), {expirationTtl: 600});
+        await fetch(OTP_WEBHOOK, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({email, code}) });
+        return json({ok:true}, 200);
+      }
 
-function bookNew(){
-  var url = 'index.html' + (_currentEmail?'?email='+encodeURIComponent(_currentEmail):'');
-  window.open(url,'_blank');
-}
+      if (url.pathname === '/verify-code' && request.method === 'POST') {
+        const body = await request.json();
+        const email = (body.email||'').trim().toLowerCase();
+        const code = (body.code||'').trim();
+        if (!email || !code) return json({error:'email and code required'}, 400);
+        const raw = await env.OTP_CODES.get('otp:'+email);
+        if (!raw) return json({error:'no code requested or it expired'}, 400);
+        const rec = JSON.parse(raw);
+        if (Date.now() > rec.exp) { await env.OTP_CODES.delete('otp:'+email); return json({error:'code expired'}, 400); }
+        if (rec.code !== code) return json({error:'incorrect code'}, 400);
+        await env.OTP_CODES.delete('otp:'+email);
+        const token = await makeToken(email);
+        return json({ok:true, token}, 200);
+      }
 
-// ═══ ROOF CARE PLAN — prebook next year's inspection (£50 deposit, 15% off) ═══════════════
-// Per-property: each address gets its own Stripe Elements instance and payment state, keyed by slug.
-var RC_STRIPE_PK = 'pk_live_51Trv87QcApNGjNdfmHcSoqHDYS69kmFe7bFzYTEluYIgGZE4GPqGRQDap8ZQeYvPpCgVxhZUmDGkDpcvCq0tTC1H00a56fU5sw';
-var _rcState = {};
-var _addrBySlug = {};
+      if (url.pathname === '/homeowner' && request.method === 'GET') {
+        const email = (url.searchParams.get('email')||'').trim().toLowerCase();
+        if (!email || !email.includes('@')) return json({error:'valid email required'}, 400);
+        if (!(await requireAuth(request, email))) return json({error:'unauthorized'}, 401);
+        const formula = `{Client Email}='${esc(email)}'`;
+        const qs = new URLSearchParams({ filterByFormula: formula, 'sort[0][field]': 'Inspection Date', 'sort[0][direction]': 'desc' });
+        const data = await atFetch(`${JOBS}?${qs.toString()}`);
+        const records = (data.records||[]).map(r => {
+          const f = r.fields;
+          const status = fieldVal(f['Status']) || 'Booked';
+          const paid = status === 'Paid';
+          return {
+            clientName: f['Client Name']||'', address: f['Property Address']||'',
+            propertyType: fieldVal(f['Property Type'])||'',
+            status, date: f['Inspection Date']||null, roofScore: f['RoofScore']||null,
+            reportLink: paid ? (f['Report Link']||null) : null
+          };
+        });
+        return json({records}, 200);
+      }
 
-function addrSlug(addr){ return 'p' + String(addr).replace(/[^a-zA-Z0-9]/g,'').slice(0,24); }
+      if (url.pathname === '/trade-account' && request.method === 'GET') {
+        const email = (url.searchParams.get('email')||'').trim().toLowerCase();
+        if (!email) return json({error:'email required'}, 400);
+        if (!(await requireAuth(request, email))) return json({error:'unauthorized'}, 401);
+        const formula = `{Email}='${esc(email)}'`;
+        const qs = new URLSearchParams({ filterByFormula: formula });
+        const data = await atFetch(`${TRADE}?${qs.toString()}`);
+        if (!data.records || !data.records.length) return json({error:'not found'}, 404);
+        const f = data.records[0].fields;
+        const curJobs = f['Current Month Jobs']||0;
+        return json({
+          company: f['Company']||'', discount: tierDiscount(curJobs),
+          currentMonthJobs: curJobs, previousMonthJobs: f['Previous Month Jobs']||0
+        }, 200);
+      }
 
-function rcScheduleLabel(dueIso){
-  if(!dueIso) return 'when it\'s time';
-  try{ return 'around ' + new Date(dueIso).toLocaleDateString('en-GB',{month:'long',year:'numeric'}); }catch(e){ return 'when it\'s time'; }
-}
+      if (url.pathname === '/trade-jobs' && request.method === 'GET') {
+        const email = (url.searchParams.get('email')||'').trim().toLowerCase();
+        if (!email) return json({error:'email required'}, 400);
+        if (!(await requireAuth(request, email))) return json({error:'unauthorized'}, 401);
+        const acctFormula = `{Email}='${esc(email)}'`;
+        const acctQs = new URLSearchParams({ filterByFormula: acctFormula });
+        const acctData = await atFetch(`${TRADE}?${acctQs.toString()}`);
+        if (!acctData.records || !acctData.records.length) return json({error:'not found'}, 404);
+        const company = acctData.records[0].fields['Company']||'';
+        const jobsFormula = `{Company}='${esc(company)}'`;
+        const jobsQs = new URLSearchParams({ filterByFormula: jobsFormula, 'sort[0][field]': 'Inspection Date', 'sort[0][direction]': 'desc' });
+        const data = await atFetch(`${JOBS}?${jobsQs.toString()}`);
+        const records = (data.records||[]).map(r => {
+          const f = r.fields;
+          const status = fieldVal(f['Status']) || 'Booked';
+          const paid = status === 'Paid';
+          return {
+            address: f['Property Address']||'', propertyType: fieldVal(f['Property Type'])||'',
+            status, date: f['Inspection Date']||null, roofScore: f['RoofScore']||null,
+            reportLink: paid ? (f['Report Link']||null) : null
+          };
+        });
+        return json({company, records}, 200);
+      }
 
-function rcShowPrebookedInline(slug, dueIso){
-  var el = document.getElementById('rc-inline-'+slug);
-  if(!el) return;
-  el.innerHTML = '<div class="rc-title">🔧 Next inspection prebooked</div>'
-    +'<div class="rc-text"><span class="rc-member">✓ Booked in</span> — £50 deposit paid, 15% off locked in. Balance due after that inspection, as normal. We\'ll email you ' + rcScheduleLabel(dueIso) + ' to pick your date.</div>';
-}
+      if (url.pathname === '/trade-submit' && request.method === 'POST') {
+        const body = await request.json();
+        const email = (body.email||'').trim().toLowerCase();
+        const clientEmail = (body.clientEmail||'').trim();
+        const address = (body.address||'').trim();
+        const propType = body.propType||'';
+        const slotStart = body.slotStart||null;
+        if (!email) return json({error:'trade account email required'}, 400);
+        if (!(await requireAuth(request, email))) return json({error:'unauthorized'}, 401);
+        if (!address || !propType) {
+          return json({error:'address and property type are required'}, 400);
+        }
+        if (clientEmail && !clientEmail.includes('@')) {
+          return json({error:'client email, if provided, must be a valid email'}, 400);
+        }
+        const acctFormula = `{Email}='${esc(email)}'`;
+        const acctQs = new URLSearchParams({ filterByFormula: acctFormula });
+        const acctData = await atFetch(`${TRADE}?${acctQs.toString()}`);
+        if (!acctData.records || !acctData.records.length) return json({error:'trade account not found'}, 404);
+        const tradeAccountId = acctData.records[0].id;
+        const tradeAccountFields = acctData.records[0].fields;
+        const company = tradeAccountFields['Company']||'';
+        const tradeAccountEmail = tradeAccountFields['Email']||'';
 
-function startPrebook(slug){
-  var addr = _addrBySlug[slug];
-  document.getElementById('rc-btn-'+slug).style.display = 'none';
-  document.getElementById('rc-pay-'+slug).style.display = 'block';
-  if(!_rcState[slug]) _rcState[slug] = {};
-  var st = _rcState[slug];
-  if(!st.stripe && window.Stripe){
-    st.stripe = Stripe(RC_STRIPE_PK);
-    st.cardEl = st.stripe.elements().create('card', {style:{base:{fontSize:'15px',fontFamily:'inherit'}}});
-    st.cardEl.mount('#rc-card-element-'+slug);
-    st.cardEl.on('change', function(e){ document.getElementById('rc-errors-'+slug).textContent = e.error ? e.error.message : ''; });
+        let calBookingUid = null;
+        if (slotStart) {
+          try {
+            const calKey = await env.CAL_API_KEY.get();
+            const bookingRes = await fetch('https://api.cal.com/v2/bookings', {
+              method: 'POST',
+              headers: {
+                Authorization: 'Bearer ' + calKey,
+                'Content-Type': 'application/json',
+                'cal-api-version': CAL_API_VERSION,
+              },
+              body: JSON.stringify({
+                start: slotStart,
+                eventTypeId: CAL_EVENT_TYPE_ID,
+                attendee: { name: body.clientName || company || 'Trade client', email: clientEmail || tradeAccountEmail, timeZone: 'Europe/London' },
+                bookingFieldsResponses: { location: { value: 'attendeeInPerson', optionValue: address } },
+              }),
+            });
+            const bookingData = await bookingRes.json();
+            if (bookingRes.ok) calBookingUid = bookingData.data ? bookingData.data.uid : bookingData.uid;
+          } catch (e) {}
+        }
+
+        const fields = {
+          'Property Address': address,
+          'Property Type': propType,
+          'Status': 'Booked',
+          'Job Type': 'Trade',
+          'Trade Accounts': [tradeAccountId],
+        };
+        if (clientEmail) fields['Client Email'] = clientEmail;
+        if (body.clientName) fields['Client Name'] = body.clientName;
+        if (slotStart) fields['Inspection Date'] = slotStart.slice(0,10);
+        else if (body.date) fields['Inspection Date'] = body.date;
+        const noteParts = [];
+        if (body.notes) noteParts.push(body.notes);
+        if (calBookingUid) noteParts.push('Cal.com booking UID: ' + calBookingUid);
+        if (noteParts.length) fields['Notes'] = noteParts.join(' | ');
+        if (company) fields['Company'] = company;
+
+        const result = await atPost(JOBS, { fields });
+        return json({ok:true, id: result.id, calBookingUid}, 200);
+      }
+
+      if (url.pathname === '/available-slots' && request.method === 'GET') {
+        const start = url.searchParams.get('start');
+        const end = url.searchParams.get('end');
+        if (!start || !end) return json({error:'start and end (ISO UTC) required'}, 400);
+        const calKey = await env.CAL_API_KEY.get();
+        const calUrl = `https://api.cal.com/v2/slots/available?eventTypeId=${CAL_EVENT_TYPE_ID}&startTime=${encodeURIComponent(start)}&endTime=${encodeURIComponent(end)}&timeZone=Europe/London`;
+        const res = await fetch(calUrl, { headers: { Authorization: 'Bearer ' + calKey, 'cal-api-version': CAL_API_VERSION } });
+        const data = await res.json();
+        if (!res.ok) return json({error:'could not fetch availability', detail: data}, 502);
+        return json({slots: (data.data && data.data.slots) || data.slots || data.data || data}, 200);
+      }
+
+      if (url.pathname === '/create-payment-intent' && request.method === 'POST') {
+        const stripeKey = await env.STRIPE_SECRET_KEY.get();
+        const res = await fetch('https://api.stripe.com/v1/payment_intents', {
+          method: 'POST',
+          headers: { Authorization: 'Bearer ' + stripeKey, 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            amount: String(DEPOSIT_PENCE),
+            currency: 'gbp',
+            'automatic_payment_methods[enabled]': 'true',
+            description: 'RoofScan UK — inspection booking deposit',
+          }),
+        });
+        const pi = await res.json();
+        if (!res.ok) return json({error:'could not create payment', detail: pi}, 502);
+        return json({ clientSecret: pi.client_secret, paymentIntentId: pi.id }, 200);
+      }
+
+      if (url.pathname === '/agent-signup' && request.method === 'POST') {
+        const body = await request.json();
+        const name = (body.name||'').trim();
+        const branch = (body.branch||'').trim();
+        const agency = (body.agency||'').trim();
+        const email = (body.email||'').trim().toLowerCase();
+        const phone = (body.phone||'').trim();
+        const accountName = (body.accountName||'').trim();
+        const sortCode = (body.sortCode||'').trim();
+        const accountNumber = (body.accountNumber||'').trim();
+        if (!name || !branch || !email || !email.includes('@')) {
+          return json({error:'name, branch, and a valid email are required'}, 400);
+        }
+
+        const initials = name.trim().split(/\s+/).map(w=>w[0]).join('').toUpperCase();
+        const branchSlug = slugify(branch).slice(0,8) || 'BR';
+        let code = '', unique = false, attempts = 0;
+        while (!unique && attempts < 8) {
+          const suffix = Math.random().toString(36).slice(2,6).toUpperCase();
+          code = `${initials}-${branchSlug}-${suffix}`;
+          const checkQs = new URLSearchParams({ filterByFormula: `{Referral Code}='${esc(code)}'` });
+          const checkData = await atFetch(`${AGENTS}?${checkQs.toString()}`);
+          unique = !checkData.records || checkData.records.length === 0;
+          attempts++;
+        }
+        if (!unique) return json({error:'could not generate a unique referral code, please try again'}, 500);
+
+        const fields = {
+          'Agent Name': name,
+          'Branch / Office': branch,
+          'Email': email,
+          'Referral Code': code,
+          'Status': 'Active',
+        };
+        if (agency) fields['Agency'] = agency;
+        if (phone) fields['Phone'] = phone;
+        if (accountName) fields['Account Name'] = accountName;
+        if (sortCode) fields['Sort Code'] = sortCode;
+        if (accountNumber) fields['Account Number'] = accountNumber;
+
+        await atPost(AGENTS, { fields });
+        const link = `https://roofscanuk.co.uk/?agent=${encodeURIComponent(code)}`;
+        return json({ ok:true, code, link }, 200);
+      }
+
+      if (url.pathname === '/validate-agent' && request.method === 'GET') {
+        const code = (url.searchParams.get('code')||'').trim();
+        if (!code) return json({valid:false}, 200);
+        const agent = await findAgentByCode(code);
+        if (!agent) return json({valid:false}, 200);
+        return json({ valid:true, agentName: agent.name, agency: agent.agency }, 200);
+      }
+
+      if (url.pathname === '/agent-account' && request.method === 'GET') {
+        const email = (url.searchParams.get('email')||'').trim().toLowerCase();
+        if (!email || !email.includes('@')) return json({error:'valid email required'}, 400);
+        if (!(await requireAuth(request, email))) return json({error:'unauthorized'}, 401);
+
+        const formula = `{Email}='${esc(email)}'`;
+        const qs = new URLSearchParams({ filterByFormula: formula });
+        const data = await atFetch(`${AGENTS}?${qs.toString()}`);
+        if (!data.records || !data.records.length) return json({error:'not found'}, 404);
+        const f = data.records[0].fields;
+
+        // Live-computed from Agent Referrals — never trust cached rollups for money figures
+        const refFormula = `{Agent Email}='${esc(email)}'`;
+        const refQs = new URLSearchParams({ filterByFormula: refFormula });
+        const refData = await atFetch(`${AGENT_REFERRALS}?${refQs.toString()}`);
+        const referrals = refData.records || [];
+        let totalEarned = 0, totalPaid = 0, totalOwed = 0;
+        referrals.forEach(r => {
+          const amt = r.fields['Amount Owed'] || 0;
+          const status = fieldVal(r.fields['Payout Status']) || 'Owed';
+          totalEarned += amt;
+          if (status === 'Paid') totalPaid += amt; else totalOwed += amt;
+        });
+
+        return json({
+          name: f['Agent Name']||'',
+          agency: f['Agency']||'',
+          branch: f['Branch / Office']||'',
+          referralCode: f['Referral Code']||'',
+          referralLink: `https://roofscanuk.co.uk/?agent=${encodeURIComponent(f['Referral Code']||'')}`,
+          totalReferrals: referrals.length,
+          totalEarned, totalPaid, totalOwed
+        }, 200);
+      }
+
+      if (url.pathname === '/agent-jobs' && request.method === 'GET') {
+        const email = (url.searchParams.get('email')||'').trim().toLowerCase();
+        if (!email || !email.includes('@')) return json({error:'valid email required'}, 400);
+        if (!(await requireAuth(request, email))) return json({error:'unauthorized'}, 401);
+
+        const formula = `{Referring Agent Email}='${esc(email)}'`;
+        const qs = new URLSearchParams({ filterByFormula: formula, 'sort[0][field]': 'Inspection Date', 'sort[0][direction]': 'desc' });
+        const data = await atFetch(`${JOBS}?${qs.toString()}`);
+        const records = (data.records||[]).map(r => {
+          const f = r.fields;
+          return {
+            address: f['Property Address']||'',
+            propertyType: fieldVal(f['Property Type'])||'',
+            status: fieldVal(f['Status']) || 'Booked',
+            date: f['Inspection Date']||null,
+          };
+        });
+        return json({records}, 200);
+      }
+
+      // Deprecated: membership no longer grants a discount (replaced by prebooking). Kept so the
+      // deployed index.html's status check never breaks — it just never shows the member banner.
+      if (url.pathname === '/roofcare-status' && request.method === 'GET') {
+        return json({ isMember:false }, 200);
+      }
+
+      // Per-property prebook eligibility for every address the client has a qualifying job at.
+      if (url.pathname === '/prebook-status' && request.method === 'GET') {
+        const email = (url.searchParams.get('email')||'').trim().toLowerCase();
+        if (!email || !email.includes('@')) return json({error:'valid email required'}, 400);
+        if (!(await requireAuth(request, email))) return json({error:'unauthorized'}, 401);
+
+        const all = await findAllQualifyingJobs(email);
+        const latestByAddr = {};
+        all.forEach(r => {
+          const addr = r.fields['Property Address']||'';
+          if (!addr) return;
+          if (!latestByAddr[addr]) latestByAddr[addr] = r; // already sorted desc by Inspection Date
+        });
+
+        const now = new Date();
+        const results = {};
+        for (const addr of Object.keys(latestByAddr)) {
+          const rec = latestByAddr[addr];
+          const already = await findPrebookedJob(email, addr);
+          if (already) {
+            results[addr] = { alreadyPrebooked:true, scheduleDue: already.fields['Prebook Schedule Due']||null };
+            continue;
+          }
+          const expires = offerExpiryFromJob(rec);
+          const eligible = !!expires && now <= expires;
+          const daysLeft = expires ? Math.max(0, Math.ceil((expires - now) / 86400000)) : 0;
+          const fullPrice = fullPriceFromJob(rec);
+          results[addr] = {
+            alreadyPrebooked: false,
+            eligible,
+            daysLeft,
+            propertyType: fieldVal(rec.fields['Property Type'])||'',
+            fullPrice,
+            discountedPrice: Math.round(fullPrice * (1 - ROOFCARE_DISCOUNT_PCT)),
+            deposit: DEPOSIT_PENCE / 100,
+          };
+        }
+        return json({ properties: results }, 200);
+      }
+
+      if (url.pathname === '/prebook-intent' && request.method === 'POST') {
+        const body = await request.json();
+        const email = (body.email||'').trim().toLowerCase();
+        const address = (body.address||'').trim();
+        if (!email || !email.includes('@') || !address) return json({error:'email and address required'}, 400);
+        if (!(await requireAuth(request, email))) return json({error:'unauthorized'}, 401);
+        if (await findPrebookedJob(email, address)) return json({error:'this property already has a prebooked inspection'}, 409);
+
+        const latest = await findLatestQualifyingJob(email, address);
+        if (!latest) return json({error:'no qualifying previous inspection found for this property'}, 404);
+        const expires = offerExpiryFromJob(latest);
+        if (!expires || new Date() > expires) return json({error:'the prebook discount window for this property has expired'}, 410);
+
+        const stripeKey = await env.STRIPE_SECRET_KEY.get();
+        const res = await fetch('https://api.stripe.com/v1/payment_intents', {
+          method: 'POST',
+          headers: { Authorization: 'Bearer ' + stripeKey, 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            amount: String(DEPOSIT_PENCE),
+            currency: 'gbp',
+            'automatic_payment_methods[enabled]': 'true',
+            description: 'RoofScan UK — prebooked annual inspection deposit (15% Roof Care rate)',
+            'metadata[type]': 'prebook',
+            'metadata[email]': email,
+            'metadata[address]': address,
+          }),
+        });
+        const pi = await res.json();
+        if (!res.ok) return json({error:'could not create payment', detail: pi}, 502);
+        return json({ clientSecret: pi.client_secret, paymentIntentId: pi.id }, 200);
+      }
+
+      if (url.pathname === '/prebook-confirm' && request.method === 'POST') {
+        const body = await request.json();
+        const email = (body.email||'').trim().toLowerCase();
+        const address = (body.address||'').trim();
+        const paymentIntentId = body.paymentIntentId;
+        if (!email || !email.includes('@') || !address || !paymentIntentId) return json({error:'email, address and paymentIntentId required'}, 400);
+        if (!(await requireAuth(request, email))) return json({error:'unauthorized'}, 401);
+
+        const already = await findPrebookedJob(email, address);
+        if (already) return json({ ok:true, alreadyPrebooked:true, scheduleDue: already.fields['Prebook Schedule Due']||null }, 200);
+
+        const stripeKey = await env.STRIPE_SECRET_KEY.get();
+        const piRes = await fetch(`https://api.stripe.com/v1/payment_intents/${paymentIntentId}`, {
+          headers: { Authorization: 'Bearer ' + stripeKey },
+        });
+        const pi = await piRes.json();
+        if (!piRes.ok || pi.status !== 'succeeded' || pi.amount !== DEPOSIT_PENCE || pi.currency !== 'gbp') {
+          return json({error:'payment not verified'}, 402);
+        }
+
+        const latest = await findLatestQualifyingJob(email, address);
+        if (!latest) return json({error:'no qualifying previous inspection found for this property'}, 404);
+        // Re-check the window server-side too — a client shouldn't be able to sneak in a payment
+        // on an expired offer just because the client-side countdown was stale.
+        const expires = offerExpiryFromJob(latest);
+        if (!expires || new Date() > expires) return json({error:'the prebook discount window for this property has expired'}, 410);
+
+        const j = latest.fields;
+        const fullPrice = fullPriceFromJob(latest);
+        const discountedPrice = Math.round(fullPrice * (1 - ROOFCARE_DISCOUNT_PCT));
+
+        const today = new Date();
+        const due = new Date(today);
+        due.setMonth(due.getMonth() + 11);
+        const todayIso = today.toISOString().slice(0,10);
+        const dueIso = due.toISOString().slice(0,10);
+
+        const fields = {
+          'Client Name': j['Client Name']||'',
+          'Client Email': email,
+          'Client Phone': j['Client Phone']||'',
+          'Property Address': j['Property Address']||'',
+          'Property Type': fieldVal(j['Property Type'])||'',
+          'Quote Total': discountedPrice,
+          'Deposit Paid': true,
+          'Status': 'Prebooked',
+          'Job Type': 'One-off',
+          'Prebook Schedule Due': dueIso,
+          'Chimneys ': j['Chimneys ']||0,
+          'Extensions ': j['Extensions ']||0,
+          'Dormers': j['Dormers']||0,
+          'Outbuildings': j['Outbuildings']||0,
+          'Notes': `Prebooked ${todayIso} — 15% Roof Care rate locked (full price £${fullPrice}, discounted £${discountedPrice}). £50 deposit non-refundable after 14 days; date freely reschedulable. Stripe PI: ${paymentIntentId}`,
+        };
+        const result = await atPost(JOBS, { fields });
+        return json({ ok:true, jobId: result.id, scheduleDue: dueIso, discountedPrice, fullPrice }, 200);
+      }
+
+      if (url.pathname === '/confirm-booking' && request.method === 'POST') {
+        const body = await request.json();
+        const { paymentIntentId, slotStart, propertyType, addons, travelBand, contact, agentCode } = body;
+        if (!paymentIntentId || !slotStart || !propertyType || !contact || !contact.email) {
+          return json({error:'missing required booking fields'}, 400);
+        }
+        const stripeKey = await env.STRIPE_SECRET_KEY.get();
+
+        const piRes = await fetch(`https://api.stripe.com/v1/payment_intents/${paymentIntentId}`, {
+          headers: { Authorization: 'Bearer ' + stripeKey },
+        });
+        const pi = await piRes.json();
+        if (!piRes.ok || pi.status !== 'succeeded' || pi.amount !== DEPOSIT_PENCE || pi.currency !== 'gbp') {
+          return json({error:'payment not verified'}, 402);
+        }
+
+        const prop = PT[propertyType];
+        if (!prop) return json({error:'invalid property type'}, 400);
+        const a = addons || {};
+        let addonsTotal = 0;
+        for (const key of Object.keys(AD)) {
+          const count = Math.max(0, Math.min(AD[key].max, Number(a[key])||0));
+          addonsTotal += count * AD[key].unit;
+        }
+        const travelAdd = TB[travelBand] ?? 0;
+        let quoteTotal = prop.base + addonsTotal + travelAdd;
+
+        // 15% Roof Care discount now only exists via prebooking (/prebook-confirm) — regular bookings
+        // get the agent referral discount only.
+        let referringAgentId = null;
+        if (agentCode) {
+          const agent = await findAgentByCode(agentCode);
+          if (agent) {
+            referringAgentId = agent.id;
+            quoteTotal = Math.max(0, quoteTotal - AGENT_REFERRAL_DISCOUNT);
+          }
+        }
+
+        let calBookingUid = null;
+        try {
+          const calKey = await env.CAL_API_KEY.get();
+          const bookingRes = await fetch('https://api.cal.com/v2/bookings', {
+            method: 'POST',
+            headers: {
+              Authorization: 'Bearer ' + calKey,
+              'Content-Type': 'application/json',
+              'cal-api-version': CAL_API_VERSION,
+            },
+            body: JSON.stringify({
+              start: slotStart,
+              eventTypeId: CAL_EVENT_TYPE_ID,
+              attendee: { name: contact.name, email: contact.email, timeZone: 'Europe/London', phoneNumber: contact.phone },
+              bookingFieldsResponses: { location: { value: 'attendeeInPerson', optionValue: contact.address } },
+            }),
+          });
+          const bookingData = await bookingRes.json();
+          if (bookingRes.ok) calBookingUid = bookingData.data ? bookingData.data.uid : bookingData.uid;
+        } catch (e) {}
+
+        const fields = {
+          'Client Name': contact.name || '',
+          'Client Email': contact.email,
+          'Client Phone': contact.phone || '',
+          'Property Address': contact.address || '',
+          'Property Type': prop.atName,
+          'Quote Total': quoteTotal,
+          'Deposit Paid': true,
+          'Inspection Date': slotStart.slice(0,10),
+          'Status': 'Booked',
+          'Job Type': 'One-off',
+          'Chimneys ': a.chimneys||0,
+          'Extensions ': a.extensions||0,
+          'Dormers': a.dormers||0,
+          'Outbuildings': a.outbuildings||0,
+        };
+        if (calBookingUid) fields['Notes'] = 'Cal.com booking UID: ' + calBookingUid;
+        if (referringAgentId) fields['Referring Agent'] = [referringAgentId];
+
+        const result = await atPost(JOBS, { fields });
+
+        return json({ ok:true, jobId: result.id, calBookingUid, agentDiscountApplied: !!referringAgentId, roofCareDiscountApplied: false }, 200);
+      }
+
+      return json({error:'not found'}, 404);
+    } catch (e) {
+      return json({error: e.message||'server error'}, 500);
+    }
   }
-  if(!st.piSecret){
-    fetch(API_BASE + '/prebook-intent', {
-      method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer ' + _token},
-      body: JSON.stringify({email:_currentEmail, address:addr})
-    }).then(function(r){return r.json();}).then(function(d){
-      if(d.clientSecret){ st.piSecret = d.clientSecret; st.piId = d.paymentIntentId; }
-      else document.getElementById('rc-errors-'+slug).textContent = d.error || 'Could not start payment — please refresh.';
-    }).catch(function(){ document.getElementById('rc-errors-'+slug).textContent = 'Could not start payment — please refresh.'; });
-  }
-}
-
-async function submitPrebook(slug){
-  var addr = _addrBySlug[slug];
-  var st = _rcState[slug] || {};
-  if(!st.piSecret){ document.getElementById('rc-errors-'+slug).textContent = 'Payment not ready yet — one moment, then try again.'; return; }
-  var btn = document.getElementById('rc-pay-btn-'+slug);
-  btn.disabled = true; btn.textContent = 'Processing…';
-  var result = await st.stripe.confirmCardPayment(st.piSecret, {
-    payment_method: { card: st.cardEl, billing_details: { email: _currentEmail } }
-  });
-  if(result.error){
-    document.getElementById('rc-errors-'+slug).textContent = result.error.message;
-    btn.disabled = false; btn.textContent = 'Confirm £50 deposit →';
-    return;
-  }
-  try{
-    var res = await fetch(API_BASE + '/prebook-confirm', {
-      method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer ' + _token},
-      body: JSON.stringify({email:_currentEmail, address:addr, paymentIntentId:st.piId})
-    });
-    var data = await res.json();
-    if(!res.ok) throw new Error(data.error || 'Something went wrong.');
-    rcShowPrebookedInline(slug, data.scheduleDue);
-  }catch(e){
-    document.getElementById('rc-errors-'+slug).textContent = (e.message||'Something went wrong') + ' — your payment went through; contact info@roofscanuk.co.uk and we\'ll sort it.';
-    btn.disabled = false; btn.textContent = 'Confirm £50 deposit →';
-  }
-}
-
-function doLogout(){
-  try{localStorage.removeItem('rs_portal_email');localStorage.removeItem('rs_portal_token');}catch(e){}
-  _currentEmail='';_jobs=[];_token='';_pendingEmail='';
-  document.getElementById('login-section').style.display='block';
-  document.getElementById('portal-section').style.display='none';
-  document.getElementById('login-step-code').style.display='none';
-  document.getElementById('login-step-email').style.display='block';
-  document.getElementById('login-email').value='';
-  document.getElementById('request-code-btn').disabled=false;
-  document.getElementById('request-code-btn').textContent='Send me a code →';
-}
-
-// Auto-login if we still have a valid saved session token — skip the email+code entirely for returning visitors
-try{
-  var savedEmail=localStorage.getItem('rs_portal_email');
-  var savedToken=localStorage.getItem('rs_portal_token');
-  if(savedEmail && savedToken){
-    loadPortal(savedEmail, savedToken); // returning visitor with valid session — go straight in
-  } else {
-    setTimeout(function(){ document.getElementById('login-email').focus(); }, 300);
-  }
-}catch(e){}
-</script>
-</body>
-</html>
+};
