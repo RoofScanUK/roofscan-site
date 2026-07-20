@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <title>My Roof — RoofScan UK</title>
+<script src="https://js.stripe.com/v3/"></script>
 <style>
 :root{--n:#1C2B4A;--s:#1E4080;--g:#C9A84C;--bg:#F8F6F0;--cd:#FFF;--br:#E8E4D8;--mu:#6B7A8D;--gr:#27AE60;--am:#E67E22;--rd:#C0392B;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
@@ -83,6 +84,12 @@ main{padding:16px;}
 .rc-btn{background:var(--n);color:var(--g);border:none;border-radius:7px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;}
 .rc-btn:disabled{opacity:0.6;cursor:default;}
 .rc-member{font-size:12px;font-weight:700;color:#1D8348;}
+.rc-price{font-size:13px;font-weight:800;color:#1A5276;margin-bottom:8px;}
+.rc-price s{opacity:.55;font-weight:600;margin-right:6px;}
+.rc-pay{display:none;margin-top:10px;}
+#rc-card-element{background:#fff;border:1px solid #AED6F1;border-radius:8px;padding:11px 12px;margin-bottom:8px;}
+.rc-errors{font-size:12px;color:#C0392B;min-height:16px;margin-bottom:6px;}
+.rc-small{font-size:11px;color:#1A5276;opacity:.75;line-height:1.5;margin-top:8px;}
 
 .logout-btn{background:none;border:none;color:var(--mu);font-size:12px;cursor:pointer;text-align:center;display:block;margin:16px auto;text-decoration:underline;font-family:inherit;}
 .spacer{height:20px;}
@@ -181,9 +188,16 @@ main{padding:16px;}
     <div id="properties-list"></div>
     <button class="new-prop-btn" onclick="bookNew()">+ Book inspection for a new property</button>
     <div class="rc-card" id="rc-card" style="display:none;">
-      <div class="rc-title">🔧 Roof Care Plan</div>
-      <div class="rc-text" id="rc-text">Join free and get 15% off every future inspection at this property — plus a reminder email when your next one's due.</div>
-      <button class="rc-btn" id="rc-btn" onclick="joinRoofCare()">Join Roof Care Plan</button>
+      <div class="rc-title">🔧 Roof Care Plan — prebook next year's inspection</div>
+      <div class="rc-text" id="rc-text"></div>
+      <div class="rc-price" id="rc-price" style="display:none;"></div>
+      <button class="rc-btn" id="rc-btn" onclick="startPrebook()">Prebook — pay £50 deposit</button>
+      <div class="rc-pay" id="rc-pay">
+        <div id="rc-card-element"></div>
+        <div class="rc-errors" id="rc-errors"></div>
+        <button class="rc-btn" id="rc-pay-btn" onclick="submitPrebook()">Confirm £50 deposit →</button>
+      </div>
+      <div class="rc-small" id="rc-small" style="display:none;">£50 deposit comes off your total and is non-refundable after 14 days — but your date is freely reschedulable. Balance due after the inspection.</div>
     </div>
     <button class="logout-btn" onclick="doLogout()">Sign out</button>
     <div class="spacer"></div>
@@ -411,36 +425,85 @@ function bookNew(){
   window.open(url,'_blank');
 }
 
-// ═══ ROOF CARE PLAN — opt-in card + join action ═══════════════
+// ═══ ROOF CARE PLAN — prebook next year's inspection (£50 deposit, 15% off) ═══════════════
+var RC_STRIPE_PK = 'pk_live_51Trv87QcApNGjNdfmHcSoqHDYS69kmFe7bFzYTEluYIgGZE4GPqGRQDap8ZQeYvPpCgVxhZUmDGkDpcvCq0tTC1H00a56fU5sw';
+var _rcStripe = null, _rcCardEl = null, _rcPiSecret = null, _rcPiId = null;
+
+function rcScheduleLabel(dueIso){
+  if(!dueIso) return 'when it\'s time';
+  try{ return 'around ' + new Date(dueIso).toLocaleDateString('en-GB',{month:'long',year:'numeric'}); }catch(e){ return 'when it\'s time'; }
+}
+
+function rcShowPrebooked(dueIso){
+  document.getElementById('rc-text').innerHTML = '<span class="rc-member">✓ You\'re booked in for next year</span> — 15% off locked in and deposit paid. We\'ll email you ' + rcScheduleLabel(dueIso) + ' to pick your date.';
+  document.getElementById('rc-price').style.display = 'none';
+  document.getElementById('rc-btn').style.display = 'none';
+  document.getElementById('rc-pay').style.display = 'none';
+  document.getElementById('rc-small').style.display = 'none';
+}
+
 async function showRoofCareCard(email){
   var card = document.getElementById('rc-card');
   try{
-    var res = await fetch(API_BASE + '/roofcare-status?email=' + encodeURIComponent(email));
+    var res = await fetch(API_BASE + '/prebook-quote?email=' + encodeURIComponent(email), {
+      headers: { 'Authorization': 'Bearer ' + _token }
+    });
     var data = await res.json();
+    if(!res.ok) return; // no eligible past job — keep card hidden
     card.style.display = 'block';
-    if(data.isMember){
-      document.getElementById('rc-text').innerHTML = '<span class="rc-member">✓ You\'re a member</span> — 15% off is applied automatically whenever you rebook, and we\'ll email you when your next inspection is due.';
-      document.getElementById('rc-btn').style.display = 'none';
-    }
+    if(data.alreadyPrebooked){ rcShowPrebooked(data.scheduleDue); return; }
+    document.getElementById('rc-text').textContent = 'Lock in next year\'s inspection at ' + (data.address || 'your property') + ' now — 15% off, and we\'ll email you nearer the time to pick your date.';
+    document.getElementById('rc-price').style.display = 'block';
+    document.getElementById('rc-price').innerHTML = '<s>£' + data.fullPrice + '</s> £' + data.discountedPrice + ' — just £50 deposit today';
   }catch(e){}
 }
 
-async function joinRoofCare(){
-  var btn = document.getElementById('rc-btn');
-  btn.disabled = true; btn.textContent = 'Joining...';
+function startPrebook(){
+  document.getElementById('rc-btn').style.display = 'none';
+  document.getElementById('rc-pay').style.display = 'block';
+  document.getElementById('rc-small').style.display = 'block';
+  if(!_rcStripe && window.Stripe){
+    _rcStripe = Stripe(RC_STRIPE_PK);
+    _rcCardEl = _rcStripe.elements().create('card', {style:{base:{fontSize:'15px',fontFamily:'inherit'}}});
+    _rcCardEl.mount('#rc-card-element');
+    _rcCardEl.on('change', function(e){ document.getElementById('rc-errors').textContent = e.error ? e.error.message : ''; });
+  }
+  if(!_rcPiSecret){
+    fetch(API_BASE + '/prebook-intent', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer ' + _token},
+      body: JSON.stringify({email:_currentEmail})
+    }).then(function(r){return r.json();}).then(function(d){
+      if(d.clientSecret){ _rcPiSecret = d.clientSecret; _rcPiId = d.paymentIntentId; }
+      else document.getElementById('rc-errors').textContent = d.error || 'Could not start payment — please refresh.';
+    }).catch(function(){ document.getElementById('rc-errors').textContent = 'Could not start payment — please refresh.'; });
+  }
+}
+
+async function submitPrebook(){
+  if(!_rcPiSecret){ document.getElementById('rc-errors').textContent = 'Payment not ready yet — one moment, then try again.'; return; }
+  var btn = document.getElementById('rc-pay-btn');
+  btn.disabled = true; btn.textContent = 'Processing…';
+  var result = await _rcStripe.confirmCardPayment(_rcPiSecret, {
+    payment_method: { card: _rcCardEl, billing_details: { email: _currentEmail } }
+  });
+  if(result.error){
+    document.getElementById('rc-errors').textContent = result.error.message;
+    btn.disabled = false; btn.textContent = 'Confirm £50 deposit →';
+    return;
+  }
   try{
-    var res = await fetch(API_BASE + '/roofcare-join', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json', 'Authorization': 'Bearer ' + _token},
-      body: JSON.stringify({email: _currentEmail})
+    var res = await fetch(API_BASE + '/prebook-confirm', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer ' + _token},
+      body: JSON.stringify({email:_currentEmail, paymentIntentId:_rcPiId})
     });
     var data = await res.json();
     if(!res.ok) throw new Error(data.error || 'Something went wrong.');
-    document.getElementById('rc-text').innerHTML = '<span class="rc-member">✓ You\'re a member</span> — 15% off is applied automatically whenever you rebook, and we\'ll email you when your next inspection is due.';
-    btn.style.display = 'none';
+    rcShowPrebooked(data.scheduleDue);
   }catch(e){
-    btn.disabled = false; btn.textContent = 'Join Roof Care Plan';
-    alert(e.message || 'Something went wrong — please try again.');
+    document.getElementById('rc-errors').textContent = (e.message||'Something went wrong') + ' — your payment went through; contact info@roofscanuk.co.uk and we\'ll sort it.';
+    btn.disabled = false; btn.textContent = 'Confirm £50 deposit →';
   }
 }
 
