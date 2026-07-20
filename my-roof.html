@@ -416,12 +416,14 @@ async function showPortal(email, jobs) {
         var jScore = j.roofScore;
         var jReport = j.reportLink;
         var paid = jStatus === 'Paid';
+        var prebooked = jStatus === 'Prebooked';
+        var badge = paid ? (jReport ? '' : 'Preparing...') : (prebooked ? 'Deposit paid' : 'Awaiting payment');
         html += '<div class="insp-item">'
-          +'<div><div class="insp-date">'+fmtDate(j.date)+'</div>'
-          +'<div class="insp-sub">'+jStatus+'</div></div>'
+          +'<div><div class="insp-date">'+(prebooked?'Next year':fmtDate(j.date))+'</div>'
+          +'<div class="insp-sub">'+(prebooked?'Prebooked — date to be arranged':jStatus)+'</div></div>'
           +'<div class="insp-right">'
           +(jScore?'<span class="insp-score" style="color:'+scoreColor(jScore)+';">'+jScore+'/100</span>':'')
-          +(paid&&jReport?'<a href="'+jReport+'" target="_blank" class="dl-btn">Download</a>':'<span class="dl-btn disabled">'+(paid?'Preparing...':'Awaiting payment')+'</span>')
+          +(paid&&jReport?'<a href="'+jReport+'" target="_blank" class="dl-btn">Download</a>':'<span class="dl-btn disabled">'+badge+'</span>')
           +'</div></div>';
       });
       html += '</div>';
@@ -442,7 +444,7 @@ async function showPortal(email, jobs) {
       html += '<div class="rc-inline" id="rc-inline-'+slug+'">'
         +'<div class="rc-countdown">⏳ '+ps.daysLeft+' day'+(ps.daysLeft===1?'':'s')+' left to lock in 15% off</div>'
         +'<div class="rc-title">🔧 Prebook next year\'s inspection</div>'
-        +'<div class="rc-price"><s>£'+ps.fullPrice+'</s> £'+ps.discountedPrice+' — just £50 deposit today</div>'
+        +'<div class="rc-price">Just pay your £50 deposit today to lock in 15% off</div>'
         +'<button class="rc-btn" id="rc-btn-'+slug+'" onclick="startPrebook(\''+slug+'\')">Prebook — pay £50 deposit</button>'
         +'<div class="rc-pay" id="rc-pay-'+slug+'">'
         +'<div id="rc-card-element-'+slug+'"></div>'
@@ -467,10 +469,13 @@ function renderReportsTab(jobs){
   var html = '';
   sorted.forEach(function(j){
     var paid = j.status === 'Paid';
+    var prebooked = j.status === 'Prebooked';
+    if(prebooked) return; // nothing to report on yet — shown on the Properties tab instead
+    var badge = paid ? (j.reportLink ? '' : 'Preparing...') : 'Awaiting payment';
     html += '<div class="report-row">'
       +'<div><div class="report-addr">'+(j.address||'—')+'</div>'
       +'<div class="report-date">'+fmtDate(j.date)+(j.roofScore?' · <span style="color:'+scoreColor(j.roofScore)+';font-weight:700;">'+j.roofScore+'/100</span>':'')+'</div></div>'
-      +(paid && j.reportLink ? '<a href="'+j.reportLink+'" target="_blank" class="dl-btn">Download</a>' : '<span class="dl-btn disabled">'+(paid?'Preparing...':'Awaiting payment')+'</span>')
+      +(paid && j.reportLink ? '<a href="'+j.reportLink+'" target="_blank" class="dl-btn">Download</a>' : '<span class="dl-btn disabled">'+badge+'</span>')
       +'</div>';
   });
   wrap.innerHTML = html;
