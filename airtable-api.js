@@ -1,11 +1,9 @@
 // RoofScan UK — Airtable API Module
 // Include this in any page that needs live Airtable data
 // Token stored in localStorage as 'rs_at_token'
-
 const AT = (function() {
   const BASE_ID = 'appPATYbyCttGeTCL';
   const BASE_URL = 'https://api.airtable.com/v0';
-
   // Table IDs
   const TABLES = {
     jobs:     'tbldFSer2uWycCZ0z',
@@ -15,7 +13,6 @@ const AT = (function() {
     careplans:'tblQbtLYU2WR6ZlzK',
     settings: 'tblkH7q5OEevbrxLD',
   };
-
   // Field IDs
   const FIELDS = {
     jobs: {
@@ -74,7 +71,6 @@ const AT = (function() {
       lastInsp: 'fldlbSCJ4MHNH043F',
     }
   };
-
   // Job status options (ordered workflow)
   const JOB_STATUSES = [
     {name:'Booked',      color:'#2980B9', bg:'#EAF4FB'},
@@ -82,7 +78,6 @@ const AT = (function() {
     {name:'Report Sent', color:'#27AE60', bg:'#E8F8EF'},
     {name:'Paid',        color:'#1D8348', bg:'#D5F5E3'},
   ];
-
   const OUTREACH_STATUSES = [
     {name:'To Contact',     color:'#6B7A8D', bg:'#F0F4F8'},
     {name:'Emailed',        color:'#2980B9', bg:'#EAF4FB'},
@@ -91,12 +86,10 @@ const AT = (function() {
     {name:'Account Set Up', color:'#27AE60', bg:'#E8F8EF'},
     {name:'Not Interested', color:'#C0392B', bg:'#FDECEA'},
   ];
-
   // Token management
   function getToken() { try { return localStorage.getItem('rs_at_token') || ''; } catch(e) { return ''; } }
   function setToken(t) { try { localStorage.setItem('rs_at_token', t); } catch(e) {} }
   function hasToken() { return !!getToken(); }
-
   // Cache management (session-level, clears on close)
   const cache = {};
   function cacheKey(tableId, params) { return tableId + JSON.stringify(params); }
@@ -106,7 +99,6 @@ const AT = (function() {
     return null;
   }
   function toCache(key, data) { cache[key] = {data, ts: Date.now()}; }
-
   // Core API request
   async function request(method, path, body) {
     const token = getToken();
@@ -126,13 +118,11 @@ const AT = (function() {
     }
     return res.json();
   }
-
   // List records from a table
   async function listRecords(tableId, fields, filterFormula, sort, maxRecords) {
     const key = cacheKey(tableId, {fields, filterFormula, sort});
     const cached = fromCache(key);
     if (cached) return cached;
-
     let url = tableId + '?';
     if (fields) fields.forEach(f => url += 'fields[]=' + encodeURIComponent(f) + '&');
     if (filterFormula) url += 'filterByFormula=' + encodeURIComponent(filterFormula) + '&';
@@ -141,7 +131,6 @@ const AT = (function() {
       url += 'sort[' + i + '][direction]=' + (s.dir||'asc') + '&';
     });
     if (maxRecords) url += 'maxRecords=' + maxRecords + '&';
-
     // Paginate
     let allRecords = [];
     let offset = null;
@@ -151,26 +140,21 @@ const AT = (function() {
       allRecords = allRecords.concat(data.records || []);
       offset = data.offset;
     } while (offset && allRecords.length < (maxRecords || 999));
-
     toCache(key, allRecords);
     return allRecords;
   }
-
   // Update a record
   async function updateRecord(tableId, recordId, fields) {
     // Invalidate cache
     Object.keys(cache).forEach(k => { if (k.startsWith(tableId)) delete cache[k]; });
     return request('PATCH', tableId + '/' + recordId, {fields});
   }
-
   // Create a record
   async function createRecord(tableId, fields) {
     Object.keys(cache).forEach(k => { if (k.startsWith(tableId)) delete cache[k]; });
     return request('POST', tableId, {fields});
   }
-
   // ─── HIGH-LEVEL HELPERS ──────────────────────────────────────────
-
   // Get jobs that need reports (Booked or Complete — not yet Report Sent or Paid)
   async function getJobsNeedingReport() {
     return listRecords(
@@ -181,7 +165,6 @@ const AT = (function() {
       30
     );
   }
-
   // Get today's jobs
   async function getTodaysJobs() {
     const today = new Date().toISOString().slice(0,10);
@@ -192,7 +175,6 @@ const AT = (function() {
       [{field: 'Inspection Date', dir: 'asc'}]
     );
   }
-
   // Get all active jobs (not yet Paid)
   async function getActiveJobs() {
     return listRecords(
@@ -203,7 +185,6 @@ const AT = (function() {
       50
     );
   }
-
   // Get recent jobs (last 30 days)
   async function getRecentJobs(max) {
     return listRecords(
@@ -214,7 +195,6 @@ const AT = (function() {
       max || 20
     );
   }
-
   // Get outreach contacts
   async function getOutreachContacts(statusFilter) {
     const formula = statusFilter ? "{Status}='" + statusFilter + "'" : '';
@@ -225,7 +205,6 @@ const AT = (function() {
       [{field: 'Status', dir: 'asc'}, {field: 'Company', dir: 'asc'}]
     );
   }
-
   // Get recent quotes
   async function getRecentQuotes(max) {
     return listRecords(
@@ -236,7 +215,6 @@ const AT = (function() {
       max || 10
     );
   }
-
   // Get trade accounts
   async function getTradeAccounts() {
     return listRecords(
@@ -246,7 +224,6 @@ const AT = (function() {
       [{field: 'Current Month Jobs', dir: 'desc'}]
     );
   }
-
   // Get care plan clients due soon
   async function getUpcomingCarePlans() {
     return listRecords(
@@ -257,7 +234,6 @@ const AT = (function() {
       20
     );
   }
-
   // Get smart alerts — overdue reports, unpaid jobs
   async function getAlerts() {
     const jobs = await listRecords(
@@ -268,7 +244,6 @@ const AT = (function() {
     const now = new Date();
     const alerts = [];
     const twoDaysAgo = new Date(now.getTime() - 48*60*60*1000).toISOString().slice(0,10);
-
     jobs.forEach(function(j) {
       var f = j.fields;
       var status = f[FIELDS.jobs.status];
@@ -284,7 +259,6 @@ const AT = (function() {
     });
     return alerts;
   }
-
   // Get hub summary stats
   async function getStats() {
     const [active, outreach, trade] = await Promise.all([
@@ -292,15 +266,12 @@ const AT = (function() {
       listRecords(TABLES.outreach, [FIELDS.outreach.status], null, null, 200),
       listRecords(TABLES.trade, [FIELDS.trade.status], "{Account Status}='Active'", null, 50),
     ]);
-
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0,10);
-
     const thisMonthJobs = active.filter(r => r.fields[FIELDS.jobs.date] >= monthStart);
     const paidThisMonth = thisMonthJobs.filter(r => r.fields[FIELDS.jobs.status] === 'Paid');
     const monthRevenue = paidThisMonth.reduce((s,r) => s + (r.fields[FIELDS.jobs.total] || 0), 0);
     const toContact = outreach.filter(r => r.fields[FIELDS.outreach.status] === 'To Contact').length;
-
     return {
       totalJobs: active.length,
       jobsThisMonth: thisMonthJobs.length,
@@ -310,22 +281,18 @@ const AT = (function() {
       activeTradeAccounts: trade.length,
     };
   }
-
   // Update job status
   async function setJobStatus(recordId, status) {
     return updateRecord(TABLES.jobs, recordId, {[FIELDS.jobs.status]: status});
   }
-
   // Update job RoofScore
   async function setRoofScore(recordId, score) {
     return updateRecord(TABLES.jobs, recordId, {[FIELDS.jobs.roofscore]: score});
   }
-
   // Update outreach status
   async function setOutreachStatus(recordId, status) {
     return updateRecord(TABLES.outreach, recordId, {[FIELDS.outreach.status]: status});
   }
-
   // Create a new job record from the app
   async function createJob(data) {
     const fields = {};
@@ -339,7 +306,6 @@ const AT = (function() {
     fields[FIELDS.jobs.status] = data.status || 'Booked';
     return createRecord(TABLES.jobs, fields);
   }
-
   // Formatters
   function fmt(n) { return '£' + (n||0).toLocaleString('en-GB', {minimumFractionDigits:0,maximumFractionDigits:0}); }
   function fmtDate(d) {
@@ -359,15 +325,11 @@ const AT = (function() {
     const s = OUTREACH_STATUSES.find(x => x.name === status);
     return s || {color:'#6B7A8D', bg:'#F0F4F8'};
   }
-
-
   // ─── EXTENDED HELPERS (full build) ──────────────────────────────
-
   // Update job notes (item 5 — notes sync)
   async function setJobNotes(recordId, notes) {
     return updateRecord(TABLES.jobs, recordId, {[FIELDS.jobs.notes]: notes});
   }
-
   // Append to job notes (preserves existing)
   async function appendJobNotes(recordId, newNote) {
     try {
@@ -378,7 +340,6 @@ const AT = (function() {
       return updateRecord(TABLES.jobs, recordId, {[FIELDS.jobs.notes]: combined});
     } catch(e) { throw e; }
   }
-
   // Create a quote record (item 6 — manual quotes to Airtable)
   async function createQuote(data) {
     const fields = {};
@@ -390,12 +351,10 @@ const AT = (function() {
     fields[FIELDS.quotes.status] = data.status || 'Pending';
     return createRecord(TABLES.quotes, fields);
   }
-
   // Update flight data on a job (item 7 — flight log sync)
   async function setFlightData(recordId, notes) {
     return appendJobNotes(recordId, notes);
   }
-
   // Get all jobs at a specific address (item 17, 27 — history & comparison)
   async function getJobsAtAddress(address) {
     if(!address) return [];
@@ -408,7 +367,6 @@ const AT = (function() {
       20
     );
   }
-
   // Check if email is a returning client (item 28)
   async function findClientByEmail(email) {
     if(!email) return [];
@@ -420,7 +378,6 @@ const AT = (function() {
       10
     );
   }
-
   // Get conversion stats (item 32)
   async function getConversionStats() {
     const [quotes, jobs] = await Promise.all([
@@ -433,7 +390,6 @@ const AT = (function() {
     var rate = totalQuotes > 0 ? Math.round((converted/totalQuotes)*100) : 0;
     return {totalQuotes, converted, totalJobs, conversionRate: rate};
   }
-
   // Get common defects across all jobs (item 31)
   async function getDefectStats() {
     const jobs = await listRecords(TABLES.jobs, [FIELDS.jobs.notes, FIELDS.jobs.status], null, null, 200);
@@ -455,7 +411,6 @@ const AT = (function() {
     });
     return counts;
   }
-
   // Get referral leaderboard (item 37)
   async function getReferralStats() {
     const jobs = await listRecords(TABLES.jobs, ['fldtHVPeC3haY3gRy', FIELDS.jobs.status], "{Referred By}!=''", null, 200);
@@ -466,7 +421,6 @@ const AT = (function() {
     });
     return Object.keys(counts).map(function(k){return {name:k, count:counts[k]};}).sort(function(a,b){return b.count-a.count;});
   }
-
   // Get Sussex average RoofScore from Settings (item 30)
   async function getSussexAverage() {
     try {
@@ -477,7 +431,6 @@ const AT = (function() {
     } catch(e) {}
     return 72; // sensible default
   }
-
   // Get upcoming care plan renewals (item 13)
   async function getCarePlanRenewals() {
     return listRecords(
@@ -488,7 +441,6 @@ const AT = (function() {
       20
     );
   }
-
   // Duplicate a job (item 23)
   async function duplicateJob(recordId, newDate) {
     var res = await request('GET', TABLES.jobs + '/' + recordId);
@@ -501,12 +453,10 @@ const AT = (function() {
     if(newDate) newFields[FIELDS.jobs.date] = newDate;
     return createRecord(TABLES.jobs, newFields);
   }
-
   // Batch update status (item 26)
   async function batchSetStatus(recordIds, status) {
     return Promise.all(recordIds.map(function(id){return setJobStatus(id, status);}));
   }
-
   // Get pipeline revenue forecast (item 20)
   async function getPipelineForecast() {
     const jobs = await listRecords(
@@ -527,20 +477,67 @@ const AT = (function() {
     var earned = paidThisMonth.reduce(function(s,j){return s+(j.fields[FIELDS.jobs.total]||0);},0);
     return {pipeline, earned, projected: earned + pipeline};
   }
-
+  // Get upcoming scheduled jobs (future Inspection Date, not yet Paid) — for the Hub calendar
+  async function getUpcomingJobs(daysAhead) {
+    const today = new Date().toISOString().slice(0,10);
+    const future = new Date(Date.now() + (daysAhead||60)*24*60*60*1000).toISOString().slice(0,10);
+    return listRecords(
+      TABLES.jobs,
+      [FIELDS.jobs.client, FIELDS.jobs.address, FIELDS.jobs.propType, FIELDS.jobs.status, FIELDS.jobs.date, FIELDS.jobs.notes, FIELDS.jobs.phone, FIELDS.jobs.total],
+      "AND(IS_AFTER({Inspection Date},'" + today + "'),IS_BEFORE({Inspection Date},'" + future + "'))",
+      [{field: 'Inspection Date', dir: 'asc'}],
+      100
+    );
+  }
+  // Get weather forecast for a UK postcode/town via Open-Meteo (no API key needed)
+  // Returns {windSpeed (m/s), rain (mm), summary, risk: 'ok'|'amber'|'red'}
+  async function getWeatherForJob(propertyAddress, inspectionDate) {
+    try {
+      // Default to Brighton coords if we can't geocode — good enough for a Sussex-wide business
+      var lat = 50.8225, lon = -0.1372;
+      var geoKey = 'rs_geo_' + (propertyAddress||'').split(',').pop().trim().toLowerCase();
+      // Try a simple postcode-based geocode via Open-Meteo's geocoding API (free, no key)
+      var townMatch = (propertyAddress||'').split(',');
+      var town = townMatch.length > 1 ? townMatch[townMatch.length-2].trim() : '';
+      if (town) {
+        try {
+          var geoRes = await fetch('https://geocoding-api.open-meteo.com/v1/search?name=' + encodeURIComponent(town) + '&count=1&country=GB');
+          var geoData = await geoRes.json();
+          if (geoData.results && geoData.results[0]) {
+            lat = geoData.results[0].latitude;
+            lon = geoData.results[0].longitude;
+          }
+        } catch(e) {}
+      }
+      var dateStr = (inspectionDate||'').slice(0,10) || new Date().toISOString().slice(0,10);
+      var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon +
+        '&daily=wind_speed_10m_max,precipitation_sum,weathercode&timezone=Europe/London&start_date=' + dateStr + '&end_date=' + dateStr;
+      var res = await fetch(url);
+      var data = await res.json();
+      if (!data.daily || !data.daily.time || !data.daily.time.length) return null;
+      var windKmh = data.daily.wind_speed_10m_max[0];
+      var windMs = Math.round((windKmh / 3.6) * 10) / 10;
+      var rain = data.daily.precipitation_sum[0];
+      var risk = 'ok';
+      var summary = 'Flyable';
+      if (windMs > 12 || rain > 60) { risk = 'red'; summary = 'Do not fly — reschedule'; }
+      else if (windMs > 10) { risk = 'amber'; summary = 'Flyable but monitor'; }
+      return { windSpeed: windMs, rain: rain, summary: summary, risk: risk, date: dateStr };
+    } catch(e) { return null; }
+  }
   // Expose public API
   return {
     TABLES, FIELDS, JOB_STATUSES, OUTREACH_STATUSES,
     getToken, setToken, hasToken,
     listRecords, updateRecord, createRecord,
-    getTodaysJobs, getActiveJobs, getRecentJobs, getJobsNeedingReport,
+    getTodaysJobs, getActiveJobs, getRecentJobs, getJobsNeedingReport, getUpcomingJobs,
     getOutreachContacts, getRecentQuotes, getTradeAccounts,
     getUpcomingCarePlans, getStats,
-    setJobStatus, setRoofScore, setOutreachStatus, createJob, getJobsNeedingReport, getAlerts,
+    setJobStatus, setRoofScore, setOutreachStatus, createJob, getAlerts,
     setJobNotes, appendJobNotes, createQuote, setFlightData,
     getJobsAtAddress, findClientByEmail, getConversionStats, getDefectStats,
     getReferralStats, getSussexAverage, getCarePlanRenewals, duplicateJob,
-    batchSetStatus, getPipelineForecast,
+    batchSetStatus, getPipelineForecast, getWeatherForJob,
     fmt, fmtDate, isToday, statusStyle, outreachStyle,
   };
 })();
