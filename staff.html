@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="RoofScan Staff">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32">
+<link rel="icon" href="icons/favicon-16.png" sizes="16x16">
+<meta name="theme-color" content="#1C2B4A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>RoofScan UK — Staff</title>
+<style>
+:root{
+  --navy:#1C2B4A;--slate:#1E4080;--gold:#C9A84C;
+  --bg:#F0F4F8;--card:#FFF;--border:#DDE4EC;--muted:#6B7A8D;
+  --green:#27AE60;--gbg:#E8F8EF;--amber:#E67E22;--abg:#FEF3E2;
+  --red:#C0392B;--rbg:#FDECEA;--blue:#2980B9;--bbg:#EAF4FB;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--navy);min-height:100vh;max-width:520px;margin:0 auto;}
+.hdr{background:linear-gradient(135deg,#1C2B4A 0%,#2C3E6A 100%);padding:16px 16px 0;}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.hdr-left{display:flex;align-items:center;gap:10px;}
+.logo{width:36px;height:36px;background:var(--gold);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:var(--navy);}
+.hdr-title{color:white;font-size:16px;font-weight:700;}
+.hdr-sub{color:rgba(255,255,255,0.45);font-size:11px;}
+.staff-badge{background:rgba(255,255,255,0.12);color:rgba(255,255,255,0.7);font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:0.05em;}
+.tabs{display:flex;overflow-x:auto;scrollbar-width:none;gap:0;}
+.tabs::-webkit-scrollbar{display:none;}
+.tb{padding:10px 12px;font-size:12px;font-weight:600;color:rgba(255,255,255,0.45);background:none;border:none;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;transition:all 0.15s;}
+.tb.active{color:var(--gold);border-bottom-color:var(--gold);}
+main{padding:14px;}
+.tc{display:none;animation:fadeIn 0.15s ease;}
+.tc.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,0.04);}
+.ct{font-size:12px;font-weight:700;color:var(--navy);margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px;}
+.ct-icon{font-size:14px;}
+.sl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:8px;margin-top:4px;display:flex;align-items:center;gap:6px;}
+.sl::after{content:'';flex:1;height:1px;background:var(--border);}
+/* CHECKLIST */
+.chk{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.chk:last-child{border-bottom:none;}
+.chk-box{width:22px;height:22px;border:2px solid var(--border);border-radius:6px;flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;transition:all 0.15s;}
+.chk.done .chk-box{background:var(--green);border-color:var(--green);}
+.chk.done .chk-box::after{content:'✓';color:white;font-size:13px;font-weight:700;}
+.chk.done .chk-text{color:var(--muted);text-decoration:line-through;}
+.chk-text{flex:1;font-size:14px;line-height:1.45;}
+.chk-note{font-size:11px;color:var(--muted);margin-top:2px;}
+/* PROGRESS */
+.prog-wrap{margin-bottom:12px;}
+.prog-bar{background:var(--border);border-radius:8px;height:8px;overflow:hidden;}
+.prog-fill{height:100%;border-radius:8px;background:var(--green);transition:width 0.3s;}
+.prog-text{font-size:11px;color:var(--muted);margin-top:4px;display:flex;justify-content:space-between;}
+.reset-btn{background:none;border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:12px;color:var(--muted);cursor:pointer;width:100%;margin-bottom:12px;}
+/* ROWS */
+.row{display:flex;justify-content:space-between;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;gap:8px;}
+.row:last-child{border-bottom:none;}
+.rl{color:var(--muted);flex:1;line-height:1.4;}
+.rv{font-weight:600;color:var(--navy);text-align:right;flex-shrink:0;}
+.rv.g{color:var(--green);}
+.rv.a{color:var(--amber);}
+.rv.r{color:var(--red);}
+/* ALERTS */
+.alert{border-radius:10px;padding:10px 14px;font-size:13px;margin-bottom:10px;display:flex;gap:8px;align-items:flex-start;line-height:1.5;}
+.alert-icon{font-size:16px;flex-shrink:0;margin-top:1px;}
+.alert.red{background:var(--rbg);color:#7B241C;border:1px solid #F1948A;}
+.alert.amber{background:var(--abg);color:#7A4210;border:1px solid #F5CBA7;}
+.alert.green{background:var(--gbg);color:#1E6E3F;border:1px solid #A9DFBF;}
+.alert.blue{background:var(--bbg);color:#1A5276;border:1px solid #AED6F1;}
+/* STAT TILES */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+.stat-tile{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;}
+.stat-num{font-size:22px;font-weight:800;color:var(--navy);line-height:1;}
+.stat-label{font-size:11px;color:var(--muted);margin-top:4px;}
+/* JOB LIST (calendar) */
+.job-item{border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;}
+.job-item:last-child{margin-bottom:0;}
+.job-date{font-size:11px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;}
+.job-client{font-size:14px;font-weight:700;color:var(--navy);}
+.job-addr{font-size:12px;color:var(--muted);margin-top:2px;}
+.job-meta{display:flex;gap:10px;margin-top:6px;font-size:11px;color:var(--muted);flex-wrap:wrap;}
+.job-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;}
+.empty-state{text-align:center;padding:20px;color:var(--muted);font-size:13px;}
+.spacer{height:20px;}
+/* ACCORDION (client Q&A) */
+.acc{border:1px solid var(--border);border-radius:8px;margin-bottom:6px;overflow:hidden;}
+.acc-h{display:flex;justify-content:space-between;align-items:center;padding:9px 12px;background:var(--bg);cursor:pointer;font-size:13px;font-weight:600;color:var(--navy);}
+.acc-chev{font-size:11px;color:var(--muted);transition:transform 0.15s;}
+.acc[data-open="1"] .acc-chev{transform:rotate(180deg);}
+.acc-b{display:none;padding:10px 12px;font-size:13px;line-height:1.5;color:var(--navy);border-top:1px solid var(--border);}
+.acc[data-open="1"] .acc-b{display:block;}
+/* CALENDAR */
+.cal-nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.cal-nav button{background:var(--bg);border:1px solid var(--border);border-radius:8px;width:32px;height:32px;font-size:16px;color:var(--navy);cursor:pointer;}
+#cal-label{font-size:13px;font-weight:700;color:var(--navy);}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center;}
+#cal-weekdays{font-size:10px;font-weight:700;color:var(--muted);margin-bottom:6px;text-transform:uppercase;}
+.cal-day{aspect-ratio:1;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:12px;color:var(--navy);cursor:pointer;position:relative;border:1px solid transparent;}
+.cal-day.other-month{color:#C8D2DC;}
+.cal-day.today{border-color:var(--gold);font-weight:700;}
+.cal-day.selected{background:var(--navy);color:white;}
+.cal-day .dot{width:5px;height:5px;border-radius:50%;background:var(--blue);margin-top:2px;}
+.cal-day.selected .dot{background:var(--gold);}
+.cal-day-detail{margin-top:12px;}
+.cal-day-detail .job-item{margin-bottom:8px;}
+/* PHOTO SORTER */
+.ps-drop{border:2px dashed var(--border);border-radius:10px;background:var(--bg);padding:1.75rem 1rem;text-align:center;cursor:pointer;}
+.ps-drop:hover,.ps-drop.dragover{border-color:var(--blue);background:var(--bbg);}
+.ps-sections{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:12px;}
+.ps-col{background:var(--card);border:1px solid var(--border);border-radius:10px;min-height:90px;}
+.ps-col.dragover{border-color:var(--blue);background:var(--bbg);}
+.ps-col-head{padding:7px 9px;border-bottom:1px solid var(--border);font-size:11px;}
+.ps-col-ref{color:var(--blue);font-weight:700;}
+.ps-col-title{font-weight:600;color:var(--navy);}
+.ps-col-count{float:right;color:var(--muted);}
+.ps-col-body{padding:7px;display:flex;flex-wrap:wrap;gap:6px;}
+.ps-photo{width:64px;position:relative;cursor:grab;}
+.ps-photo img{width:64px;height:64px;object-fit:cover;border-radius:6px;border:1px solid var(--border);display:block;background:#eee;}
+.ps-photo.pending img{opacity:.45;}
+.ps-photo.err img{border-color:var(--red);}
+.ps-photo .ps-spin{position:absolute;top:0;left:0;width:64px;height:64px;display:flex;align-items:center;justify-content:center;font-size:10px;pointer-events:none;}
+.ps-photo .ps-rm{position:absolute;top:-5px;right:-5px;background:var(--red);color:white;border:none;border-radius:50%;width:16px;height:16px;font-size:10px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;}
+.ps-photo .ps-fname{font-size:8px;color:var(--muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:64px;text-align:center;}
+.ps-lightbox{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;z-index:1000;cursor:zoom-out;}
+.ps-lightbox.open{display:flex;}
+.ps-lightbox img{max-width:90vw;max-height:90vh;border-radius:8px;}
+</style>
+<script src="airtable-api.js"></script>
+<script src="https://unpkg.com/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+</head>
+<body>
+<div class="hdr">
+  <div class="hdr-top">
+    <div class="hdr-left">
+      <div class="logo">RS</div>
+      <div>
+        <div class="hdr-title">RoofScan UK</div>
+        <div class="hdr-sub">Team Reference App</div>
+      </div>
+    </div>
+    <div class="staff-badge">STAFF</div>
+  </div>
+  <div class="tabs">
+    <button class="tb active" onclick="showTab('job',this)">📋 Job Flow</button>
+    <button class="tb" onclick="showTab('safety',this)">🛡️ Safety</button>
+    <button class="tb" onclick="showTab('ref',this)">📞 Quick Ref</button>
+    <button class="tb" onclick="showTab('planning',this)">📅 Planning</button>
+    <button class="tb" onclick="showTab('sorter',this)">📸 Photo Sorter</button>
+  </div>
+</div>
+<main>
+<!-- ══════════════════════════════════════════ -->
+<!-- JOB FLOW -->
+<!-- ══════════════════════════════════════════ -->
+<div class="tc active" id="tab-job">
+  <div class="prog-wrap">
+    <div class="prog-bar"><div class="prog-fill" id="prog" style="width:0%"></div></div>
+    <div class="prog-text"><span id="prog-txt">0 of 0 tasks complete</span><span id="prog-pct">0%</span></div>
+  </div>
+  <button class="reset-btn" onclick="resetChecks()">↺ Reset checklist for new job</button>
+  <!-- JOB OF THE DAY - set by owner, seen by staff -->
+  <div id="job-banner" style="background:var(--slate);border-radius:12px;padding:14px 16px;margin-bottom:12px;display:none;">
+    <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--gold);margin-bottom:4px;">Today's Job</div>
+    <div id="job-detail-display" style="font-size:14px;color:white;line-height:1.5;"></div>
+  </div>
+  <!-- OWNER: Set today's job details -->
+  <div id="set-job-section" style="background:var(--card);border:1px dashed var(--border);border-radius:12px;padding:12px 14px;margin-bottom:12px;">
+    <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">📋 Set today's job (owner only)</div>
+    <textarea id="job-detail-input" placeholder="e.g. 14 Marine Parade, Brighton BN2 1TL&#10;Client: Sarah Wheeler&#10;Access: side gate, code 1234&#10;Note: dog in garden"
+      style="width:100%;min-height:80px;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;color:var(--navy);background:var(--bg);resize:none;outline:none;line-height:1.5;"
+      oninput="saveJobDetail()"></textarea>
+    <div style="display:flex;gap:8px;margin-top:6px;">
+      <button onclick="saveJobDetail()" style="flex:1;background:var(--navy);color:var(--gold);border:none;border-radius:8px;padding:8px;font-size:12px;font-weight:700;cursor:pointer;">Save job details</button>
+      <button onclick="clearJobDetail()" style="background:none;border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--muted);cursor:pointer;">Clear</button>
+    </div>
+  </div>
+  <div class="card" id="weather-card" style="display:none;"></div>
+  <div class="card" id="overdue-card" style="display:none;"></div>
+  <div class="sl">Before leaving</div>
+  <div class="card">
+    <div class="chk" data-id="staff-1" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">All batteries charged to 100%<div class="chk-note">All 3 batteries in the Fly More Combo</div></div></div>
+    <div class="chk" data-id="staff-2" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Operator ID label on aircraft<div class="chk-note">CAA legal requirement — must be visible</div></div></div>
+    <div class="chk" data-id="staff-3" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Flock Cover app — account logged in and ready</div></div>
+    <div class="chk" data-id="staff-4" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Memory cards formatted and empty</div></div>
+    <div class="chk" data-id="staff-5" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">ND filters packed<div class="chk-note">ND8 overcast · ND16 bright · ND32 direct sun</div></div></div>
+    <div class="chk" data-id="staff-6" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Hi-vis vest in bag</div></div>
+    <div class="chk" data-id="staff-7" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Phone charged — DJI Fly app open and updated</div></div>
+    <div class="chk" data-id="staff-8" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Client address confirmed</div></div>
+    <div class="chk" data-id="staff-9" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Weather checked — wind under 12m/s, no rain forecast<div class="chk-note">Check windy.com or DJI Fly weather overlay</div></div></div>
+  </div>
+  <div class="sl">On site</div>
+  <div class="card">
+    <div class="chk" data-id="staff-10" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Introduce yourself to client — politely and professionally</div></div>
+    <div class="chk" data-id="staff-11" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Walk the full site before flying<div class="chk-note">Look for power lines, trees, antennas, obstructions</div></div></div>
+    <div class="chk" data-id="staff-12" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Select clear take-off and landing zone — away from people</div></div>
+    <div class="chk" data-id="staff-13" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Start Flock Cover session before takeoff<div class="chk-note">Tap "Start flight" in the app</div></div></div>
+    <div class="chk" data-id="staff-14" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Run DJI preflight check — all sensors showing green</div></div>
+    <div class="chk" data-id="staff-15" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Capture front elevation — slow, steady, level pass</div></div>
+    <div class="chk" data-id="staff-16" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Capture rear elevation</div></div>
+    <div class="chk" data-id="staff-17" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Capture both side elevations</div></div>
+    <div class="chk" data-id="staff-18" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Capture all chimneys — close-up of each</div></div>
+    <div class="chk" data-id="staff-19" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Capture flashings, ridge, gutters, any visible defects</div></div>
+    <div class="chk" data-id="staff-20" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Top-down overview shot of full roof</div></div>
+    <div class="chk" data-id="staff-21" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Review footage on phone before landing — reshoot if needed</div></div>
+    <div class="chk" data-id="staff-22" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Land safely — stop Flock Cover session</div></div>
+  </div>
+  <div class="sl">After the job</div>
+  <div class="card">
+    <div class="chk" data-id="staff-23" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Transfer all footage to laptop and back up immediately</div></div>
+    <div class="chk" data-id="staff-24" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Select best photos — minimum 20 for the report</div></div>
+    <div class="chk" data-id="staff-25" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Write full report — complete all sections<div class="chk-note">Report due within 48 hours. Aim for 24.</div></div></div>
+    <div class="chk" data-id="staff-26" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Calculate RoofScore</div></div>
+    <div class="chk" data-id="staff-27" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Export report as PDF and upload to client's Google Drive folder</div></div>
+    <div class="chk" data-id="staff-28" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Charge all batteries ready for next job</div></div>
+  </div>
+</div>
+<!-- ══════════════════════════════════════════ -->
+<!-- SAFETY -->
+<!-- ══════════════════════════════════════════ -->
+<div class="tc" id="tab-safety">
+  <div class="alert red"><div class="alert-icon">🚫</div><div><strong>Never fly if:</strong> wind is above 12m/s, visibility is poor, it's raining, or you feel unsafe about the site. Cancel and rebook — never take risks.</div></div>
+  <div class="sl">Weather limits</div>
+  <div class="card">
+    <div class="row"><span class="rl">Maximum wind speed</span><span class="rv r">12 m/s (27 mph)</span></div>
+    <div class="row"><span class="rl">Rain</span><span class="rv r">Never fly in rain</span></div>
+    <div class="row"><span class="rl">Minimum visibility</span><span class="rv">Clear visual contact at all times</span></div>
+    <div class="row"><span class="rl">Fog or low cloud</span><span class="rv r">Do not fly</span></div>
+    <div class="row"><span class="rl">Cold weather (below 0°C)</span><span class="rv a">Reduce battery efficiency — check charge</span></div>
+    <div class="row"><span class="rl">Strong gusts</span><span class="rv r">Cancel even if avg wind is ok</span></div>
+  </div>
+  <div class="sl">CAA rules — always follow these</div>
+  <div class="card">
+    <div class="row"><span class="rl">Maximum altitude</span><span class="rv">120 metres (400 feet)</span></div>
+    <div class="row"><span class="rl">Keep drone in sight</span><span class="rv">Always — visual line of sight only</span></div>
+    <div class="row"><span class="rl">Distance from uninvolved people</span><span class="rv">50 metres minimum</span></div>
+    <div class="row"><span class="rl">Distance from crowds/gatherings</span><span class="rv a">Do not fly over</span></div>
+    <div class="row"><span class="rl">Near airports/heliports</span><span class="rv r">Never without permission</span></div>
+    <div class="row"><span class="rl">Emergency vehicles / police scene</span><span class="rv r">Land immediately if asked</span></div>
+    <div class="row"><span class="rl">Privacy — filming people</span><span class="rv">Roof only — never film interiors</span></div>
+    <div class="row"><span class="rl">Operator ID</span><span class="rv">Must be on aircraft and visible</span></div>
+  </div>
+  <div class="sl">If something goes wrong</div>
+  <div class="alert amber"><div class="alert-icon">⚠️</div><div><strong>Drone crash or incident:</strong> Stop flying immediately. Check if anyone is injured — call 999 if needed. Secure the area. Call Takhy on 07498 364197. Do not post anything on social media.</div></div>
+  <div class="alert amber"><div class="alert-icon">⚠️</div><div><strong>Someone asks you to land:</strong> Land immediately and politely. You are not obliged to explain but be respectful. Call Takhy if there's any dispute.</div></div>
+  <div class="alert amber"><div class="alert-icon">⚠️</div><div><strong>Lost signal or fly-away:</strong> Do not panic. The drone will hover and return to home. Call Takhy on 07498 364197 as soon as it's safe to do so.</div></div>
+  <div class="alert blue"><div class="alert-icon">📋</div><div><strong>Flock Cover:</strong> Always start and stop your session in the app. This is your insurance — without it active you are not covered.</div></div>
+  <div class="sl">On-site safety</div>
+  <div class="card">
+    <div class="row"><span class="rl">Hi-vis vest</span><span class="rv">Always worn during flight</span></div>
+    <div class="row"><span class="rl">Bystanders</span><span class="rv">Ask them to move back 50m before flying</span></div>
+    <div class="row"><span class="rl">Power lines</span><span class="rv r">Keep 30 metres minimum distance</span></div>
+    <div class="row"><span class="rl">Trees and obstacles</span><span class="rv">Plan your flight path before takeoff</span></div>
+    <div class="row"><span class="rl">Client's garden / property</span><span class="rv">Ask permission before entering garden</span></div>
+    <div class="row"><span class="rl">Never leave drone unattended</span><span class="rv">Keep eyes on it at all times</span></div>
+  </div>
+  <div class="sl">Client questions — what to say</div>
+  <div class="card">
+    <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Clients sometimes ask these on the doorstep. Give a calm, canned answer — don't improvise.</div>
+    <div class="acc" data-open="0">
+      <div class="acc-h" onclick="toggleAcc(this)"><span>"Is this legal?"</span><span class="acc-chev">▾</span></div>
+      <div class="acc-b">Yes. We're a CAA-registered drone operator with a visible Operator ID on the aircraft, and we're fully insured through Flock Cover. We only ever film roofs — never interiors or gardens beyond what's needed to reach the roofline.</div>
+    </div>
+    <div class="acc" data-open="0">
+      <div class="acc-h" onclick="toggleAcc(this)"><span>"Will you film my neighbours?"</span><span class="acc-chev">▾</span></div>
+      <div class="acc-b">No. The flight path stays directly over your property and roofline. We're not looking into neighbouring gardens or windows — the camera is angled at the roof, not sideways.</div>
+    </div>
+    <div class="acc" data-open="0">
+      <div class="acc-h" onclick="toggleAcc(this)"><span>"Do I need to tell my neighbours?"</span><span class="acc-chev">▾</span></div>
+      <div class="acc-b">You're not legally required to, but it's a nice courtesy if a drone flying nearby might surprise them — entirely up to you.</div>
+    </div>
+    <div class="acc" data-open="0">
+      <div class="acc-h" onclick="toggleAcc(this)"><span>"How long will this take?"</span><span class="acc-chev">▾</span></div>
+      <div class="acc-b">Usually 15–30 minutes on site depending on the size and complexity of the roof.</div>
+    </div>
+    <div class="acc" data-open="0">
+      <div class="acc-h" onclick="toggleAcc(this)"><span>"What if it's too windy or starts raining?"</span><span class="acc-chev">▾</span></div>
+      <div class="acc-b">Safety comes first — if conditions aren't safe to fly we'll reschedule at no extra cost. We'd rather come back than risk a bad flight.</div>
+    </div>
+    <div class="acc" data-open="0">
+      <div class="acc-h" onclick="toggleAcc(this)"><span>"Can I watch?"</span><span class="acc-chev">▾</span></div>
+      <div class="acc-b">Of course, just from a safe distance back from the take-off/landing area. Happy to explain what we're capturing as we go.</div>
+    </div>
+    <div class="acc" data-open="0">
+      <div class="acc-h" onclick="toggleAcc(this)"><span>"What happens to my photos/data?"</span><span class="acc-chev">▾</span></div>
+      <div class="acc-b">They're stored securely and used only to build your report. We don't share or publish them without your permission.</div>
+    </div>
+  </div>
+  <div class="sl">What not to say</div>
+  <div class="alert amber"><div class="alert-icon">🤐</div><div>Don't guarantee outcomes ("you'll definitely need a new roof"), don't give structural or legal advice beyond what's in the report, don't badmouth other roofers or trades, and don't negotiate or change the price on site — refer pricing questions to Takhy.</div></div>
+  <div class="sl">If a client complains</div>
+  <div class="alert amber"><div class="alert-icon">😬</div><div>Stay calm and polite. Don't admit fault or promise a refund on the spot. Note down exactly what they said, then tell Takhy as soon as possible so it can be handled properly.</div></div>
+</div>
+<!-- ══════════════════════════════════════════ -->
+<!-- PLANNING (calendar + monthly stats) -->
+<!-- ══════════════════════════════════════════ -->
+<div class="tc" id="tab-planning">
+  <div class="sl">Airtable connection</div>
+  <div class="card" style="margin-bottom:12px;">
+    <div id="at-key-entry" style="display:flex;gap:8px;">
+      <input type="password" id="at-key-input" placeholder="Airtable Personal Access Token" style="flex:1;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;outline:none;">
+      <button onclick="atSaveKey()" style="background:var(--navy);color:var(--gold);border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;">Connect</button>
+    </div>
+    <div id="at-key-saved" style="display:none;font-size:12px;color:var(--green);font-weight:600;">Airtable connected on this device ✓ <a onclick="atChangeKey()" style="color:var(--blue);cursor:pointer;text-decoration:underline;font-weight:400;margin-left:6px;">change</a></div>
+    <div style="font-size:11px;color:var(--muted);margin-top:8px;line-height:1.5;">Stored only in this browser. Needed for the calendar, stats, and the weather/overdue cards on Job Flow to show live data.</div>
+  </div>
+  <div class="sl">Job calendar</div>
+  <div class="card">
+    <div class="cal-nav">
+      <button onclick="calNav(-1)">‹</button>
+      <div id="cal-label">—</div>
+      <button onclick="calNav(1)">›</button>
+    </div>
+    <div class="cal-grid" id="cal-weekdays">
+      <div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div><div>S</div>
+    </div>
+    <div class="cal-grid" id="cal-days"></div>
+    <div class="cal-day-detail" id="cal-day-detail"></div>
+  </div>
+
+  <div class="sl">This month</div>
+  <div class="stat-grid" id="stats-grid">
+    <div class="stat-tile"><div class="stat-num" id="stat-jobs">—</div><div class="stat-label">Jobs this month</div></div>
+    <div class="stat-tile"><div class="stat-num" id="stat-income">—</div><div class="stat-label">Income this month</div></div>
+    <div class="stat-tile"><div class="stat-num" id="stat-roofscore">—</div><div class="stat-label">Sussex avg RoofScore</div></div>
+    <div class="stat-tile"><div class="stat-num" id="stat-trade">—</div><div class="stat-label">Active Trade accounts</div></div>
+  </div>
+  <button class="reset-btn" onclick="loadPlanning()">↻ Refresh Planning data</button>
+</div>
+<!-- ══════════════════════════════════════════ -->
+<!-- QUICK REF -->
+<!-- ══════════════════════════════════════════ -->
+<div class="tc" id="tab-ref">
+  <div class="sl">Equipment check</div>
+  <div class="card" style="margin-bottom:12px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div style="font-size:12px;color:var(--muted);">Resets automatically each day</div>
+      <div style="font-size:11px;font-weight:700;color:var(--navy);" id="equip-count">0 / 0 packed</div>
+    </div>
+    <div id="equip-list"></div>
+  </div>
+  <div class="sl">on-site notes</div>
+  <div class="card" style="margin-bottom:12px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+      <div style="font-size:12px;font-weight:700;color:var(--navy);">Notes — tap to edit</div>
+      <button onclick="clearSiteNotes()" style="font-size:11px;color:var(--muted);background:none;border:1px solid var(--border);border-radius:6px;padding:2px 8px;cursor:pointer;">Clear</button>
+    </div>
+    <textarea id="site-notes" placeholder="Anything you want to remember or tell Takhy after the job..."
+      style="width:100%;min-height:100px;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;color:var(--navy);background:var(--bg);resize:none;outline:none;line-height:1.5;"
+      oninput="saveSiteNotes()"></textarea>
+    <button onclick="copySiteNotes()" style="width:100%;background:var(--navy);color:var(--gold);border:none;border-radius:8px;padding:8px;font-size:12px;font-weight:700;cursor:pointer;margin-top:6px;">📋 Copy notes to send to Takhy</button>
+  </div>
+  <div class="sl">Emergency contacts</div>
+  <div class="card">
+    <div class="row"><span class="rl"><strong>Emergency services</strong></span><span class="rv r">999</span></div>
+    <div class="row"><span class="rl"><strong>Takhy (any issue on site)</strong></span><span class="rv">07498 364197</span></div>
+    <div class="row"><span class="rl">RoofScan UK email</span><span class="rv">info@roofscanuk.co.uk</span></div>
+    <div class="row"><span class="rl">Flock Cover (insurance)</span><span class="rv">flockcover.com</span></div>
+    <div class="row"><span class="rl">CAA emergency (airspace)</span><span class="rv">0330 022 1500</span></div>
+  </div>
+  <div class="sl">incident log</div>
+  <div class="card">
+    <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Record any on-site issue for insurance and CAA records — near miss, weather abort, confrontation, equipment fault.</div>
+    <select id="incident-type" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px;font-size:13px;background:white;color:var(--navy);outline:none;margin-bottom:8px;">
+      <option value="">— Incident type —</option>
+      <option>Near miss</option>
+      <option>Weather abort</option>
+      <option>Equipment fault</option>
+      <option>Confrontation / access refused</option>
+      <option>Property damage</option>
+      <option>Other</option>
+    </select>
+    <textarea id="incident-notes" placeholder="What happened, when, where..." style="width:100%;min-height:70px;border:1px solid var(--border);border-radius:8px;padding:9px;font-size:13px;font-family:inherit;color:var(--navy);background:var(--bg);resize:none;outline:none;margin-bottom:8px;"></textarea>
+    <button onclick="logIncident()" style="background:var(--red);color:white;border:none;border-radius:8px;padding:9px;font-size:13px;font-weight:700;cursor:pointer;width:100%;">⚠️ Log incident</button>
+    <div id="incident-result" style="font-size:12px;text-align:center;margin-top:6px;"></div>
+    <div id="incident-history" style="margin-top:10px;"></div>
+  </div>
+  <div class="sl">Report turnaround commitment</div>
+  <div class="alert green"><div class="alert-icon">⏱️</div><div><strong>48-hour guarantee:</strong> Every client is told their report will arrive within 48 hours. This is our core promise. Aim for 24 hours where possible. If you are going to miss the deadline for any reason, tell Takhy immediately so the client can be notified.</div></div>
+  <div class="spacer"></div>
+</div>
+<!-- ══════════════════════════════════════════ -->
+<!-- PHOTO SORTER -->
+<!-- ══════════════════════════════════════════ -->
+<div class="tc" id="tab-sorter">
+  <div class="sl">Anthropic API key</div>
+  <div class="card">
+    <div id="ps-key-entry" style="display:flex;gap:8px;">
+      <input type="password" id="ps-key-input" placeholder="sk-ant-api03-..." style="flex:1;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;outline:none;">
+      <button onclick="psSaveKey()" style="background:var(--navy);color:var(--gold);border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;">Save</button>
+    </div>
+    <div id="ps-key-saved" style="display:none;font-size:12px;color:var(--green);font-weight:600;">API key saved on this device ✓ <a onclick="psChangeKey()" style="color:var(--blue);cursor:pointer;text-decoration:underline;font-weight:400;margin-left:6px;">change</a></div>
+    <div style="font-size:11px;color:var(--muted);margin-top:8px;line-height:1.5;">Stored only in this browser, sent straight to api.anthropic.com. This is separate from the standalone Photo Sorter tool — paste your key here too. Costs a fraction of a cent per photo.</div>
+  </div>
+  <div class="sl">Drop in today's photos</div>
+  <div class="card">
+    <div class="ps-drop" id="ps-drop-zone" onclick="document.getElementById('ps-file-input').click()">
+      <input type="file" id="ps-file-input" accept="image/*" multiple style="display:none;">
+      <div style="font-size:26px;margin-bottom:6px;">📸</div>
+      <div style="font-size:13px;font-weight:600;color:var(--navy);">Drag & drop, or tap to browse</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px;">Sorted automatically as soon as they're added</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap;">
+      <button onclick="psResortErrors()" style="background:none;border:1px solid var(--border);border-radius:8px;padding:7px 12px;font-size:12px;color:var(--blue);cursor:pointer;">Retry failed</button>
+      <button onclick="psClearAll()" style="background:none;border:1px solid var(--border);border-radius:8px;padding:7px 12px;font-size:12px;color:var(--muted);cursor:pointer;">Clear all</button>
+      <div style="flex:1;min-width:100px;">
+        <div class="prog-bar"><div class="prog-fill" id="ps-progress-fill" style="width:0%"></div></div>
+      </div>
+      <div style="font-size:11px;color:var(--muted);" id="ps-progress-label">No photos yet</div>
+    </div>
+    <button class="reset-btn" style="background:var(--navy);color:var(--gold);border:none;margin-top:10px;margin-bottom:0;" id="ps-zip-btn" onclick="psDownloadZip()" disabled>⬇ Download sorted ZIP</button>
+  </div>
+  <div class="ps-sections" id="ps-sections-grid"></div>
+  <div class="empty-state" id="ps-status-msg"></div>
+  <div class="spacer"></div>
+</div>
+</main>
+<div class="ps-lightbox" id="ps-lightbox" onclick="psCloseLightbox()"><img id="ps-lightbox-img"></div>
+<script>
+function showTab(id,btn){
+  document.querySelectorAll('.tc').forEach(e=>e.classList.remove('active'));
+  document.querySelectorAll('.tb').forEach(e=>e.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+  btn.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
+  if(id === 'planning') loadPlanning();
+  if(id === 'job') loadJobFlowLive();
+}
+function toggleAcc(headerEl){
+  var acc = headerEl.parentElement;
+  var open = acc.getAttribute('data-open')==='1';
+  acc.setAttribute('data-open', open?'0':'1');
+}
+function tick(el){
+  el.classList.toggle('done');
+  var id=el.dataset.id;
+  if(id) localStorage.setItem('rschk_'+id, el.classList.contains('done')?'1':'0');
+  updateProg();
+}
+function updateProg(){
+  const all=document.querySelectorAll('#tab-job .chk');
+  const done=document.querySelectorAll('#tab-job .chk.done');
+  const p=all.length?Math.round((done.length/all.length)*100):0;
+  document.getElementById('prog').style.width=p+'%';
+  document.getElementById('prog-txt').textContent=done.length+' of '+all.length+' complete';
+  document.getElementById('prog-pct').textContent=p+'%';
+}
+function resetChecks(){
+  document.querySelectorAll('#tab-job .chk').forEach(function(e){
+    e.classList.remove('done');
+    if(e.dataset.id) localStorage.removeItem('rschk_'+e.dataset.id);
+  });
+  updateProg();
+}
+// Restore checklist state on load
+document.querySelectorAll('[data-id]').forEach(function(el){
+  if(localStorage.getItem('rschk_'+el.dataset.id)==='1') el.classList.add('done');
+});
+updateProg();
+function saveJobDetail(){
+  var txt=document.getElementById('job-detail-input').value;
+  try{localStorage.setItem('rs_job_today',txt);}catch(e){}
+  updateJobBanner();
+}
+function clearJobDetail(){
+  document.getElementById('job-detail-input').value='';
+  try{localStorage.removeItem('rs_job_today');}catch(e){}
+  updateJobBanner();
+}
+function updateJobBanner(){
+  // First try Airtable for today's jobs
+  if(typeof AT !== 'undefined' && AT.hasToken()) {
+    AT.getTodaysJobs().then(function(jobs){
+      if(jobs && jobs.length > 0) {
+        var job = jobs[0];
+        var f = job.fields;
+        var details = [
+          f['fld8R0gd2hcYSnmi5'] || '',
+          f['fldk2TDM0kE3BJkc3'] || '',
+          f['fldTecfNE5C0HTUYP'] ? (f['fldTecfNE5C0HTUYP'].name || f['fldTecfNE5C0HTUYP']) : '',
+        ].filter(Boolean).join('\n');
+        var notes = f['fldvym9yUybOyvoq4'] || '';
+        var full = details + (notes ? '\n\nNotes: ' + notes : '');
+        var banner = document.getElementById('job-banner');
+        var display = document.getElementById('job-detail-display');
+        var input = document.getElementById('job-detail-input');
+        if(banner && display && full.trim()) {
+          banner.style.display = 'block';
+          display.textContent = full;
+          if(input) input.value = full;
+          banner.dataset.jobId = job.id;
+        }
+        if(jobs.length > 1 && banner) {
+          var badge = document.createElement('div');
+          badge.style.cssText = 'font-size:10px;color:rgba(255,255,255,0.45);margin-top:4px;';
+          badge.textContent = jobs.length + ' jobs today — showing first';
+          banner.appendChild(badge);
+        }
+        return;
+      }
+      _loadBannerFromStorage();
+    }).catch(function(){ _loadBannerFromStorage(); });
+  } else {
+    _loadBannerFromStorage();
+  }
+}
+function _loadBannerFromStorage(){
+  try{
+    var txt=localStorage.getItem('rs_job_today');
+    var banner=document.getElementById('job-banner');
+    var display=document.getElementById('job-detail-display');
+    if(txt&&txt.trim()){
+      banner.style.display='block';
+      display.textContent=txt;
+      document.getElementById('job-detail-input').value=txt;
+    } else {
+      banner.style.display='none';
+    }
+  }catch(e){}
+}
+function saveSiteNotes(){
+  try{localStorage.setItem('rs_site_notes',document.getElementById('site-notes').value);}catch(e){}
+}
+function clearSiteNotes(){
+  document.getElementById('site-notes').value='';
+  try{localStorage.removeItem('rs_site_notes');}catch(e){}
+}
+function copySiteNotes(){
+  var txt=document.getElementById('site-notes').value;
+  if(!txt.trim()) return;
+  navigator.clipboard.writeText('Site notes from inspection:\n\n'+txt).then(function(){
+    var btn=event.target;
+    btn.textContent='✅ Copied!';
+    setTimeout(function(){btn.textContent='📋 Copy notes to send to Takhy';},2000);
+  });
+}
+updateJobBanner();
+try{
+  var sn=localStorage.getItem('rs_site_notes');
+  if(sn) document.getElementById('site-notes').value=sn;
+}catch(e){}
+// ═══ INCIDENT LOG ════════════════════════════════════════
+function logIncident(){
+  var type = document.getElementById('incident-type').value;
+  var notes = document.getElementById('incident-notes').value.trim();
+  var result = document.getElementById('incident-result');
+  if(!type || !notes){ result.style.color='var(--amber)'; result.textContent='Type and description required.'; return; }
+  var incidents = [];
+  try { incidents = JSON.parse(localStorage.getItem('rs_incidents'))||[]; } catch(e){}
+  var entry = { type:type, notes:notes, time:new Date().toISOString(), date:new Date().toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) };
+  incidents.unshift(entry);
+  try { localStorage.setItem('rs_incidents', JSON.stringify(incidents)); } catch(e){}
+  if(navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(function(pos){
+      entry.lat = pos.coords.latitude; entry.lng = pos.coords.longitude;
+      try { localStorage.setItem('rs_incidents', JSON.stringify(incidents)); } catch(e){}
+    });
+  }
+  document.getElementById('incident-type').value='';
+  document.getElementById('incident-notes').value='';
+  result.style.color='var(--green)'; result.textContent='✅ Incident logged with timestamp.';
+  renderIncidents();
+}
+function renderIncidents(){
+  var incidents = [];
+  try { incidents = JSON.parse(localStorage.getItem('rs_incidents'))||[]; } catch(e){}
+  var el = document.getElementById('incident-history');
+  if(!el) return;
+  if(!incidents.length){ el.innerHTML=''; return; }
+  el.innerHTML = '<div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:6px;">Recent incidents</div>' + incidents.slice(0,5).map(function(inc){
+    return '<div style="background:var(--rbg);border-radius:8px;padding:8px 10px;margin-bottom:5px;font-size:12px;"><strong style="color:var(--red);">'+inc.type+'</strong> <span style="color:var(--muted);">· '+inc.date+'</span><div style="color:#7B241C;margin-top:2px;">'+inc.notes+'</div></div>';
+  }).join('');
+}
+renderIncidents();
+// ═══ EQUIPMENT CHECK (Quick Ref) ════════════════════════════════════
+var EQUIP_ITEMS = [
+  'Drone (aircraft)',
+  '3× batteries charged',
+  'Charger',
+  'ND filter set',
+  'Memory cards formatted (+ spare)',
+  'Phone charged — DJI Fly app ready',
+  'Hi-vis vest',
+  'Operator ID label visible on aircraft',
+  'Controller/tablet charged'
+];
+function equipTodayStr(){ return new Date().toISOString().slice(0,10); }
+function renderEquip(){
+  var list = document.getElementById('equip-list');
+  if(!list) return;
+  var today = equipTodayStr();
+  list.innerHTML = EQUIP_ITEMS.map(function(item,i){
+    var key = 'rs_equip_'+today+'_'+i;
+    var done = false;
+    try{ done = localStorage.getItem(key)==='1'; }catch(e){}
+    return '<div class="chk'+(done?' done':'')+'" data-equip="'+i+'" onclick="tickEquip(this)"><div class="chk-box"></div><div class="chk-text">'+item+'</div></div>';
+  }).join('');
+  updateEquipCount();
+}
+function tickEquip(el){
+  el.classList.toggle('done');
+  var i = el.dataset.equip;
+  var key = 'rs_equip_'+equipTodayStr()+'_'+i;
+  try{
+    if(el.classList.contains('done')) localStorage.setItem(key,'1'); else localStorage.removeItem(key);
+  }catch(e){}
+  updateEquipCount();
+}
+function updateEquipCount(){
+  var all = document.querySelectorAll('#equip-list .chk');
+  var done = document.querySelectorAll('#equip-list .chk.done');
+  var el = document.getElementById('equip-count');
+  if(el) el.textContent = done.length+' / '+all.length+' packed';
+}
+renderEquip();
+// ═══ JOB FLOW — live weather + overdue ════════════════════════════
+async function loadJobFlowLive(){
+  if(typeof AT === 'undefined' || !AT.hasToken()) return;
+  loadWeatherCard();
+  loadOverdueCard();
+}
+async function loadWeatherCard(){
+  var card = document.getElementById('weather-card');
+  if(!card) return;
+  try{
+    var jobs = await AT.getUpcomingJobs(60);
+    if(!jobs.length){ card.style.display='none'; card.innerHTML=''; return; }
+    var next = jobs[0];
+    var w = await AT.getWeatherForJob(next.fields[AT.FIELDS.jobs.address], next.fields[AT.FIELDS.jobs.date]);
+    if(!w){ card.style.display='none'; card.innerHTML=''; return; }
+    var alertClass = w.risk === 'red' ? 'red' : (w.risk === 'amber' ? 'amber' : 'green');
+    var icon = w.risk === 'red' ? '⚠️' : (w.risk === 'amber' ? '🟡' : '✅');
+    card.style.display='block';
+    card.innerHTML = '<div class="alert '+alertClass+'" style="margin-bottom:0;"><div class="alert-icon">'+icon+'</div><div><strong>Next job — '+
+      (next.fields[AT.FIELDS.jobs.client]||'Client')+', '+AT.fmtDate(w.date)+':</strong> '+w.summary+
+      '. Wind '+w.windSpeed+'m/s, rain '+w.rain+'mm.</div></div>';
+  }catch(e){ card.style.display='none'; card.innerHTML=''; }
+}
+async function loadOverdueCard(){
+  var card = document.getElementById('overdue-card');
+  if(!card) return;
+  try{
+    var alerts = await AT.getAlerts();
+    var overdue = alerts.filter(function(a){ return a.type === 'overdue'; });
+    if(!overdue.length){ card.style.display='none'; card.innerHTML=''; return; }
+    card.style.display='block';
+    card.innerHTML = '<div class="sl" style="margin-top:0;">Overdue reports</div>'+overdue.map(function(a){
+      return '<div class="job-item"><div class="job-client">'+a.client+'</div>'+
+        '<div class="job-addr">Inspected '+a.date+' — no report sent yet</div>'+
+        '<div class="job-meta"><span class="job-badge" style="background:var(--rbg);color:var(--red);">'+a.msg+'</span></div></div>';
+    }).join('');
+  }catch(e){ card.style.display='none'; card.innerHTML=''; }
+}
+loadJobFlowLive();
+// ═══ PLANNING TAB — calendar + monthly stats ═══════════════════════
+function atRefreshKeyUI(){
+  var connected = typeof AT !== 'undefined' && AT.hasToken();
+  var entry = document.getElementById('at-key-entry');
+  var saved = document.getElementById('at-key-saved');
+  if(entry) entry.style.display = connected ? 'none' : 'flex';
+  if(saved) saved.style.display = connected ? 'block' : 'none';
+}
+function atSaveKey(){
+  var v = document.getElementById('at-key-input').value.trim();
+  if(!v || typeof AT === 'undefined') return;
+  AT.setToken(v);
+  atRefreshKeyUI();
+  loadPlanning();
+  loadJobFlowLive();
+}
+function atChangeKey(){
+  if(typeof AT !== 'undefined') AT.setToken('');
+  document.getElementById('at-key-input').value = '';
+  atRefreshKeyUI();
+}
+atRefreshKeyUI();
+var calToday = new Date();
+var calYear = calToday.getFullYear();
+var calMonth = calToday.getMonth();
+var calJobsByDate = {};
+var calSelected = null;
+async function loadPlanning(){
+  var grid = document.getElementById('cal-days');
+  if(typeof AT === 'undefined' || !AT.hasToken()){
+    if(grid) grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;">No Airtable connection — open on a device with the token set.</div>';
+    return;
+  }
+  try{
+    var jobs = await AT.getUpcomingJobs(180);
+    calJobsByDate = {};
+    jobs.forEach(function(j){
+      var d = (j.fields[AT.FIELDS.jobs.date]||'').slice(0,10);
+      if(!d) return;
+      if(!calJobsByDate[d]) calJobsByDate[d] = [];
+      calJobsByDate[d].push(j);
+    });
+  }catch(e){ calJobsByDate = {}; }
+  renderCalendar();
+  loadStats();
+}
+function calNav(delta){
+  calMonth += delta;
+  if(calMonth < 0){ calMonth = 11; calYear--; }
+  if(calMonth > 11){ calMonth = 0; calYear++; }
+  renderCalendar();
+}
+function renderCalendar(){
+  var label = document.getElementById('cal-label');
+  if(!label) return;
+  var monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  label.textContent = monthNames[calMonth]+' '+calYear;
+  var first = new Date(calYear, calMonth, 1);
+  var startDow = (first.getDay()+6)%7; // Monday = 0
+  var daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+  var daysInPrevMonth = new Date(calYear, calMonth, 0).getDate();
+  var cells = [];
+  for(var i=0;i<startDow;i++){ cells.push({day: daysInPrevMonth-startDow+1+i, other:true}); }
+  for(var d=1; d<=daysInMonth; d++){ cells.push({day:d, other:false}); }
+  var nextDay = 1;
+  while(cells.length < 42){ cells.push({day: nextDay++, other:true}); }
+  var todayStr2 = new Date().toISOString().slice(0,10);
+  var grid = document.getElementById('cal-days');
+  grid.innerHTML = cells.map(function(c){
+    var dateStr = c.other ? '' : (calYear+'-'+String(calMonth+1).padStart(2,'0')+'-'+String(c.day).padStart(2,'0'));
+    var hasJob = dateStr && calJobsByDate[dateStr];
+    var cls = 'cal-day'+(c.other?' other-month':'')+(dateStr===todayStr2?' today':'')+(dateStr && dateStr===calSelected?' selected':'');
+    var onclick = c.other ? '' : ' onclick="calSelectDay(\''+dateStr+'\')"';
+    return '<div class="'+cls+'"'+onclick+'>'+c.day+(hasJob?'<div class="dot"></div>':'')+'</div>';
+  }).join('');
+  if(calSelected) renderDayDetail(calSelected);
+}
+function calSelectDay(dateStr){
+  calSelected = dateStr;
+  renderCalendar();
+  renderDayDetail(dateStr);
+}
+function renderDayDetail(dateStr){
+  var detail = document.getElementById('cal-day-detail');
+  if(!detail) return;
+  var jobs = calJobsByDate[dateStr] || [];
+  if(!jobs.length){ detail.innerHTML = '<div class="empty-state">No jobs on this day.</div>'; return; }
+  detail.innerHTML = jobs.map(function(j){
+    var f = j.fields;
+    var status = f[AT.FIELDS.jobs.status];
+    var style = AT.statusStyle(status);
+    return '<div class="job-item"><div class="job-client">'+(f[AT.FIELDS.jobs.client]||'Client')+'</div>'+
+      '<div class="job-addr">'+(f[AT.FIELDS.jobs.address]||'')+'</div>'+
+      '<div class="job-meta"><span class="job-badge" style="background:'+style.bg+';color:'+style.color+';">'+(status||'—')+'</span></div></div>';
+  }).join('');
+}
+async function loadStats(){
+  try{
+    var stats = await AT.getStats();
+    document.getElementById('stat-jobs').textContent = stats.jobsThisMonth;
+    document.getElementById('stat-income').textContent = AT.fmt(stats.monthRevenue);
+    document.getElementById('stat-trade').textContent = stats.activeTradeAccounts;
+  }catch(e){}
+  try{
+    var avg = await AT.getSussexAverage();
+    document.getElementById('stat-roofscore').textContent = avg;
+  }catch(e){}
+}
+// ═══ PHOTO SORTER TAB ═══════════════════════════════════════════════
+var PS_SECTIONS = [
+  {ref:"2.1.1", title:"Chimney pots & flaunching"},
+  {ref:"2.1.2", title:"Flashings & saddle pieces"},
+  {ref:"2.1.3", title:"Stack pointing & stonework"},
+  {ref:"2.2.1", title:"Ridge tiles & pointing"},
+  {ref:"2.2.2", title:"Slates / tiles – general condition"},
+  {ref:"2.2.3", title:"Verge detail"},
+  {ref:"2.2.4", title:"Pipe penetrations & soil vents"},
+  {ref:"2.3.1", title:"Guttering condition & fixings"},
+  {ref:"2.3.2", title:"Fascias & soffits"},
+  {ref:"2.3.3", title:"Downpipes & drainage"},
+  {ref:"2.4.1", title:"Aerial / satellite fixings"},
+  {ref:"—", title:"Overview / general shot"},
+  {ref:"?", title:"Unsorted – needs review"}
+];
+var PS_UNSORTED_IDX = PS_SECTIONS.length - 1;
+var PS_CLASSIFY_PROMPT = "You are sorting a photo from a UK drone roof inspection into the correct report section. Reply with ONLY the single number (1-13) for the best match, nothing else.\n" +
+  "1. Chimney pots & flaunching (mortar joint at chimney base)\n" +
+  "2. Flashings & saddle pieces (lead/metal weatherproofing around chimney or joins)\n" +
+  "3. Stack pointing & stonework (brick/stone mortar joints on the chimney stack itself)\n" +
+  "4. Ridge tiles & pointing (the tiles/mortar along the very top ridge line of the roof)\n" +
+  "5. Slates or tiles - general condition (a wide shot of the main roof covering, cracked/slipped/missing tiles)\n" +
+  "6. Verge detail (the sloped edge of the roof at the gable end of the building)\n" +
+  "7. Pipe penetrations & soil vents (small pipes/vents poking through the roof surface)\n" +
+  "8. Guttering condition & fixings (the gutter channel itself)\n" +
+  "9. Fascias & soffits (the boards under the roof edge/eaves, often white/UPVC)\n" +
+  "10. Downpipes & drainage (vertical pipes carrying water down the wall)\n" +
+  "11. Aerial or satellite dish fixings\n" +
+  "12. Overview / general shot (a wide-angle photo of the whole roof or property, not a specific defect)\n" +
+  "13. Unsure - none of the above clearly fit\n" +
+  "Reply with ONLY the number.";
+var psPhotos = [];
+var psNextId = 1;
+function psGetApiKey(){ try{ return localStorage.getItem('rs_anthropic_key') || ''; }catch(e){ return ''; } }
+function psRefreshKeyUI(){
+  var k = psGetApiKey();
+  var entry = document.getElementById('ps-key-entry');
+  var saved = document.getElementById('ps-key-saved');
+  if(entry) entry.style.display = k ? 'none' : 'flex';
+  if(saved) saved.style.display = k ? 'block' : 'none';
+}
+function psSaveKey(){
+  var v = document.getElementById('ps-key-input').value.trim();
+  if(!v) return;
+  try{ localStorage.setItem('rs_anthropic_key', v); }catch(e){}
+  psRefreshKeyUI();
+}
+function psChangeKey(){
+  try{ localStorage.removeItem('rs_anthropic_key'); }catch(e){}
+  document.getElementById('ps-key-input').value = '';
+  psRefreshKeyUI();
+}
+function psInitDropZone(){
+  var dz = document.getElementById('ps-drop-zone');
+  var fi = document.getElementById('ps-file-input');
+  if(!dz || !fi) return;
+  dz.addEventListener('dragover', function(e){ e.preventDefault(); dz.classList.add('dragover'); });
+  dz.addEventListener('dragleave', function(){ dz.classList.remove('dragover'); });
+  dz.addEventListener('drop', function(e){ e.preventDefault(); dz.classList.remove('dragover'); psHandleFiles(e.dataTransfer.files); });
+  fi.addEventListener('change', function(e){ psHandleFiles(e.target.files); fi.value=''; });
+}
+function psHandleFiles(fileList){
+  if(!psGetApiKey()){
+    var msg = document.getElementById('ps-status-msg');
+    if(msg) msg.textContent = 'Save your Anthropic API key above first.';
+    return;
+  }
+  var added = [];
+  for(var i=0;i<fileList.length;i++){
+    var f = fileList[i];
+    if(f.type.indexOf('image/')!==0) continue;
+    var p = {id:'p'+(psNextId++), file:f, url:URL.createObjectURL(f), sectionIdx:PS_UNSORTED_IDX, status:'pending', errmsg:''};
+    psPhotos.push(p);
+    added.push(p);
+  }
+  psRenderAll();
+  psRunPool(added, 4, psClassifyPhoto);
+}
+function psRunPool(items, limit, worker){
+  var idx = 0; var active = 0;
+  return new Promise(function(resolve){
+    if(items.length===0){ resolve(); return; }
+    function next(){
+      if(idx>=items.length && active===0){ resolve(); return; }
+      while(active<limit && idx<items.length){
+        (function(item){
+          active++;
+          worker(item).then(function(){ active--; psUpdateProgress(); next(); })
+                       .catch(function(){ active--; psUpdateProgress(); next(); });
+        })(items[idx]); idx++;
+      }
+    }
+    next();
+  });
+}
+function psDownscaleImage(file, maxDim){
+  return new Promise(function(resolve,reject){
+    var reader = new FileReader();
+    reader.onload = function(e){
+      var img = new Image();
+      img.onload = function(){
+        var w = img.width, h = img.height;
+        if(w>=h && w>maxDim){ h = Math.round(h*maxDim/w); w = maxDim; }
+        else if(h>w && h>maxDim){ w = Math.round(w*maxDim/h); h = maxDim; }
+        var canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img,0,0,w,h);
+        try{
+          var dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+          resolve(dataUrl.split(',')[1]);
+        }catch(err){ reject(err); }
+      };
+      img.onerror = function(){ reject(new Error('Could not read image')); };
+      img.src = e.target.result;
+    };
+    reader.onerror = function(){ reject(new Error('Could not read file')); };
+    reader.readAsDataURL(file);
+  });
+}
+async function psClassifyPhoto(photo){
+  photo.status = 'sorting';
+  psRenderAll();
+  try{
+    var base64 = await psDownscaleImage(photo.file, 768);
+    var res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{
+        'content-type':'application/json',
+        'x-api-key': psGetApiKey(),
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body: JSON.stringify({
+        model:'claude-haiku-4-5-20251001',
+        max_tokens:8,
+        messages:[{role:'user', content:[
+          {type:'image', source:{type:'base64', media_type:'image/jpeg', data:base64}},
+          {type:'text', text: PS_CLASSIFY_PROMPT}
+        ]}]
+      })
+    });
+    if(!res.ok){
+      var errText = await res.text();
+      throw new Error('API '+res.status+': '+errText.slice(0,150));
+    }
+    var data = await res.json();
+    var text = (data.content && data.content[0] && data.content[0].text) || '';
+    var m = text.match(/\d+/);
+    var num = m ? parseInt(m[0],10) : PS_SECTIONS.length;
+    var idx = Math.min(Math.max(num-1,0), PS_SECTIONS.length-1);
+    photo.sectionIdx = idx;
+    photo.status = 'done';
+  }catch(e){
+    photo.status = 'error';
+    photo.errmsg = e.message || 'Failed';
+    photo.sectionIdx = PS_UNSORTED_IDX;
+  }
+  psRenderAll();
+}
+function psResortErrors(){
+  var errored = psPhotos.filter(function(p){ return p.status==='error'; });
+  var msg = document.getElementById('ps-status-msg');
+  if(!errored.length){ if(msg) msg.textContent = 'Nothing to retry.'; return; }
+  psRunPool(errored, 4, psClassifyPhoto);
+}
+function psClearAll(){
+  psPhotos.forEach(function(p){ URL.revokeObjectURL(p.url); });
+  psPhotos = [];
+  psRenderAll();
+}
+function psUpdateProgress(){
+  var total = psPhotos.length;
+  var done = psPhotos.filter(function(p){ return p.status==='done' || p.status==='error'; }).length;
+  var pct = total ? Math.round(done/total*100) : 0;
+  var fill = document.getElementById('ps-progress-fill');
+  var label = document.getElementById('ps-progress-label');
+  var zipBtn = document.getElementById('ps-zip-btn');
+  if(fill) fill.style.width = pct+'%';
+  if(label) label.textContent = total ? (done+' / '+total+' sorted') : 'No photos yet';
+  if(zipBtn) zipBtn.disabled = total===0;
+}
+function psRenderAll(){
+  var grid = document.getElementById('ps-sections-grid');
+  if(!grid) return;
+  grid.innerHTML = '';
+  PS_SECTIONS.forEach(function(sec, idx){
+    var col = document.createElement('div');
+    col.className = 'ps-col';
+    col.ondragover = function(e){ e.preventDefault(); col.classList.add('dragover'); };
+    col.ondragleave = function(){ col.classList.remove('dragover'); };
+    col.ondrop = function(e){
+      e.preventDefault(); col.classList.remove('dragover');
+      var pid = e.dataTransfer.getData('text/plain');
+      var p = psPhotos.find(function(x){ return x.id===pid; });
+      if(p){ p.sectionIdx = idx; psRenderAll(); }
+    };
+    var inSection = psPhotos.filter(function(p){ return p.sectionIdx===idx; });
+    var head = document.createElement('div');
+    head.className = 'ps-col-head';
+    head.innerHTML = '<span class="ps-col-count">'+inSection.length+'</span><div class="ps-col-ref">'+sec.ref+'</div><div class="ps-col-title">'+sec.title+'</div>';
+    col.appendChild(head);
+    var body = document.createElement('div');
+    body.className = 'ps-col-body';
+    inSection.forEach(function(p){
+      var card = document.createElement('div');
+      card.className = 'ps-photo'+(p.status==='pending'||p.status==='sorting'?' pending':'')+(p.status==='error'?' err':'');
+      card.draggable = true;
+      card.ondragstart = function(e){ e.dataTransfer.setData('text/plain', p.id); };
+      var img = document.createElement('img');
+      img.src = p.url;
+      img.onclick = function(e){ e.stopPropagation(); psOpenLightbox(p.url); };
+      card.appendChild(img);
+      if(p.status==='sorting'){
+        var spin = document.createElement('div'); spin.className='ps-spin'; spin.textContent='⏳'; card.appendChild(spin);
+      }
+      var rm = document.createElement('button');
+      rm.className = 'ps-rm'; rm.textContent = '×';
+      rm.onclick = function(e){ e.stopPropagation(); URL.revokeObjectURL(p.url); psPhotos = psPhotos.filter(function(x){ return x.id!==p.id; }); psRenderAll(); };
+      card.appendChild(rm);
+      var fname = document.createElement('div');
+      fname.className = 'ps-fname'; fname.textContent = p.file.name; fname.title = p.file.name;
+      card.appendChild(fname);
+      body.appendChild(card);
+    });
+    col.appendChild(body);
+    grid.appendChild(col);
+  });
+  psUpdateProgress();
+}
+function psOpenLightbox(url){
+  document.getElementById('ps-lightbox-img').src = url;
+  document.getElementById('ps-lightbox').classList.add('open');
+}
+function psCloseLightbox(){ document.getElementById('ps-lightbox').classList.remove('open'); }
+function psSanitizeFolder(name){
+  return name.replace(/[\\\/:*?"<>|]/g, '-');
+}
+async function psDownloadZip(){
+  if(!psPhotos.length) return;
+  var zip = new JSZip();
+  var used = {};
+  psPhotos.forEach(function(p){
+    var sec = PS_SECTIONS[p.sectionIdx];
+    var folderName = psSanitizeFolder(sec.ref+' '+sec.title);
+    var key = folderName+'/'+p.file.name;
+    var finalName = p.file.name;
+    if(used[key]){
+      var parts = p.file.name.split('.');
+      var ext = parts.length>1 ? '.'+parts.pop() : '';
+      finalName = parts.join('.')+'-'+p.id+ext;
+    }
+    used[key] = true;
+    zip.folder(folderName).file(finalName, p.file);
+  });
+  var msg = document.getElementById('ps-status-msg');
+  if(msg) msg.textContent = 'Building ZIP...';
+  var blob = await zip.generateAsync({type:'blob'});
+  var d = new Date();
+  var stamp = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  saveAs(blob, 'roofscan-sorted-photos-'+stamp+'.zip');
+  if(msg) msg.textContent = 'Downloaded. Unzip it, then drag into the Report Generator.';
+}
+psRefreshKeyUI();
+psInitDropZone();
+psRenderAll();
+</script>
+</body>
+</html>
