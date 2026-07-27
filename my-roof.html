@@ -3,8 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
-<title>My Roof — RoofScan UK</title>
-<script src="https://js.stripe.com/v3/"></script>
+<title>My Roof: RoofScan UK</title>
 <style>
 :root{--n:#1C2B4A;--s:#1E4080;--g:#C9A84C;--bg:#F8F6F0;--cd:#FFF;--br:#E8E4D8;--mu:#6B7A8D;--gr:#27AE60;--am:#E67E22;--rd:#C0392B;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
@@ -77,31 +76,11 @@ main{padding:16px;}
 /* NEW PROPERTY */
 .new-prop-btn{width:100%;background:var(--cd);border:1px dashed var(--br);border-radius:14px;padding:14px;font-size:14px;font-weight:600;color:var(--mu);cursor:pointer;text-align:center;margin-bottom:12px;font-family:inherit;}
 
-/* ROOF CARE PLAN */
-.rc-card{background:#EAF4FB;border:1px solid #AED6F1;border-radius:12px;padding:14px 16px;margin-bottom:12px;}
-.rc-title{font-size:13px;font-weight:700;color:#1A5276;margin-bottom:4px;}
-.rc-text{font-size:12px;color:#1A5276;line-height:1.5;margin-bottom:8px;}
-.rc-btn{background:var(--n);color:var(--g);border:none;border-radius:7px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;}
-.rc-btn:disabled{opacity:0.6;cursor:default;}
-.rc-member{font-size:12px;font-weight:700;color:#1D8348;}
-.rc-price{font-size:13px;font-weight:800;color:#1A5276;margin-bottom:8px;}
-.rc-price s{opacity:.55;font-weight:600;margin-right:6px;}
-.rc-pay{display:none;margin-top:10px;}
-#rc-card-element{background:#fff;border:1px solid #AED6F1;border-radius:8px;padding:11px 12px;margin-bottom:8px;}
-.rc-errors{font-size:12px;color:#C0392B;min-height:16px;margin-bottom:6px;}
-.rc-small{font-size:11px;color:#1A5276;opacity:.75;line-height:1.5;margin-top:8px;}
-.rc-countdown{display:inline-block;background:#FBEEE0;color:#B9560A;font-size:11px;font-weight:800;padding:3px 9px;border-radius:20px;margin-bottom:8px;}
-.rc-inline{padding:14px 16px;border-top:1px solid var(--br);background:#EAF4FB;}
-.rc-inline .rc-title{margin-bottom:6px;}
-
-/* TABS */
-.tabs{display:flex;gap:4px;background:var(--cd);border:1px solid var(--br);border-radius:12px;padding:4px;margin-bottom:14px;}
-.tab-btn{flex:1;background:none;border:none;padding:9px 6px;font-size:13px;font-weight:700;color:var(--mu);border-radius:9px;cursor:pointer;font-family:inherit;}
-.tab-btn.active{background:var(--n);color:var(--g);}
-.reports-empty{text-align:center;color:var(--mu);font-size:13px;padding:30px 10px;}
-.report-row{background:var(--cd);border:1px solid var(--br);border-radius:12px;padding:13px 15px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:10px;}
-.report-addr{font-size:13.5px;font-weight:700;color:var(--n);}
-.report-date{font-size:11.5px;color:var(--mu);margin-top:2px;}
+/* REFERRAL */
+.ref-card{background:#FBF0D0;border:1px solid #F0C040;border-radius:12px;padding:14px 16px;margin-bottom:12px;}
+.ref-title{font-size:13px;font-weight:700;color:#8B6914;margin-bottom:4px;}
+.ref-text{font-size:12px;color:#7A5814;line-height:1.5;margin-bottom:8px;}
+.ref-link{background:var(--n);color:var(--g);border:none;border-radius:7px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;}
 
 .logout-btn{background:none;border:none;color:var(--mu);font-size:12px;cursor:pointer;text-align:center;display:block;margin:16px auto;text-decoration:underline;font-family:inherit;}
 .spacer{height:20px;}
@@ -197,16 +176,12 @@ main{padding:16px;}
   <div id="portal-section" style="display:none;">
     <div class="welcome" id="welcome-name">Welcome back</div>
     <div class="welcome-sub" id="welcome-sub">Your inspection history</div>
-    <div class="tabs">
-      <button class="tab-btn active" id="tab-btn-props" onclick="switchTab('props')">Properties</button>
-      <button class="tab-btn" id="tab-btn-reports" onclick="switchTab('reports')">Reports</button>
-    </div>
-    <div id="tab-props">
-      <div id="properties-list"></div>
-      <button class="new-prop-btn" onclick="bookNew()">+ Book inspection for a new property</button>
-    </div>
-    <div id="tab-reports" style="display:none;">
-      <div id="reports-list"></div>
+    <div id="properties-list"></div>
+    <button class="new-prop-btn" onclick="bookNew()">+ Book inspection for a new property</button>
+    <div class="ref-card" id="ref-card" style="display:none;">
+      <div class="ref-title">💛 Know someone who needs a roof inspection?</div>
+      <div class="ref-text">Share your referral link and they'll get £20 off their first inspection. We'll let you know when they book.</div>
+      <button class="ref-link" onclick="copyRef()">Copy referral link</button>
     </div>
     <button class="logout-btn" onclick="doLogout()">Sign out</button>
     <div class="spacer"></div>
@@ -332,8 +307,7 @@ async function loadPortal(email, token) {
     _currentEmail = email;
     _token = token;
     _jobs = jobs;
-    await showPortal(email, jobs);
-    renderReportsTab(jobs);
+    showPortal(email, jobs);
   } catch(e) {
     document.getElementById('portal-section').style.display = 'none';
     document.getElementById('login-section').style.display = 'block';
@@ -344,7 +318,7 @@ async function loadPortal(email, token) {
   }
 }
 
-async function showPortal(email, jobs) {
+function showPortal(email, jobs) {
   document.getElementById('login-section').style.display = 'none';
   document.getElementById('portal-section').style.display = 'block';
   var firstName = '';
@@ -359,16 +333,6 @@ async function showPortal(email, jobs) {
     if(!byAddr[addr]) byAddr[addr]=[];
     byAddr[addr].push(j);
   });
-
-  // Per-property Roof Care prebook eligibility — each address gets its own offer/countdown
-  var prebookStatus = {};
-  try{
-    var psRes = await fetch(API_BASE + '/prebook-status?email=' + encodeURIComponent(email), {
-      headers: { 'Authorization': 'Bearer ' + _token }
-    });
-    var psData = await psRes.json();
-    if(psRes.ok) prebookStatus = psData.properties || {};
-  }catch(e){}
 
   var html = '';
   Object.keys(byAddr).forEach(function(addr){
@@ -405,7 +369,7 @@ async function showPortal(email, jobs) {
 
     // 12-month reminder — only show if last inspection was Paid and 12+ months ago
     if(status === 'Paid' && isDueForReinspection(latest.date)) {
-      html += '<div class="due-reminder"><span class="due-reminder-icon">🗓️</span><span>It\'s been over a year since your last inspection here — worth booking a check-up to catch any new issues early.</span></div>';
+      html += '<div class="due-reminder"><span class="due-reminder-icon">🗓️</span><span>It\'s been over a year since your last inspection here, worth booking a check-up to catch any new issues early.</span></div>';
     }
 
     // Inspection history
@@ -416,155 +380,42 @@ async function showPortal(email, jobs) {
         var jScore = j.roofScore;
         var jReport = j.reportLink;
         var paid = jStatus === 'Paid';
-        var prebooked = jStatus === 'Prebooked';
-        var badge = paid ? (jReport ? '' : 'Preparing...') : (prebooked ? 'Deposit paid' : 'Awaiting payment');
         html += '<div class="insp-item">'
-          +'<div><div class="insp-date">'+(prebooked?'Next year':fmtDate(j.date))+'</div>'
-          +'<div class="insp-sub">'+(prebooked?'Prebooked — date to be arranged':jStatus)+'</div></div>'
+          +'<div><div class="insp-date">'+fmtDate(j.date)+'</div>'
+          +'<div class="insp-sub">'+jStatus+'</div></div>'
           +'<div class="insp-right">'
           +(jScore?'<span class="insp-score" style="color:'+scoreColor(jScore)+';">'+jScore+'/100</span>':'')
-          +(paid&&jReport?'<a href="'+jReport+'" target="_blank" class="dl-btn">Download</a>':'<span class="dl-btn disabled">'+badge+'</span>')
+          +(paid&&jReport?'<a href="'+jReport+'" target="_blank" class="dl-btn">Download</a>':'<span class="dl-btn disabled">'+(paid?'Preparing...':'Awaiting payment')+'</span>')
           +'</div></div>';
       });
       html += '</div>';
     }
 
-    // Book-again slot: normal button, OR the prebook offer (with countdown) while eligible,
-    // OR a "prebooked" confirmation if they've already locked it in for this property.
-    var bookUrl = 'index.html?email='+encodeURIComponent(email);
-    var slug = addrSlug(addr);
-    var ps = prebookStatus[addr];
-    _addrBySlug[slug] = addr;
-    if(ps && ps.alreadyPrebooked){
-      html += '<div class="rc-inline" id="rc-inline-'+slug+'">'
-        +'<div class="rc-title">🔧 Next inspection prebooked</div>'
-        +'<div class="rc-text"><span class="rc-member">✓ Booked in</span> — £50 deposit paid, 15% off locked in. Balance due after that inspection, as normal. We\'ll email you '+rcScheduleLabel(ps.scheduleDue)+' to pick your date.</div>'
-        +'</div>';
-    } else if(ps && ps.eligible){
-      html += '<div class="rc-inline" id="rc-inline-'+slug+'">'
-        +'<div class="rc-countdown">⏳ '+ps.daysLeft+' day'+(ps.daysLeft===1?'':'s')+' left to lock in 15% off</div>'
-        +'<div class="rc-title">🔧 Prebook next year\'s inspection</div>'
-        +'<div class="rc-price">Just pay your £50 deposit today to lock in 15% off</div>'
-        +'<button class="rc-btn" id="rc-btn-'+slug+'" onclick="startPrebook(\''+slug+'\')">Prebook — pay £50 deposit</button>'
-        +'<div class="rc-pay" id="rc-pay-'+slug+'">'
-        +'<div id="rc-card-element-'+slug+'"></div>'
-        +'<div class="rc-errors" id="rc-errors-'+slug+'"></div>'
-        +'<button class="rc-btn" id="rc-pay-btn-'+slug+'" onclick="submitPrebook(\''+slug+'\')">Confirm £50 deposit →</button>'
-        +'</div>'
-        +'<div class="rc-small">£50 comes off your total and is non-refundable after 14 days — your date stays freely reschedulable. Once the countdown ends, this reverts to a normal booking.</div>'
-        +'</div>';
-    } else {
-      html += '<div class="book-section"><a href="'+bookUrl+'" target="_blank" class="book-btn">📅 Book another inspection for this property</a></div>';
-    }
+    // Book again
+    var bookUrl = 'https://cal.com/roofscanuk/inspection?email='+encodeURIComponent(email)+'&notes=Re-inspection+of+'+encodeURIComponent(addr);
+    html += '<div class="book-section"><a href="'+bookUrl+'" target="_blank" class="book-btn">📅 Book another inspection for this property</a></div>';
     html += '</div>';
   });
 
   document.getElementById('properties-list').innerHTML = html;
-}
 
-function renderReportsTab(jobs){
-  var wrap = document.getElementById('reports-list');
-  if(!jobs || !jobs.length){ wrap.innerHTML = '<div class="reports-empty">No reports yet.</div>'; return; }
-  var sorted = jobs.slice().sort(function(a,b){ return new Date(b.date||0) - new Date(a.date||0); });
-  var html = '';
-  sorted.forEach(function(j){
-    var paid = j.status === 'Paid';
-    var prebooked = j.status === 'Prebooked';
-    if(prebooked) return; // nothing to report on yet — shown on the Properties tab instead
-    var badge = paid ? (j.reportLink ? '' : 'Preparing...') : 'Awaiting payment';
-    html += '<div class="report-row">'
-      +'<div><div class="report-addr">'+(j.address||'—')+'</div>'
-      +'<div class="report-date">'+fmtDate(j.date)+(j.roofScore?' · <span style="color:'+scoreColor(j.roofScore)+';font-weight:700;">'+j.roofScore+'/100</span>':'')+'</div></div>'
-      +(paid && j.reportLink ? '<a href="'+j.reportLink+'" target="_blank" class="dl-btn">Download</a>' : '<span class="dl-btn disabled">'+badge+'</span>')
-      +'</div>';
-  });
-  wrap.innerHTML = html;
-}
-
-function switchTab(name){
-  var isProps = name === 'props';
-  document.getElementById('tab-props').style.display = isProps ? 'block' : 'none';
-  document.getElementById('tab-reports').style.display = isProps ? 'none' : 'block';
-  document.getElementById('tab-btn-props').classList.toggle('active', isProps);
-  document.getElementById('tab-btn-reports').classList.toggle('active', !isProps);
+  // Show referral card if they've had a paid inspection
+  var hasPaid = jobs.some(function(j){return j.status==='Paid';});
+  if(hasPaid) document.getElementById('ref-card').style.display = 'block';
 }
 
 function bookNew(){
-  var url = 'index.html' + (_currentEmail?'?email='+encodeURIComponent(_currentEmail):'');
+  var url = 'https://cal.com/roofscanuk/inspection' + (_currentEmail?'?email='+encodeURIComponent(_currentEmail):'');
   window.open(url,'_blank');
 }
 
-// ═══ ROOF CARE PLAN — prebook next year's inspection (£50 deposit, 15% off) ═══════════════
-// Per-property: each address gets its own Stripe Elements instance and payment state, keyed by slug.
-var RC_STRIPE_PK = 'pk_live_51Trv87QcApNGjNdfmHcSoqHDYS69kmFe7bFzYTEluYIgGZE4GPqGRQDap8ZQeYvPpCgVxhZUmDGkDpcvCq0tTC1H00a56fU5sw';
-var _rcState = {};
-var _addrBySlug = {};
-
-function addrSlug(addr){ return 'p' + String(addr).replace(/[^a-zA-Z0-9]/g,'').slice(0,24); }
-
-function rcScheduleLabel(dueIso){
-  if(!dueIso) return 'when it\'s time';
-  try{ return 'around ' + new Date(dueIso).toLocaleDateString('en-GB',{month:'long',year:'numeric'}); }catch(e){ return 'when it\'s time'; }
-}
-
-function rcShowPrebookedInline(slug, dueIso){
-  var el = document.getElementById('rc-inline-'+slug);
-  if(!el) return;
-  el.innerHTML = '<div class="rc-title">🔧 Next inspection prebooked</div>'
-    +'<div class="rc-text"><span class="rc-member">✓ Booked in</span> — £50 deposit paid, 15% off locked in. Balance due after that inspection, as normal. We\'ll email you ' + rcScheduleLabel(dueIso) + ' to pick your date.</div>';
-}
-
-function startPrebook(slug){
-  var addr = _addrBySlug[slug];
-  document.getElementById('rc-btn-'+slug).style.display = 'none';
-  document.getElementById('rc-pay-'+slug).style.display = 'block';
-  if(!_rcState[slug]) _rcState[slug] = {};
-  var st = _rcState[slug];
-  if(!st.stripe && window.Stripe){
-    st.stripe = Stripe(RC_STRIPE_PK);
-    st.cardEl = st.stripe.elements().create('card', {style:{base:{fontSize:'15px',fontFamily:'inherit'}}});
-    st.cardEl.mount('#rc-card-element-'+slug);
-    st.cardEl.on('change', function(e){ document.getElementById('rc-errors-'+slug).textContent = e.error ? e.error.message : ''; });
-  }
-  if(!st.piSecret){
-    fetch(API_BASE + '/prebook-intent', {
-      method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer ' + _token},
-      body: JSON.stringify({email:_currentEmail, address:addr})
-    }).then(function(r){return r.json();}).then(function(d){
-      if(d.clientSecret){ st.piSecret = d.clientSecret; st.piId = d.paymentIntentId; }
-      else document.getElementById('rc-errors-'+slug).textContent = d.error || 'Could not start payment — please refresh.';
-    }).catch(function(){ document.getElementById('rc-errors-'+slug).textContent = 'Could not start payment — please refresh.'; });
-  }
-}
-
-async function submitPrebook(slug){
-  var addr = _addrBySlug[slug];
-  var st = _rcState[slug] || {};
-  if(!st.piSecret){ document.getElementById('rc-errors-'+slug).textContent = 'Payment not ready yet — one moment, then try again.'; return; }
-  var btn = document.getElementById('rc-pay-btn-'+slug);
-  btn.disabled = true; btn.textContent = 'Processing…';
-  var result = await st.stripe.confirmCardPayment(st.piSecret, {
-    payment_method: { card: st.cardEl, billing_details: { email: _currentEmail } }
-  });
-  if(result.error){
-    document.getElementById('rc-errors-'+slug).textContent = result.error.message;
-    btn.disabled = false; btn.textContent = 'Confirm £50 deposit →';
-    return;
-  }
-  try{
-    var res = await fetch(API_BASE + '/prebook-confirm', {
-      method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer ' + _token},
-      body: JSON.stringify({email:_currentEmail, address:addr, paymentIntentId:st.piId})
-    });
-    var data = await res.json();
-    if(!res.ok) throw new Error(data.error || 'Something went wrong.');
-    rcShowPrebookedInline(slug, data.scheduleDue);
-  }catch(e){
-    document.getElementById('rc-errors-'+slug).textContent = (e.message||'Something went wrong') + ' — your payment went through; contact info@roofscanuk.co.uk and we\'ll sort it.';
-    btn.disabled = false; btn.textContent = 'Confirm £50 deposit →';
-  }
+function copyRef(){
+  var refLink = 'https://roofscanuk.co.uk/book?ref='+btoa(_currentEmail).replace(/=/g,'');
+  navigator.clipboard.writeText(refLink).then(function(){
+    var btn = document.querySelector('.ref-link');
+    btn.textContent = '✅ Copied!';
+    setTimeout(function(){btn.textContent='Copy referral link';},2000);
+  }).catch(function(){ prompt('Your referral link:', refLink); });
 }
 
 function doLogout(){

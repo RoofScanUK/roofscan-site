@@ -72,11 +72,19 @@ h2.section-title{font-size:clamp(1.7rem,3.2vw,2.35rem);}
 .hero-art{display:flex;align-items:center;justify-content:center;}
 .hero-art svg{width:100%;max-width:340px;height:auto;}
 
-/* TRUST STRIP */
-.trust-strip{background:var(--paper);border-bottom:1px solid var(--line);padding:20px 24px;}
-.trust-strip .wrap{display:flex;justify-content:center;gap:0;flex-wrap:wrap;align-items:center;}
-.trust-strip span{color:var(--muted);font-size:12.5px;font-weight:500;white-space:nowrap;padding:0 18px;border-right:1px solid var(--line);}
-.trust-strip span:last-child{border-right:none;}
+/* TRUST STRIP / CREDENTIAL BADGES */
+.trust-strip{background:var(--paper);border-bottom:1px solid var(--line);padding:22px 24px;}
+.cred-badges{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;}
+.cred-badge{display:flex;align-items:center;gap:7px;background:rgba(28,43,74,.04);border:1px solid var(--line);border-radius:20px;padding:7px 15px 7px 11px;font-size:12.5px;font-weight:600;color:var(--navy);white-space:nowrap;}
+.cred-badge svg{width:14px;height:14px;stroke:var(--gold);stroke-width:2;fill:none;flex-shrink:0;}
+
+/* PROOF / METRICS SECTION */
+.proof-stats{background:var(--navy);padding:64px 24px;}
+.proof-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:rgba(251,250,247,.14);border:1px solid rgba(251,250,247,.14);}
+@media (max-width:720px){ .proof-grid{grid-template-columns:repeat(2,1fr);} }
+.proof-tile{background:var(--navy);padding:30px 20px;text-align:center;}
+.proof-tile .n{font-family:'Fraunces',serif;color:var(--gold);font-size:2.2rem;}
+.proof-tile .l{color:rgba(251,250,247,.55);font-size:11px;text-transform:uppercase;letter-spacing:.08em;margin-top:6px;}
 
 /* TIMELINE (process) */
 .timeline{display:grid;grid-template-columns:repeat(3,1fr);gap:36px;position:relative;}
@@ -253,7 +261,7 @@ textarea{resize:vertical;}
       <span class="nav-link" onclick="go('about')">About</span>
       <span class="nav-link" onclick="go('contact')">Contact</span>
       <a class="nav-link" href="login.html" style="color:var(--muted);">Client Login</a>
-      <button class="btn small" onclick="go('book')">Get instant quote</button>
+      <button class="btn small" style="background:var(--gold);border-color:var(--gold);color:var(--navy);" onclick="go('book')">Get instant quote</button>
     </div>
   </div>
 </nav>
@@ -269,7 +277,7 @@ textarea{resize:vertical;}
         <h1>Your roof, inspected from above</h1>
         <p>Professional drone roof inspections across Sussex. Answer a few quick questions and get an instant, no-obligation price, no call needed. Full written report with condition ratings, delivered within 48 hours.</p>
         <div class="hero-ctas">
-          <button class="btn" onclick="go('book')">Get your instant quote →</button>
+          <button class="btn" style="background:var(--gold);border-color:var(--gold);color:var(--navy);" onclick="go('book')">Get your instant quote →</button>
           <a class="textlink" href="#" onclick="event.preventDefault();document.getElementById('how-it-works').scrollIntoView({behavior:'smooth'});">See how it works</a>
         </div>
         <div class="fact-strip">
@@ -294,8 +302,12 @@ textarea{resize:vertical;}
   </section>
 
   <section class="trust-strip">
-    <div class="wrap">
-      <span>CAA Operator ID</span><span>Commercial drone insurance</span><span>DJI Air 3S</span><span>All of Sussex</span><span>48hr report delivery</span>
+    <div class="wrap cred-badges">
+      <span class="cred-badge"><svg viewBox="0 0 24 24"><path d="M12 2l7 3v6c0 4.5-3 8-7 9-4-1-7-4.5-7-9V5z"/><path d="M9 12l2 2 4-4"/></svg>CAA Operator ID</span>
+      <span class="cred-badge"><svg viewBox="0 0 24 24"><path d="M12 2l7 3v6c0 4.5-3 8-7 9-4-1-7-4.5-7-9V5z"/><path d="M9 12l2 2 4-4"/></svg>Commercial drone insurance</span>
+      <span class="cred-badge"><svg viewBox="0 0 24 24"><path d="M12 2l7 3v6c0 4.5-3 8-7 9-4-1-7-4.5-7-9V5z"/><path d="M9 12l2 2 4-4"/></svg>DJI Air 3S</span>
+      <span class="cred-badge"><svg viewBox="0 0 24 24"><path d="M12 2l7 3v6c0 4.5-3 8-7 9-4-1-7-4.5-7-9V5z"/><path d="M9 12l2 2 4-4"/></svg>All of Sussex</span>
+      <span class="cred-badge"><svg viewBox="0 0 24 24"><path d="M12 2l7 3v6c0 4.5-3 8-7 9-4-1-7-4.5-7-9V5z"/><path d="M9 12l2 2 4-4"/></svg>48hr report delivery</span>
     </div>
   </section>
 
@@ -314,7 +326,7 @@ textarea{resize:vertical;}
       <div class="timeline">
         <div class="tl-item tl-expand" onclick="this.classList.toggle('open')"><div class="tl-num">01</div><h3>Get your instant quote</h3><p>Answer a few quick questions about the property, its type, location, and any roof features, and see your price straight away. No call needed.</p><p class="tl-more">Takes about a minute. Pay a £50 deposit online to lock in your date; the balance is due once the job's done.</p></div>
         <div class="tl-item tl-expand" onclick="this.classList.toggle('open')"><div class="tl-num">02</div><h3>We fly and inspect</h3><p>Our CAA-licensed pilot captures high-resolution imagery of every element: chimneys, ridges, flashings, gutters.</p><p class="tl-more">Most inspections take under an hour on site, including setup and safety checks. You don't need to be home unless you'd like to be.</p></div>
-        <div class="tl-item tl-expand" onclick="this.classList.toggle('open')"><div class="tl-num">03</div><h3>Receive your report</h3><p>A fully written condition report with photos, ratings, and a contractor-ready Schedule of Works, within 48 hours.</p><p class="tl-more">Delivered as a PDF you can forward to a contractor, solicitor, or insurer, no login required to view it.</p></div>
+        <div class="tl-item tl-expand" onclick="this.classList.toggle('open')"><div class="tl-num">03</div><h3>Receive your report</h3><p>A fully written condition report with photos, ratings, and a contractor-ready Schedule of Works, within 48 hours.</p><p class="tl-more">Delivered as a PDF in your secure client portal, which you can then forward to a contractor, solicitor, or insurer.</p></div>
       </div>
       <div style="text-align:center;margin-top:8px;"><span class="muted" style="font-size:12px;">Tap a step for more detail</span></div>
     </div>
@@ -348,43 +360,13 @@ textarea{resize:vertical;}
           <div class="check-item"><span class="dash">—</span><span>PDF delivered within 48 hours</span></div>
         </div>
       </div>
-      <div class="panel">
-        <div class="eyebrow" style="margin-bottom:16px;">Sample overview</div>
-        <div class="panel-row"><span class="l">Overall condition</span><span class="v">Moderate</span></div>
-        <div class="panel-row"><span class="l">Repair required</span><span class="v">2 items</span></div>
-        <div class="panel-row"><span class="l">Monitor</span><span class="v">3 items</span></div>
-        <div class="panel-row"><span class="l">Satisfactory</span><span class="v">8 items</span></div>
-        <div class="panel-row"><span class="l">Inspection date</span><span class="v muted" style="font-weight:400;">14 Jun 2026</span></div>
-        <div class="panel-row"><span class="l">Delivered</span><span class="v muted" style="font-weight:400;">16 Jun 2026</span></div>
+      <div class="panel" style="padding:16px;">
+        <div class="eyebrow" style="margin-bottom:12px;">Sample report</div>
+        <iframe src="sample-report.pdf" title="Sample RoofScan UK inspection report" style="width:100%;height:340px;border:1px solid var(--line);border-radius:2px;"></iframe>
+        <div style="text-align:center;margin-top:14px;">
+          <a class="textlink" href="sample-report.pdf" target="_blank" rel="noopener noreferrer">View full sample report →</a>
+        </div>
       </div>
-    </div>
-  </section>
-
-  <section class="pad reveal" style="border-top:1px solid var(--line);">
-    <div class="wrap">
-      <div class="section-head center">
-        <div class="eyebrow">Transparent pricing</div>
-        <h2 class="section-title" style="margin-bottom:10px;">Clear, upfront pricing</h2>
-        <p class="muted">Your price depends on property type, roof features, and location in Sussex.</p>
-      </div>
-      <div>
-        <div class="price-row"><div class="badge">T</div><div class="info"><div class="t">Terraced</div><div class="d">Mid or end terrace</div></div><div class="amt">£199</div></div>
-        <div class="price-row"><div class="badge">S</div><div class="info"><div class="t">Semi-detached</div><div class="d">Semi-detached house</div></div><div class="amt">£219</div></div>
-        <div class="price-row"><div class="badge">D</div><div class="info"><div class="t">Detached</div><div class="d">Standalone property</div></div><div class="amt">£249</div></div>
-        <div class="price-row"><div class="badge">L</div><div class="info"><div class="t">Large detached</div><div class="d">5+ beds or large footprint</div></div><div class="amt">£299</div></div>
-      </div>
-      <div style="text-align:center;margin-top:32px;">
-        <div class="muted" style="font-size:13px;margin-bottom:22px;">Add-ons: chimneys £35 · extensions £30 · dormers £20 · outbuildings £40 &nbsp;·&nbsp; Travel: free in Brighton &amp; Hove, +£10 mid Sussex, +£20 wider Sussex</div>
-        <a class="textlink" href="#" onclick="event.preventDefault();go('pricing')">See full pricing breakdown →</a>
-      </div>
-    </div>
-  </section>
-
-  <section class="pad reveal" style="border-top:1px solid var(--line);">
-    <div class="wrap review-quote">
-      <div class="eyebrow" style="text-align:center;">Client reviews</div>
-      <p>"Google Reviews will appear here once you have 5 or more."</p>
-      <div class="note">Placeholder text. This section switches on automatically.</div>
     </div>
   </section>
 
