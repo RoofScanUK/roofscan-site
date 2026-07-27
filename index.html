@@ -780,9 +780,9 @@ textarea{resize:vertical;}
       </div>
       <div>
         <div class="footer-title">Services</div>
-        <div class="footer-link">Residential Inspections</div>
-        <div class="footer-link">Business & Portfolio Subscriptions</div>
-        <div class="footer-link">Surveyor & Lender Support</div>
+        <div class="footer-link" onclick="go('services')">Residential Inspections</div>
+        <div class="footer-link" onclick="go('services')">Business & Portfolio Subscriptions</div>
+        <div class="footer-link" onclick="go('services')">Surveyor & Lender Support</div>
       </div>
       <div>
         <div class="footer-title">Company</div>
@@ -792,12 +792,12 @@ textarea{resize:vertical;}
       </div>
       <div>
         <div class="footer-title">Client Portals</div>
-        <a class="footer-link" href="login.html" style="display:block;">Portal Login: My Roof & Trade</a>
+        <div class="footer-link" onclick="openLoginModal()">Portal Login: My Roof & Trade</div>
       </div>
       <div>
         <div class="footer-title">Legal</div>
-        <div class="footer-link">Terms &amp; Conditions</div>
-        <div class="footer-link">Privacy Policy</div>
+        <a class="footer-link" href="terms.html" style="display:block;">Terms &amp; Conditions</a>
+        <a class="footer-link" href="privacy.html" style="display:block;">Privacy Policy</a>
       </div>
     </div>
     <div class="footer-bottom">
