@@ -237,6 +237,40 @@ textarea{resize:vertical;}
 .total-row .v{color:var(--paper);font-size:13px;font-weight:600;}
 .book-cta{display:block;background:var(--gold);color:var(--navy);border-radius:2px;padding:15px;font-size:15px;font-weight:700;text-align:center;margin-bottom:12px;}
 
+/* CLIENT LOGIN MODAL */
+.login-overlay{display:none;position:fixed;inset:0;background:rgba(28,43,74,.55);backdrop-filter:blur(2px);z-index:500;align-items:center;justify-content:center;padding:24px;}
+.login-overlay.open{display:flex;}
+.login-modal{background:var(--white);border-radius:4px;max-width:920px;width:100%;display:grid;grid-template-columns:1fr 1fr;overflow:hidden;box-shadow:0 24px 64px rgba(28,43,74,.28);max-height:90vh;}
+.login-modal-side{background:var(--navy);padding:56px 44px;display:flex;flex-direction:column;justify-content:center;}
+.login-modal-side .eyebrow{color:var(--gold);}
+.login-modal-side h3{color:var(--paper);font-size:1.7rem;margin-bottom:14px;}
+.login-modal-side p{color:rgba(251,250,247,.7);font-size:14.5px;line-height:1.6;}
+.login-modal-main{padding:48px 44px;position:relative;overflow-y:auto;}
+.login-modal-close{position:absolute;top:18px;right:18px;background:none;border:none;font-size:22px;line-height:1;color:var(--muted);width:32px;height:32px;border-radius:50%;}
+.login-modal-close:hover{background:var(--paper);}
+.login-modal-main h2{font-size:1.5rem;margin-bottom:8px;}
+.login-modal-sub{color:var(--muted);font-size:14.5px;line-height:1.6;margin-bottom:24px;}
+.login-inp{width:100%;border:1px solid var(--line);border-radius:2px;padding:13px 16px;font-size:15px;color:var(--ink);outline:none;margin-bottom:14px;font-family:inherit;background:var(--paper);}
+.login-inp:focus{border-color:var(--navy);}
+.login-modal-btn{width:100%;background:var(--navy);color:var(--paper);border:none;border-radius:2px;padding:14px;font-size:14.5px;font-weight:600;cursor:pointer;font-family:inherit;}
+.login-modal-btn:disabled{opacity:.6;}
+.login-modal-error{font-size:13.5px;color:#B0442E;margin-top:10px;line-height:1.5;}
+.login-spinner{display:inline-block;width:15px;height:15px;border:2px solid rgba(251,250,247,.35);border-top-color:var(--paper);border-radius:50%;animation:lm-spin .7s linear infinite;}
+@keyframes lm-spin{to{transform:rotate(360deg);}}
+.login-text-btn{background:none;border:none;color:var(--muted);font-size:12.5px;cursor:pointer;text-decoration:underline;font-family:inherit;padding:0;}
+.login-checking{text-align:center;padding:30px 0;}
+.login-checking .login-spinner{width:20px;height:20px;border-color:rgba(28,43,74,.15);border-top-color:var(--navy);margin-bottom:12px;}
+.login-checking p{color:var(--muted);font-size:14px;}
+.login-choose-row{display:grid;gap:12px;margin-top:6px;}
+.login-choose-btn{width:100%;background:var(--paper);border:1px solid var(--line);border-radius:2px;padding:16px;font-size:14.5px;font-weight:600;color:var(--navy);cursor:pointer;font-family:inherit;text-align:left;}
+.login-choose-btn:hover{border-color:var(--navy);}
+.login-choose-btn .d{font-size:12.5px;color:var(--muted);font-weight:400;margin-top:3px;}
+@media (max-width:760px){
+  .login-modal{grid-template-columns:1fr;max-height:92vh;}
+  .login-modal-side{padding:32px 28px;}
+  .login-modal-main{padding:36px 28px;}
+}
+
 /* icon svg small helper for addons */
 .mono-icon{width:22px;height:22px;flex-shrink:0;}
 
@@ -260,11 +294,64 @@ textarea{resize:vertical;}
       <span class="nav-link" onclick="go('pricing')">Pricing</span>
       <span class="nav-link" onclick="go('about')">About</span>
       <span class="nav-link" onclick="go('contact')">Contact</span>
-      <a class="nav-link" href="login.html" style="color:var(--muted);">Client Login</a>
+      <span class="nav-link" style="color:var(--muted);" onclick="openLoginModal()">Client Login</span>
       <button class="btn small" style="background:var(--gold);border-color:var(--gold);color:var(--navy);" onclick="go('book')">Get instant quote</button>
     </div>
   </div>
 </nav>
+
+<div class="login-overlay" id="login-overlay" onclick="if(event.target===this)closeLoginModal()">
+  <div class="login-modal">
+    <div class="login-modal-side">
+      <div class="eyebrow">Client login</div>
+      <h3>Your roof, all in one place</h3>
+      <p>View your inspection history, download your reports, and track any follow-up work. Trade accounts can also see job status and invoices here.</p>
+    </div>
+    <div class="login-modal-main">
+      <button class="login-modal-close" onclick="closeLoginModal()">&times;</button>
+
+      <div id="lm-step-email">
+        <h2>Sign in to your account</h2>
+        <div class="login-modal-sub">Enter the email address you used to book an inspection, or your trade account email. We'll send a 6-digit code to confirm it's you, then take you straight to the right place.</div>
+        <input type="email" id="lm-email" class="login-inp" placeholder="your@email.com" onkeydown="if(event.key==='Enter')lmRequestCode()">
+        <button class="login-modal-btn" id="lm-request-btn" onclick="lmRequestCode()">Send me a code →</button>
+        <div class="login-modal-error" id="lm-login-error"></div>
+      </div>
+
+      <div id="lm-step-code" style="display:none;">
+        <h2>Enter your code</h2>
+        <div class="login-modal-sub">We sent a 6-digit code to <strong id="lm-code-sent-to" style="color:var(--navy);"></strong>. It expires in 10 minutes.</div>
+        <input type="text" inputmode="numeric" maxlength="6" id="lm-code" class="login-inp" placeholder="123456" onkeydown="if(event.key==='Enter')lmVerifyCode()">
+        <button class="login-modal-btn" id="lm-verify-btn" onclick="lmVerifyCode()">Verify &amp; continue →</button>
+        <div class="login-modal-error" id="lm-code-error"></div>
+        <div style="display:flex;justify-content:space-between;margin-top:14px;">
+          <button class="login-text-btn" onclick="lmBackToEmail()">Use a different email</button>
+          <button class="login-text-btn" onclick="lmRequestCode(true)">Resend code</button>
+        </div>
+      </div>
+
+      <div id="lm-step-checking" style="display:none;">
+        <div class="login-checking"><span class="login-spinner"></span><p>Checking your account...</p></div>
+      </div>
+
+      <div id="lm-step-choose" style="display:none;">
+        <h2>Which account would you like to open?</h2>
+        <div class="login-modal-sub">This email is linked to both a homeowner and a trade account.</div>
+        <div class="login-choose-row">
+          <button class="login-choose-btn" onclick="lmGoToPortal('homeowner')">My Roof<div class="d">Your inspection history &amp; reports</div></button>
+          <button class="login-choose-btn" onclick="lmGoToPortal('trade')">Trade account<div class="d">Jobs, invoices &amp; submissions</div></button>
+        </div>
+      </div>
+
+      <div id="lm-step-notfound" style="display:none;">
+        <h2>No account found</h2>
+        <div class="login-modal-sub" id="lm-notfound-msg"></div>
+        <button class="login-modal-btn" onclick="lmBackToEmail()">Try a different email</button>
+      </div>
+
+    </div>
+  </div>
+</div>
 
 <main>
 
@@ -911,6 +998,119 @@ function renderPrice(){
 
   document.getElementById('book-cta-link').href = 'https://cal.com/roofscanuk/inspection?total='+total;
   document.getElementById('balance-note').innerHTML = 'Balance of '+fmt(Math.max(0,total-50))+' due on completion · <a href="terms.html" class="muted">Terms &amp; Conditions</a>';
+}
+
+// ============ CLIENT LOGIN MODAL ============
+var LM_API_BASE = 'https://roofscan-api.tiny-voice-ac40.workers.dev';
+var lmPendingEmail = '';
+var lmPendingToken = '';
+
+function openLoginModal(){
+  document.getElementById('login-overlay').classList.add('open');
+  lmShowStep('lm-step-email');
+  setTimeout(()=>{ const el=document.getElementById('lm-email'); if(el) el.focus(); }, 60);
+}
+function closeLoginModal(){
+  document.getElementById('login-overlay').classList.remove('open');
+}
+document.addEventListener('keydown', e=>{
+  if(e.key==='Escape') closeLoginModal();
+});
+
+function lmShowStep(id){
+  ['lm-step-email','lm-step-code','lm-step-checking','lm-step-choose','lm-step-notfound'].forEach(s=>{
+    document.getElementById(s).style.display = (s===id) ? 'block' : 'none';
+  });
+}
+
+async function lmRequestCode(isResend){
+  var email = document.getElementById('lm-email').value.trim().toLowerCase();
+  if(!isResend){
+    if(!email || !email.includes('@')){ document.getElementById('lm-login-error').textContent = 'Please enter a valid email address.'; return; }
+  } else {
+    email = lmPendingEmail;
+  }
+  var btn = isResend ? null : document.getElementById('lm-request-btn');
+  if(btn){ btn.disabled = true; btn.innerHTML = '<span class="login-spinner"></span>'; }
+  document.getElementById('lm-login-error').textContent = '';
+  document.getElementById('lm-code-error').textContent = '';
+  try{
+    var res = await fetch(LM_API_BASE + '/request-code', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({email: email})
+    });
+    if(!res.ok) throw new Error('API error '+res.status);
+    lmPendingEmail = email;
+    document.getElementById('lm-code-sent-to').textContent = email;
+    lmShowStep('lm-step-code');
+    document.getElementById('lm-code').value = '';
+    document.getElementById('lm-code').focus();
+    if(isResend){ document.getElementById('lm-code-error').style.color = '#27AE60'; document.getElementById('lm-code-error').textContent = 'Code resent.'; }
+  } catch(e){
+    document.getElementById('lm-login-error').textContent = 'Something went wrong. Please try again.';
+  }
+  if(btn){ btn.disabled = false; btn.textContent = 'Send me a code →'; }
+}
+
+function lmBackToEmail(){
+  lmShowStep('lm-step-email');
+  document.getElementById('lm-code-error').textContent = '';
+}
+
+async function lmVerifyCode(){
+  var code = document.getElementById('lm-code').value.trim();
+  if(!code){ document.getElementById('lm-code-error').textContent = 'Enter the 6-digit code.'; return; }
+  var btn = document.getElementById('lm-verify-btn');
+  btn.disabled = true; btn.innerHTML = '<span class="login-spinner"></span>';
+  document.getElementById('lm-code-error').textContent = '';
+  try{
+    var res = await fetch(LM_API_BASE + '/verify-code', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({email: lmPendingEmail, code: code})
+    });
+    var body = await res.json();
+    if(!res.ok || !body.token) throw new Error(body.error || 'Incorrect or expired code.');
+    lmPendingToken = body.token;
+    lmShowStep('lm-step-checking');
+    await lmRouteToAccount(lmPendingEmail, lmPendingToken);
+  } catch(e){
+    document.getElementById('lm-code-error').textContent = e.message || 'Incorrect or expired code.';
+    btn.disabled = false; btn.textContent = 'Verify & continue →';
+  }
+}
+
+async function lmCheckHomeowner(email, token){
+  try{
+    var res = await fetch(LM_API_BASE + '/homeowner?email=' + encodeURIComponent(email), { headers: { 'Authorization': 'Bearer ' + token } });
+    if(!res.ok) return false;
+    var data = await res.json();
+    return !!(data.records && data.records.length);
+  } catch(e){ return false; }
+}
+async function lmCheckTrade(email, token){
+  try{
+    var res = await fetch(LM_API_BASE + '/trade-account?email=' + encodeURIComponent(email), { headers: { 'Authorization': 'Bearer ' + token } });
+    return res.ok;
+  } catch(e){ return false; }
+}
+function lmSaveHomeownerSession(email, token){ try{ localStorage.setItem('rs_portal_email', email); localStorage.setItem('rs_portal_token', token); }catch(e){} }
+function lmSaveTradeSession(email, token){ try{ localStorage.setItem('rs_trade_email', email); localStorage.setItem('rs_trade_token', token); }catch(e){} }
+
+function lmGoToPortal(which){
+  if(which==='homeowner'){ lmSaveHomeownerSession(lmPendingEmail, lmPendingToken); window.location.href = 'my-roof.html'; }
+  else { lmSaveTradeSession(lmPendingEmail, lmPendingToken); window.location.href = 'trade-portal.html'; }
+}
+
+async function lmRouteToAccount(email, token){
+  var results = await Promise.all([lmCheckHomeowner(email, token), lmCheckTrade(email, token)]);
+  var isHomeowner = results[0], isTrade = results[1];
+  if(isHomeowner && isTrade){ lmShowStep('lm-step-choose'); return; }
+  if(isHomeowner){ lmSaveHomeownerSession(email, token); window.location.href = 'my-roof.html'; return; }
+  if(isTrade){ lmSaveTradeSession(email, token); window.location.href = 'trade-portal.html'; return; }
+  document.getElementById('lm-notfound-msg').innerHTML = 'We couldn\'t find a homeowner or trade account for <strong>'+email+'</strong>.<br><br>Double check it\'s the exact email you used, or <a href="mailto:info@roofscanuk.co.uk" style="color:var(--navy);font-weight:600;">contact us</a> for help.<br><br>New here? <a href="#" onclick="closeLoginModal();go(\'book\');return false;" style="color:var(--navy);font-weight:600;">Book an inspection →</a>';
+  lmShowStep('lm-step-notfound');
 }
 </script>
 
