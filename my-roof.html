@@ -430,15 +430,16 @@ async function showPortal(email, jobs) {
     }
 
     // Book-again slot: normal button, OR the prebook offer (with countdown) while eligible,
-    // OR a "prebooked" confirmation if they've already locked it in for this property —
-    // which itself branches once the booking window has opened (Prebook Booking Open),
-    // showing a "Pick your inspection date" button instead of the static "we'll email you" line.
+    // OR a "prebooked" confirmation if they've already locked it in for this property.
     var bookUrl = 'index.html?email='+encodeURIComponent(email);
     var slug = addrSlug(addr);
     var ps = prebookStatus[addr];
     _addrBySlug[slug] = addr;
     if(ps && ps.alreadyPrebooked){
-      html += '<div class="rc-inline" id="rc-inline-'+slug+'">' + rcPrebookedInlineHtml(slug, ps.scheduleDue) + '</div>';
+      html += '<div class="rc-inline" id="rc-inline-'+slug+'">'
+        +'<div class="rc-title">🔧 Next inspection prebooked</div>'
+        +'<div class="rc-text"><span class="rc-member">✓ Booked in</span> — £50 deposit paid, 15% off locked in. Balance due after that inspection, as normal. We\'ll email you '+rcScheduleLabel(ps.scheduleDue)+' to pick your date.</div>'
+        +'</div>';
     } else if(ps && ps.eligible){
       html += '<div class="rc-inline" id="rc-inline-'+slug+'">'
         +'<div class="rc-countdown">⏳ '+ps.daysLeft+' day'+(ps.daysLeft===1?'':'s')+' left to lock in 15% off</div>'
@@ -495,6 +496,7 @@ function bookNew(){
 
 // ═══ ROOF CARE PLAN — prebook next year's inspection (£50 deposit, 15% off) ═══════════════
 // Per-property: each address gets its own Stripe Elements instance and payment state, keyed by slug.
+// Matches the live Worker's per-property /prebook-status, /prebook-intent, /prebook-confirm endpoints.
 var RC_STRIPE_PK = 'pk_live_51Trv87QcApNGjNdfmHcSoqHDYS69kmFe7bFzYTEluYIgGZE4GPqGRQDap8ZQeYvPpCgVxhZUmDGkDpcvCq0tTC1H00a56fU5sw';
 var _rcState = {};
 var _addrBySlug = {};
@@ -504,46 +506,6 @@ function addrSlug(addr){ return 'p' + String(addr).replace(/[^a-zA-Z0-9]/g,'').s
 function rcScheduleLabel(dueIso){
   if(!dueIso) return 'when it\'s time';
   try{ return 'around ' + new Date(dueIso).toLocaleDateString('en-GB',{month:'long',year:'numeric'}); }catch(e){ return 'when it\'s time'; }
-}
-
-// Client-side "is booking open yet" check — mirrors the Airtable "Prebook Booking Open" formula
-// (today is on/after the scheduled due date). Used so the button appears the moment a client's
-// booking window opens, matching the automated email Zap that fires on the same condition.
-function rcIsBookingOpen(dueIso){
-  if(!dueIso) return false;
-  try{
-    var due = new Date(dueIso);
-    var now = new Date();
-    return now >= due;
-  }catch(e){ return false; }
-}
-
-// Shared markup for the "already prebooked" confirmation state — branches on whether the
-// booking window has opened yet. Used both on initial page load and right after a successful
-// deposit payment (rcShowPrebookedInline), so the two paths never drift out of sync.
-function rcPrebookedInlineHtml(slug, dueIso){
-  if(rcIsBookingOpen(dueIso)){
-    return '<div class="rc-title">🔧 Next inspection prebooked</div>'
-      +'<div class="rc-text"><span class="rc-member">✓ Booked in</span> — £50 deposit paid, 15% off locked in. It\'s time to pick your date.</div>'
-      +'<button class="rc-btn" onclick="bookPrebookedDate(\''+slug+'\')">📅 Pick your inspection date</button>';
-  }
-  return '<div class="rc-title">🔧 Next inspection prebooked</div>'
-    +'<div class="rc-text"><span class="rc-member">✓ Booked in</span> — £50 deposit paid, 15% off locked in. Balance due after that inspection, as normal. We\'ll email you ' + rcScheduleLabel(dueIso) + ' to pick your date.</div>';
-}
-
-function rcShowPrebookedInline(slug, dueIso){
-  var el = document.getElementById('rc-inline-'+slug);
-  if(!el) return;
-  el.innerHTML = rcPrebookedInlineHtml(slug, dueIso);
-}
-
-// Placeholder hand-off for picking the actual date on an already-paid prebook.
-// This does NOT go through the deposit/Stripe flow again — it needs its own
-// "update the existing Jobs record" endpoint on the Worker, which is the next
-// build step. Wired up and ready to point at the real slot-picker once that
-// endpoint exists.
-function bookPrebookedDate(slug){
-  alert('Date picker coming soon — this will let you choose your inspection date without paying again.');
 }
 
 function startPrebook(slug){
@@ -592,7 +554,9 @@ async function submitPrebook(slug){
     });
     var data = await res.json();
     if(!res.ok) throw new Error(data.error || 'Something went wrong.');
-    rcShowPrebookedInline(slug, data.scheduleDue);
+    var el = document.getElementById('rc-inline-'+slug);
+    if(el) el.innerHTML = '<div class="rc-title">🔧 Next inspection prebooked</div>'
+      +'<div class="rc-text"><span class="rc-member">✓ Booked in</span> — £50 deposit paid, 15% off locked in. Balance due after that inspection, as normal. We\'ll email you ' + rcScheduleLabel(data.scheduleDue) + ' to pick your date.</div>';
   }catch(e){
     document.getElementById('rc-errors-'+slug).textContent = (e.message||'Something went wrong') + ' — your payment went through; contact info@roofscanuk.co.uk and we\'ll sort it.';
     btn.disabled = false; btn.textContent = 'Confirm £50 deposit →';
