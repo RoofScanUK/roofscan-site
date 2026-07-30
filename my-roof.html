@@ -436,10 +436,7 @@ async function showPortal(email, jobs) {
     var ps = prebookStatus[addr];
     _addrBySlug[slug] = addr;
     if(ps && ps.alreadyPrebooked){
-      html += '<div class="rc-inline" id="rc-inline-'+slug+'">'
-        +'<div class="rc-title">🔧 Next inspection prebooked</div>'
-        +'<div class="rc-text"><span class="rc-member">✓ Booked in</span> — £50 deposit paid, 15% off locked in. Balance due after that inspection, as normal. We\'ll email you '+rcScheduleLabel(ps.scheduleDue)+' to pick your date.</div>'
-        +'</div>';
+      html += '<div class="rc-inline" id="rc-inline-'+slug+'">' + rcPrebookedHtml(slug, ps) + '</div>';
     } else if(ps && ps.eligible){
       html += '<div class="rc-inline" id="rc-inline-'+slug+'">'
         +'<div class="rc-countdown">⏳ '+ps.daysLeft+' day'+(ps.daysLeft===1?'':'s')+' left to lock in 15% off</div>'
@@ -508,6 +505,70 @@ function rcScheduleLabel(dueIso){
   try{ return 'around ' + new Date(dueIso).toLocaleDateString('en-GB',{month:'long',year:'numeric'}); }catch(e){ return 'when it\'s time'; }
 }
 
+// "Already prebooked" card markup — branches on whether the Worker says the booking window
+// is open yet (ps.bookingOpen, computed server-side from Prebook Schedule Due so it always
+// agrees with the automated email Zap 45 sends on the same condition). Before that, just the
+// honest static message with no button. After that, a real "pick your date" flow appears —
+// this never touches Stripe, the deposit was already taken in /prebook-confirm.
+function rcPrebookedHtml(slug, ps){
+  var base = '<div class="rc-title">🔧 Next inspection prebooked</div>';
+  if(!ps.bookingOpen){
+    return base + '<div class="rc-text"><span class="rc-member">✓ Booked in</span> — £50 deposit paid, 15% off locked in. Balance due after that inspection, as normal. We\'ll email you ' + rcScheduleLabel(ps.scheduleDue) + ' to pick your date.</div>';
+  }
+  return base
+    + '<div class="rc-text"><span class="rc-member">✓ Booked in</span> — £50 deposit paid, 15% off locked in. It\'s time to pick your inspection date. No further payment needed.</div>'
+    + '<button class="rc-btn" id="rc-datebtn-'+slug+'" onclick="loadPrebookSlots(\''+slug+'\')">📅 Pick your inspection date</button>'
+    + '<div id="rc-slots-'+slug+'" style="margin-top:10px;display:none;"></div>';
+}
+
+async function loadPrebookSlots(slug){
+  var wrap = document.getElementById('rc-slots-'+slug);
+  var btn = document.getElementById('rc-datebtn-'+slug);
+  btn.disabled = true; btn.textContent = 'Loading dates…';
+  wrap.style.display = 'block';
+  wrap.innerHTML = '<div style="font-size:12px;color:var(--mu);">Loading available dates…</div>';
+  try{
+    var start = new Date().toISOString();
+    var endD = new Date(); endD.setDate(endD.getDate()+21);
+    var res = await fetch(API_BASE + '/available-slots?start=' + encodeURIComponent(start) + '&end=' + encodeURIComponent(endD.toISOString()));
+    var data = await res.json();
+    if(!res.ok || !data.slots) throw new Error('no slots');
+    var slots = Array.isArray(data.slots) ? data.slots : Object.values(data.slots).flat();
+    if(!slots.length){ wrap.innerHTML = '<div style="font-size:12px;color:var(--mu);">No open dates in the next few weeks — call or WhatsApp 07498 364197 and we\'ll sort a date directly.</div>'; btn.style.display='none'; return; }
+    var html = '<div style="font-size:11px;color:var(--mu);margin-bottom:6px;">Choose a date:</div>';
+    slots.slice(0,12).forEach(function(s){
+      var startTime = s.time || s.start || s;
+      var label = new Date(startTime).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}) + ' · ' + new Date(startTime).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+      html += '<button class="rc-btn" style="display:block;width:100%;margin-bottom:6px;text-align:left;" onclick="confirmPrebookDate(\''+slug+'\', \''+startTime+'\')">'+label+'</button>';
+    });
+    wrap.innerHTML = html;
+    btn.style.display = 'none';
+  }catch(e){
+    wrap.innerHTML = '<div style="font-size:12px;color:var(--rd);">Couldn\'t load available dates — call or WhatsApp 07498 364197 and we\'ll sort a date directly.</div>';
+    btn.disabled = false; btn.textContent = '📅 Pick your inspection date';
+  }
+}
+
+async function confirmPrebookDate(slug, slotStart){
+  var addr = _addrBySlug[slug];
+  var wrap = document.getElementById('rc-slots-'+slug);
+  wrap.innerHTML = '<div style="font-size:12px;color:var(--mu);">Confirming your date…</div>';
+  try{
+    var res = await fetch(API_BASE + '/prebook-book-date', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer ' + _token},
+      body: JSON.stringify({email:_currentEmail, address:addr, slotStart:slotStart})
+    });
+    var data = await res.json();
+    if(!res.ok) throw new Error(data.error || 'Something went wrong.');
+    var el = document.getElementById('rc-inline-'+slug);
+    if(el) el.innerHTML = '<div class="rc-title">✅ Inspection date confirmed</div>'
+      +'<div class="rc-text">You\'re booked in for '+fmtDate(data.date)+'. We\'ll see you then — no further payment needed until after the inspection.</div>';
+  }catch(e){
+    wrap.innerHTML = '<div style="font-size:12px;color:var(--rd);">'+(e.message||'Something went wrong')+' — call or WhatsApp 07498 364197 and we\'ll sort your date directly.</div>';
+  }
+}
+
 function startPrebook(slug){
   var addr = _addrBySlug[slug];
   document.getElementById('rc-btn-'+slug).style.display = 'none';
@@ -555,8 +616,7 @@ async function submitPrebook(slug){
     var data = await res.json();
     if(!res.ok) throw new Error(data.error || 'Something went wrong.');
     var el = document.getElementById('rc-inline-'+slug);
-    if(el) el.innerHTML = '<div class="rc-title">🔧 Next inspection prebooked</div>'
-      +'<div class="rc-text"><span class="rc-member">✓ Booked in</span> — £50 deposit paid, 15% off locked in. Balance due after that inspection, as normal. We\'ll email you ' + rcScheduleLabel(data.scheduleDue) + ' to pick your date.</div>';
+    if(el) el.innerHTML = rcPrebookedHtml(slug, { scheduleDue: data.scheduleDue, bookingOpen: false });
   }catch(e){
     document.getElementById('rc-errors-'+slug).textContent = (e.message||'Something went wrong') + ' — your payment went through; contact info@roofscanuk.co.uk and we\'ll sort it.';
     btn.disabled = false; btn.textContent = 'Confirm £50 deposit →';
