@@ -521,6 +521,11 @@ function rcPrebookedHtml(slug, ps){
     + '<div id="rc-slots-'+slug+'" style="margin-top:10px;display:none;"></div>';
 }
 
+// Two-tier day/time picker, matching the same pattern used on the main booking flow's
+// date step (index.html Step 6): a row of day buttons, then a row of time buttons for
+// whichever day is selected. No payment step here, the deposit was already taken.
+var _prebookSlotsByDay = {};
+
 async function loadPrebookSlots(slug){
   var wrap = document.getElementById('rc-slots-'+slug);
   var btn = document.getElementById('rc-datebtn-'+slug);
@@ -529,24 +534,54 @@ async function loadPrebookSlots(slug){
   wrap.innerHTML = '<div style="font-size:12px;color:var(--mu);">Loading available dates…</div>';
   try{
     var start = new Date().toISOString();
-    var endD = new Date(); endD.setDate(endD.getDate()+21);
+    var endD = new Date(); endD.setDate(endD.getDate()+14);
     var res = await fetch(API_BASE + '/available-slots?start=' + encodeURIComponent(start) + '&end=' + encodeURIComponent(endD.toISOString()));
     var data = await res.json();
-    if(!res.ok || !data.slots) throw new Error('no slots');
-    var slots = Array.isArray(data.slots) ? data.slots : Object.values(data.slots).flat();
-    if(!slots.length){ wrap.innerHTML = '<div style="font-size:12px;color:var(--mu);">No open dates in the next few weeks — call or WhatsApp 07498 364197 and we\'ll sort a date directly.</div>'; btn.style.display='none'; return; }
-    var html = '<div style="font-size:11px;color:var(--mu);margin-bottom:6px;">Choose a date:</div>';
-    slots.slice(0,12).forEach(function(s){
-      var startTime = s.time || s.start || s;
-      var label = new Date(startTime).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}) + ' · ' + new Date(startTime).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
-      html += '<button class="rc-btn" style="display:block;width:100%;margin-bottom:6px;text-align:left;" onclick="confirmPrebookDate(\''+slug+'\', \''+startTime+'\')">'+label+'</button>';
-    });
+    if(!res.ok) throw new Error('no slots');
+    var raw = data.slots || {};
+    var byDay = {};
+    if(Array.isArray(raw)){
+      raw.forEach(function(s){
+        var iso = s.start || s.time || s;
+        var day = iso.slice(0,10);
+        (byDay[day] = byDay[day] || []).push(iso);
+      });
+    } else {
+      Object.keys(raw).forEach(function(day){
+        byDay[day] = (raw[day]||[]).map(function(s){ return s.start || s.time || s; });
+      });
+    }
+    _prebookSlotsByDay[slug] = byDay;
+    var days = Object.keys(byDay).sort();
+    if(!days.length){ wrap.innerHTML = '<div style="font-size:12px;color:var(--mu);">No open dates in the next couple of weeks — call or WhatsApp 07498 364197 and we\'ll sort a date directly.</div>'; btn.style.display='none'; return; }
+    var html = '<div style="font-size:11px;color:var(--mu);margin-bottom:6px;">Choose a date:</div>'
+      + '<div id="rc-days-'+slug+'" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;"></div>'
+      + '<div id="rc-times-'+slug+'" style="display:flex;flex-wrap:wrap;gap:6px;"></div>';
     wrap.innerHTML = html;
+    var dayEl = document.getElementById('rc-days-'+slug);
+    dayEl.innerHTML = days.map(function(d){
+      var dt = new Date(d+'T00:00:00');
+      var label = dt.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
+      return '<button class="rc-btn" style="flex:none;" onclick="showPrebookTimesForDay(\''+slug+'\',\''+d+'\')" id="rc-day-'+slug+'-'+d+'">'+label+'</button>';
+    }).join('');
+    showPrebookTimesForDay(slug, days[0]);
     btn.style.display = 'none';
   }catch(e){
     wrap.innerHTML = '<div style="font-size:12px;color:var(--rd);">Couldn\'t load available dates — call or WhatsApp 07498 364197 and we\'ll sort a date directly.</div>';
     btn.disabled = false; btn.textContent = '📅 Pick your inspection date';
   }
+}
+
+function showPrebookTimesForDay(slug, day){
+  document.querySelectorAll('[id^="rc-day-'+slug+'-"]').forEach(function(b){ b.style.background='var(--n)'; b.style.opacity='1'; });
+  var dayBtn = document.getElementById('rc-day-'+slug+'-'+day);
+  if(dayBtn) dayBtn.style.background = '#0F1A30';
+  var timesEl = document.getElementById('rc-times-'+slug);
+  var times = (_prebookSlotsByDay[slug] && _prebookSlotsByDay[slug][day]) || [];
+  timesEl.innerHTML = times.map(function(iso){
+    var t = new Date(iso).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/London'});
+    return '<button class="rc-btn" style="flex:none;" onclick="confirmPrebookDate(\''+slug+'\', \''+iso+'\')">'+t+'</button>';
+  }).join('');
 }
 
 async function confirmPrebookDate(slug, slotStart){
