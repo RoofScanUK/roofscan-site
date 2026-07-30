@@ -94,9 +94,19 @@ main{padding:16px;}
 .rc-inline{padding:14px 16px;border-top:1px solid var(--br);background:#EAF4FB;}
 .rc-inline .rc-title{margin-bottom:6px;}
 
-/* Prebook date/time picker — single scrollable dropdown + explicit confirm step */
+/* Prebook date/time picker — calendar grid for the date, dropdown for the time */
 .rc-slot-select{width:100%;border:1px solid #AED6F1;border-radius:8px;padding:10px 12px;font-size:14px;color:var(--n);background:#fff;font-family:inherit;margin-bottom:8px;}
 .rc-confirm-btn{width:100%;}
+.rc-cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.rc-cal-nav{background:#fff;border:1px solid #AED6F1;color:var(--n);font-size:14px;font-weight:700;cursor:pointer;width:26px;height:26px;border-radius:6px;font-family:inherit;line-height:1;}
+.rc-cal-nav:disabled{opacity:.3;cursor:not-allowed;}
+.rc-cal-month{font-size:12px;font-weight:700;color:var(--n);}
+.rc-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:10px;}
+.rc-cal-dow{font-size:10px;color:var(--mu);text-align:center;font-weight:700;padding:2px 0;}
+.rc-cal-day{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:12px;border-radius:6px;cursor:pointer;background:#fff;border:1px solid #AED6F1;color:var(--n);font-weight:600;font-family:inherit;padding:0;}
+.rc-cal-day.unavail{color:var(--mu);background:#F0EEE8;border-color:#E8E4D8;text-decoration:line-through;cursor:not-allowed;opacity:.65;}
+.rc-cal-day.empty{visibility:hidden;cursor:default;}
+.rc-cal-day.sel{background:var(--n);color:var(--g);border-color:var(--n);}
 
 /* TABS */
 .tabs{display:flex;gap:4px;background:var(--cd);border:1px solid var(--br);border-radius:12px;padding:4px;margin-bottom:14px;}
@@ -525,10 +535,13 @@ function rcPrebookedHtml(slug, ps){
     + '<div id="rc-slots-'+slug+'" style="margin-top:10px;display:none;"></div>';
 }
 
-// Two-tier day/time picker, matching the same pattern used on the main booking flow's
-// date step (index.html Step 6): a row of day buttons, then a row of time buttons for
-// whichever day is selected. No payment step here, the deposit was already taken.
+// Calendar-style picker: a real month grid where unavailable days are greyed out and
+// crossed through, clicking an available day reveals a dropdown of just that day's times,
+// then a separate Confirm button. Fetches a wide enough window (60 days) that flipping
+// between months actually shows something. No booking happens until Confirm is clicked.
 var _prebookSlotsByDay = {};
+var _rcCalState = {};
+var RC_DOW = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 
 async function loadPrebookSlots(slug){
   var wrap = document.getElementById('rc-slots-'+slug);
@@ -538,7 +551,7 @@ async function loadPrebookSlots(slug){
   wrap.innerHTML = '<div style="font-size:12px;color:var(--mu);">Loading available dates…</div>';
   try{
     var start = new Date().toISOString();
-    var endD = new Date(); endD.setDate(endD.getDate()+14);
+    var endD = new Date(); endD.setDate(endD.getDate()+60);
     var res = await fetch(API_BASE + '/available-slots?start=' + encodeURIComponent(start) + '&end=' + encodeURIComponent(endD.toISOString()));
     var data = await res.json();
     if(!res.ok) throw new Error('no slots');
@@ -556,29 +569,70 @@ async function loadPrebookSlots(slug){
       });
     }
     _prebookSlotsByDay[slug] = byDay;
-    var days = Object.keys(byDay).sort();
-    if(!days.length){ wrap.innerHTML = '<div style="font-size:12px;color:var(--mu);">No open dates in the next couple of weeks — call or WhatsApp 07498 364197 and we\'ll sort a date directly.</div>'; btn.style.display='none'; return; }
-    // Single native dropdown, one option per slot, grouped by date — the user scrolls through
-    // it like any normal <select>, then hits a separate Confirm button. Nothing books until
-    // that button is clicked, so there's no risk of an accidental tap booking a date.
-    var optionsHtml = days.map(function(d){
-      var dt = new Date(d+'T00:00:00');
-      var dayLabel = dt.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
-      var times = byDay[d];
-      var opts = times.map(function(iso){
-        var t = new Date(iso).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/London'});
-        return '<option value="'+iso+'">'+dayLabel+' · '+t+'</option>';
-      }).join('');
-      return '<optgroup label="'+dayLabel+'">'+opts+'</optgroup>';
-    }).join('');
-    wrap.innerHTML = '<div style="font-size:11px;color:var(--mu);margin-bottom:6px;">Choose a date and time:</div>'
-      + '<select class="rc-slot-select" id="rc-slotselect-'+slug+'">'+optionsHtml+'</select>'
-      + '<button class="rc-btn rc-confirm-btn" onclick="confirmPrebookDate(\''+slug+'\')">Confirm this date →</button>';
+    if(!Object.keys(byDay).length){ wrap.innerHTML = '<div style="font-size:12px;color:var(--mu);">No open dates in the next couple of months — call or WhatsApp 07498 364197 and we\'ll sort a date directly.</div>'; btn.style.display='none'; return; }
+    var today = new Date();
+    _rcCalState[slug] = { year: today.getFullYear(), month: today.getMonth() };
+    wrap.innerHTML = '<div id="rc-cal-'+slug+'"></div><div id="rc-timepick-'+slug+'"></div>';
+    renderPrebookCalendar(slug);
     btn.style.display = 'none';
   }catch(e){
     wrap.innerHTML = '<div style="font-size:12px;color:var(--rd);">Couldn\'t load available dates — call or WhatsApp 07498 364197 and we\'ll sort a date directly.</div>';
     btn.disabled = false; btn.textContent = '📅 Pick your inspection date';
   }
+}
+
+function prebookCalNav(slug, delta){
+  var st = _rcCalState[slug];
+  var m = st.month + delta;
+  var y = st.year;
+  if(m < 0){ m = 11; y--; }
+  if(m > 11){ m = 0; y++; }
+  st.month = m; st.year = y;
+  document.getElementById('rc-timepick-'+slug).innerHTML = '';
+  renderPrebookCalendar(slug);
+}
+
+function renderPrebookCalendar(slug){
+  var st = _rcCalState[slug];
+  var byDay = _prebookSlotsByDay[slug] || {};
+  var today = new Date(); today.setHours(0,0,0,0);
+  var firstOfMonth = new Date(st.year, st.month, 1);
+  var daysInMonth = new Date(st.year, st.month+1, 0).getDate();
+  var startDow = (firstOfMonth.getDay() + 6) % 7; // Mon=0..Sun=6
+  var monthLabel = firstOfMonth.toLocaleDateString('en-GB',{month:'long',year:'numeric'});
+  var isCurrentMonth = (st.year === today.getFullYear() && st.month === today.getMonth());
+
+  var html = '<div class="rc-cal-head">'
+    + '<button class="rc-cal-nav" onclick="prebookCalNav(\''+slug+'\',-1)"'+(isCurrentMonth?' disabled':'')+'>‹</button>'
+    + '<span class="rc-cal-month">'+monthLabel+'</span>'
+    + '<button class="rc-cal-nav" onclick="prebookCalNav(\''+slug+'\',1)">›</button>'
+    + '</div><div class="rc-cal-grid">';
+  RC_DOW.forEach(function(d){ html += '<div class="rc-cal-dow">'+d+'</div>'; });
+  for(var i=0;i<startDow;i++){ html += '<div class="rc-cal-day empty"></div>'; }
+  for(var day=1; day<=daysInMonth; day++){
+    var iso = st.year+'-'+String(st.month+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+    var hasSlots = byDay[iso] && byDay[iso].length;
+    var cls = 'rc-cal-day' + (hasSlots ? '' : ' unavail');
+    html += '<button type="button" class="'+cls+'" id="rc-cd-'+slug+'-'+iso+'"'
+      + (hasSlots ? ' onclick="selectPrebookDay(\''+slug+'\',\''+iso+'\')"' : ' disabled')
+      + '>'+day+'</button>';
+  }
+  html += '</div>';
+  document.getElementById('rc-cal-'+slug).innerHTML = html;
+}
+
+function selectPrebookDay(slug, iso){
+  document.querySelectorAll('#rc-cal-'+slug+' .rc-cal-day').forEach(function(b){ b.classList.remove('sel'); });
+  var el = document.getElementById('rc-cd-'+slug+'-'+iso);
+  if(el) el.classList.add('sel');
+  var times = (_prebookSlotsByDay[slug] && _prebookSlotsByDay[slug][iso]) || [];
+  var opts = times.map(function(t){
+    var label = new Date(t).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/London'});
+    return '<option value="'+t+'">'+label+'</option>';
+  }).join('');
+  document.getElementById('rc-timepick-'+slug).innerHTML =
+    '<select class="rc-slot-select" id="rc-slotselect-'+slug+'">'+opts+'</select>'
+    + '<button class="rc-btn rc-confirm-btn" onclick="confirmPrebookDate(\''+slug+'\')">Confirm this date →</button>';
 }
 
 async function confirmPrebookDate(slug){
