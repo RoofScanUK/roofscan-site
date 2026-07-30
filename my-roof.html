@@ -94,15 +94,9 @@ main{padding:16px;}
 .rc-inline{padding:14px 16px;border-top:1px solid var(--br);background:#EAF4FB;}
 .rc-inline .rc-title{margin-bottom:6px;}
 
-/* Prebook date/time picker — compact scrollable day strip + tidy time grid */
-.rc-day-strip{display:flex;overflow-x:auto;gap:6px;padding-bottom:6px;margin-bottom:10px;-webkit-overflow-scrolling:touch;scrollbar-width:thin;}
-.rc-day-strip::-webkit-scrollbar{height:5px;}
-.rc-day-strip::-webkit-scrollbar-thumb{background:#AED6F1;border-radius:10px;}
-.rc-day-pill{flex:0 0 auto;background:var(--n);color:var(--g);border:none;border-radius:7px;padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;opacity:.55;}
-.rc-day-pill.sel{opacity:1;background:#0F1A30;}
-.rc-time-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:6px;}
-.rc-time-pill{background:var(--n);color:var(--g);border:none;border-radius:6px;padding:7px 4px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit;text-align:center;}
-.rc-more-times{background:none;border:none;color:var(--s);font-size:11.5px;font-weight:700;text-decoration:underline;cursor:pointer;font-family:inherit;padding:6px 0 0;display:block;}
+/* Prebook date/time picker — single scrollable dropdown + explicit confirm step */
+.rc-slot-select{width:100%;border:1px solid #AED6F1;border-radius:8px;padding:10px 12px;font-size:14px;color:var(--n);background:#fff;font-family:inherit;margin-bottom:8px;}
+.rc-confirm-btn{width:100%;}
 
 /* TABS */
 .tabs{display:flex;gap:4px;background:var(--cd);border:1px solid var(--br);border-radius:12px;padding:4px;margin-bottom:14px;}
@@ -564,17 +558,22 @@ async function loadPrebookSlots(slug){
     _prebookSlotsByDay[slug] = byDay;
     var days = Object.keys(byDay).sort();
     if(!days.length){ wrap.innerHTML = '<div style="font-size:12px;color:var(--mu);">No open dates in the next couple of weeks — call or WhatsApp 07498 364197 and we\'ll sort a date directly.</div>'; btn.style.display='none'; return; }
-    var html = '<div style="font-size:11px;color:var(--mu);margin-bottom:6px;">Choose a date:</div>'
-      + '<div class="rc-day-strip" id="rc-days-'+slug+'"></div>'
-      + '<div class="rc-time-grid" id="rc-times-'+slug+'"></div>';
-    wrap.innerHTML = html;
-    var dayEl = document.getElementById('rc-days-'+slug);
-    dayEl.innerHTML = days.map(function(d){
+    // Single native dropdown, one option per slot, grouped by date — the user scrolls through
+    // it like any normal <select>, then hits a separate Confirm button. Nothing books until
+    // that button is clicked, so there's no risk of an accidental tap booking a date.
+    var optionsHtml = days.map(function(d){
       var dt = new Date(d+'T00:00:00');
-      var label = dt.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
-      return '<button class="rc-day-pill" onclick="showPrebookTimesForDay(\''+slug+'\',\''+d+'\')" id="rc-day-'+slug+'-'+d+'">'+label+'</button>';
+      var dayLabel = dt.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
+      var times = byDay[d];
+      var opts = times.map(function(iso){
+        var t = new Date(iso).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/London'});
+        return '<option value="'+iso+'">'+dayLabel+' · '+t+'</option>';
+      }).join('');
+      return '<optgroup label="'+dayLabel+'">'+opts+'</optgroup>';
     }).join('');
-    showPrebookTimesForDay(slug, days[0]);
+    wrap.innerHTML = '<div style="font-size:11px;color:var(--mu);margin-bottom:6px;">Choose a date and time:</div>'
+      + '<select class="rc-slot-select" id="rc-slotselect-'+slug+'">'+optionsHtml+'</select>'
+      + '<button class="rc-btn rc-confirm-btn" onclick="confirmPrebookDate(\''+slug+'\')">Confirm this date →</button>';
     btn.style.display = 'none';
   }catch(e){
     wrap.innerHTML = '<div style="font-size:12px;color:var(--rd);">Couldn\'t load available dates — call or WhatsApp 07498 364197 and we\'ll sort a date directly.</div>';
@@ -582,32 +581,11 @@ async function loadPrebookSlots(slug){
   }
 }
 
-// Only a handful of times show by default — tapping "Show more times" reveals the rest,
-// rather than dumping 20+ time buttons on screen at once.
-var RC_TIMES_PREVIEW = 6;
-
-function showPrebookTimesForDay(slug, day, showAll){
-  document.querySelectorAll('#rc-days-'+slug+' .rc-day-pill').forEach(function(b){ b.classList.remove('sel'); });
-  var dayBtn = document.getElementById('rc-day-'+slug+'-'+day);
-  if(dayBtn) dayBtn.classList.add('sel');
-  var timesEl = document.getElementById('rc-times-'+slug);
-  var times = (_prebookSlotsByDay[slug] && _prebookSlotsByDay[slug][day]) || [];
-  var visible = showAll ? times : times.slice(0, RC_TIMES_PREVIEW);
-  var html = visible.map(function(iso){
-    var t = new Date(iso).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/London'});
-    return '<button class="rc-time-pill" onclick="confirmPrebookDate(\''+slug+'\', \''+iso+'\')">'+t+'</button>';
-  }).join('');
-  timesEl.innerHTML = html;
-  if(!showAll && times.length > RC_TIMES_PREVIEW){
-    timesEl.insertAdjacentHTML('afterend', '<button class="rc-more-times" id="rc-more-'+slug+'" onclick="document.getElementById(\'rc-more-'+slug+'\').remove(); showPrebookTimesForDay(\''+slug+'\',\''+day+'\',true);">Show more times ('+(times.length-RC_TIMES_PREVIEW)+' more)</button>');
-  } else {
-    var existingMore = document.getElementById('rc-more-'+slug);
-    if(existingMore) existingMore.remove();
-  }
-}
-
-async function confirmPrebookDate(slug, slotStart){
+async function confirmPrebookDate(slug){
   var addr = _addrBySlug[slug];
+  var select = document.getElementById('rc-slotselect-'+slug);
+  var slotStart = select ? select.value : null;
+  if(!slotStart) return;
   var wrap = document.getElementById('rc-slots-'+slug);
   wrap.innerHTML = '<div style="font-size:12px;color:var(--mu);">Confirming your date…</div>';
   try{
