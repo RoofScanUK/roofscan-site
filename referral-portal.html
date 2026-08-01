@@ -111,6 +111,7 @@ main{padding:14px;}
       <div><div class="as-val" id="stat-paid" style="color:rgba(255,255,255,0.7);">£0</div><div class="as-label">Paid out</div></div>
       <div><div class="as-val" id="stat-owed" style="color:var(--am);">£0</div><div class="as-label">Owed</div></div>
     </div>
+    <div style="font-size:11px;color:rgba(255,255,255,0.45);margin-top:10px;">Paid out once your referral's inspection is complete and their invoice is settled.</div>
   </div>
 
   <div class="link-card">
@@ -135,6 +136,15 @@ var _referralLink = '';
 function fmtDate(d){ return d?new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'—'; }
 function fmtMoney(n){ return '£'+(n||0).toLocaleString('en-GB'); }
 function statusClass(s){ return String(s||'Booked').replace(/\s+/g,'.'); }
+function statusCaption(s){
+  var m = {
+    'Booked': 'Inspection scheduled — nothing to do yet.',
+    'Complete': 'Inspection done, report being prepared.',
+    'Report Sent': 'Report delivered to your client — your reward is being processed.',
+    'Paid': 'Reward paid to you.'
+  };
+  return m[s] || 'Inspection scheduled — nothing to do yet.';
+}
 
 async function fetchAgentAccount(email, token){
   var res = await fetch(API_BASE+'/agent-account?email='+encodeURIComponent(email), {
@@ -179,7 +189,7 @@ async function requestCode(isResend){
     document.getElementById('login-code').focus();
     if(isResend){ document.getElementById('code-err').style.color='var(--gr)'; document.getElementById('code-err').textContent='Code resent.'; }
   }catch(e){
-    document.getElementById('login-err').textContent='Something went wrong. Please try again.';
+    document.getElementById('login-err').innerHTML='We couldn\'t send your code. Check your connection and try again, or call/WhatsApp 07498 364197 and we\'ll get you in.';
   }
   if(btn){ btn.disabled=false; btn.textContent='Send me a code →'; }
 }
@@ -228,7 +238,7 @@ async function loadPortal(email, token){
     var jobs = await fetchAgentJobs(email, token);
     renderJobs(jobs);
   }catch(e){
-    showLoginError('Session expired or something went wrong. Please log in again.');
+    showLoginError('Session expired or something went wrong. Please log in again, or call/WhatsApp 07498 364197 if it keeps happening.');
   }
 }
 
@@ -265,6 +275,7 @@ function renderJobs(jobs){
         '<div><div class="job-addr">'+(j.address||'Property')+'</div><div class="job-type">'+(j.propertyType||'')+'</div></div>'+
         '<div class="job-right"><div class="job-date">'+fmtDate(j.date)+'</div><span class="status-pill '+statusClass(j.status)+'">'+(j.status||'Booked')+'</span></div>'+
       '</div>'+
+      '<div style="font-size:11.5px;color:var(--mu);margin-top:6px;">'+statusCaption(j.status)+'</div>'+
     '</div>';
   }).join('');
 }

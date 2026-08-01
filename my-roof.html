@@ -211,6 +211,7 @@ main{padding:16px;}
   <div id="portal-section" style="display:none;">
     <div class="welcome" id="welcome-name">Welcome back</div>
     <div class="welcome-sub" id="welcome-sub">Your inspection history</div>
+    <div style="font-size:12px;color:var(--mu);margin:2px 0 14px;">Signed in as <span id="session-email" style="font-weight:600;color:var(--n);"></span> · <span style="text-decoration:underline;cursor:pointer;" onclick="doLogout()">not you?</span></div>
     <div class="tabs">
       <button class="tab-btn active" id="tab-btn-props" onclick="switchTab('props')">Properties</button>
       <button class="tab-btn" id="tab-btn-reports" onclick="switchTab('reports')">Reports</button>
@@ -293,7 +294,7 @@ async function requestCode(isResend) {
     document.getElementById('login-code').focus();
     if(isResend) { document.getElementById('code-error').style.color = 'var(--gr)'; document.getElementById('code-error').textContent = 'Code resent.'; }
   } catch(e) {
-    document.getElementById('login-error').textContent = 'Something went wrong. Please try again.';
+    document.getElementById('login-error').innerHTML = 'We couldn\'t send your code. Check your connection and try again, or <a href="mailto:info@roofscanuk.co.uk" style="color:var(--s);font-weight:600;">email us</a> and we\'ll get you in.';
   }
   if(btn) { btn.disabled = false; btn.textContent = 'Send me a code →'; }
 }
@@ -365,6 +366,7 @@ async function showPortal(email, jobs) {
   if(jobs.length) { var name = jobs[0].clientName||''; firstName = name.split(' ')[0]; }
   document.getElementById('welcome-name').textContent = firstName ? 'Hi '+firstName+',' : 'Welcome back,';
   document.getElementById('welcome-sub').textContent = jobs.length+' inspection'+(jobs.length>1?'s':'')+' on record for '+email;
+  document.getElementById('session-email').textContent = email;
 
   // Group by address
   var byAddr = {};
@@ -677,8 +679,8 @@ function startPrebook(slug){
       body: JSON.stringify({email:_currentEmail, address:addr})
     }).then(function(r){return r.json();}).then(function(d){
       if(d.clientSecret){ st.piSecret = d.clientSecret; st.piId = d.paymentIntentId; }
-      else document.getElementById('rc-errors-'+slug).textContent = d.error || 'Could not start payment — please refresh.';
-    }).catch(function(){ document.getElementById('rc-errors-'+slug).textContent = 'Could not start payment — please refresh.'; });
+      else document.getElementById('rc-errors-'+slug).textContent = (d.error || 'Could not start payment') + ' — refresh and try again, or call/WhatsApp 07498 364197.';
+    }).catch(function(){ document.getElementById('rc-errors-'+slug).textContent = 'Could not start payment — refresh and try again, or call/WhatsApp 07498 364197.'; });
   }
 }
 

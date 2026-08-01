@@ -11,9 +11,9 @@
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 body{font-family:'Plus Jakarta Sans',-apple-system,sans-serif;background:var(--bg);color:var(--n);min-height:100vh;max-width:560px;margin:0 auto;}
 
-.hero{background:linear-gradient(135deg,var(--n) 0%,#2C3E6A 100%);padding:28px 24px 24px;text-align:center;}
-.hero-logo{width:52px;height:52px;border-radius:12px;margin-bottom:12px;}
-.hero-title{color:white;font-size:24px;font-weight:800;margin-bottom:6px;}
+.hero{background:linear-gradient(135deg,var(--n) 0%,#2C3E6A 100%);padding:24px 24px 24px;text-align:left;display:flex;align-items:center;gap:14px;}
+.hero-logo{width:44px;height:44px;border-radius:12px;flex-shrink:0;}
+.hero-title{color:white;font-size:22px;font-weight:800;margin-bottom:4px;}
 .hero-sub{color:rgba(255,255,255,0.5);font-size:13px;}
 
 .search-box{margin:-18px 18px 0;position:relative;z-index:5;}
@@ -55,8 +55,10 @@ main{padding:28px 18px 20px;}
 
 <div class="hero">
   <img src="icons/apple-touch-icon.png" class="hero-logo">
-  <div class="hero-title">Frequently Asked Questions</div>
-  <div class="hero-sub">Everything about booking, payment, and your report</div>
+  <div>
+    <div class="hero-title">Frequently Asked Questions</div>
+    <div class="hero-sub">Everything about booking, payment, and your report</div>
+  </div>
 </div>
 
 <div class="search-box">
@@ -72,7 +74,7 @@ main{padding:28px 18px 20px;}
     <div class="cat-pill" onclick="filterCat('day',this)">On the day</div>
     <div class="cat-pill" onclick="filterCat('payment',this)">Payment</div>
     <div class="cat-pill" onclick="filterCat('report',this)">Your report</div>
-    <div class="cat-pill" onclick="filterCat('trade',this)">Trade accounts</div>
+    <div class="cat-pill" onclick="filterCat('trade',this)">Referral partners</div>
   </div>
 
   <div id="faq-list">
@@ -81,7 +83,7 @@ main{padding:28px 18px 20px;}
 
     <div class="faq-item" data-cat="booking" onclick="toggleFaq(this)">
       <div class="faq-q"><span>How do I book an inspection?</span><span class="faq-icon">+</span></div>
-      <div class="faq-a"><div class="faq-a-inner">Book directly through our online calendar at <a href="https://cal.com/roofscanuk/inspection" onclick="event.stopPropagation()">cal.com/roofscanuk/inspection</a>. Choose a date and time, pay a £50 deposit to secure it, and you're confirmed.</div></div>
+      <div class="faq-a"><div class="faq-a-inner">Book directly on this site, enter your postcode, choose a date, and pay a £50 deposit to secure it. Everything happens here, no external calendar or account needed.</div></div>
     </div>
 
     <div class="faq-item" data-cat="booking" onclick="toggleFaq(this)">
@@ -147,7 +149,7 @@ main{padding:28px 18px 20px;}
 
     <div class="faq-item" data-cat="report" onclick="toggleFaq(this)">
       <div class="faq-q"><span>How long until I get my report?</span><span class="faq-icon">+</span></div>
-      <div class="faq-a"><div class="faq-a-inner">Within 48 hours of your balance payment being received (excluding weekends and bank holidays). Your inspection findings are ready as soon as payment clears, so paying promptly means a faster report.</div></div>
+      <div class="faq-a"><div class="faq-a-inner">Within 48 hours of your completed flight (excluding weekends and bank holidays). Your balance payment is due on completion, so the report clock and payment happen at the same point.</div></div>
     </div>
 
     <div class="faq-item" data-cat="report" onclick="toggleFaq(this)">
@@ -170,21 +172,26 @@ main{padding:28px 18px 20px;}
       <div class="faq-a"><div class="faq-a-inner">Yes, once you've paid in full the report is yours to share as you wish, with agents, buyers, contractors, or your insurer.</div></div>
     </div>
 
-    <div class="faq-group-title" data-cat="trade">Trade accounts</div>
+    <div class="faq-group-title" data-cat="trade">Referral partners</div>
 
     <div class="faq-item" data-cat="trade" onclick="toggleFaq(this)">
       <div class="faq-q"><span>Do you work with letting and estate agents?</span><span class="faq-icon">+</span></div>
-      <div class="faq-a"><div class="faq-a-inner">Yes, we offer Trade Accounts for agents, property managers and roofing contractors, with volume-based discounts and monthly invoicing. Email <a href="mailto:info@roofscanuk.co.uk" onclick="event.stopPropagation()">info@roofscanuk.co.uk</a> to set one up.</div></div>
+      <div class="faq-a"><div class="faq-a-inner">Yes. If your business works with clients who ever need a roof looked at, before a sale, a let, a conveyancing check, or a resident concern, we set up a referral partnership with you. Your clients get a discount, and there's a reward for your business on every completed referral. <a href="mailto:info@roofscanuk.co.uk?subject=Referral%20partnership" onclick="event.stopPropagation()">Get in touch</a> to set one up.</div></div>
     </div>
 
     <div class="faq-item" data-cat="trade" onclick="toggleFaq(this)">
-      <div class="faq-q"><span>How does billing work for Trade Accounts?</span><span class="faq-icon">+</span></div>
-      <div class="faq-a"><div class="faq-a-inner">Trade Account jobs are invoiced monthly rather than paid individually. Reports are delivered as soon as they're ready, so you're not waiting on payment per job.</div></div>
+      <div class="faq-q"><span>Do I need a contract?</span><span class="faq-icon">+</span></div>
+      <div class="faq-a"><div class="faq-a-inner">No. There's no contract, no minimum, and no cost to sign up. You get your own tracked referral link, so everything runs automatically from there.</div></div>
     </div>
 
     <div class="faq-item" data-cat="trade" onclick="toggleFaq(this)">
-      <div class="faq-q"><span>Who receives the report for a trade job?</span><span class="faq-icon">+</span></div>
-      <div class="faq-a"><div class="faq-a-inner">Both the agent's Trade Account portal and the property owner or tenant's email, based on the client email address entered at job submission.</div></div>
+      <div class="faq-q"><span>How does the reward get paid?</span><span class="faq-icon">+</span></div>
+      <div class="faq-a"><div class="faq-a-inner">Once a referred client's inspection is complete and paid, your reward is tracked automatically against your referral link. <a href="mailto:info@roofscanuk.co.uk?subject=Referral%20partnership" onclick="event.stopPropagation()">Email us</a> for details on how payouts work.</div></div>
+    </div>
+
+    <div class="faq-item" data-cat="trade" onclick="toggleFaq(this)">
+      <div class="faq-q"><span>Who receives the report for a referred client?</span><span class="faq-icon">+</span></div>
+      <div class="faq-a"><div class="faq-a-inner">The property owner or tenant, sent to the email address entered at booking. They can then share it with you as their agent, solicitor, or contractor if they choose to.</div></div>
     </div>
 
   </div>

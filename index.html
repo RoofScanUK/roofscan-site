@@ -11,6 +11,7 @@
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
+<script src="https://js.stripe.com/v3/"></script>
 <style>
 :root{
   --navy:#1C2B4A; --navy-2:#233658; --gold:#B8945F; --ink:#20262F;
@@ -30,7 +31,7 @@ button{cursor:pointer;font-family:inherit;}
 
 /* NAV */
 nav.topnav{background:var(--paper);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:200;}
-.nav-inner{max-width:1080px;margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:76px;}
+.nav-inner{width:100%;padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:76px;}
 .brand{cursor:pointer;background:none;border:none;text-align:left;display:flex;align-items:center;gap:10px;}
 .brand-logo{height:34px;width:auto;display:block;}
 .brand-name{font-family:'Fraunces',serif;color:var(--navy);font-weight:500;font-size:19px;letter-spacing:0;}
@@ -368,39 +369,34 @@ textarea{resize:vertical;}
           <a class="textlink" href="#" onclick="event.preventDefault();document.getElementById('how-it-works').scrollIntoView({behavior:'smooth'});">See how it works</a>
         </div>
         <div class="fact-strip">
-          <div class="fact"><div class="v">£199</div><div class="l">From</div></div>
+          <div class="fact"><div class="v">£199</div><div class="l">From, by property size</div></div>
           <div class="fact"><div class="v">48hrs</div><div class="l">Report delivery</div></div>
           <div class="fact"><div class="v">100%</div><div class="l">Sussex coverage</div></div>
           <div class="fact"><div class="v">Instant</div><div class="l">Online quote</div></div>
         </div>
       </div>
       <div class="hero-art">
-        <svg viewBox="0 0 300 260" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M40 170 L150 70 L260 170" stroke="#B8945F" stroke-width="1.4"/>
-          <path d="M60 170 L150 92 L240 170" stroke="rgba(251,250,247,.5)" stroke-width="1.4"/>
-          <line x1="20" y1="170" x2="280" y2="170" stroke="rgba(251,250,247,.3)" stroke-width="1.4"/>
-          <rect x="130" y="100" width="12" height="30" stroke="rgba(251,250,247,.5)" stroke-width="1.4"/>
-          <circle cx="215" cy="55" r="5" stroke="#B8945F" stroke-width="1.4"/>
-          <path d="M215 40 v10 M215 60 v10 M200 55 h10 M220 55 h10" stroke="#B8945F" stroke-width="1.2"/>
-          <path d="M180 90 C195 78, 205 68, 210 60" stroke="#B8945F" stroke-width="1" stroke-dasharray="2 4"/>
-        </svg>
+        <img src="icons/roof-aerial-top.jpg" alt="Real drone aerial photo of a UK roof taken by RoofScan UK" style="width:100%;height:100%;object-fit:cover;border-radius:12px;border:1px solid rgba(251,250,247,.15);">
       </div>
     </div>
   </section>
 
-  <section class="trust-strip">
-    <div class="wrap cred-badges">
-      <span class="cred-badge"><svg viewBox="0 0 24 24"><path d="M12 2l7 3v6c0 4.5-3 8-7 9-4-1-7-4.5-7-9V5z"/><path d="M9 12l2 2 4-4"/></svg>CAA Operator ID</span>
-      <span class="cred-badge"><svg viewBox="0 0 24 24"><path d="M12 2l7 3v6c0 4.5-3 8-7 9-4-1-7-4.5-7-9V5z"/><path d="M9 12l2 2 4-4"/></svg>Commercial drone insurance</span>
-      <span class="cred-badge"><svg viewBox="0 0 24 24"><path d="M12 2l7 3v6c0 4.5-3 8-7 9-4-1-7-4.5-7-9V5z"/><path d="M9 12l2 2 4-4"/></svg>DJI Air 3S</span>
-      <span class="cred-badge"><svg viewBox="0 0 24 24"><path d="M12 2l7 3v6c0 4.5-3 8-7 9-4-1-7-4.5-7-9V5z"/><path d="M9 12l2 2 4-4"/></svg>All of Sussex</span>
-      <span class="cred-badge"><svg viewBox="0 0 24 24"><path d="M12 2l7 3v6c0 4.5-3 8-7 9-4-1-7-4.5-7-9V5z"/><path d="M9 12l2 2 4-4"/></svg>48hr report delivery</span>
-    </div>
-  </section>
-
-  <section style="padding:18px 24px;border-bottom:1px solid var(--line);">
-    <div class="wrap" style="text-align:center;">
-      <span class="muted" style="font-size:13px;">Run by <strong style="color:var(--navy);">Takhy Ndiaye Marrero</strong>, hands-on construction background, CAA-licensed drone pilot. <a href="#" onclick="event.preventDefault();go('about')" class="textlink" style="font-size:13px;">More about us →</a></span>
+  <section class="pad reveal" style="padding-top:56px;padding-bottom:56px;">
+    <div class="wrap-n">
+      <div class="section-head center">
+        <div class="eyebrow">Why trust us</div>
+        <h2 class="section-title" style="font-size:clamp(1.5rem,2.6vw,1.9rem);">Licensed, insured, and built for accuracy</h2>
+      </div>
+      <div class="panel" style="padding:6px 28px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:15px 0;border-bottom:1px solid var(--line);"><span class="muted" style="font-size:14px;">CAA Operator ID</span><span style="font-size:13px;font-weight:700;color:#1E7A46;">✓ Verified</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:15px 0;border-bottom:1px solid var(--line);"><span class="muted" style="font-size:14px;">Pilot competency</span><span style="font-size:13px;font-weight:700;color:#1E7A46;">✓ GVC qualified</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:15px 0;border-bottom:1px solid var(--line);"><span class="muted" style="font-size:14px;">Public liability insurance</span><span style="font-size:13px;font-weight:700;color:#1E7A46;">✓ Active, £2M+ cover</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:15px 0;border-bottom:1px solid var(--line);"><span class="muted" style="font-size:14px;">A2 Certificate of Competency</span><span style="font-size:13px;font-weight:700;color:#1E7A46;">✓ Held</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:15px 0;border-bottom:1px solid var(--line);"><span class="muted" style="font-size:14px;">Aircraft</span><span style="font-size:13px;font-weight:700;color:#1E7A46;">✓ DJI Air 3S</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:15px 0;border-bottom:1px solid var(--line);"><span class="muted" style="font-size:14px;">Coverage area</span><span style="font-size:13px;font-weight:700;color:#1E7A46;">✓ All of Sussex</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:15px 0;"><span class="muted" style="font-size:14px;">Report delivery</span><span style="font-size:13px;font-weight:700;color:#1E7A46;">✓ Within 48 hours</span></div>
+      </div>
+      <div style="text-align:center;margin-top:16px;"><span class="muted" style="font-size:12.5px;">Copies of insurance and licensing documents are available on request. <a href="mailto:info@roofscanuk.co.uk" class="textlink" style="font-size:12.5px;">Email us</a>.</span></div>
     </div>
   </section>
 
@@ -427,7 +423,7 @@ textarea{resize:vertical;}
       </div>
       <div class="num-list">
         <div class="num-row"><div class="idx">01</div><div><h3>Residential Inspections</h3><p>One-off inspections for homeowners across Sussex. Full report, photos, and ratings. No scaffolding, no disruption.</p></div><button class="go" onclick="go('book')">Get a quote →</button></div>
-        <div class="num-row"><div class="idx">02</div><div><h3>Business & Portfolio Subscriptions</h3><p>Fixed per-property pricing for estate and letting agents, property managers, and housing associations who need roofs checked regularly.</p></div><a class="go" href="https://cal.com/roofscanuk/subscription-discovery-call" target="_blank" rel="noopener noreferrer">Book a call →</a></div>
+        <div class="num-row"><div class="idx">02</div><div><h3>A Referral Partnership <span style="font-weight:600;color:var(--gold);font-size:0.7em;">— for businesses, not homeowners</span></h3><p>For estate agents, letting agents, block management, and solicitors. Your clients get a discount, your business gets a reward for every completed referral, no contract, no minimum.</p></div><button class="go" onclick="go('services')">Learn more →</button></div>
         <div class="num-row"><div class="idx">03</div><div><h3>Surveyor & Lender Support</h3><p>Independent drone evidence to support a RICS survey or lending decision. Fast, unbiased, and attachable to your own paperwork.</p></div><button class="go" onclick="go('contact')">Get in touch →</button></div>
       </div>
     </div>
@@ -449,9 +445,11 @@ textarea{resize:vertical;}
       </div>
       <div class="panel" style="padding:16px;">
         <div class="eyebrow" style="margin-bottom:12px;">Sample report</div>
-        <iframe src="sample-report.pdf" title="Sample RoofScan UK inspection report" style="width:100%;height:340px;border:1px solid var(--line);border-radius:2px;"></iframe>
+        <iframe src="sample-report.pdf" title="Sample RoofScan UK inspection report" style="width:100%;height:340px;border:1px solid var(--line);border-radius:2px;">
+          <p style="padding:14px;font-size:13px;color:var(--muted);">Your browser can't preview PDFs inline. <a class="textlink" href="sample-report.pdf" target="_blank" rel="noopener noreferrer">View the sample report →</a></p>
+        </iframe>
         <div style="text-align:center;margin-top:14px;">
-          <a class="textlink" href="sample-report.pdf" target="_blank" rel="noopener noreferrer">View full sample report →</a>
+          <a class="btn small" href="sample-report.pdf" target="_blank" rel="noopener noreferrer">View full sample report →</a>
         </div>
       </div>
     </div>
@@ -486,6 +484,7 @@ textarea{resize:vertical;}
       </div>
 
       <h2 style="font-size:1.3rem;margin-bottom:6px;">Add-ons</h2>
+      <p class="muted" style="font-size:13px;margin-bottom:18px;line-height:1.7;">Not sure what applies to your property? These are shown as a guide, we confirm the exact add-ons that apply to your roof before your booking is finalised, so you're never charged for something you didn't expect.</p>
       <div style="margin-bottom:56px;">
         <div class="price-row"><div class="badge">＋</div><div class="info"><div class="t">Chimney stacks</div><div class="d">Each stack, all four sides inspected close up</div></div><div class="amt" style="font-size:1.1rem;">+£35</div></div>
         <div class="price-row"><div class="badge">＋</div><div class="info"><div class="t">Extensions / flat roofs</div><div class="d">Rear or side extensions</div></div><div class="amt" style="font-size:1.1rem;">+£30</div></div>
@@ -494,26 +493,26 @@ textarea{resize:vertical;}
       </div>
 
       <h2 style="font-size:1.3rem;margin-bottom:6px;">Travel</h2>
-      <div style="margin-bottom:24px;">
+      <div style="margin-bottom:16px;">
         <div class="price-row"><div class="badge">→</div><div class="info"><div class="t">Brighton &amp; Hove area</div><div class="d">Our home patch</div></div><div class="amt" style="font-size:1.1rem;">Free</div></div>
         <div class="price-row"><div class="badge">→</div><div class="info"><div class="t">Mid Sussex</div><div class="d">Worthing, Lewes, Burgess Hill and similar</div></div><div class="amt" style="font-size:1.1rem;">+£10</div></div>
         <div class="price-row"><div class="badge">→</div><div class="info"><div class="t">Wider Sussex</div><div class="d">Crawley, Eastbourne, Chichester and beyond</div></div><div class="amt" style="font-size:1.1rem;">+£20</div></div>
       </div>
-      <p class="muted" style="font-size:13px;margin-bottom:56px;line-height:1.7;">Travel applies to one-off inspections only. Subscription clients pay a flat per-property rate with travel included across all of Sussex.</p>
+      <p class="muted" style="font-size:13px;margin-bottom:56px;line-height:1.7;">Not sure which band your postcode falls into? Enter your address in the instant quote and we'll confirm the right travel charge automatically, or email us and we'll tell you before you book.</p>
 
-      <h2 style="font-size:1.3rem;margin-bottom:20px;">Professional subscription</h2>
-      <div class="sub-block">
-        <div class="eyebrow" style="margin-bottom:18px;">Estate agents · Letting agents · Property managers · Housing associations</div>
-        <div class="sub-grid">
-          <div class="sub-tile"><div class="l">Terraced</div><div class="v">£149</div><div class="u">per property</div></div>
-          <div class="sub-tile"><div class="l">Semi-detached</div><div class="v">£165</div><div class="u">per property</div></div>
-          <div class="sub-tile"><div class="l">Detached</div><div class="v">£189</div><div class="u">per property</div></div>
-          <div class="sub-tile"><div class="l">Large detached</div><div class="v">£225</div><div class="u">per property</div></div>
+      <h2 style="font-size:1.3rem;margin-bottom:6px;">Booking, payment & cancellation</h2>
+      <div style="margin-bottom:56px;">
+        <div class="check-list">
+          <div class="check-item"><span class="dash">—</span><span>£50 deposit to book your slot, balance due once your inspection is complete</span></div>
+          <div class="check-item"><span class="dash">—</span><span>Need to reschedule? Free of charge with at least 48 hours' notice; your deposit is refunded or moved to the new date</span></div>
+          <div class="check-item"><span class="dash">—</span><span>If we can't fly on the day due to weather, we'll rebook the next available slot at no extra cost, your 48-hour report clock starts from the completed flight, not the original booking date</span></div>
         </div>
-        <p style="color:rgba(251,250,247,.6);font-size:13.5px;line-height:1.7;margin:0 0 22px;">Minimum 5 properties per month. Monthly direct debit. White-label reports. 48hr SLA. Travel included across all of Sussex.</p>
-        <a class="btn" style="background:var(--gold);border-color:var(--gold);color:var(--navy);" href="https://cal.com/roofscanuk/subscription-discovery-call" target="_blank" rel="noopener noreferrer">Book a free discovery call</a>
       </div>
-      <p class="muted" style="font-size:13px;line-height:1.9;margin-bottom:28px;">Every inspection includes: full drone survey of all elevations, professional written report, condition ratings, Schedule of Works, 48-hour delivery. Fully insured, CAA licensed.</p>
+
+      <h2 style="font-size:1.3rem;margin-bottom:6px;">If something's not right</h2>
+      <p class="muted" style="font-size:13px;margin-bottom:56px;line-height:1.7;">We're fully insured for our drone operations. If you're not happy with your report, or something was missed, tell us and we'll put it right, that might mean revisiting the property or reviewing the imagery again, at no extra cost to you.</p>
+
+      <p class="muted" style="font-size:13px;line-height:1.9;margin-bottom:28px;">Every inspection includes: full drone survey of all elevations, professional written report, condition ratings, Schedule of Works, 48-hour delivery after a completed flight. Fully insured, CAA licensed.</p>
       <button class="btn" onclick="go('book')">Book your inspection →</button>
     </div>
   </section>
@@ -525,7 +524,7 @@ textarea{resize:vertical;}
     <div class="wrap">
       <div class="eyebrow">Our services</div>
       <h1 style="color:var(--paper);font-size:clamp(1.9rem,3.6vw,2.7rem);margin:0 0 12px;">One drone. Every roof problem, seen clearly.</h1>
-      <p style="color:rgba(251,250,247,.7);font-size:15.5px;line-height:1.7;max-width:56ch;margin:0;">Whether you're a homeowner who needs answers, or a business that needs roofs checked at scale, there's a service built for you.</p>
+      <p style="color:rgba(251,250,247,.7);font-size:15.5px;line-height:1.7;max-width:56ch;margin:0;">Whether you're a homeowner who needs answers, or a professional who wants an easy way to help your clients, there's something here for you.</p>
     </div>
   </section>
   <section class="pad reveal">
@@ -549,50 +548,20 @@ textarea{resize:vertical;}
       <div class="svc-row">
         <div class="badge">02</div>
         <div>
-          <div class="svc-tag">For estate & letting agents</div>
-          <h2>Estate Agent &amp; Letting Agent Subscriptions</h2>
-          <p class="body">A rolling monthly arrangement for agencies who need roofs checked before every sale or let goes to market. Submit each property through your own intake process and we handle the rest. Fixed per-property pricing, white-label reports with your branding, and a guaranteed 48-hour turnaround so nothing holds up a listing.</p>
+          <div class="svc-tag">For estate agents, letting agents, block management & solicitors</div>
+          <h2>A Referral Partnership for Your Business</h2>
+          <p class="body">If your business works with clients who ever need a roof looked at, before a sale, a let, a conveyancing check, or a resident concern, we'd like to set up a referral partnership with you. Your clients get a discount, and there's a reward for every referral that comes through your business. No contract, no minimum, no cost to sign up.</p>
           <div class="check-list" style="margin-bottom:20px;">
-            <div class="check-item"><span class="dash">—</span><span>From £149 per property, minimum 5/month</span></div>
-            <div class="check-item"><span class="dash">—</span><span>48-hour turnaround so listings aren't delayed</span></div>
-            <div class="check-item"><span class="dash">—</span><span>White-label reports available</span></div>
-          </div>
-          <a class="btn small" href="https://cal.com/roofscanuk/subscription-discovery-call" target="_blank" rel="noopener noreferrer">Book a discovery call →</a>
-        </div>
-      </div>
-
-      <div class="svc-row">
-        <div class="badge">03</div>
-        <div>
-          <div class="svc-tag">For property managers & landlords</div>
-          <h2>Property Manager &amp; Portfolio Subscriptions</h2>
-          <p class="body">Scheduled roof condition checks across your managed portfolio, so problems are caught early rather than turning into expensive repairs or tenant complaints. We work to a rolling inspection calendar and flag anything urgent right away, not buried in a monthly report.</p>
-          <div class="check-list" style="margin-bottom:20px;">
-            <div class="check-item"><span class="dash">—</span><span>Rolling inspection calendar across your portfolio</span></div>
-            <div class="check-item"><span class="dash">—</span><span>Urgent issues flagged immediately</span></div>
-            <div class="check-item"><span class="dash">—</span><span>Fixed per-property pricing, billed monthly</span></div>
-          </div>
-          <a class="btn small" href="https://cal.com/roofscanuk/subscription-discovery-call" target="_blank" rel="noopener noreferrer">Book a discovery call →</a>
-        </div>
-      </div>
-
-      <div class="svc-row">
-        <div class="badge">04</div>
-        <div>
-          <div class="svc-tag">For housing associations</div>
-          <h2>Social Housing Stock Condition Surveys</h2>
-          <p class="body">Compliance-ready roof condition data across larger housing stock, without scaffolding or access equipment on every visit. Useful for planned maintenance programmes, stock condition surveys, and demonstrating compliance to regulators.</p>
-          <div class="check-list" style="margin-bottom:20px;">
-            <div class="check-item"><span class="dash">—</span><span>Scales to large stock volumes</span></div>
-            <div class="check-item"><span class="dash">—</span><span>Data formatted to support planned maintenance programmes</span></div>
-            <div class="check-item"><span class="dash">—</span><span>No scaffolding required per property</span></div>
+            <div class="check-item"><span class="dash">—</span><span>A discount for every client you refer to us</span></div>
+            <div class="check-item"><span class="dash">—</span><span>A reward for your business on each completed referral</span></div>
+            <div class="check-item"><span class="dash">—</span><span>Your own tracked referral link, so everything's automatic</span></div>
           </div>
           <button class="btn small" onclick="go('contact')">Get in touch →</button>
         </div>
       </div>
 
       <div class="svc-row">
-        <div class="badge">05</div>
+        <div class="badge">03</div>
         <div>
           <div class="svc-tag">For surveyors & lenders</div>
           <h2>Supporting Evidence for Surveys &amp; Lending</h2>
@@ -630,7 +599,7 @@ textarea{resize:vertical;}
     <div class="wrap-n">
       <div class="about-block"><h2>Why we started</h2><p>A normal roof inspection usually means scaffolding, ladders, cost, and risk, or a roofer climbing up and telling you what they found with nothing to back it up. RoofScan UK exists to fix that. A drone captures every tile, ridge, and flashing in high resolution, so you get a full written report you can actually trust and act on. No scaffolding, no guesswork, and nobody with a stake in what happens next.</p></div>
       <div class="about-block"><h2>Grounded in the trade</h2><p>RoofScan UK is run by Takhy Ndiaye Marrero, who brings hands-on construction experience and a background in property to every inspection. Reports get written by someone who understands what he's looking at, not just pretty pictures, but a genuine read on what's going on up there and what to do about it.</p></div>
-      <div class="about-block"><h2>Independent by design</h2><p>We don't do the repairs, and we don't recommend who does. That's on purpose. We have no stake in the work that follows, so our reports stay honest. We tell you what we see, with no referral relationships pulling the findings one way or another.</p></div>
+      <div class="about-block"><h2>Independent by design</h2><p>We don't do the repairs, and we take no fee from anyone who does. That's on purpose. We have nothing to gain from what we find, so our reports stay honest. We tell you what we see, not what's convenient for someone else's next job.</p></div>
       <div class="about-block"><h2>Local to Sussex</h2><p>We're based in Brighton and cover the whole of Sussex, from Chichester to Rye, the coast to the mid-Sussex villages. Being local means we know the area, the housing stock, and the weather that batters these roofs. It also means a real person answers when you call.</p></div>
       <div class="cred-grid">
         <div><div class="t">CAA</div><div class="d">Operator ID &amp; qualified pilot</div></div>
@@ -655,7 +624,7 @@ textarea{resize:vertical;}
     <div class="wrap-n">
       <div class="eyebrow">Contact</div>
       <h1 style="color:var(--paper);font-size:clamp(1.9rem,3.6vw,2.7rem);margin:0 0 12px;">Get in touch</h1>
-      <p style="color:rgba(251,250,247,.7);font-size:15.5px;line-height:1.7;margin:0;">Questions about a booking, a subscription, or a partnership? We reply within 2 hours during business hours.</p>
+      <p style="color:rgba(251,250,247,.7);font-size:15.5px;line-height:1.7;margin:0;">Questions about a booking or a referral partnership? We reply within 2 hours during business hours.</p>
     </div>
   </section>
   <section style="padding:28px 24px 0;">
@@ -663,10 +632,10 @@ textarea{resize:vertical;}
       <div style="background:var(--white);border:1px solid var(--line);border-radius:2px;padding:26px 28px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;">
         <div>
           <div class="eyebrow" style="margin-bottom:6px;">For businesses</div>
-          <div style="font-weight:600;font-size:15.5px;color:var(--navy);margin-bottom:4px;">Estate agent, letting agent, property manager, or housing association?</div>
-          <div class="muted" style="font-size:13.5px;">Book a free 30-minute discovery call to talk through a subscription for your portfolio, no obligation.</div>
+          <div style="font-weight:600;font-size:15.5px;color:var(--navy);margin-bottom:4px;">Estate agent, letting agent, block management, or solicitor?</div>
+          <div class="muted" style="font-size:13.5px;">Set up a referral partnership. Your clients get a discount, your business gets a reward for every completed referral. No contract, no minimum.</div>
         </div>
-        <a class="btn" style="background:var(--gold);border-color:var(--gold);color:var(--navy);white-space:nowrap;" href="https://cal.com/roofscanuk/subscription-discovery-call" target="_blank" rel="noopener noreferrer">Book a discovery call →</a>
+        <a class="btn" style="background:var(--gold);border-color:var(--gold);color:var(--navy);white-space:nowrap;" href="mailto:info@roofscanuk.co.uk?subject=Referral%20partnership">Get in touch →</a>
       </div>
     </div>
   </section>
@@ -674,7 +643,7 @@ textarea{resize:vertical;}
     <div class="wrap-n" style="display:grid;grid-template-columns:1fr 1fr;gap:48px;">
       <div>
         <div class="contact-row"><div><div class="label">Call or text</div><div class="value">07498 364197</div><div class="note">Mon-Fri 8am-6pm · Sat 8am-2pm</div></div></div>
-        <div class="contact-row"><div><div class="label">Email</div><div class="value">info@roofscanuk.co.uk</div><div class="note">We reply within 2 working hours</div></div></div>
+        <div class="contact-row"><div><div class="label">Email</div><div class="value">info@roofscanuk.co.uk</div><div class="note">We reply within 2 hours during business hours</div></div></div>
         <div class="contact-row"><div><div class="label">WhatsApp</div><div class="value">07498 364197</div><div class="note">Message us for a quick response</div></div></div>
         <div class="contact-row"><div><div class="label">Based in</div><div class="value">Brighton, East Sussex</div><div class="note">Covering the whole of Sussex</div></div></div>
       </div>
@@ -724,13 +693,12 @@ textarea{resize:vertical;}
 
         <div id="book-step-3" style="display:none;">
           <h2 style="font-size:1.15rem;margin:0 0 6px;">Where is the property?</h2>
-          <p class="muted" style="font-size:13px;margin:0 0 22px;line-height:1.6;">Type or select your nearest town in Sussex.</p>
+          <p class="muted" style="font-size:13px;margin:0 0 22px;line-height:1.6;">Enter the property's postcode and we'll work out your travel charge automatically.</p>
           <div class="town-wrap">
-            <input id="town-input" placeholder="Type your town..." autocomplete="off" oninput="onTownInput()" onfocus="showTownList()">
-            <button class="town-clear" id="town-clear" style="display:none;" onclick="clearTown()">×</button>
-            <div class="town-list" id="town-list" style="display:none;"></div>
+            <input id="postcode-input" placeholder="e.g. BN1 1AA" autocomplete="off" style="text-transform:uppercase;" oninput="onPostcodeInput()">
+            <button class="town-clear" id="postcode-clear" style="display:none;" onclick="clearPostcode()">×</button>
           </div>
-          <div id="town-info" class="muted" style="font-size:12px;margin-bottom:20px;display:none;"></div>
+          <div id="postcode-info" class="muted" style="font-size:12px;margin-top:10px;margin-bottom:20px;display:none;"></div>
           <div class="row-btns"><button class="back-btn" onclick="goStep(2)">← Back</button><button class="btn full" id="step3-next" onclick="nextFromStep(3)">Next: your details →</button></div>
         </div>
 
@@ -741,7 +709,11 @@ textarea{resize:vertical;}
             <input id="c-name" placeholder="Full name" oninput="checkContactFields()">
             <input id="c-email" placeholder="Email address" oninput="checkContactFields()">
             <input id="c-phone" placeholder="Phone number" oninput="checkContactFields()">
-            <input id="c-address" placeholder="Property address (including postcode)" oninput="checkContactFields()">
+            <input id="c-street" placeholder="House number/name and street" oninput="checkContactFields()">
+            <div id="c-postcode-locked" style="display:flex;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:8px;padding:11px 14px;font-size:15px;color:var(--navy);background:var(--paper);">
+              <span id="c-postcode-value">—</span>
+              <span class="muted" style="font-size:12px;">Confirmed in step 3 · <a href="#" onclick="event.preventDefault();goStep(3);" class="textlink" style="font-size:12px;">change</a></span>
+            </div>
           </div>
           <div class="row-btns">
             <button class="back-btn" onclick="goStep(3)">← Back</button>
@@ -758,9 +730,43 @@ textarea{resize:vertical;}
             <div id="total-lines"></div>
             <div style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(251,250,247,.12);color:rgba(251,250,247,.5);font-size:12px;line-height:1.7;">Drone survey · full written report · photos · condition ratings · Schedule of Works · 48hr delivery · fully insured</div>
           </div>
-          <a class="book-cta" id="book-cta-link" href="https://cal.com/roofscanuk/inspection" target="_blank" rel="noopener noreferrer">Pick your date &amp; pay £50 deposit →</a>
+          <button class="book-cta" id="book-cta-link" onclick="goStep(6)" style="width:100%;border:none;cursor:pointer;font-family:inherit;">Pick your date &amp; pay £50 deposit →</button>
           <div class="muted" style="text-align:center;font-size:12px;line-height:1.8;" id="balance-note"></div>
           <div style="margin-top:22px;"><button class="back-btn" style="width:auto;padding:9px 18px;font-size:12px;" onclick="goStep(4)">← Edit details</button></div>
+        </div>
+
+        <div id="book-step-6" style="display:none;">
+          <div id="step6-intro">
+          <h2 style="font-size:1.15rem;margin:0 0 6px;">Pick your inspection date</h2>
+          <p class="muted" style="font-size:13px;margin:0 0 22px;line-height:1.6;">Choose an available slot, then pay your £50 deposit to confirm your booking.</p>
+          </div>
+          <div id="slot-loading" class="muted" style="font-size:13px;">Loading available times…</div>
+          <div id="slot-nav" style="display:none;align-items:center;justify-content:space-between;margin-bottom:14px;">
+            <button class="back-btn" style="flex:none;padding:8px 14px;font-size:12px;" onclick="shiftWeek(-1)" id="week-prev">← Earlier</button>
+            <div class="muted" id="week-label" style="font-size:13px;font-weight:600;"></div>
+            <button class="back-btn" style="flex:none;padding:8px 14px;font-size:12px;" onclick="shiftWeek(1)" id="week-next">Later →</button>
+          </div>
+          <div id="slot-days" style="display:none;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:4px;"></div>
+          <div id="slot-times-wrap" style="display:none;margin-top:8px;"></div>
+          <div id="slot-empty" class="muted" style="display:none;font-size:13px;margin-top:10px;">No available times this week — try Later →.</div>
+
+          <div id="payment-section" style="display:none;margin-top:24px;">
+            <div class="total-card" style="margin-bottom:18px;">
+              <div class="label">Deposit due now</div>
+              <div class="amt">£50</div>
+            </div>
+            <div id="card-element" style="padding:14px;border:1px solid rgba(0,0,0,.15);border-radius:6px;background:#fff;"></div>
+            <div id="card-errors" style="color:#c0392b;font-size:13px;margin-top:8px;min-height:16px;"></div>
+            <button class="btn full" id="pay-btn" style="margin-top:16px;" onclick="submitPayment()">Pay £50 deposit &amp; book →</button>
+          </div>
+
+          <div id="booking-confirmed" style="display:none;text-align:center;padding:32px 0;">
+            <h2 style="font-size:1.3rem;margin:0 0 10px;">You're booked!</h2>
+            <p style="font-size:15px;font-weight:600;margin:0 0 14px;" id="confirmed-slot-line"></p>
+            <p class="muted" style="font-size:14px;line-height:1.7;">A confirmation has been sent to your email. Our CAA-licensed pilot will fly the property on the day — the drone survey takes about 30–45 minutes and you don't need to be home. No scaffolding, no disruption. Your full written report follows within 48 hours of the balance payment, which is due on completion.</p>
+          </div>
+
+          <div style="margin-top:22px;"><button class="back-btn" id="step6-back" style="width:auto;padding:9px 18px;font-size:12px;" onclick="goStep(5)">← Back</button></div>
         </div>
       </div>
     </section>
@@ -781,7 +787,7 @@ textarea{resize:vertical;}
       <div>
         <div class="footer-title">Services</div>
         <div class="footer-link" onclick="go('services')">Residential Inspections</div>
-        <div class="footer-link" onclick="go('services')">Business & Portfolio Subscriptions</div>
+        <div class="footer-link" onclick="go('services')">Referral Partnerships</div>
         <div class="footer-link" onclick="go('services')">Surveyor & Lender Support</div>
       </div>
       <div>
@@ -789,6 +795,7 @@ textarea{resize:vertical;}
         <div class="footer-link" onclick="go('about')">About</div>
         <div class="footer-link" onclick="go('contact')">Contact</div>
         <div class="footer-link" onclick="go('pricing')">Pricing</div>
+        <a class="footer-link" href="faq.html" style="display:block;">FAQs</a>
       </div>
       <div>
         <div class="footer-title">Client Portals</div>
@@ -860,14 +867,24 @@ const AD=[
   {id:"outbuildings",label:"Outbuildings / garages",unit:40,max:5,desc:"Separate structures"},
 ];
 const TB={local:{label:"Brighton & Hove area",add:0},mid:{label:"Mid Sussex",add:10},far:{label:"Wider Sussex",add:20}};
-const TN=[
-  {name:"Brighton",band:"local"},{name:"Hove",band:"local"},{name:"Portslade",band:"local"},{name:"Shoreham-by-Sea",band:"local"},{name:"Newhaven",band:"local"},{name:"Peacehaven",band:"local"},
-  {name:"Worthing",band:"mid"},{name:"Lancing",band:"mid"},{name:"Lewes",band:"mid"},{name:"Burgess Hill",band:"mid"},{name:"Haywards Heath",band:"mid"},{name:"Hassocks",band:"mid"},{name:"Seaford",band:"mid"},{name:"Steyning",band:"mid"},{name:"Henfield",band:"mid"},
-  {name:"Crawley",band:"far"},{name:"Eastbourne",band:"far"},{name:"Chichester",band:"far"},{name:"Horsham",band:"far"},{name:"Hastings",band:"far"},{name:"Bognor Regis",band:"far"},{name:"Littlehampton",band:"far"},{name:"Arundel",band:"far"},{name:"Uckfield",band:"far"},{name:"Heathfield",band:"far"},{name:"Rye",band:"far"},{name:"East Grinstead",band:"far"},
-];
 const SL=["Property","Features","Location","Details","Your price","Book"];
 
-let bstep=1, prop=null, town=null;
+// Straight-line distance from Brighton clock tower, used to auto-assign a travel band from any UK postcode.
+const BRIGHTON_LAT=50.8225, BRIGHTON_LNG=-0.1372;
+function milesBetween(lat1,lng1,lat2,lng2){
+  const R=3958.8, toRad=d=>d*Math.PI/180;
+  const dLat=toRad(lat2-lat1), dLng=toRad(lng2-lng1);
+  const a=Math.sin(dLat/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+function bandForDistance(miles){
+  if(miles<=7) return 'local';
+  if(miles<=22) return 'mid';
+  if(miles<=45) return 'far';
+  return null; // outside current coverage
+}
+
+let bstep=1, prop=null, postcodeInfo=null, postcodeTimer=null;
 let counts={chimneys:0,extensions:0,dormers:0,outbuildings:0};
 let contact={name:"",email:"",phone:"",address:""};
 
@@ -915,53 +932,74 @@ function stepCount(id,d,max){
   document.getElementById('plus-'+id).disabled = counts[id]===max;
 }
 
-function onTownInput(){
-  const val = document.getElementById('town-input').value;
-  town = null;
-  document.getElementById('town-clear').style.display='none';
-  document.getElementById('town-info').style.display='none';
-  showTownList(val);
-}
-function showTownList(filterOverride){
-  const val = filterOverride!==undefined ? filterOverride : document.getElementById('town-input').value;
-  if(town) return;
-  const filtered = val ? TN.filter(t=>t.name.toLowerCase().includes(val.toLowerCase())) : TN;
-  const list = document.getElementById('town-list');
-  list.innerHTML = filtered.map(t=>`<div class="town-item" onclick="selectTown('${t.name}')">${t.name}</div>`).join('');
-  list.style.display = 'block';
-}
-function selectTown(name){
-  town = TN.find(t=>t.name===name);
-  document.getElementById('town-input').value = town.name;
-  document.getElementById('town-list').style.display='none';
-  document.getElementById('town-clear').style.display='block';
-  const info = document.getElementById('town-info');
-  info.textContent = town.name+' · '+TB[town.band].label;
+function onPostcodeInput(){
+  clearTimeout(postcodeTimer);
+  postcodeInfo = null;
+  document.getElementById('postcode-clear').style.display='none';
+  const info = document.getElementById('postcode-info');
+  const val = document.getElementById('postcode-input').value.trim();
+  if(!val){ info.style.display='none'; return; }
+  info.textContent = 'Checking postcode…';
   info.style.display = 'block';
+  postcodeTimer = setTimeout(()=>checkPostcode(val), 500);
 }
-function clearTown(){
-  town = null;
-  document.getElementById('town-input').value='';
-  document.getElementById('town-clear').style.display='none';
-  document.getElementById('town-info').style.display='none';
-}
-document.addEventListener('click', e=>{
-  if(!e.target.closest('.town-wrap')){
-    const l = document.getElementById('town-list');
-    if(l) l.style.display='none';
+async function checkPostcode(raw){
+  const info = document.getElementById('postcode-info');
+  const cleaned = raw.replace(/\s+/g,'').toUpperCase();
+  const ukPostcodeRe = /^[A-Z]{1,2}[0-9][A-Z0-9]?[0-9][A-Z]{2}$/;
+  if(!ukPostcodeRe.test(cleaned)){
+    info.textContent = "That doesn't look like a valid postcode, please check and try again.";
+    info.style.display = 'block';
+    return;
   }
-});
+  try{
+    const res = await fetch('https://api.postcodes.io/postcodes/'+encodeURIComponent(cleaned));
+    const data = await res.json();
+    if(data.status!==200 || !data.result){
+      info.textContent = "We couldn't find that postcode, please check and try again.";
+      info.style.display = 'block';
+      return;
+    }
+    const {latitude, longitude, postcode} = data.result;
+    const miles = milesBetween(BRIGHTON_LAT, BRIGHTON_LNG, latitude, longitude);
+    const band = bandForDistance(miles);
+    if(!band){
+      postcodeInfo = null;
+      info.textContent = "That's a bit outside our current coverage area. Email info@roofscanuk.co.uk and we'll let you know if we can help.";
+      info.style.display = 'block';
+      return;
+    }
+    postcodeInfo = {postcode, band, miles};
+    document.getElementById('postcode-clear').style.display='block';
+    info.textContent = postcode+' · '+TB[band].label+(TB[band].add>0?' (+£'+TB[band].add+' travel)':' (no travel charge)');
+    info.style.display = 'block';
+  }catch(err){
+    console.error('Postcode lookup failed:', err);
+    info.textContent = "Couldn't check that postcode right now, please try again in a moment.";
+    info.style.display = 'block';
+  }
+}
+function clearPostcode(){
+  postcodeInfo = null;
+  document.getElementById('postcode-input').value='';
+  document.getElementById('postcode-clear').style.display='none';
+  document.getElementById('postcode-info').style.display='none';
+}
 
 function checkContactFields(){
   contact.name = document.getElementById('c-name').value;
   contact.email = document.getElementById('c-email').value;
   contact.phone = document.getElementById('c-phone').value;
-  contact.address = document.getElementById('c-address').value;
+  const street = document.getElementById('c-street').value.trim();
+  // The postcode is locked from step 3, so the full address is always built
+  // from a real validated postcode rather than retyped free text — removes
+  // the mismatch risk entirely instead of just flagging it.
+  contact.address = postcodeInfo ? (street ? street + ', ' + postcodeInfo.postcode : '') : street;
 }
 
 function goStep(n){
   bstep = n;
-  for(let i=1;i<=5;i++){ document.getElementById('book-step-'+i).style.display = (i===n?'block':'none'); }
+  for(let i=1;i<=6;i++){ const el=document.getElementById('book-step-'+i); if(el) el.style.display = (i===n?'block':'none'); }
   renderProgress();
   const titles = {
     1:["Tell us about your property","Answer a few quick questions and see your price instantly, no call, no obligation."],
@@ -969,35 +1007,244 @@ function goStep(n){
     3:["Tell us about your property","Answer a few quick questions and see your price instantly, no call, no obligation."],
     4:["Your details","We'll use these to confirm your booking and deliver your report."],
     5:["Your inspection price","Here's your full breakdown, ready to book whenever you are."],
+    6:["Pick your date","Choose a slot and pay your £50 deposit to confirm."],
   };
   document.getElementById('book-step-title').textContent = titles[n][0];
   document.getElementById('book-step-sub').textContent = titles[n][1];
+  if(n===4){
+    // Show the postcode already confirmed in step 3 as a locked chip, so the
+    // customer only ever types the house number/street — the postcode itself
+    // is never retyped, so it can't drift from what was validated.
+    const pcEl = document.getElementById('c-postcode-value');
+    if(pcEl) pcEl.textContent = postcodeInfo ? postcodeInfo.postcode : '—';
+    checkContactFields();
+  }
   if(n===5) renderPrice();
+  if(n===6) initBookingStep();
 }
 
 function nextFromStep(n){
   if(n===1 && !prop){ alert('Please select a property type.'); return; }
-  if(n===3 && !town){ alert('Please select your town.'); return; }
+  if(n===3 && !postcodeInfo){ alert('Please enter a valid postcode within our coverage area.'); return; }
   if(n===4 && !(contact.name && contact.email && contact.phone && contact.address)){ alert('Please fill in all fields.'); return; }
   goStep(n+1);
 }
 
 function renderPrice(){
   const property = PT.find(p=>p.id===prop);
-  const trav = town ? TB[town.band] : TB.local;
+  const trav = postcodeInfo ? TB[postcodeInfo.band] : TB.local;
   const addonTotal = AD.reduce((s,a)=>s+counts[a.id]*a.unit,0);
   const total = (property?property.base:0) + trav.add + addonTotal;
   document.getElementById('total-amt').textContent = fmt(total);
 
   const lines = [];
   if(property) lines.push([property.label, property.base]);
-  if(trav.add>0) lines.push(['Travel, '+(town?town.name:''), trav.add]);
+  if(trav.add>0) lines.push(['Travel, '+(postcodeInfo?postcodeInfo.postcode:''), trav.add]);
   AD.forEach(a=>{ if(counts[a.id]>0) lines.push([a.label+' ×'+counts[a.id], counts[a.id]*a.unit]); });
   document.getElementById('total-lines').innerHTML = lines.map(([l,v])=>
     `<div class="total-row"><span class="l">${l}</span><span class="v">${fmt(v)}</span></div>`).join('');
 
-  document.getElementById('book-cta-link').href = 'https://cal.com/roofscanuk/inspection?total='+total;
   document.getElementById('balance-note').innerHTML = 'Balance of '+fmt(Math.max(0,total-50))+' due on completion · <a href="terms.html" class="muted">Terms &amp; Conditions</a>';
+}
+
+// ═══ STEP 6 — date picker + Stripe deposit payment ═══════════════════
+const STRIPE_PK = 'pk_live_51Trv87QcApNGjNdfmHcSoqHDYS69kmFe7bFzYTEluYIgGZE4GPqGRQDap8ZQeYvPpCgVxhZUmDGkDpcvCq0tTC1H00a56fU5sw';
+let stripeClient = null, cardElement = null, selectedSlot = null, piClientSecret = null, piId = null, step6Inited = false;
+let weekOffset = 0;
+let slotsByDay = {};
+
+function initBookingStep(){
+  if(step6Inited) return;
+  step6Inited = true;
+  loadSlots();
+  createDepositIntent();
+  if(window.Stripe){
+    stripeClient = Stripe(STRIPE_PK);
+    const elements = stripeClient.elements();
+    cardElement = elements.create('card', {style:{base:{fontSize:'15px',fontFamily:'inherit'}}});
+    cardElement.mount('#card-element');
+    cardElement.on('change', e => {
+      document.getElementById('card-errors').textContent = e.error ? e.error.message : '';
+    });
+  }
+}
+
+function windowDates(offset){
+  const start = new Date();
+  start.setHours(0,0,0,0);
+  start.setDate(start.getDate() + offset*7);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 7);
+  return {start, end};
+}
+
+async function loadSlots(){
+  document.getElementById('slot-loading').style.display = 'block';
+  document.getElementById('slot-loading').textContent = 'Loading available times…';
+  document.getElementById('slot-empty').style.display = 'none';
+  document.getElementById('slot-nav').style.display = 'none';
+  document.getElementById('slot-days').style.display = 'none';
+  document.getElementById('slot-times-wrap').style.display = 'none';
+  const {start, end} = windowDates(weekOffset);
+  try{
+    const res = await fetch(`${LM_API_BASE}/available-slots?start=${encodeURIComponent(start.toISOString())}&end=${encodeURIComponent(end.toISOString())}`);
+    const data = await res.json();
+    renderSlots(data.slots || {}, start, end);
+  }catch(e){
+    document.getElementById('slot-loading').textContent = 'Could not load availability — please refresh and try again.';
+  }
+}
+
+function shiftWeek(dir){
+  const next = weekOffset + dir;
+  if(next < 0) return;
+  weekOffset = next;
+  loadSlots();
+}
+
+function renderSlots(raw, start, end){
+  document.getElementById('slot-loading').style.display = 'none';
+  slotsByDay = {};
+  if(Array.isArray(raw)){
+    raw.forEach(s=>{
+      const iso = s.start || s.time || s;
+      const day = iso.slice(0,10);
+      (slotsByDay[day] = slotsByDay[day] || []).push(iso);
+    });
+  } else {
+    Object.keys(raw).forEach(day=>{
+      slotsByDay[day] = (raw[day]||[]).map(s => s.start || s.time || s);
+    });
+  }
+
+  const nav = document.getElementById('slot-nav');
+  nav.style.display = 'flex';
+  const prevBtn = document.getElementById('week-prev');
+  prevBtn.disabled = weekOffset === 0;
+  prevBtn.style.opacity = weekOffset === 0 ? '0.4' : '1';
+  const endLabel = new Date(end); endLabel.setDate(endLabel.getDate()-1);
+  document.getElementById('week-label').textContent = start.toLocaleDateString('en-GB',{day:'numeric',month:'short'}) + ' – ' + endLabel.toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+
+  const days = [];
+  for(let d = new Date(start); d < end; d.setDate(d.getDate()+1)){
+    days.push(d.toISOString().slice(0,10));
+  }
+
+  const dayEl = document.getElementById('slot-days');
+  dayEl.style.display = 'grid';
+  dayEl.innerHTML = days.map(d=>{
+    const dt = new Date(d+'T00:00:00');
+    const has = (slotsByDay[d]||[]).length > 0;
+    const wd = dt.toLocaleDateString('en-GB',{weekday:'short'});
+    const dn = dt.toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+    return `<button class="back-btn" ${has?'':'disabled'} style="flex:none;padding:10px 4px;font-size:12px;text-align:center;line-height:1.5;${has?'':'opacity:.35;cursor:default;'}" onclick="${has?`showTimesForDay('${d}')`:''}" id="day-${d}"><div style="font-weight:600;">${wd}</div><div style="font-size:11px;">${dn}</div></button>`;
+  }).join('');
+
+  const firstWithSlots = days.find(d => (slotsByDay[d]||[]).length > 0);
+  if(firstWithSlots){
+    showTimesForDay(firstWithSlots);
+  } else {
+    document.getElementById('slot-times-wrap').style.display = 'none';
+    document.getElementById('slot-empty').style.display = 'block';
+  }
+}
+
+function showTimesForDay(day){
+  document.getElementById('slot-empty').style.display = 'none';
+  document.querySelectorAll('[id^="day-"]').forEach(b=>b.classList.remove('sel'));
+  const dayBtn = document.getElementById('day-'+day);
+  if(dayBtn) dayBtn.classList.add('sel');
+
+  const times = (slotsByDay[day]||[]).map(iso => ({
+    iso,
+    label: new Date(iso).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/London'}),
+    hour: parseInt(new Date(iso).toLocaleTimeString('en-GB',{hour:'2-digit',hour12:false,timeZone:'Europe/London'}),10)
+  }));
+  const morning = times.filter(t=>t.hour<12);
+  const afternoon = times.filter(t=>t.hour>=12);
+
+  const renderGroup = (label, list) => {
+    if(!list.length) return '';
+    const btns = list.map(t=>`<button class="back-btn" style="flex:none;padding:9px 14px;font-size:13px;" onclick="selectSlot('${t.iso}', this)">${t.label}</button>`).join('');
+    return `<div class="muted" style="font-size:12px;margin:12px 0 6px;text-transform:uppercase;letter-spacing:.04em;">${label}</div><div style="display:flex;flex-wrap:wrap;gap:8px;">${btns}</div>`;
+  };
+
+  document.getElementById('slot-times-wrap').style.display = 'block';
+  document.getElementById('slot-times-wrap').innerHTML = renderGroup('Morning', morning) + renderGroup('Afternoon', afternoon);
+  document.getElementById('payment-section').style.display = 'none';
+  selectedSlot = null;
+}
+
+function selectSlot(iso, btn){
+  selectedSlot = iso;
+  document.querySelectorAll('#slot-times-wrap .back-btn').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+  document.getElementById('payment-section').style.display = 'block';
+}
+
+async function createDepositIntent(){
+  try{
+    const res = await fetch(`${LM_API_BASE}/create-payment-intent`, {method:'POST'});
+    const data = await res.json();
+    piClientSecret = data.clientSecret;
+    piId = data.paymentIntentId;
+  }catch(e){
+    document.getElementById('card-errors').textContent = 'Could not start payment — please refresh and try again.';
+  }
+}
+
+async function submitPayment(){
+  if(!selectedSlot){ alert('Please pick a date and time first.'); return; }
+  if(!piClientSecret){ document.getElementById('card-errors').textContent = 'Payment not ready yet — please wait a moment and try again.'; return; }
+  const payBtn = document.getElementById('pay-btn');
+  payBtn.disabled = true;
+  payBtn.textContent = 'Processing…';
+
+  const result = await stripeClient.confirmCardPayment(piClientSecret, {
+    payment_method: { card: cardElement, billing_details: { name: contact.name, email: contact.email } }
+  });
+
+  if(result.error){
+    document.getElementById('card-errors').textContent = result.error.message;
+    payBtn.disabled = false;
+    payBtn.textContent = 'Pay £50 deposit & book →';
+    return;
+  }
+
+  try{
+    const res = await fetch(`${LM_API_BASE}/confirm-booking`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        paymentIntentId: piId,
+        slotStart: selectedSlot,
+        propertyType: prop,
+        addons: counts,
+        travelBand: postcodeInfo ? postcodeInfo.band : 'local',
+        contact
+      })
+    });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error || 'booking failed');
+    document.getElementById('payment-section').style.display = 'none';
+    document.getElementById('slot-nav').style.display = 'none';
+    document.getElementById('slot-days').style.display = 'none';
+    document.getElementById('slot-times-wrap').style.display = 'none';
+    document.getElementById('step6-back').style.display = 'none';
+    document.getElementById('step6-intro').style.display = 'none';
+    document.getElementById('progress-row').parentElement.style.display = 'none';
+    document.getElementById('book-step-title').textContent = 'Booking confirmed';
+    document.getElementById('book-step-sub').textContent = "Thanks — here's what happens next.";
+    const bookedDt = new Date(selectedSlot);
+    const dateLabel = bookedDt.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
+    const timeLabel = bookedDt.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/London'});
+    document.getElementById('confirmed-slot-line').textContent = `Inspection booked for ${dateLabel} at ${timeLabel}.`;
+    document.getElementById('booking-confirmed').style.display = 'block';
+  }catch(e){
+    document.getElementById('card-errors').textContent = 'Payment succeeded but booking could not be confirmed — please contact us at info@roofscanuk.co.uk with your payment reference: ' + piId;
+    payBtn.disabled = false;
+    payBtn.textContent = 'Pay £50 deposit & book →';
+  }
 }
 
 // ============ CLIENT LOGIN MODAL ============
@@ -1100,7 +1347,7 @@ function lmSaveTradeSession(email, token){ try{ localStorage.setItem('rs_trade_e
 
 function lmGoToPortal(which){
   if(which==='homeowner'){ lmSaveHomeownerSession(lmPendingEmail, lmPendingToken); window.location.href = 'my-roof.html'; }
-  else { lmSaveTradeSession(lmPendingEmail, lmPendingToken); window.location.href = 'trade-portal.html'; }
+  else { lmSaveTradeSession(lmPendingEmail, lmPendingToken); window.location.href = 'referral-portal.html'; }
 }
 
 async function lmRouteToAccount(email, token){
@@ -1108,7 +1355,7 @@ async function lmRouteToAccount(email, token){
   var isHomeowner = results[0], isTrade = results[1];
   if(isHomeowner && isTrade){ lmShowStep('lm-step-choose'); return; }
   if(isHomeowner){ lmSaveHomeownerSession(email, token); window.location.href = 'my-roof.html'; return; }
-  if(isTrade){ lmSaveTradeSession(email, token); window.location.href = 'trade-portal.html'; return; }
+  if(isTrade){ lmSaveTradeSession(email, token); window.location.href = 'referral-portal.html'; return; }
   document.getElementById('lm-notfound-msg').innerHTML = 'We couldn\'t find a homeowner or trade account for <strong>'+email+'</strong>.<br><br>Double check it\'s the exact email you used, or <a href="mailto:info@roofscanuk.co.uk" style="color:var(--navy);font-weight:600;">contact us</a> for help.<br><br>New here? <a href="#" onclick="closeLoginModal();go(\'book\');return false;" style="color:var(--navy);font-weight:600;">Book an inspection →</a>';
   lmShowStep('lm-step-notfound');
 }
