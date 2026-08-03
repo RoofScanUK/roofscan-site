@@ -306,14 +306,14 @@ textarea{resize:vertical;}
     <div class="login-modal-side">
       <div class="eyebrow">Client login</div>
       <h3>Your roof, all in one place</h3>
-      <p>View your inspection history, download your reports, and track any follow-up work. Trade accounts can also see job status and invoices here.</p>
+      <p>View your inspection history, download your reports, and track any follow-up work. Referral partners can also see referral status and payouts here.</p>
     </div>
     <div class="login-modal-main">
       <button class="login-modal-close" onclick="closeLoginModal()">&times;</button>
 
       <div id="lm-step-email">
         <h2>Sign in to your account</h2>
-        <div class="login-modal-sub">Enter the email address you used to book an inspection, or your trade account email. We'll send a 6-digit code to confirm it's you, then take you straight to the right place.</div>
+        <div class="login-modal-sub">Enter the email address you used to book an inspection, or your referral partner email. We'll send a 6-digit code to confirm it's you, then take you straight to the right place.</div>
         <input type="email" id="lm-email" class="login-inp" placeholder="your@email.com" onkeydown="if(event.key==='Enter')lmRequestCode()">
         <button class="login-modal-btn" id="lm-request-btn" onclick="lmRequestCode()">Send me a code →</button>
         <div class="login-modal-error" id="lm-login-error"></div>
@@ -337,10 +337,10 @@ textarea{resize:vertical;}
 
       <div id="lm-step-choose" style="display:none;">
         <h2>Which account would you like to open?</h2>
-        <div class="login-modal-sub">This email is linked to both a homeowner and a trade account.</div>
+        <div class="login-modal-sub">This email is linked to both a homeowner and a referral partner account.</div>
         <div class="login-choose-row">
           <button class="login-choose-btn" onclick="lmGoToPortal('homeowner')">My Roof<div class="d">Your inspection history &amp; reports</div></button>
-          <button class="login-choose-btn" onclick="lmGoToPortal('trade')">Trade account<div class="d">Jobs, invoices &amp; submissions</div></button>
+          <button class="login-choose-btn" onclick="lmGoToPortal('trade')">Referral Partner<div class="d">Referrals &amp; payouts</div></button>
         </div>
       </div>
 
@@ -763,7 +763,7 @@ textarea{resize:vertical;}
           <div id="booking-confirmed" style="display:none;text-align:center;padding:32px 0;">
             <h2 style="font-size:1.3rem;margin:0 0 10px;">You're booked!</h2>
             <p style="font-size:15px;font-weight:600;margin:0 0 14px;" id="confirmed-slot-line"></p>
-            <p class="muted" style="font-size:14px;line-height:1.7;">A confirmation has been sent to your email. Our CAA-licensed pilot will fly the property on the day — the drone survey takes about 30–45 minutes and you don't need to be home. No scaffolding, no disruption. Your full written report follows within 48 hours of the balance payment, which is due on completion.</p>
+            <p class="muted" style="font-size:14px;line-height:1.7;">A confirmation has been sent to your email. Our CAA-licensed pilot will fly the property on the day — the drone survey takes about 30–45 minutes and you don't need to be home. No scaffolding, no disruption. Your full written report follows within 48 hours of the completed flight. The balance payment is due on completion.</p>
           </div>
 
           <div style="margin-top:22px;"><button class="back-btn" id="step6-back" style="width:auto;padding:9px 18px;font-size:12px;" onclick="goStep(5)">← Back</button></div>
@@ -799,7 +799,7 @@ textarea{resize:vertical;}
       </div>
       <div>
         <div class="footer-title">Client Portals</div>
-        <div class="footer-link" onclick="openLoginModal()">Portal Login: My Roof & Trade</div>
+        <div class="footer-link" onclick="openLoginModal()">Portal Login: My Roof & Referral Partner</div>
       </div>
       <div>
         <div class="footer-title">Legal</div>
