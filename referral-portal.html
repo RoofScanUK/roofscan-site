@@ -150,7 +150,11 @@ async function fetchAgentAccount(email, token){
   var res = await fetch(API_BASE+'/agent-account?email='+encodeURIComponent(email), {
     headers: { 'Authorization': 'Bearer ' + token }
   });
-  if(!res.ok) return null;
+  if(!res.ok){
+    var err = new Error('agent-account failed');
+    err.status = res.status;
+    throw err;
+  }
   return res.json();
 }
 
@@ -238,7 +242,11 @@ async function loadPortal(email, token){
     var jobs = await fetchAgentJobs(email, token);
     renderJobs(jobs);
   }catch(e){
-    showLoginError('Session expired or something went wrong. Please log in again, or call/WhatsApp 07498 364197 if it keeps happening.');
+    if(e && e.status === 401){
+      showLoginError('Your session has expired. Please log back in below to keep viewing your referrals.');
+    } else {
+      showLoginError('Something went wrong loading your account. Please log in again, or call/WhatsApp 07498 364197 if it keeps happening.');
+    }
   }
 }
 
