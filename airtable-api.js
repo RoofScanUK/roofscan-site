@@ -27,7 +27,7 @@ const AT = (function() {
       date:     'fldmMdTOz2ieZ74e3',
       status:   'fldhm3oLpNvtD8Thc',
       notes:    'fldvym9yUybOyvoq4',
-      report:   'fldenMqINAf6DcCO7',
+      report:   'fldenMqINAf6DcCO7', // single source of truth for the hosted report — portal + Zap 4 client email both read this
       roofscore:'fldCWxHxCghBnjemX',
       company:  'fldkibwZ0z68rPMAl',
       payment:  'fldaq6odXbJ1UGKbi',
