@@ -238,7 +238,7 @@ var _pendingEmail = '';
 var _token = '';
 
 
-// ═══ 12-MONTH REMINDER (item: due for re-inspection) ═══════════════
+// ═══ 12-MONTH REMINDER (item: due for re-inspection) ══════════════════════════════════════════
 function isDueForReinspection(lastInspDate) {
   if(!lastInspDate) return false;
   var last = new Date(lastInspDate);
@@ -248,8 +248,12 @@ function isDueForReinspection(lastInspDate) {
 }
 
 function statusSteps(status) {
-  var steps = ['Booked','Complete','Report Sent','Paid'];
-  var labels = ['Booked','Inspected','Payment due','Report ready'];
+  // Matches the live Airtable Status field options: Prebooked, Booked, Complete, Invoiced, Paid.
+  // "Report Sent" was never a real status option, so a job sitting at "Invoiced" (the actual
+  // status between inspection and payment) always fell through to idx 0 and showed as freshly
+  // "Booked" — this fixes that.
+  var steps = ['Prebooked','Booked','Complete','Invoiced','Paid'];
+  var labels = ['Prebooked','Booked','Inspected','Invoice sent','Report ready'];
   var idx = steps.indexOf(status);
   if(idx < 0) idx = 0;
   return steps.map(function(s,i){ return {label:labels[i], state:i<idx?'done':i===idx?'current':''}; });
@@ -507,7 +511,7 @@ function bookNew(){
   window.open(url,'_blank');
 }
 
-// ═══ ROOF CARE PLAN — prebook next year's inspection (£50 deposit, 15% off) ═══════════════
+// ═══ ROOF CARE PLAN — prebook next year's inspection (£50 deposit, 15% off) ══════════════════════════════════
 // Per-property: each address gets its own Stripe Elements instance and payment state, keyed by slug.
 // Matches the live Worker's per-property /prebook-status, /prebook-intent, /prebook-confirm endpoints.
 var RC_STRIPE_PK = 'pk_live_51Trv87QcApNGjNdfmHcSoqHDYS69kmFe7bFzYTEluYIgGZE4GPqGRQDap8ZQeYvPpCgVxhZUmDGkDpcvCq0tTC1H00a56fU5sw';
