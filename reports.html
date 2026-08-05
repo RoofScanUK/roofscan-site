@@ -1088,11 +1088,7 @@ function buildDoc(d,obs){
   var BRAND = (d.whiteLabel && d.brandName) ? d.brandName : "RoofScan UK";
   var BRAND_UPPER = BRAND.toUpperCase();
   var WHITE="FFFFFF",RED="C0392B",AMBER="E67E22",GREEN="27AE60",LIGHT_GREY="CCCCCC";
-  // Palette matched to RoofScan_UK_Example_Report.docx (the approved reference document) —
-  // extracted directly from its XML: navy #1C2B4A for headings/dark bars, #1E4080 for
-  // sub-headings/labels, #3D6AA8 for the big divider-page numerals, cream #F5F5F2 for tints.
-  // Body text uses the same navy as headings in the reference doc, not a separate near-black.
-  var DARK="1C2B4A", GREY_BG="F0EFED";
+  var DARK="1A1A2E", GREY_BG="F5F7FA";
   // Agency colour palette: the agency's picked colour becomes BLUE_MID (the vibrant accent
   // RoofScan's palette uses for headings/highlights), with BLUE (darker, for header bars) and
   // BLUE_LIGHT (near-white, for section tints) derived from it — same three-tone relationship
@@ -1103,7 +1099,7 @@ function buildDoc(d,obs){
     BLUE = hexShade(BLUE_MID, -0.35);
     BLUE_LIGHT = hexShade(BLUE_MID, 0.85);
   } else {
-    BLUE="1C2B4A"; BLUE_LIGHT="F5F5F2"; BLUE_MID="1E4080";
+    BLUE="1B4F8A"; BLUE_LIGHT="D6E4F2"; BLUE_MID="2E75B6";
   }
   var PAGE_W=11906,PAGE_H=16838,MARGIN=1134,CONTENT_W=PAGE_W-(MARGIN*2);
   var NB={style:D.BorderStyle.NONE,size:0,color:WHITE};
@@ -1127,8 +1123,8 @@ function buildDoc(d,obs){
   function strans(num,title,sub){
     sub=sub||"";
     var extraPara=sub?[new D.Paragraph({alignment:D.AlignmentType.LEFT,children:[new D.TextRun({text:sub,font:"Arial",size:22,color:"B0C8E8",italics:true})]})]:[];
-    var t1=new D.Table({width:{size:CONTENT_W,type:D.WidthType.DXA},columnWidths:[CONTENT_W],rows:[new D.TableRow({height:{value:7000,rule:"exact"},children:[new D.TableCell({borders:NBS,shading:{fill:BLUE,type:D.ShadingType.CLEAR},width:{size:CONTENT_W,type:D.WidthType.DXA},verticalAlign:D.VerticalAlign.CENTER,margins:{top:400,bottom:400,left:700,right:700},children:[new D.Paragraph({alignment:D.AlignmentType.LEFT,spacing:{before:0,after:100},children:[new D.TextRun({text:num,font:"Arial",size:120,bold:true,color:"3D6AA8"})]}),new D.Paragraph({alignment:D.AlignmentType.LEFT,spacing:{before:0,after:sub?100:0},children:[new D.TextRun({text:title,font:"Arial",size:52,bold:true,color:WHITE})]})].concat(extraPara)})]})]});
-    var t2=new D.Table({width:{size:CONTENT_W,type:D.WidthType.DXA},columnWidths:[CONTENT_W],rows:[new D.TableRow({children:[new D.TableCell({borders:NBS,shading:{fill:BLUE_LIGHT,type:D.ShadingType.CLEAR},width:{size:CONTENT_W,type:D.WidthType.DXA},margins:{top:160,bottom:160,left:700,right:700},children:[new D.Paragraph({alignment:D.AlignmentType.LEFT,children:[new D.TextRun({text:BRAND_UPPER+"  |  Drone Roof Inspection Report  |  "+d.address,font:"Arial",size:17,color:BLUE,bold:true})]})]})]})]});
+    var t1=new D.Table({width:{size:CONTENT_W,type:D.WidthType.DXA},columnWidths:[CONTENT_W],rows:[new D.TableRow({height:{value:7000,rule:"exact"},children:[new D.TableCell({borders:NBS,shading:{fill:BLUE,type:D.ShadingType.CLEAR},width:{size:CONTENT_W,type:D.WidthType.DXA},verticalAlign:D.VerticalAlign.CENTER,margins:{top:400,bottom:400,left:700,right:700},children:[new D.Paragraph({alignment:D.AlignmentType.LEFT,spacing:{before:0,after:100},children:[new D.TextRun({text:num,font:"Arial",size:120,bold:true,color:"3A6FA8"})]}),new D.Paragraph({alignment:D.AlignmentType.LEFT,spacing:{before:0,after:sub?100:0},children:[new D.TextRun({text:title,font:"Arial",size:52,bold:true,color:WHITE})]})].concat(extraPara)})]})]});
+    var t2=new D.Table({width:{size:CONTENT_W,type:D.WidthType.DXA},columnWidths:[CONTENT_W],rows:[new D.TableRow({children:[new D.TableCell({borders:NBS,shading:{fill:BLUE_LIGHT,type:D.ShadingType.CLEAR},width:{size:CONTENT_W,type:D.WidthType.DXA},margins:{top:160,bottom:160,left:700,right:700},children:[new D.Paragraph({alignment:D.AlignmentType.LEFT,children:[new D.TextRun({text:BRAND_UPPER+"  |  Drone Roof Inspection Report",font:"Arial",size:17,color:BLUE,bold:true})]})]})]})]});
     return[t1,t2,pb()];
   }
 
@@ -1148,8 +1144,7 @@ function buildDoc(d,obs){
   var innerT=new D.Table({width:{size:CONTENT_W-800,type:D.WidthType.DXA},columnWidths:[LCW,TCW],rows:[new D.TableRow({height:{value:1440,rule:"atLeast"},children:[logoCell,new D.TableCell({borders:NBS,width:{size:TCW,type:D.WidthType.DXA},verticalAlign:D.VerticalAlign.CENTER,margins:{top:0,bottom:0,left:200,right:0},children:[new D.Paragraph({spacing:{before:0,after:100},children:[new D.TextRun({text:BRAND_UPPER,font:"Arial",size:56,bold:true,color:WHITE})]}),new D.Paragraph({spacing:{before:0,after:0},children:[new D.TextRun({text:"Drone Roof Inspection Report",font:"Arial",size:22,color:"B0C8E8"})]})].concat(producedByPara)})]})]});
   var hBar=new D.Table({width:{size:CONTENT_W,type:D.WidthType.DXA},columnWidths:[CONTENT_W],rows:[new D.TableRow({height:{value:2200,rule:"atLeast"},children:[new D.TableCell({borders:NBS,shading:{fill:BLUE,type:D.ShadingType.CLEAR},width:{size:CONTENT_W,type:D.WidthType.DXA},verticalAlign:D.VerticalAlign.CENTER,margins:{top:300,bottom:300,left:400,right:400},children:[innerT]})]})]});
   var ic=Math.floor(CONTENT_W/2)-100;
-  var coverProducer = (d.whiteLabel && d.brandName) ? BRAND : "RoofScan UK";
-  var infoT=new D.Table({width:{size:CONTENT_W,type:D.WidthType.DXA},columnWidths:[ic+200,ic-100],rows:[new D.TableRow({children:[new D.TableCell({borders:NBS,width:{size:ic+200,type:D.WidthType.DXA},margins:{top:200,bottom:0,left:0,right:300},children:[new D.Paragraph({spacing:{before:0,after:100},children:[new D.TextRun({text:"PROPERTY",font:"Arial",size:17,bold:true,color:BLUE_MID})]}),new D.Paragraph({spacing:{before:0,after:60},children:[new D.TextRun({text:d.address+(d.postcode?" - "+d.postcode:""),font:"Arial",size:22,bold:true,color:DARK})]})]}),new D.TableCell({borders:{top:NB,bottom:NB,right:NB,left:{style:D.BorderStyle.SINGLE,size:4,color:BLUE_LIGHT}},width:{size:ic-100,type:D.WidthType.DXA},margins:{top:200,bottom:0,left:300,right:0},children:[new D.Paragraph({spacing:{before:0,after:100},children:[new D.TextRun({text:"REPORT DETAILS",font:"Arial",size:17,bold:true,color:BLUE_MID})]}),new D.Paragraph({spacing:{before:0,after:60},children:[new D.TextRun({text:"Inspection date:  ",font:"Arial",size:19,bold:true,color:DARK}),new D.TextRun({text:d.inspDate,font:"Arial",size:19,color:DARK})]}),new D.Paragraph({spacing:{before:0,after:60},children:[new D.TextRun({text:"Client:  ",font:"Arial",size:19,bold:true,color:DARK}),new D.TextRun({text:d.client,font:"Arial",size:19,color:DARK})]}),new D.Paragraph({spacing:{before:0,after:60},children:[new D.TextRun({text:"Inspector:  ",font:"Arial",size:19,bold:true,color:DARK}),new D.TextRun({text:coverProducer,font:"Arial",size:19,color:DARK})]}),new D.Paragraph({spacing:{before:0,after:60},children:[new D.TextRun({text:"Reference:  ",font:"Arial",size:19,bold:true,color:DARK}),new D.TextRun({text:d.reportRef,font:"Arial",size:19,color:DARK})]})]})]})]});
+  var infoT=new D.Table({width:{size:CONTENT_W,type:D.WidthType.DXA},columnWidths:[ic+200,ic-100],rows:[new D.TableRow({children:[new D.TableCell({borders:NBS,width:{size:ic+200,type:D.WidthType.DXA},margins:{top:200,bottom:0,left:0,right:300},children:[new D.Paragraph({spacing:{before:0,after:100},children:[new D.TextRun({text:"PROPERTY",font:"Arial",size:17,bold:true,color:BLUE_MID})]}),new D.Paragraph({spacing:{before:0,after:60},children:[new D.TextRun({text:d.address+(d.postcode?" - "+d.postcode:""),font:"Arial",size:22,bold:true,color:DARK})]})]}),new D.TableCell({borders:{top:NB,bottom:NB,right:NB,left:{style:D.BorderStyle.SINGLE,size:4,color:BLUE_LIGHT}},width:{size:ic-100,type:D.WidthType.DXA},margins:{top:200,bottom:0,left:300,right:0},children:[new D.Paragraph({spacing:{before:0,after:100},children:[new D.TextRun({text:"REPORT DETAILS",font:"Arial",size:17,bold:true,color:BLUE_MID})]}),new D.Paragraph({spacing:{before:0,after:60},children:[new D.TextRun({text:"Date:  ",font:"Arial",size:19,bold:true,color:DARK}),new D.TextRun({text:d.inspDate,font:"Arial",size:19,color:DARK})]}),new D.Paragraph({spacing:{before:0,after:60},children:[new D.TextRun({text:"Client:  ",font:"Arial",size:19,bold:true,color:DARK}),new D.TextRun({text:d.client,font:"Arial",size:19,color:DARK})]}),new D.Paragraph({spacing:{before:0,after:60},children:[new D.TextRun({text:"Ref:  ",font:"Arial",size:19,bold:true,color:DARK}),new D.TextRun({text:d.reportRef,font:"Arial",size:19,color:DARK})]})]})]})]});
   var gcw=Math.floor(CONTENT_W/4);
   function gc(l,v){return new D.TableCell({borders:AB,shading:{fill:GREY_BG,type:D.ShadingType.CLEAR},width:{size:gcw,type:D.WidthType.DXA},margins:{top:120,bottom:120,left:140,right:140},verticalAlign:D.VerticalAlign.CENTER,children:[new D.Paragraph({alignment:D.AlignmentType.CENTER,spacing:{before:0,after:40},children:[new D.TextRun({text:l,font:"Arial",size:16,bold:true,color:BLUE_MID})]}),new D.Paragraph({alignment:D.AlignmentType.CENTER,children:[new D.TextRun({text:v,font:"Arial",size:19,bold:true,color:DARK})]})]});}
   var glT=new D.Table({width:{size:CONTENT_W,type:D.WidthType.DXA},columnWidths:[gcw,gcw,gcw,gcw],rows:[new D.TableRow({children:[gc("ROOF TYPE",d.roofType),gc("COVERING",d.covering),gc("APPROX. AGE",d.roofAge),gc("DEFECTS FOUND",String(parseInt(d.redCount)+parseInt(d.amberCount)))]})]});
@@ -1196,8 +1191,6 @@ function buildDoc(d,obs){
 
   function secB(num,title,desc,lim,arr){
     if(!arr.length)return[];
-    // Heading 2, not Heading 1 — matches the reference doc, where 3.1/3.2/3.3/3.4 are
-    // sub-headings under the "3.0 Observations & Recommendations" Heading 1, not top-level.
     var items=[h2(num+"  "+title),sp(60,60),bod(desc)];
     if(lim){items.push(sp(80,60));items.push(lb(lim));}
     items.push(sp(120,60));
@@ -1206,70 +1199,60 @@ function buildDoc(d,obs){
     return items;
   }
 
-  // Section order, numbering, and boilerplate wording below are matched directly against
-  // RoofScan_UK_Example_Report.docx (the approved reference document in RoofScan Business
-  // Documents on Drive) — extracted verbatim from its XML rather than paraphrased, so the real
-  // generated report reads the same as the one the business is actually built around. The one
-  // deliberate departure: RoofScore doesn't appear in the reference doc at all, but it's real,
-  // actively-used functionality elsewhere in the app, so it's folded into 2.1 Condition
-  // Dashboard rather than dropped.
-  var preparedByLine = d.whiteLabel ? (d.inspector+" — RoofScan UK, on behalf of "+BRAND) : (d.inspector+" — RoofScan UK — www.roofscanuk.co.uk");
+  // Section order, numbering, and wording below are matched directly against sample-report.pdf
+  // (the actual reference sample), page by page — not the RoofScan_UK_Example_Report.docx in
+  // Drive, which turned out to be a stale/different document. Executive Summary sits before the
+  // numbered sections with no divider page of its own; numbering then runs 1.0 About This Report,
+  // 2.0 Observations & Recommendations, 3.0 Terms & Disclaimer, 4.0 Schedule of Works (last).
+  var preparedByLine = d.whiteLabel ? (d.inspector+" - RoofScan UK, on behalf of "+BRAND) : (d.inspector+" - RoofScan UK");
   var children=[
     hBar,sp(300,200),infoT,sp(200,160),glT,sp(200,200),imgPh,sp(200,160),cBar,pb(),
     new D.Paragraph({spacing:{before:0,after:80},children:[new D.TextRun({text:"Contents",font:"Arial",size:36,bold:true,color:BLUE})]}),
     bl(),sp(100,100),
-    new D.TableOfContents("Table of Contents",{hyperlink:true,headingStyleRange:"1-3"}),pb()
+    new D.TableOfContents("Table of Contents",{hyperlink:true,headingStyleRange:"1-3"}),pb(),
+    h1("Executive Summary"),bl(),sp(120,80),
+    h2("Condition Dashboard"),sp(60,100),dashT,sp(160,80),
+    h2("Overall Roof Condition"),sp(60,80),condT,sp(160,80),
+    h2("RoofScore"),sp(60,100),rsTable(d),sp(160,80),
+    h2("Summary of Findings"),bod(d.summary),sp(80,80),
+    h2("Key Risks"),bod(d.keyRisks),sp(80,80),
+    h2("Maintenance Overview"),bod(d.maintenance),pb()
   ].concat(
-    strans("1.0","Report Details","Scope, limitations and rating system"),
-    [h1("1.0  Report Details"),bl(),sp(100,80),
-    h2("1.1  Property & Instruction"),
+    strans("1.0","Report Details","Scope, limitations & rating system"),
+    [h1("1.0  About This Report"),bl(),sp(100,80),
     lv("Property",d.address+(d.postcode?" - "+d.postcode:"")),
+    lv("Inspection Date",d.inspDate),
     lv("Client",d.client),
-    lv("Inspection date",d.inspDate),
-    new D.Paragraph({spacing:{before:60,after:60},children:[new D.TextRun({text:"Prepared by:  ",font:"Arial",size:19,bold:true,color:BLUE_MID}),new D.TextRun({text:preparedByLine,font:"Arial",size:19,color:DARK})]}),
-    lv("Report reference",d.reportRef),sp(160,80),
-    h2("1.2  Roof at a Glance"),
-    lv("Roof type",d.roofType),
-    lv("Primary covering",d.covering),
-    lv("Approximate age",d.roofAge),
-    lv("Overall condition",d.condition),sp(160,80),
-    h2("1.3  Scope of Inspection"),
-    bod("Instructions were received to attend the above property and carry out a drone-based visual inspection of the roof. This report documents the findings of that inspection and has been prepared for the named client only. It does not constitute a full structural survey or building survey."),
-    bod("The inspection was carried out using an unmanned aerial vehicle (drone). All observations are based on visual imagery captured from the air. No physical access to the roof surface was undertaken."),
-    sp(80,80),h2("1.4  Traffic-Light Rating System"),
-    bod("All observations are rated using the following three-tier traffic-light system:"),
-    new D.Paragraph({spacing:{before:80,after:80},indent:{left:360},children:[new D.TextRun({text:"Repair Required  —  ",font:"Arial",size:19,bold:true,color:RED}),new D.TextRun({text:"A defect identified that requires remedial action. Timescale is indicated by the priority rating.",font:"Arial",size:19,color:DARK})]}),
-    new D.Paragraph({spacing:{before:80,after:80},indent:{left:360},children:[new D.TextRun({text:"Monitor  —  ",font:"Arial",size:19,bold:true,color:AMBER}),new D.TextRun({text:"An element that warrants attention or ongoing monitoring but is not immediately critical.",font:"Arial",size:19,color:DARK})]}),
-    new D.Paragraph({spacing:{before:80,after:80},indent:{left:360},children:[new D.TextRun({text:"Satisfactory  —  ",font:"Arial",size:19,bold:true,color:GREEN}),new D.TextRun({text:"Element is performing as expected with no immediate action required.",font:"Arial",size:19,color:DARK})]}),
+    new D.Paragraph({spacing:{before:60,after:60},children:[new D.TextRun({text:"Prepared By:  ",font:"Arial",size:19,bold:true,color:BLUE_MID}),new D.TextRun({text:preparedByLine,font:"Arial",size:19,color:DARK})]}),
+    lv("Report Reference",d.reportRef),sp(160,80),
+    h2("1.1  Scope"),
+    bod("Instructions were received to attend the property and undertake a drone-based visual inspection. This report has been prepared based on drone imagery captured on-site. It does not constitute a full building survey."),
+    sp(80,80),h2("1.2  Limitations"),
+    bod("The inspection was carried out using an unmanned aerial vehicle (drone). All observations are based on visual imagery only - no physical contact with roof surfaces was made."),
+    sp(80,80),h2("1.3  Traffic-Light System"),
+    new D.Paragraph({spacing:{before:80,after:40},children:[new D.TextRun({text:"Repair Required  -  ",font:"Arial",size:19,bold:true,color:RED}),new D.TextRun({text:"A defect requiring remedial action.",font:"Arial",size:19,color:DARK})]}),
+    new D.Paragraph({spacing:{before:40,after:40},children:[new D.TextRun({text:"Monitor  -  ",font:"Arial",size:19,bold:true,color:AMBER}),new D.TextRun({text:"Warrants attention but not immediately critical.",font:"Arial",size:19,color:DARK})]}),
+    new D.Paragraph({spacing:{before:40,after:40},children:[new D.TextRun({text:"Satisfactory  -  ",font:"Arial",size:19,bold:true,color:GREEN}),new D.TextRun({text:"No immediate action required.",font:"Arial",size:19,color:DARK})]}),
     pb()],
-    strans("2.0","Executive Summary","Condition dashboard and overview of findings"),
-    [h1("2.0  Executive Summary"),bl(),sp(120,80),
-    h2("2.1  Condition Dashboard"),sp(60,100),dashT,sp(160,80),rsTable(d),sp(100,80),
-    h2("2.2  Overall Roof Condition"),sp(60,80),condT,sp(120,80),
-    h2("2.3  Summary of Findings"),bod(d.summary),sp(80,80),
-    h2("2.4  Key Risks"),bod(d.keyRisks),sp(80,80),
-    h2("2.5  Maintenance Overview"),bod(d.maintenance),pb()],
-    strans("3.0","Observations & Recommendations","Drone inspection findings by element"),
-    [h1("3.0  Observations & Recommendations"),bl(),sp(80,40),
-    bod("Observations are recorded as if standing at the front of the property and facing it. Left and right references are made accordingly."),sp(120,80)],
-    secB("3.1","Chimneys & Leadwork","The chimney stacks are among the most exposed elements of the roof and a common source of water ingress. The following observations relate to the stack, pots, flaunching, pointing, and associated leadwork.","Chimney elements were inspected by drone only. No physical access to the stack top was undertaken. The condition of the internal flue and pot liner cannot be assessed from aerial imagery.",ch),
-    secB("3.2","Roof Coverings","The observations below relate to the primary roof covering, ridge, verge, and penetrations across all elevations.",null,cv),
-    secB("3.3","Rainwater Goods","The guttering, downpipes, fascias, and soffits are critical to managing surface water away from the building fabric. The following observations relate to these elements on all elevations.","Rainwater goods were not assessed under live rainfall conditions. Internal blockages below visible sections and the condition of underground drainage connections cannot be confirmed from aerial imagery alone.",rw2),
-    secB("3.4","Ancillary Elements","The following observations relate to aerial fixings, satellite dishes, and other elements external to the primary roof structure.",null,an),
+    strans("2.0","Observations & Recommendations","Drone inspection findings by element"),
+    [h1("2.0  Observations & Recommendations"),bl(),sp(80,40),
+    bod("Observations are made as if standing at the front of the property."),sp(120,80)],
+    secB("2.1","Chimneys & Leadwork","The chimney stacks are the most exposed elements and common sources of water ingress.","Chimney elements inspected by drone only. No physical access to the stack was undertaken.",ch),
+    secB("2.2","Roof Coverings","The observations below relate to the primary roof covering.",null,cv),
+    secB("2.3","Rainwater Goods","The rainwater goods are critical to managing surface water away from the building fabric.","Rainwater goods were not observed under live rainfall. Observe gutters during heavy rainfall.",rw2),
+    secB("2.4","Ancillary Elements","The following observations relate to elements outside the primary roof structure.",null,an),
+    strans("3.0","Terms & Disclaimer","Limitations, liability & regulatory notes"),
+    [h1("3.0  Terms, Limitations & Disclaimer"),bl(),sp(80,80),
+    h2("3.1  Confidentiality"),bod("This report is prepared solely for the named client. No responsibility is accepted to any third party."),sp(80,80),
+    h2("3.2  Scope Limitations"),bod("This is a visual-only drone inspection and is not a full structural survey."),sp(80,80),
+    h2("3.3  Drone Operations"),bod("All drone operations are conducted in compliance with UK CAA regulations."),
+    sp(160,80),tl(),sp(80,80),
+    new D.Paragraph({alignment:D.AlignmentType.CENTER,children:[new D.TextRun({text: d.whiteLabel ? (BRAND+"  |  Produced by RoofScan UK  |  www.roofscanuk.co.uk") : "RoofScan UK  |  www.roofscanuk.co.uk",font:"Arial",size:17,color:"6B7A8D"})]}),pb()],
     strans("4.0","Schedule of Works","Summary table for contractor briefing"),
     [h1("4.0  Schedule of Works"),bl(),sp(80,60),
-    bod("The table below summarises all observations from this inspection. It is intended for use as a contractor briefing document. Obtain written quotations from suitably qualified contractors before any works commence. Works should be carried out in the order of priority indicated."),
+    bod("The table below summarises all observations. Obtain written quotations from suitably qualified contractors before any works commence."),
     sp(120,80),sT,sp(160,80),tl(),sp(80,80),
-    new D.Paragraph({alignment:D.AlignmentType.CENTER,children:[new D.TextRun({text: d.whiteLabel ? ("End of Schedule of Works  —  "+BRAND+" — produced by RoofScan UK  —  Ref: "+d.reportRef) : ("End of Schedule of Works  —  RoofScan UK  —  Ref: "+d.reportRef),font:"Arial",size:17,color:"6B7A8D",italics:true})]}),pb()],
-    strans("5.0","Terms & Disclaimer","Limitations, liability and compliance"),
-    [h1("5.0  Terms, Limitations & Disclaimer"),bl(),sp(80,80),
-    h2("5.1  Confidentiality"),bod("This report has been prepared solely for the benefit of the named client. RoofScan UK accepts no responsibility to any third party for the content of this report. This report may not be reproduced or distributed without the express consent of RoofScan UK."),sp(80,80),
-    h2("5.2  Scope Limitations"),bod("This report is based on a visual-only drone inspection and does not constitute a full structural survey, building survey, or RICS-level assessment. Observations are limited to elements visible from aerial imagery. No physical contact with roof surfaces was made. Internal spaces, concealed elements, and below-ground drainage are outside the scope of this report."),sp(80,80),
-    h2("5.3  Drone Operations"),bod("All drone operations were conducted in compliance with UK Civil Aviation Authority regulations under PDRA-01 Operational Authorisation. RoofScan UK holds full commercial drone insurance for all flights."),sp(80,80),
-    h2("5.4  Recommendations"),bod("Recommendations in this report are made in good faith based on visual observation. RoofScan UK does not undertake roofing repairs or any remedial works. All recommended works should be carried out by suitably qualified contractors holding relevant insurance and accreditation."),
-    sp(160,80),tl(),sp(80,80),
-    new D.Paragraph({alignment:D.AlignmentType.CENTER,children:[new D.TextRun({text: d.whiteLabel ? (BRAND+"  |  Produced by RoofScan UK  |  www.roofscanuk.co.uk  |  info@roofscanuk.co.uk  |  07498 364197") : "RoofScan UK  |  www.roofscanuk.co.uk  |  info@roofscanuk.co.uk  |  07498 364197",font:"Arial",size:17,color:"6B7A8D"})]}),
-    new D.Paragraph({alignment:D.AlignmentType.CENTER,spacing:{before:40,after:0},children:[new D.TextRun({text:"All drone operations conducted in compliance with UK CAA regulations  |  Fully insured for commercial drone operations",font:"Arial",size:15,italics:true,color:"AAAAAA"})]})]
+    new D.Paragraph({alignment:D.AlignmentType.CENTER,children:[new D.TextRun({text: d.whiteLabel ? ("End of Schedule of Works  -  "+BRAND+" - produced by RoofScan UK") : "End of Schedule of Works  -  RoofScan UK",font:"Arial",size:17,color:"6B7A8D",italics:true})]})]
   );
 
 
@@ -1280,8 +1263,8 @@ function buildDoc(d,obs){
       return new D.Paragraph({children:[new D.TextRun({text:"RoofScore not calculated",font:"Arial",size:18,color:"6B7A8D",italics:true})]});
     }
     var score=d.roofscore;
-    var scoreCol=score>=90?"1D8348":score>=70?"1A5276":score>=50?"A04000":"922B21";
-    var bgCol=score>=90?"D5F5E3":score>=70?"D6EAF8":score>=50?"FAD7A0":"FADBD8";
+    var scoreCol=BLUE_MID;
+    var bgCol=BLUE_LIGHT;
     var cells=[
       {label:"Chimneys & leadwork",val:d.rsChimneys},
       {label:"Roof coverings",val:d.rsCoverings},
@@ -1309,12 +1292,11 @@ function buildDoc(d,obs){
           margins:{top:100,bottom:100,left:180,right:180},
           children:cells.map(function(cell){
             var v=parseInt(cell.val)||0;
-            var cc=v>=90?"1D8348":v>=70?"1A5276":v>=50?"A04000":"922B21";
             return new D.Paragraph({
               spacing:{before:60,after:60},
               children:[
                 new D.TextRun({text:cell.label+": ",font:"Arial",size:19,bold:true,color:"333333"}),
-                new D.TextRun({text:(cell.val||"—")+(v&&cell.val!=="—"?"/100":""),font:"Arial",size:19,bold:false,color:cc}),
+                new D.TextRun({text:(cell.val||"—")+(v&&cell.val!=="—"?"/100":""),font:"Arial",size:19,bold:false,color:BLUE_MID}),
               ]
             });
           })
