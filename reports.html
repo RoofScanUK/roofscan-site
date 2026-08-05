@@ -283,7 +283,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
             <div class="rs-cell"><div class="rs-cell-label">Rainwater</div><div class="rs-cell-score" id="rs-rainwater" style="color:rgba(255,255,255,0.3);">—</div></div>
             <div class="rs-cell"><div class="rs-cell-label">Ancillary</div><div class="rs-cell-score" id="rs-ancillary" style="color:rgba(255,255,255,0.3);">—</div></div>
           </div>
-          <button class="rs-ai-btn" id="rs-ai-btn" onclick="runUnifiedAI()" disabled>
+          <button class="rs-ai-btn" id="rs-ai-btn" onclick="refineScoreWithAI()" disabled>
             <span id="rs-ai-icon">✦</span> Regenerate with AI
           </button>
           <div class="rs-ai-note" id="rs-ai-note">Complete your findings below, then use AI to refine the score based on your observation text</div>
@@ -454,11 +454,200 @@ var state={},conditionIdx=2;
 
 function badgeClass(s){if(!s)return"badge-none";if(s==="Repair required")return"badge-red";if(s==="Monitor")return"badge-amber";if(s==="Satisfactory")return"badge-green";return"badge-none";}
 function updateDashboard(){var r=0,a=0,g=0;Object.values(state).forEach(function(s){if(!s||!s.status)return;if(s.status==="Repair required")r++;else if(s.status==="Monitor")a++;else if(s.status==="Satisfactory")g++;});document.getElementById("countRed").textContent=r;document.getElementById("countAmber").textContent=a;document.getElementById("countGreen").textContent=g;}
-function setCondition(idx){conditionIdx=idx;document.querySelectorAll(".cond-btn").forEach(function(b,i){b.classList.toggle("active",i===idx);});}
+function setCondition(idx){conditionIdx=idx;document.querySelectorAll(".cond-btn").forEach(function(b,i){b.classList.toggle("active",i===idx);});autoSaveReport();}
 function kk(s,i){return s+"_"+i;}
-function handleStatus(secId,idx,val){var key=kk(secId,idx);if(!state[key])state[key]={};state[key].status=val;var b=document.getElementById("badge_"+key);if(b){b.className="status-badge "+badgeClass(val);b.textContent=val||"Not set";}updateDashboard();}
+function handleStatus(secId,idx,val){var key=kk(secId,idx);if(!state[key])state[key]={};state[key].status=val;var b=document.getElementById("badge_"+key);if(b){b.className="status-badge "+badgeClass(val);b.textContent=val||"Not set";}updateDashboard();autoSaveReport();}
 function toggleObs(key){var b=document.getElementById("obsbody_"+key);var c=document.getElementById("chev_"+key);if(!b)return;var open=b.style.display==="block";b.style.display=open?"none":"block";if(c)c.classList.toggle("open",!open);}
-function removeObs(key){delete state[key];var el=document.getElementById("obsblock_"+key);if(el)el.remove();updateDashboard();}
+function removeObs(key){delete state[key];var el=document.getElementById("obsblock_"+key);if(el)el.remove();updateDashboard();autoSaveReport();}
+
+// ═══ AUTOSAVE / RESUME-DRAFT ════════════════════════════════════════
+// The autosave bar and resume-card HTML/CSS already existed with no JS behind them at all
+// (onclick handlers pointing at functions that were never written, plus one guarded call site
+// in handlePhoto — `autoSaveReport && autoSaveReport()` — clearly left as a hook for this).
+// Implements a real draft: debounced save to localStorage on every field/status/condition
+// change, a resume prompt on page load if an unfinished draft exists, and auto-clear once a
+// report is actually generated. Photos are deliberately excluded from the draft — base64 image
+// data would blow past localStorage's ~5MB quota after a handful of photos — so a resumed
+// report keeps all text/status but photos need re-adding, which the resume detail text notes.
+var RS_DRAFT_KEY = 'rs_report_draft';
+var _autosaveTimer = null;
+var _pendingDraft = null;
+
+function _draftFieldVal(id){ var el = document.getElementById(id); return el ? el.value : ''; }
+
+function collectDraftFields(){
+  var slimState = {};
+  Object.keys(state).forEach(function(k){
+    var s = state[k];
+    if(!s || !s.status) return;
+    slimState[k] = {status: s.status, priority: s.priority || ''};
+  });
+  var obsText = {};
+  document.querySelectorAll('[id^="obstext_"]').forEach(function(ta){
+    if(ta.value.trim()) obsText[ta.id] = ta.value;
+  });
+  return {
+    savedAt: Date.now(),
+    address: _draftFieldVal('address'), postcode: _draftFieldVal('postcode'),
+    client: _draftFieldVal('client'), inspDate: _draftFieldVal('inspDate'),
+    reportRef: _draftFieldVal('reportRef'), roofType: _draftFieldVal('roofType'),
+    covering: _draftFieldVal('covering'), roofAge: _draftFieldVal('roofAge'),
+    inspector: _draftFieldVal('inspector'), atRecordId: _draftFieldVal('atRecordId'),
+    summary: _draftFieldVal('summary'), keyRisks: _draftFieldVal('keyRisks'),
+    maintenance: _draftFieldVal('maintenance'), conditionIdx: conditionIdx,
+    state: slimState, obsText: obsText
+  };
+}
+
+// Debounced (800ms) so rapid typing doesn't hammer localStorage. Updates the existing
+// autosave-status text/colour classes (already styled in CSS, previously just static text).
+function autoSaveReport(){
+  var statusEl = document.getElementById('autosave-status');
+  if(statusEl){ statusEl.textContent = 'Saving...'; statusEl.className = 'autosave-status saving'; }
+  clearTimeout(_autosaveTimer);
+  _autosaveTimer = setTimeout(function(){
+    try{
+      localStorage.setItem(RS_DRAFT_KEY, JSON.stringify(collectDraftFields()));
+      if(statusEl){ statusEl.textContent = 'All changes saved automatically'; statusEl.className = 'autosave-status saved'; }
+    }catch(e){
+      if(statusEl){ statusEl.textContent = 'Autosave failed — storage may be full'; statusEl.className = 'autosave-status'; }
+    }
+  }, 800);
+}
+
+function _timeAgo(ts){
+  var mins = Math.round((Date.now() - ts) / 60000);
+  if(mins < 1) return 'just now';
+  if(mins < 60) return mins + ' min ago';
+  var hrs = Math.round(mins / 60);
+  if(hrs < 24) return hrs + ' hr ago';
+  return Math.round(hrs / 24) + ' day(s) ago';
+}
+
+// Runs once on page load. Shows the (previously dead) resume-card if a draft was left behind
+// by a closed tab, crash, or accidental navigation.
+function checkForDraft(){
+  var raw;
+  try{ raw = localStorage.getItem(RS_DRAFT_KEY); }catch(e){ raw = null; }
+  if(!raw) return;
+  var draft;
+  try{ draft = JSON.parse(raw); }catch(e){ return; }
+  if(!draft || !draft.savedAt) return;
+  var card = document.getElementById('resume-card');
+  var detail = document.getElementById('resume-detail');
+  if(!card) return;
+  var who = draft.address || draft.client || 'Untitled report';
+  if(detail) detail.textContent = who + ' — saved ' + _timeAgo(draft.savedAt) + ' (photos not included, re-add if needed)';
+  card.style.display = 'flex';
+  _pendingDraft = draft;
+}
+
+function resumeReport(){
+  var draft = _pendingDraft;
+  if(!draft) return;
+  ['address','postcode','client','inspDate','reportRef','roofType','covering','roofAge','inspector','atRecordId','summary','keyRisks','maintenance'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(el && draft[id] !== undefined) el.value = draft[id];
+  });
+  if(draft.conditionIdx !== undefined) setCondition(draft.conditionIdx);
+  // Restore observation statuses/priorities into state, then reflect each onto its badge —
+  // renderSections() is deliberately NOT called again here, since it appends fresh cards without
+  // clearing the container first and would duplicate every section.
+  if(draft.state){
+    Object.keys(draft.state).forEach(function(key){
+      state[key] = state[key] || {};
+      state[key].status = draft.state[key].status;
+      state[key].priority = draft.state[key].priority;
+      var badge = document.getElementById('badge_' + key);
+      if(badge){ badge.className = 'status-badge ' + badgeClass(state[key].status); badge.textContent = state[key].status || 'Not set'; }
+      var pri = document.getElementById('pri_' + key);
+      if(pri && state[key].priority) pri.value = state[key].priority;
+    });
+  }
+  if(draft.obsText){
+    Object.keys(draft.obsText).forEach(function(id){
+      var el = document.getElementById(id);
+      if(el) el.value = draft.obsText[id];
+    });
+  }
+  updateDashboard();
+  calculateRoofScore();
+  var card = document.getElementById('resume-card');
+  if(card) card.style.display = 'none';
+  _pendingDraft = null;
+}
+
+// Dismissing just hides the banner for this visit — the draft itself is left alone in case
+// Takhy wants to come back to it later. Only "Clear saved" or a successful report generation
+// actually deletes it.
+function dismissResume(){
+  var card = document.getElementById('resume-card');
+  if(card) card.style.display = 'none';
+}
+
+function clearSavedReport(){
+  try{ localStorage.removeItem(RS_DRAFT_KEY); }catch(e){}
+  _pendingDraft = null;
+  var statusEl = document.getElementById('autosave-status');
+  if(statusEl){ statusEl.textContent = 'No draft saved'; statusEl.className = 'autosave-status'; }
+  var card = document.getElementById('resume-card');
+  if(card) card.style.display = 'none';
+}
+
+// Catches typing in job detail fields, the summary/risks/maintenance textareas, and every
+// observation textarea (including ones added later via "+ Add observation") without needing an
+// oninput attribute wired into each one individually.
+document.addEventListener('input', function(e){
+  var id = e.target && e.target.id;
+  if(!id) return;
+  var watched = ['address','postcode','client','inspDate','reportRef','roofType','covering','roofAge','inspector','atRecordId','summary','keyRisks','maintenance'];
+  if(watched.indexOf(id) >= 0 || id.indexOf('obstext_') === 0){
+    autoSaveReport();
+  }
+});
+
+// ═══ VOICE DICTATION FOR OBSERVATION NOTES ═══════════════════════════
+// The 🎤 button and .listening pulse CSS already existed on every observation textarea with no
+// JS behind them. Uses the browser's built-in Web Speech API (Chrome/Edge; Safari has partial
+// support) — no API key or server round-trip needed, so it works even without a staff key set.
+var _voiceRecognition = null;
+var _voiceActiveBtn = null;
+function startVoiceNote(textareaId, btn){
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR){
+    alert('Voice dictation isn\'t supported in this browser. Try Chrome or Edge.');
+    return;
+  }
+  // Tapping the mic again while it's already listening stops it (toggle behaviour).
+  if(_voiceRecognition && _voiceActiveBtn === btn){
+    _voiceRecognition.stop();
+    return;
+  }
+  if(_voiceRecognition) _voiceRecognition.stop();
+  var ta = document.getElementById(textareaId);
+  if(!ta) return;
+  var rec = new SR();
+  rec.lang = 'en-GB';
+  rec.continuous = true;
+  rec.interimResults = false;
+  _voiceRecognition = rec;
+  _voiceActiveBtn = btn;
+  btn.classList.add('listening');
+  rec.onresult = function(e){
+    var text = '';
+    for(var i = e.resultIndex; i < e.results.length; i++){
+      if(e.results[i].isFinal) text += e.results[i][0].transcript;
+    }
+    text = text.trim();
+    if(text){
+      ta.value = ta.value.trim() ? ta.value.trim() + ' ' + text : text;
+      autoSaveReport();
+    }
+  };
+  rec.onerror = function(){ btn.classList.remove('listening'); _voiceRecognition = null; _voiceActiveBtn = null; };
+  rec.onend = function(){ btn.classList.remove('listening'); _voiceRecognition = null; _voiceActiveBtn = null; };
+  rec.start();
+}
 
 function handlePhoto(key,input){
   var file=input.files[0];if(!file)return;
@@ -837,6 +1026,8 @@ async function generateReport(){
     var filename="RoofScan_"+d.address.replace(/[^a-zA-Z0-9]/g,"_").substring(0,30)+"_"+d.reportRef+".docx";
     saveAs(blob,filename);
     msg.className="status-msg success";msg.textContent="Report downloaded successfully.";
+    // A finished, downloaded report shouldn't keep prompting "resume this draft?" on next visit.
+    clearSavedReport();
     // One action on export: host the finished report and push the link + RoofScore + job
     // reference into Airtable in a single write, so the client email Zap has something real
     // to trigger off. Report Archive Link was previously never populated at all.
@@ -1592,6 +1783,7 @@ function bpRemoveExtra(id){
 bpRefreshKeyUI();
 bpInitDropZone();
 renderAgencyDropdown();
+checkForDraft();
 
 // ═══ ROOFSCORE AUTO-CALCULATION ════════════════════════════════════
 
