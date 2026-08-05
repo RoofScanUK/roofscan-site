@@ -8,7 +8,11 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>RoofScan UK - Report Generator</title>
-<script src="https://unpkg.com/docx@8.5.0/build/index.js"></script>
+<!-- Was pointing at build/index.js, which doesn't exist in this package version — docx@8.5.0's
+     browser bundle is at build/index.umd.js (its package.json "main" field). The wrong path was
+     a silent 404 with no onerror handler, so the script tag failed invisibly and every click on
+     "Download Word Document Report" threw "docx is not defined" with no clue why. -->
+<script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
 <script src="https://unpkg.com/file-saver@2.0.5/dist/FileSaver.min.js"></script>
 <script src="airtable-api.js"></script>
 <style>
