@@ -127,10 +127,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .autosave-btn:hover{background:rgba(255,255,255,0.15);}
 .ai-thinking{display:flex;align-items:center;gap:8px;background:#FBF0D0;border:1px solid #F0C040;border-radius:8px;padding:10px 14px;margin-bottom:1rem;font-size:13px;color:#8B6914;}
 .ai-thinking .spinner-ai{width:16px;height:16px;border:2px solid #F0C040;border-top-color:#8B6914;border-radius:50%;animation:spin 0.7s linear infinite;flex-shrink:0;}
-.speed-mode-bar{background:#1E4080;border-radius:10px;padding:10px 14px;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;}
-.speed-toggle{background:rgba(255,255,255,0.15);color:white;border:none;border-radius:6px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;}
-.speed-toggle.on{background:#C9A84C;color:#1C2B4A;}
-.speed-hint{color:rgba(255,255,255,0.6);font-size:11px;}
 .resume-card{background:#EAF4FB;border:1px solid #AED6F1;border-radius:10px;padding:12px 14px;margin-bottom:1.5rem;display:flex;align-items:center;gap:12px;}
 .resume-icon{font-size:24px;}
 .resume-text{flex:1;}
@@ -234,12 +230,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
   </div>
   <button class="resume-btn" onclick="resumeReport()">Resume</button>
   <button class="dismiss-btn" onclick="dismissResume()">×</button>
-</div>
-
-<!-- SPEED MODE BAR -->
-<div class="speed-mode-bar">
-  <div class="speed-hint">⚡ Speed mode: status only, no text required</div>
-  <button class="speed-toggle" id="speed-toggle" onclick="toggleSpeedMode()">Off</button>
 </div>
 
 <!-- AI THINKING INDICATOR -->
