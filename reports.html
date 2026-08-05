@@ -351,12 +351,29 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
       <div style="padding:1rem 1.5rem;border-top:1px solid #E0E8F0;display:flex;align-items:center;gap:12px;background:#F8F6F0;">
         
 <!-- CLIENT PREVIEW + WHITE LABEL -->
-<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center;">
+<div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;align-items:center;">
   <button onclick="previewForClient()" style="flex:1;min-width:140px;background:#1E4080;color:white;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">👁 Preview for client</button>
-  <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#6B7A8D;cursor:pointer;">
-    <input type="checkbox" id="whiteLabelToggle" style="width:16px;height:16px;"> White-label
-  </label>
-  <input type="text" id="whiteLabelName" placeholder="Agency name" style="display:none;border:1px solid #E8E4D8;border-radius:6px;padding:6px 10px;font-size:12px;width:120px;">
+  <label style="font-size:12px;color:#6B7A8D;white-space:nowrap;">Brand:</label>
+  <select id="whiteLabelAgency" onchange="onAgencySelectChange()" style="border:1px solid #E8E4D8;border-radius:6px;padding:6px 10px;font-size:12px;min-width:140px;font-family:inherit;">
+    <option value="">RoofScan UK (default)</option>
+    <option value="__add__">+ Add new agency…</option>
+  </select>
+  <img id="agencyLogoPreview" src="" style="display:none;width:28px;height:28px;object-fit:contain;border-radius:4px;border:1px solid #E8E4D8;">
+</div>
+<div id="addAgencyForm" style="display:none;background:#F8F6F0;border:1px solid #E8E4D8;border-radius:8px;padding:12px;margin-bottom:12px;">
+  <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#6B7A8D;margin-bottom:8px;">Add a trade agency</div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+    <input type="text" id="newAgencyName" placeholder="Agency name" style="border:1px solid #E8E4D8;border-radius:6px;padding:6px 10px;font-size:12px;flex:1;min-width:120px;">
+    <input type="color" id="newAgencyColor" value="#1B4F8A" title="Brand colour" style="width:36px;height:32px;border:1px solid #E8E4D8;border-radius:6px;padding:2px;cursor:pointer;">
+    <label style="font-size:12px;color:#6B7A8D;background:white;border:1px solid #E8E4D8;border-radius:6px;padding:6px 10px;cursor:pointer;">
+      Logo <input type="file" id="newAgencyLogo" accept="image/*" style="display:none;" onchange="document.getElementById('newAgencyLogoName').textContent=this.files[0]?this.files[0].name:'';">
+    </label>
+    <span id="newAgencyLogoName" style="font-size:11px;color:#6B7A8D;"></span>
+  </div>
+  <div style="display:flex;gap:8px;margin-top:10px;">
+    <button onclick="saveNewAgency()" style="background:#1B4F8A;color:white;border:none;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Save agency</button>
+    <button onclick="cancelAddAgency()" style="background:white;color:#6B7A8D;border:1px solid #D0DBE8;border-radius:6px;padding:6px 14px;font-size:12px;cursor:pointer;font-family:inherit;">Cancel</button>
+  </div>
 </div>
 
 <button class="gen-btn" id="genBtn" onclick="generateReport()" style="margin-top:0;flex:1;">Download Word Document Report</button>
@@ -610,36 +627,207 @@ function formatDate(val){if(!val)return"[Date not provided]";var d=new Date(val)
 function statusColor(s){if(s==="Repair required")return"C0392B";if(s==="Monitor")return"E67E22";if(s==="Satisfactory")return"27AE60";return"2E75B6";}
 function statusLabel(s){if(s==="Repair required")return"Repair Required";if(s==="Monitor")return"Monitor";if(s==="Satisfactory")return"Satisfactory";return s||"Not set";}
 
+// ── Trade agency white-label registry ──────────────────────────────────────
+// Agencies are saved to localStorage (not Airtable — this is purely a per-device branding
+// preset list), so each is only entered once and then just picked from a dropdown on every
+// job for that trade account. Each agency stores a name, a brand colour, and an optional logo
+// (as a data URL, kept small since it's only ever rendered at report-header size).
+function loadAgencies(){
+  try{ return JSON.parse(localStorage.getItem('rs_agencies')||'[]'); }catch(e){ return []; }
+}
+function saveAgencies(list){
+  try{ localStorage.setItem('rs_agencies', JSON.stringify(list)); }catch(e){}
+}
+function renderAgencyDropdown(selectId){
+  var sel = document.getElementById('whiteLabelAgency');
+  if(!sel) return;
+  var agencies = loadAgencies();
+  var prev = selectId || sel.value;
+  sel.innerHTML = '<option value="">RoofScan UK (default)</option>'
+    + agencies.map(function(a){ return '<option value="'+a.id+'">'+a.name+'</option>'; }).join('')
+    + '<option value="__add__">+ Add new agency…</option>';
+  sel.value = prev && sel.querySelector('option[value="'+prev+'"]') ? prev : '';
+  onAgencySelectChange();
+}
+function onAgencySelectChange(){
+  var sel = document.getElementById('whiteLabelAgency');
+  var form = document.getElementById('addAgencyForm');
+  var logoImg = document.getElementById('agencyLogoPreview');
+  if(!sel) return;
+  if(sel.value === '__add__'){
+    if(form) form.style.display = 'block';
+    sel.value = '';
+    if(logoImg) logoImg.style.display = 'none';
+    return;
+  }
+  if(form) form.style.display = 'none';
+  var agency = loadAgencies().find(function(a){ return a.id === sel.value; });
+  if(logoImg){
+    if(agency && agency.logoDataUrl){ logoImg.src = agency.logoDataUrl; logoImg.style.display = 'block'; }
+    else { logoImg.style.display = 'none'; }
+  }
+}
+function cancelAddAgency(){
+  document.getElementById('addAgencyForm').style.display = 'none';
+  document.getElementById('newAgencyName').value = '';
+  document.getElementById('newAgencyLogo').value = '';
+  document.getElementById('newAgencyLogoName').textContent = '';
+}
+function saveNewAgency(){
+  var name = document.getElementById('newAgencyName').value.trim();
+  var color = document.getElementById('newAgencyColor').value || '#1B4F8A';
+  var fileInput = document.getElementById('newAgencyLogo');
+  if(!name){ alert('Enter the agency name first.'); return; }
+  var file = fileInput.files && fileInput.files[0];
+  function finish(logoDataUrl){
+    var agencies = loadAgencies();
+    var agency = { id: 'ag_'+Date.now(), name: name, color: color, logoDataUrl: logoDataUrl || null };
+    agencies.push(agency);
+    saveAgencies(agencies);
+    cancelAddAgency();
+    renderAgencyDropdown(agency.id);
+  }
+  if(file){
+    var reader = new FileReader();
+    reader.onload = function(e){ finish(e.target.result); };
+    reader.onerror = function(){ finish(null); };
+    reader.readAsDataURL(file);
+  } else {
+    finish(null);
+  }
+}
+// Reads the selected agency from the dropdown. Only "on" if a real saved agency is chosen —
+// the default RoofScan UK option always leaves white-label off.
+function getWhiteLabelInfo(){
+  var sel = document.getElementById('whiteLabelAgency');
+  var id = sel ? sel.value : '';
+  if(!id || id === '__add__') return {whiteLabel:false, brandName:'', brandColor:null, brandLogo:null};
+  var agency = loadAgencies().find(function(a){ return a.id === id; });
+  if(!agency) return {whiteLabel:false, brandName:'', brandColor:null, brandLogo:null};
+  return {whiteLabel:true, brandName:agency.name, brandColor:agency.color, brandLogo:agency.logoDataUrl};
+}
+// Lightens (positive percent, 0-1) or darkens (negative percent) a hex colour. Used to derive a
+// dark/medium/light three-tone accent set from the single colour an agency picks, matching how
+// RoofScan's own BLUE / BLUE_MID / BLUE_LIGHT trio is used throughout the document.
+function hexShade(hex, percent){
+  hex = (hex||'1B4F8A').replace('#','');
+  if(hex.length===3) hex = hex.split('').map(function(c){return c+c;}).join('');
+  var num = parseInt(hex,16) || 0x1B4F8A;
+  var r=(num>>16)&0xFF, g=(num>>8)&0xFF, b=num&0xFF;
+  function adj(c){ return percent>=0 ? Math.round(c+(255-c)*percent) : Math.round(c*(1+percent)); }
+  return [adj(r),adj(g),adj(b)].map(function(v){ return Math.min(255,Math.max(0,v)).toString(16).padStart(2,'0'); }).join('');
+}
+// Strips the "data:image/png;base64," prefix off a data URL and returns {base64, type} — needed
+// because docx's ImageRun wants raw base64 plus an explicit type, not a data URL.
+function parseDataUrl(dataUrl){
+  if(!dataUrl) return null;
+  var m = dataUrl.match(/^data:image\/(\w+);base64,(.+)$/);
+  if(!m) return null;
+  var type = m[1]==='jpeg' ? 'jpg' : m[1];
+  return {base64:m[2], type:type};
+}
+// Shared by generateReport() (the real .docx) and previewForClient() (the in-browser look),
+// so the preview always reflects exactly what's about to be downloaded.
+function collectReportData(){
+  var conds=["Poor","Fair","Moderate","Good","Excellent"];
+  var wl = getWhiteLabelInfo();
+  return {
+    address:document.getElementById("address").value||"[Address not provided]",
+    postcode:document.getElementById("postcode").value||"",
+    client:document.getElementById("client").value||"[Client]",
+    inspDate:formatDate(document.getElementById("inspDate").value),
+    reportRef:document.getElementById("reportRef").value||"RSU-XXXX",
+    roofType:document.getElementById("roofType").value||"[Roof type]",
+    covering:document.getElementById("covering").value||"[Covering]",
+    roofAge:document.getElementById("roofAge").value||"[Age]",
+    inspector:document.getElementById("inspector").value||"[Inspector]",
+    condition:conds[conditionIdx],
+    roofscore:_currentRoofScore,
+    rsDesc:_currentRoofScore?scoreDesc(_currentRoofScore):"",
+    rsChimneys:document.getElementById("rs-chimneys")?document.getElementById("rs-chimneys").textContent:"—",
+    rsCoverings:document.getElementById("rs-coverings")?document.getElementById("rs-coverings").textContent:"—",
+    rsRainwater:document.getElementById("rs-rainwater")?document.getElementById("rs-rainwater").textContent:"—",
+    rsAncillary:document.getElementById("rs-ancillary")?document.getElementById("rs-ancillary").textContent:"—",
+    summary:document.getElementById("summary").value||"[Summary not provided]",
+    keyRisks:document.getElementById("keyRisks").value||"[Key risks not provided]",
+    maintenance:document.getElementById("maintenance").value||"[Maintenance not provided]",
+    redCount:document.getElementById("countRed").textContent,
+    amberCount:document.getElementById("countAmber").textContent,
+    greenCount:document.getElementById("countGreen").textContent,
+    whiteLabel:wl.whiteLabel,
+    brandName:wl.brandName,
+    brandColor:wl.brandColor,
+    brandLogo:wl.brandLogo
+  };
+}
+// Read-only, in-browser look at what the client will actually receive — same data the .docx
+// pulls from (collectReportData + collectObsFinal), so it never drifts from the real download.
+// Was previously a dead button (onclick called a function that didn't exist anywhere).
+function previewForClient(){
+  var d = collectReportData();
+  var obs = collectObsFinal();
+  var brand = (d.whiteLabel && d.brandName) ? d.brandName : "RoofScan UK";
+  var brandColor = (d.whiteLabel && d.brandColor) ? d.brandColor : "#1B4F8A";
+  var brandLogoImg = (d.whiteLabel && d.brandLogo) ? '<img src="'+d.brandLogo+'" style="width:36px;height:36px;object-fit:contain;border-radius:6px;background:white;padding:3px;margin-bottom:8px;">' : '';
+  var rows = obs.map(function(o){
+    var color = '#' + statusColor(o.status);
+    var label = statusLabel(o.status);
+    var note = (o.observation||'').trim() || 'No notes recorded.';
+    return '<div style="padding:10px 0;border-bottom:1px solid #E8E4D8;">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">'
+      + '<strong style="font-size:13px;color:#1A1A2E;">'+o.ref+' '+(o.title||'')+'</strong>'
+      + '<span style="font-size:11px;font-weight:700;color:'+color+';background:'+color+'22;border-radius:10px;padding:2px 10px;white-space:nowrap;">'+label+'</span>'
+      + '</div>'
+      + '<div style="font-size:13px;color:#444;margin-top:4px;">'+note+'</div>'
+      + '</div>';
+  }).join('');
+  var html = ''
+    + '<div style="max-width:700px;margin:0 auto;background:white;border-radius:16px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.3);font-family:Arial,sans-serif;">'
+    +   '<div style="background:'+brandColor+';padding:1.5rem;color:white;">'
+    +     brandLogoImg
+    +     '<div style="font-size:20px;font-weight:700;">'+brand+'</div>'
+    +     '<div style="font-size:13px;color:rgba(255,255,255,0.75);">Drone Roof Inspection Report — Client Preview</div>'
+    +     (d.whiteLabel ? '<div style="font-size:11px;color:rgba(255,255,255,0.6);font-style:italic;margin-top:4px;">Produced by RoofScan UK</div>' : '')
+    +   '</div>'
+    +   '<div style="padding:1.5rem;max-height:65vh;overflow-y:auto;">'
+    +     '<div style="font-size:13px;color:#1A1A2E;margin-bottom:14px;line-height:1.6;">'
+    +       '<strong>Property:</strong> '+d.address+(d.postcode?' - '+d.postcode:'')+'<br>'
+    +       '<strong>Client:</strong> '+d.client+'<br>'
+    +       '<strong>Inspection date:</strong> '+d.inspDate+'<br>'
+    +       '<strong>Reference:</strong> '+d.reportRef
+    +     '</div>'
+    +     (d.roofscore ? (''
+    +       '<div style="background:#F5F7FA;border-radius:10px;padding:14px;text-align:center;margin-bottom:16px;">'
+    +         '<div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#6B7A8D;">RoofScore</div>'
+    +         '<div style="font-size:32px;font-weight:800;color:'+brandColor+';">'+d.roofscore+'<span style="font-size:16px;color:#999;">/100</span></div>'
+    +       '</div>') : '')
+    +     (d.summary && d.summary!=="[Summary not provided]" ? (''
+    +       '<div style="margin-bottom:16px;">'
+    +         '<div style="font-size:12px;font-weight:700;color:'+brandColor+';text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Executive summary</div>'
+    +         '<div style="font-size:13px;color:#444;">'+d.summary+'</div>'
+    +       '</div>') : '')
+    +     '<div style="font-size:12px;font-weight:700;color:'+brandColor+';text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">Observations</div>'
+    +     (rows || '<div style="font-size:13px;color:#999;">No observations recorded yet.</div>')
+    +   '</div>'
+    +   '<div style="padding:1rem 1.5rem;background:#F8F6F0;text-align:right;">'
+    +     '<button onclick="document.getElementById(\'clientPreviewModal\').remove()" style="background:white;color:#6B7A8D;border:1px solid #D0DBE8;border-radius:8px;padding:.6rem 1.2rem;cursor:pointer;font-size:13px;font-weight:500;font-family:inherit;">Close preview</button>'
+    +   '</div>'
+    + '</div>';
+  var old = document.getElementById('clientPreviewModal');
+  if(old) old.remove();
+  var overlay = document.createElement('div');
+  overlay.id = 'clientPreviewModal';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1100;overflow-y:auto;padding:2rem 1rem;';
+  overlay.onclick = function(e){ if(e.target===overlay) overlay.remove(); };
+  overlay.innerHTML = html;
+  document.body.appendChild(overlay);
+}
 async function generateReport(){
   var btn=document.getElementById("genBtn");var msg=document.getElementById("statusMsg");
   btn.disabled=true;msg.className="status-msg";msg.textContent="Building your Word document...";
   try{
-    var conds=["Poor","Fair","Moderate","Good","Excellent"];
     var obs=collectObsFinal();
-    var d={
-      address:document.getElementById("address").value||"[Address not provided]",
-      postcode:document.getElementById("postcode").value||"",
-      client:document.getElementById("client").value||"[Client]",
-      inspDate:formatDate(document.getElementById("inspDate").value),
-      reportRef:document.getElementById("reportRef").value||"RSU-XXXX",
-      roofType:document.getElementById("roofType").value||"[Roof type]",
-      covering:document.getElementById("covering").value||"[Covering]",
-      roofAge:document.getElementById("roofAge").value||"[Age]",
-      inspector:document.getElementById("inspector").value||"[Inspector]",
-      condition:conds[conditionIdx],
-      roofscore:_currentRoofScore,
-      rsDesc:_currentRoofScore?scoreDesc(_currentRoofScore):"",
-      rsChimneys:document.getElementById("rs-chimneys")?document.getElementById("rs-chimneys").textContent:"—",
-      rsCoverings:document.getElementById("rs-coverings")?document.getElementById("rs-coverings").textContent:"—",
-      rsRainwater:document.getElementById("rs-rainwater")?document.getElementById("rs-rainwater").textContent:"—",
-      rsAncillary:document.getElementById("rs-ancillary")?document.getElementById("rs-ancillary").textContent:"—",
-      summary:document.getElementById("summary").value||"[Summary not provided]",
-      keyRisks:document.getElementById("keyRisks").value||"[Key risks not provided]",
-      maintenance:document.getElementById("maintenance").value||"[Maintenance not provided]",
-      redCount:document.getElementById("countRed").textContent,
-      amberCount:document.getElementById("countAmber").textContent,
-      greenCount:document.getElementById("countGreen").textContent
-    };
+    var d=collectReportData();
     var doc=buildDoc(d,obs);
     var blob=await docx.Packer.toBlob(doc);
     // Kept flat (no subfolder trick) — the "/" in the filename only created a real subfolder in
@@ -691,7 +879,24 @@ async function generateReport(){
 
 function buildDoc(d,obs){
   var D=docx;
-  var BLUE="1B4F8A",BLUE_LIGHT="D6E4F2",BLUE_MID="2E75B6",DARK="1A1A2E",GREY_BG="F5F7FA",WHITE="FFFFFF",RED="C0392B",AMBER="E67E22",GREEN="27AE60",LIGHT_GREY="CCCCCC";
+  // White-label: when a trade/agency job has a brand name set (see getWhiteLabelInfo), every
+  // "RoofScan UK" mention in the document is swapped for it, and the RoofScan logo is dropped
+  // from the cover page rather than showing alongside someone else's name.
+  var BRAND = (d.whiteLabel && d.brandName) ? d.brandName : "RoofScan UK";
+  var BRAND_UPPER = BRAND.toUpperCase();
+  var DARK="1A1A2E",GREY_BG="F5F7FA",WHITE="FFFFFF",RED="C0392B",AMBER="E67E22",GREEN="27AE60",LIGHT_GREY="CCCCCC";
+  // Agency colour palette: the agency's picked colour becomes BLUE_MID (the vibrant accent
+  // RoofScan's palette uses for headings/highlights), with BLUE (darker, for header bars) and
+  // BLUE_LIGHT (near-white, for section tints) derived from it — same three-tone relationship
+  // as RoofScan's own default palette below, just built from one colour instead of hand-picked.
+  var BLUE, BLUE_MID, BLUE_LIGHT;
+  if(d.whiteLabel && d.brandColor){
+    BLUE_MID = d.brandColor.replace('#','');
+    BLUE = hexShade(BLUE_MID, -0.35);
+    BLUE_LIGHT = hexShade(BLUE_MID, 0.85);
+  } else {
+    BLUE="1B4F8A"; BLUE_LIGHT="D6E4F2"; BLUE_MID="2E75B6";
+  }
   var PAGE_W=11906,PAGE_H=16838,MARGIN=1134,CONTENT_W=PAGE_W-(MARGIN*2);
   var NB={style:D.BorderStyle.NONE,size:0,color:WHITE};
   var NBS={top:NB,bottom:NB,left:NB,right:NB};
@@ -715,12 +920,24 @@ function buildDoc(d,obs){
     sub=sub||"";
     var extraPara=sub?[new D.Paragraph({alignment:D.AlignmentType.LEFT,children:[new D.TextRun({text:sub,font:"Arial",size:22,color:"B0C8E8",italics:true})]})]:[];
     var t1=new D.Table({width:{size:CONTENT_W,type:D.WidthType.DXA},columnWidths:[CONTENT_W],rows:[new D.TableRow({height:{value:7000,rule:"exact"},children:[new D.TableCell({borders:NBS,shading:{fill:BLUE,type:D.ShadingType.CLEAR},width:{size:CONTENT_W,type:D.WidthType.DXA},verticalAlign:D.VerticalAlign.CENTER,margins:{top:400,bottom:400,left:700,right:700},children:[new D.Paragraph({alignment:D.AlignmentType.LEFT,spacing:{before:0,after:100},children:[new D.TextRun({text:num,font:"Arial",size:120,bold:true,color:"3A6FA8"})]}),new D.Paragraph({alignment:D.AlignmentType.LEFT,spacing:{before:0,after:sub?100:0},children:[new D.TextRun({text:title,font:"Arial",size:52,bold:true,color:WHITE})]})].concat(extraPara)})]})]}); 
-    var t2=new D.Table({width:{size:CONTENT_W,type:D.WidthType.DXA},columnWidths:[CONTENT_W],rows:[new D.TableRow({children:[new D.TableCell({borders:NBS,shading:{fill:BLUE_LIGHT,type:D.ShadingType.CLEAR},width:{size:CONTENT_W,type:D.WidthType.DXA},margins:{top:160,bottom:160,left:700,right:700},children:[new D.Paragraph({alignment:D.AlignmentType.LEFT,children:[new D.TextRun({text:"ROOFSCAN UK  |  Drone Roof Inspection Report",font:"Arial",size:17,color:BLUE,bold:true})]})]})]})]}); 
+    var t2=new D.Table({width:{size:CONTENT_W,type:D.WidthType.DXA},columnWidths:[CONTENT_W],rows:[new D.TableRow({children:[new D.TableCell({borders:NBS,shading:{fill:BLUE_LIGHT,type:D.ShadingType.CLEAR},width:{size:CONTENT_W,type:D.WidthType.DXA},margins:{top:160,bottom:160,left:700,right:700},children:[new D.Paragraph({alignment:D.AlignmentType.LEFT,children:[new D.TextRun({text:BRAND_UPPER+"  |  Drone Roof Inspection Report",font:"Arial",size:17,color:BLUE,bold:true})]})]})]})]});
     return[t1,t2,pb()];
   }
 
   var LCW=1600,TCW=CONTENT_W-LCW-800;
-  var innerT=new D.Table({width:{size:CONTENT_W-800,type:D.WidthType.DXA},columnWidths:[LCW,TCW],rows:[new D.TableRow({height:{value:1440,rule:"atLeast"},children:[new D.TableCell({borders:NBS,width:{size:LCW,type:D.WidthType.DXA},verticalAlign:D.VerticalAlign.CENTER,margins:{top:0,bottom:0,left:0,right:500},children:[new D.Paragraph({alignment:D.AlignmentType.CENTER,spacing:{before:0,after:0},children:[new D.ImageRun({data:LDATA,transformation:{width:110,height:110},type:"png"})]})]}),new D.TableCell({borders:NBS,width:{size:TCW,type:D.WidthType.DXA},verticalAlign:D.VerticalAlign.CENTER,margins:{top:0,bottom:0,left:200,right:0},children:[new D.Paragraph({spacing:{before:0,after:100},children:[new D.TextRun({text:"ROOFSCAN UK",font:"Arial",size:56,bold:true,color:WHITE})]}),new D.Paragraph({spacing:{before:0,after:0},children:[new D.TextRun({text:"Drone Roof Inspection Report",font:"Arial",size:22,color:"B0C8E8"})]})]})]})]}); 
+  // Use the agency's own uploaded logo when white-labelled; fall back to no logo at all if
+  // white-labelled but no logo was uploaded for that agency (never shows RoofScan's logo next
+  // to someone else's name); otherwise the usual RoofScan logo.
+  var agencyLogo = d.whiteLabel ? parseDataUrl(d.brandLogo) : null;
+  var logoImageChildren = [];
+  if(d.whiteLabel && agencyLogo){ logoImageChildren = [new D.ImageRun({data:b64u(agencyLogo.base64),transformation:{width:110,height:110},type:agencyLogo.type})]; }
+  else if(!d.whiteLabel){ logoImageChildren = [new D.ImageRun({data:LDATA,transformation:{width:110,height:110},type:"png"})]; }
+  var logoCell=new D.TableCell({borders:NBS,width:{size:LCW,type:D.WidthType.DXA},verticalAlign:D.VerticalAlign.CENTER,margins:{top:0,bottom:0,left:0,right:500},children:[new D.Paragraph({alignment:D.AlignmentType.CENTER,spacing:{before:0,after:0},children:logoImageChildren})]});
+  // White-labelled cover pages still name RoofScan UK as the actual producer of the report,
+  // in small text under the agency's own name/logo — the agency is who the client dealt with,
+  // but the client should still be able to see who technically carried out the inspection.
+  var producedByPara = d.whiteLabel ? [new D.Paragraph({spacing:{before:40,after:0},children:[new D.TextRun({text:"Produced by RoofScan UK",font:"Arial",size:17,italics:true,color:"B0C8E8"})]})] : [];
+  var innerT=new D.Table({width:{size:CONTENT_W-800,type:D.WidthType.DXA},columnWidths:[LCW,TCW],rows:[new D.TableRow({height:{value:1440,rule:"atLeast"},children:[logoCell,new D.TableCell({borders:NBS,width:{size:TCW,type:D.WidthType.DXA},verticalAlign:D.VerticalAlign.CENTER,margins:{top:0,bottom:0,left:200,right:0},children:[new D.Paragraph({spacing:{before:0,after:100},children:[new D.TextRun({text:BRAND_UPPER,font:"Arial",size:56,bold:true,color:WHITE})]}),new D.Paragraph({spacing:{before:0,after:0},children:[new D.TextRun({text:"Drone Roof Inspection Report",font:"Arial",size:22,color:"B0C8E8"})]})].concat(producedByPara)})]})]});
   var hBar=new D.Table({width:{size:CONTENT_W,type:D.WidthType.DXA},columnWidths:[CONTENT_W],rows:[new D.TableRow({height:{value:2200,rule:"atLeast"},children:[new D.TableCell({borders:NBS,shading:{fill:BLUE,type:D.ShadingType.CLEAR},width:{size:CONTENT_W,type:D.WidthType.DXA},verticalAlign:D.VerticalAlign.CENTER,margins:{top:300,bottom:300,left:400,right:400},children:[innerT]})]})]});
   var ic=Math.floor(CONTENT_W/2)-100;
   var infoT=new D.Table({width:{size:CONTENT_W,type:D.WidthType.DXA},columnWidths:[ic+200,ic-100],rows:[new D.TableRow({children:[new D.TableCell({borders:NBS,width:{size:ic+200,type:D.WidthType.DXA},margins:{top:200,bottom:0,left:0,right:300},children:[new D.Paragraph({spacing:{before:0,after:100},children:[new D.TextRun({text:"PROPERTY",font:"Arial",size:17,bold:true,color:BLUE_MID})]}),new D.Paragraph({spacing:{before:0,after:60},children:[new D.TextRun({text:d.address+(d.postcode?" - "+d.postcode:""),font:"Arial",size:22,bold:true,color:DARK})]})]}),new D.TableCell({borders:{top:NB,bottom:NB,right:NB,left:{style:D.BorderStyle.SINGLE,size:4,color:BLUE_LIGHT}},width:{size:ic-100,type:D.WidthType.DXA},margins:{top:200,bottom:0,left:300,right:0},children:[new D.Paragraph({spacing:{before:0,after:100},children:[new D.TextRun({text:"REPORT DETAILS",font:"Arial",size:17,bold:true,color:BLUE_MID})]}),new D.Paragraph({spacing:{before:0,after:60},children:[new D.TextRun({text:"Date:  ",font:"Arial",size:19,bold:true,color:DARK}),new D.TextRun({text:d.inspDate,font:"Arial",size:19,color:DARK})]}),new D.Paragraph({spacing:{before:0,after:60},children:[new D.TextRun({text:"Client:  ",font:"Arial",size:19,bold:true,color:DARK}),new D.TextRun({text:d.client,font:"Arial",size:19,color:DARK})]}),new D.Paragraph({spacing:{before:0,after:60},children:[new D.TextRun({text:"Ref:  ",font:"Arial",size:19,bold:true,color:DARK}),new D.TextRun({text:d.reportRef,font:"Arial",size:19,color:DARK})]})]})]})]}); 
@@ -795,7 +1012,7 @@ function buildDoc(d,obs){
     [h1("1.0  About This Report"),bl(),sp(100,80),
     lv("Property",d.address+(d.postcode?" - "+d.postcode:"")),
     lv("Inspection Date",d.inspDate),lv("Client",d.client),
-    new D.Paragraph({spacing:{before:60,after:60},children:[new D.TextRun({text:"Prepared By:  ",font:"Arial",size:19,bold:true,color:BLUE}),new D.TextRun({text:d.inspector+" - RoofScan UK",font:"Arial",size:19,color:DARK})]}),
+    new D.Paragraph({spacing:{before:60,after:60},children:[new D.TextRun({text:"Prepared By:  ",font:"Arial",size:19,bold:true,color:BLUE}),new D.TextRun({text: d.whiteLabel ? (d.inspector+" - RoofScan UK, on behalf of "+BRAND) : (d.inspector+" - RoofScan UK"),font:"Arial",size:19,color:DARK})]}),
     lv("Report Reference",d.reportRef),sp(160,80),
     h2("1.1  Scope"),bod("Instructions were received to attend the property and undertake a drone-based visual inspection. This report has been prepared based on drone imagery captured on-site. It does not constitute a full building survey."),
     sp(80,80),h2("1.2  Limitations"),
@@ -818,12 +1035,12 @@ function buildDoc(d,obs){
     h2("3.2  Scope Limitations"),bod("This is a visual-only drone inspection and is not a full structural survey."),sp(80,80),
     h2("3.3  Drone Operations"),bod("All drone operations are conducted in compliance with UK CAA regulations."),
     sp(160,80),tl(),sp(80,80),
-    new D.Paragraph({alignment:D.AlignmentType.CENTER,children:[new D.TextRun({text:"RoofScan UK  |  www.roofscanuk.co.uk",font:"Arial",size:17,color:"888888"})]}),pb()],
+    new D.Paragraph({alignment:D.AlignmentType.CENTER,children:[new D.TextRun({text: d.whiteLabel ? (BRAND+"  |  Produced by RoofScan UK") : "RoofScan UK  |  www.roofscanuk.co.uk",font:"Arial",size:17,color:"888888"})]}),pb()],
     strans("4.0","Schedule of Works","Summary table for contractor briefing"),
     [h1("4.0  Schedule of Works"),bl(),sp(80,60),
     bod("The table below summarises all observations. Obtain written quotations from suitably qualified contractors before any works commence."),
     sp(120,80),sT,sp(160,80),tl(),sp(80,80),
-    new D.Paragraph({alignment:D.AlignmentType.CENTER,children:[new D.TextRun({text:"End of Schedule of Works  -  RoofScan UK",font:"Arial",size:17,color:"888888",italics:true})]})]
+    new D.Paragraph({alignment:D.AlignmentType.CENTER,children:[new D.TextRun({text: d.whiteLabel ? ("End of Schedule of Works  -  "+BRAND+" (produced by RoofScan UK)") : ("End of Schedule of Works  -  "+BRAND),font:"Arial",size:17,color:"888888",italics:true})]})]
   );
 
 
@@ -884,7 +1101,7 @@ function buildDoc(d,obs){
     ]},
     sections:[{
       properties:{page:{size:{width:PAGE_W,height:PAGE_H},margin:{top:MARGIN,right:MARGIN,bottom:MARGIN+400,left:MARGIN}}},
-      headers:{default:new D.Header({children:[new D.Paragraph({spacing:{before:0,after:80},tabStops:[{type:D.TabStopType.RIGHT,position:D.TabStopPosition.MAX}],children:[new D.TextRun({text:"ROOFSCAN UK",font:"Arial",size:18,bold:true,color:BLUE}),new D.TextRun({text:"\tDrone Roof Inspection Report  |  "+d.reportRef,font:"Arial",size:17,color:"999999"})]}),new D.Paragraph({border:{bottom:{style:D.BorderStyle.SINGLE,size:4,color:BLUE_LIGHT,space:1}},children:[]})]})},
+      headers:{default:new D.Header({children:[new D.Paragraph({spacing:{before:0,after:80},tabStops:[{type:D.TabStopType.RIGHT,position:D.TabStopPosition.MAX}],children:[new D.TextRun({text:BRAND_UPPER,font:"Arial",size:18,bold:true,color:BLUE}),new D.TextRun({text:"\tDrone Roof Inspection Report  |  "+d.reportRef,font:"Arial",size:17,color:"999999"})]}),new D.Paragraph({border:{bottom:{style:D.BorderStyle.SINGLE,size:4,color:BLUE_LIGHT,space:1}},children:[]})]})},
       footers:{default:new D.Footer({children:[new D.Paragraph({border:{top:{style:D.BorderStyle.SINGLE,size:4,color:BLUE_LIGHT,space:1}},spacing:{before:80,after:0},tabStops:[{type:D.TabStopType.RIGHT,position:D.TabStopPosition.MAX}],children:[new D.TextRun({text:d.client+"  |  "+d.inspDate,font:"Arial",size:16,color:"AAAAAA"}),new D.TextRun({text:"\tPage ",font:"Arial",size:16,color:"888888"}),new D.TextRun({children:[D.PageNumber.CURRENT],font:"Arial",size:16,color:"888888"}),new D.TextRun({text:" of ",font:"Arial",size:16,color:"888888"}),new D.TextRun({children:[D.PageNumber.TOTAL_PAGES],font:"Arial",size:16,color:"888888"})]})]})},
       children:children
     }]
@@ -1374,6 +1591,7 @@ function bpRemoveExtra(id){
 }
 bpRefreshKeyUI();
 bpInitDropZone();
+renderAgencyDropdown();
 
 // ═══ ROOFSCORE AUTO-CALCULATION ════════════════════════════════════
 
