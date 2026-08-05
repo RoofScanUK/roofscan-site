@@ -256,9 +256,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
         <div class="field"><label>Approx. age</label><input type="text" id="roofAge" placeholder="e.g. 40-50 yrs"></div>
         <div class="field"><label>Inspector</label><input type="text" id="inspector" placeholder="Your name"></div>
       </div>
-      <div class="field-row cols-2">
+      <div class="field-row cols-1">
         <div class="field"><label>Airtable Job Record ID <span style="font-weight:400;opacity:0.6;">(optional — auto-saves RoofScore)</span></label><input type="text" id="atRecordId" placeholder="recXXXXXXXXXXXXXXXX" style="font-family:monospace;font-size:13px;"></div>
-        <div class="field"><label>Job Reference</label><input type="text" id="jobRef2" placeholder="Same as Report Ref above"></div>
       </div>
     </div>
   </div>
@@ -1061,7 +1060,8 @@ var bpRefHashes = {}; // ref -> [aHash,...] already placed, for duplicate detect
 // best candidate shot for judging the roof as a whole (a wide overview beats a close-up defect
 // crop), then run one extra AI call once the batch finishes to guess Covering and Approx. age.
 var bpRoofSpecPhoto = null, bpRoofSpecPriority = -1;
-var BP_ROOFSPEC_PROMPT = "Look at this UK roof photo. Reply in EXACTLY this format, nothing else: <covering>||<age>\n" +
+var BP_ROOFSPEC_PROMPT = "Look at this UK roof photo. Reply in EXACTLY this format, nothing else: <type>||<covering>||<age>\n" +
+  "<type> is Pitched or Flat (or \"Pitched with flat extension roof\" if you can see both). Almost all UK residential roofs are pitched, so only say Flat if you can clearly see a flat/low-slope section.\n" +
   "<covering> is your best guess at the roof covering material in a few words (e.g. \"Concrete interlocking tiles\", \"Natural slate\", \"Clay plain tiles\"). If you genuinely can't tell, reply Unclear.\n" +
   "<age> is a rough approximate age band based on visible wear, tile style, moss growth and colour (e.g. \"10-20 yrs\", \"40-50 yrs\"). This is a visual estimate only, not a fact — if you can't estimate at all, reply Unclear.";
 
@@ -1206,16 +1206,22 @@ function bpCaptureRoofSpecCandidate(catIdx, base64){
     bpRoofSpecPhoto = base64;
   }
 }
-// Runs once, after a batch of bulk-imported photos finishes sorting. Fills Covering and
-// Approx. age from the best candidate photo — but only fields the inspector hasn't already
-// typed something into, so a guess never overwrites a manual entry.
+// Runs once, after a batch of bulk-imported photos finishes sorting. Fills Roof type, Covering
+// and Approx. age from the best candidate photo. Covering/age only fill if still blank, so a
+// guess never overwrites a manual entry. Roof type is different: it's pre-filled with "Pitched"
+// as an assumption the moment a job loads (see _doLoadJob), not read from any real data — so
+// this is allowed to overwrite that specific assumed value with an actual photo-confirmed
+// answer, but it still never overwrites a value the inspector typed themselves (tracked via the
+// roofTypeIsAssumed flag, cleared the instant the field is hand-edited).
 async function bpMaybeDetectRoofSpecs(){
   if(!bpRoofSpecPhoto) return;
+  var typeEl = document.getElementById('roofType');
   var coveringEl = document.getElementById('covering');
   var ageEl = document.getElementById('roofAge');
+  var needType = typeEl && typeEl.dataset.roofTypeIsAssumed === 'true';
   var needCovering = coveringEl && !coveringEl.value.trim();
   var needAge = ageEl && !ageEl.value.trim();
-  if(!needCovering && !needAge) return;
+  if(!needType && !needCovering && !needAge) return;
   try{
     var res = await fetch(WORKER_BASE + '/ai-proxy', {
       method:'POST',
@@ -1233,14 +1239,16 @@ async function bpMaybeDetectRoofSpecs(){
     var data = await res.json();
     var text = (data.content && data.content[0] && data.content[0].text) || '';
     var parts = text.split('||');
-    var covering = (parts[0]||'').trim();
-    var age = (parts[1]||'').trim();
+    var type = (parts[0]||'').trim();
+    var covering = (parts[1]||'').trim();
+    var age = (parts[2]||'').trim();
     var filled = [];
+    if(needType && type && !/^unclear/i.test(type)){ typeEl.value = type; typeEl.dataset.roofTypeIsAssumed = 'false'; filled.push('Roof type'); }
     if(needCovering && covering && !/^unclear/i.test(covering)){ coveringEl.value = covering; filled.push('Covering'); }
     if(needAge && age && !/^unclear/i.test(age)){ ageEl.value = age; filled.push('Approx. age'); }
     if(filled.length){
       var bar = document.getElementById('prefill-bar');
-      if(bar){ bar.textContent = '🤖 AI-estimated from photos — check before sending: ' + filled.join(' · '); bar.className = 'prefill-bar show'; }
+      if(bar){ bar.textContent = '🤖 AI-confirmed from photos — check before sending: ' + filled.join(' · '); bar.className = 'prefill-bar show'; }
     }
   }catch(e){}
 }
@@ -1670,7 +1678,12 @@ async function _doLoadJob(recordId, fallbackData) {
   var ADDRESS_CLEAN = POSTCODE ? ADDRESS.replace(postcodeMatch[0], '').replace(/,\s*$/, '').trim() : ADDRESS;
 
   // ── Property type → roof type mapping ─────────────────────────
-  var ROOF_TYPE = 'Pitched'; // All Sussex residential are pitched
+  // This is an assumption, not data — Airtable has no roof-type field to read. Almost every
+  // Sussex residential job is pitched, so it's filled in to save retyping, but it's marked as
+  // "assumed" (roofTypeIsAssumed) so the photo-based check in bpMaybeDetectRoofSpecs is allowed
+  // to overwrite it with an actual confirmed answer once photos are imported. Editing the field
+  // by hand clears the flag so nothing ever overwrites a real manual entry.
+  var ROOF_TYPE = 'Pitched';
 
   // ── Auto-generate report reference ───────────────────────────
   var REPORT_REF = JOBREF || '';
@@ -1693,7 +1706,14 @@ async function _doLoadJob(recordId, fallbackData) {
   if(setField('client',     CLIENT))     filled.push('Client name');
   if(setField('inspDate',   DATE))       filled.push('Inspection date');
   if(setField('reportRef',  REPORT_REF)) filled.push('Report reference');
-  if(setField('roofType',   ROOF_TYPE))  filled.push('Roof type');
+  if(setField('roofType',   ROOF_TYPE)) {
+    filled.push('Roof type');
+    var roofTypeEl = document.getElementById('roofType');
+    if(roofTypeEl) {
+      roofTypeEl.dataset.roofTypeIsAssumed = 'true';
+      roofTypeEl.addEventListener('input', function(){ this.dataset.roofTypeIsAssumed = 'false'; }, {once:true});
+    }
+  }
   if(setField('inspector',  'Takhy Ndiaye Marrero')) filled.push('Inspector');
   if(setField('atRecordId', recordId))   {}
 
