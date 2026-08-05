@@ -124,6 +124,12 @@ const AT = (function() {
     const cached = fromCache(key);
     if (cached) return cached;
     let url = tableId + '?';
+    // Every field reference in this module (FIELDS.jobs.xxx etc.) is a field ID, not a field
+    // name. Airtable's List records API keys its response by field NAME unless explicitly told
+    // otherwise, so without this flag every f['fldXXXXXXX'] lookup below silently returns
+    // undefined even though the data is really there. This was the root cause of the Airtable
+    // job picker (and calendar/job banner) showing blank client/address/date fields.
+    url += 'returnFieldsByFieldId=true&';
     if (fields) fields.forEach(f => url += 'fields[]=' + encodeURIComponent(f) + '&');
     if (filterFormula) url += 'filterByFormula=' + encodeURIComponent(filterFormula) + '&';
     if (sort) sort.forEach((s,i) => {
@@ -333,7 +339,7 @@ const AT = (function() {
   // Append to job notes (preserves existing)
   async function appendJobNotes(recordId, newNote) {
     try {
-      var res = await request('GET', TABLES.jobs + '/' + recordId);
+      var res = await request('GET', TABLES.jobs + '/' + recordId + '?returnFieldsByFieldId=true');
       var existing = res.fields[FIELDS.jobs.notes] || '';
       var stamp = new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
       var combined = existing ? existing + '\n[' + stamp + '] ' + newNote : newNote;
@@ -443,7 +449,7 @@ const AT = (function() {
   }
   // Duplicate a job (item 23)
   async function duplicateJob(recordId, newDate) {
-    var res = await request('GET', TABLES.jobs + '/' + recordId);
+    var res = await request('GET', TABLES.jobs + '/' + recordId + '?returnFieldsByFieldId=true');
     var f = res.fields;
     var newFields = {};
     [FIELDS.jobs.client, FIELDS.jobs.address, FIELDS.jobs.email, FIELDS.jobs.phone, FIELDS.jobs.propType, FIELDS.jobs.total, FIELDS.jobs.company].forEach(function(fid){
