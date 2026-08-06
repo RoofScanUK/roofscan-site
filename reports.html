@@ -248,6 +248,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 <div class="card">
     <div class="card-header">Job details</div>
     <div class="card-body">
+      <div id="prefill-bar" class="prefill-bar"></div>
+      <div id="previous-reports-note" style="display:none;background:#EAF4FB;border-left:3px solid #2980B9;border-radius:0 8px 8px 0;padding:8px 12px;font-size:12px;color:#1A5276;margin-bottom:1rem;"></div>
       <div class="field-row cols-2">
         <div class="field"><label>Property address</label><input type="text" id="address" placeholder="e.g. 14 Maple Street"></div>
         <div class="field"><label>Postcode</label><input type="text" id="postcode" placeholder="e.g. BN1 4GH"></div>
@@ -1286,6 +1288,11 @@ async function polishSingleObs(key, originalText, statusBadgeId, textareaId) {
     var res = await callClaude("claude-sonnet-4-20250514", 200, [{ role: "user", content: prompt }]);
 
     var data = await res.json();
+    // The Worker proxy passes through whatever the API (or its own auth check) returns — on a
+    // failure that's {error: "..."} with no content array, not a Claude response shape. Without
+    // this check, data.content.map() threw a confusing "Cannot read properties of undefined"
+    // instead of surfacing the real problem (e.g. a stale/mismatched staff passphrase).
+    if(!data.content) throw new Error((data.error && (data.error.message || data.error)) || 'Unexpected response from AI proxy');
     var polished = data.content.map(function(i){ return i.text || ""; }).join("").trim();
     polishedObs[key] = polished;
     
@@ -2165,6 +2172,45 @@ async function _doLoadJob(recordId, fallbackData) {
   // ── Show job-loaded badge in picker ──────────────────────────
   var badge2 = document.getElementById('job-loaded-badge');
   if(badge2) badge2.style.display = 'flex';
+}
+
+// Was called from _doLoadJob() but never defined anywhere — every job load threw
+// "checkPreviousReports is not defined" in the console (silently, since it's inside an async
+// handler with no visible error to the user). Uses AT.getJobsAtAddress(), which already existed
+// and was already built for exactly this, just never wired up to anything.
+async function checkPreviousReports(recordId, address){
+  var note = document.getElementById('previous-reports-note');
+  if(!note) return;
+  try{
+    if(typeof AT === 'undefined' || !AT.hasToken() || !address) return;
+    var jobs = await AT.getJobsAtAddress(address);
+    var others = jobs.filter(function(j){ return j.id !== recordId; });
+    if(!others.length) return;
+    var dates = others.map(function(j){ return AT.fmtDate(j.fields[AT.FIELDS.jobs.date]); }).slice(0,3);
+    note.textContent = '📋 ' + others.length + ' previous inspection' + (others.length>1?'s':'') + ' found at this address (' + dates.join(', ') + (others.length>3?', …':'') + ') — check for recurring issues.';
+    note.style.display = 'block';
+  }catch(e){ console.error('checkPreviousReports failed:', e); }
+}
+
+// Was called from _doLoadJob() but never defined anywhere — same silent-crash bug as
+// checkPreviousReports above. Fetches the Sussex-wide average RoofScore (AT.getSussexAverage(),
+// already built, never wired up) and shows it next to the RoofScore card once a score exists.
+async function loadBenchmark(){
+  var outOf = document.getElementById('rs-out-of');
+  if(!outOf) return;
+  try{
+    if(typeof AT === 'undefined' || !AT.hasToken()) return;
+    var avg = await AT.getSussexAverage();
+    if(!avg) return;
+    var existing = document.getElementById('rs-benchmark');
+    if(!existing){
+      existing = document.createElement('span');
+      existing.id = 'rs-benchmark';
+      existing.style.cssText = 'opacity:0.6;font-size:11px;margin-left:6px;';
+      outOf.parentNode.appendChild(existing);
+    }
+    existing.textContent = '· Sussex avg: ' + avg;
+  }catch(e){ console.error('loadBenchmark failed:', e); }
 }
 
 // Superseded — generateReport() now uploads the report and writes Report Archive Link /
