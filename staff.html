@@ -131,9 +131,9 @@ main{padding:14px;}
   </div>
 </div>
 <main>
-<!-- ═══════════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════ -->
 <!-- JOB FLOW -->
-<!-- ═══════════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════ -->
 <div class="tc active" id="tab-job">
   <div class="prog-wrap">
     <div class="prog-bar"><div class="prog-fill" id="prog" style="width:0%"></div></div>
@@ -196,9 +196,9 @@ main{padding:14px;}
     <div class="chk" data-id="staff-28" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Charge all batteries ready for next job</div></div>
   </div>
 </div>
-<!-- ═══════════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════ -->
 <!-- SAFETY -->
-<!-- ═══════════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════ -->
 <div class="tc" id="tab-safety">
   <div class="alert red"><div class="alert-icon">🚫</div><div><strong>Never fly if:</strong> wind is above 12m/s, visibility is poor, it's raining, or you feel unsafe about the site. Cancel and rebook — never take risks.</div></div>
   <div class="sl">⚠️ Pre-flight safety case — required before EVERY flight</div>
@@ -285,9 +285,9 @@ main{padding:14px;}
   <div class="sl">If a client complains</div>
   <div class="alert amber"><div class="alert-icon">😬</div><div>Stay calm and polite. Don't admit fault or promise a refund on the spot. Note down exactly what they said, then tell Takhy as soon as possible so it can be handled properly.</div></div>
 </div>
-<!-- ═══════════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════ -->
 <!-- PLANNING (calendar + monthly stats) -->
-<!-- ═══════════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════ -->
 <div class="tc" id="tab-planning">
   <div class="sl">Airtable connection</div>
   <div class="card" style="margin-bottom:12px;">
@@ -298,32 +298,39 @@ main{padding:14px;}
     <div id="at-key-saved" style="display:none;font-size:12px;color:var(--green);font-weight:600;">Airtable connected on this device ✓ <a onclick="atChangeKey()" style="color:var(--blue);cursor:pointer;text-decoration:underline;font-weight:400;margin-left:6px;">change</a></div>
     <div style="font-size:11px;color:var(--muted);margin-top:8px;line-height:1.5;">Stored only in this browser. Needed for the calendar, stats, and the weather/overdue cards on Job Flow to show live data.</div>
   </div>
-  <div class="sl">Job calendar</div>
-  <div class="card">
-    <div class="cal-nav">
-      <button onclick="calNav(-1)">‹</button>
-      <div id="cal-label">—</div>
-      <button onclick="calNav(1)">›</button>
+  <!-- Calendar + monthly stats (income, trade accounts, Sussex avg) are collapsed by default —
+       the council flagged these as solving for a multi-employee company Takhy doesn't have yet.
+       The Airtable connection card above stays fully visible/first since it's now load-bearing
+       for the weather cards, safety case sync, and incident log sync as well, not just this. -->
+  <button class="reset-btn" id="planning-advanced-toggle" onclick="togglePlanningAdvanced()">▸ Show job calendar &amp; monthly stats</button>
+  <div id="planning-advanced" style="display:none;">
+    <div class="sl">Job calendar</div>
+    <div class="card">
+      <div class="cal-nav">
+        <button onclick="calNav(-1)">‹</button>
+        <div id="cal-label">—</div>
+        <button onclick="calNav(1)">›</button>
+      </div>
+      <div class="cal-grid" id="cal-weekdays">
+        <div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div><div>S</div>
+      </div>
+      <div class="cal-grid" id="cal-days"></div>
+      <div class="cal-day-detail" id="cal-day-detail"></div>
     </div>
-    <div class="cal-grid" id="cal-weekdays">
-      <div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div><div>S</div>
-    </div>
-    <div class="cal-grid" id="cal-days"></div>
-    <div class="cal-day-detail" id="cal-day-detail"></div>
-  </div>
 
-  <div class="sl">This month</div>
-  <div class="stat-grid" id="stats-grid">
-    <div class="stat-tile"><div class="stat-num" id="stat-jobs">—</div><div class="stat-label">Jobs this month</div></div>
-    <div class="stat-tile"><div class="stat-num" id="stat-income">—</div><div class="stat-label">Income this month</div></div>
-    <div class="stat-tile"><div class="stat-num" id="stat-roofscore">—</div><div class="stat-label">Sussex avg RoofScore</div></div>
-    <div class="stat-tile"><div class="stat-num" id="stat-trade">—</div><div class="stat-label">Active Trade accounts</div></div>
+    <div class="sl">This month</div>
+    <div class="stat-grid" id="stats-grid">
+      <div class="stat-tile"><div class="stat-num" id="stat-jobs">—</div><div class="stat-label">Jobs this month</div></div>
+      <div class="stat-tile"><div class="stat-num" id="stat-income">—</div><div class="stat-label">Income this month</div></div>
+      <div class="stat-tile"><div class="stat-num" id="stat-roofscore">—</div><div class="stat-label">Sussex avg RoofScore</div></div>
+      <div class="stat-tile"><div class="stat-num" id="stat-trade">—</div><div class="stat-label">Active Trade accounts</div></div>
+    </div>
+    <button class="reset-btn" onclick="loadPlanning()">↻ Refresh Planning data</button>
   </div>
-  <button class="reset-btn" onclick="loadPlanning()">↻ Refresh Planning data</button>
 </div>
-<!-- ═══════════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════ -->
 <!-- QUICK REF -->
-<!-- ═══════════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════ -->
 <div class="tc" id="tab-ref">
   <div class="sl">Equipment check</div>
   <div class="card" style="margin-bottom:12px;">
@@ -381,9 +388,34 @@ function showTab(id,btn){
   document.getElementById('tab-'+id).classList.add('active');
   btn.classList.add('active');
   btn.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
-  if(id === 'planning') loadPlanning();
+  if(id === 'planning'){
+    var adv = document.getElementById('planning-advanced');
+    if(adv && adv.style.display !== 'none') loadPlanning();
+  }
   if(id === 'job') loadJobFlowLive();
 }
+// Calendar + monthly stats are opt-in now (see council note above the markup) — remembers the
+// choice per device so it doesn't have to be re-expanded every visit once Takhy actually wants it.
+function togglePlanningAdvanced(){
+  var adv = document.getElementById('planning-advanced');
+  var btn = document.getElementById('planning-advanced-toggle');
+  if(!adv || !btn) return;
+  var show = adv.style.display === 'none';
+  adv.style.display = show ? 'block' : 'none';
+  btn.textContent = (show ? '▾ Hide' : '▸ Show') + ' job calendar & monthly stats';
+  try{ localStorage.setItem('rs_planning_advanced', show ? '1' : '0'); }catch(e){}
+  if(show) loadPlanning();
+}
+(function initPlanningAdvanced(){
+  var wantOpen = false;
+  try{ wantOpen = localStorage.getItem('rs_planning_advanced') === '1'; }catch(e){}
+  if(wantOpen){
+    var adv = document.getElementById('planning-advanced');
+    var btn = document.getElementById('planning-advanced-toggle');
+    if(adv) adv.style.display = 'block';
+    if(btn) btn.textContent = '▾ Hide job calendar & monthly stats';
+  }
+})();
 function toggleAcc(headerEl){
   var acc = headerEl.parentElement;
   var open = acc.getAttribute('data-open')==='1';
@@ -445,8 +477,32 @@ function updateJobBanner(){
         if(banner && display && full.trim()) {
           banner.style.display = 'block';
           display.textContent = full;
-          if(input) input.value = full;
           banner.dataset.jobId = job.id;
+          // Previously this always overwrote whatever was manually typed in the "Set today's
+          // job" box with the live Airtable value, silently — a data-loss pattern the council
+          // flagged (access notes, gate codes etc. typed by hand could vanish with no warning).
+          // Now: only auto-fill the box if it's empty or still holds exactly what we last wrote
+          // there from Airtable ourselves (tracked below). If it holds something actually typed
+          // by hand, leave it alone and show a note instead of silently discarding it.
+          var lastAtFill = '';
+          try{ lastAtFill = localStorage.getItem('rs_job_today_from_at') || ''; }catch(e){}
+          var currentManual = input ? input.value : '';
+          var manualUntouched = !currentManual.trim() || currentManual === lastAtFill;
+          var warnId = 'job-conflict-note';
+          var warn = document.getElementById(warnId);
+          if(input && manualUntouched){
+            input.value = full;
+            try{ localStorage.setItem('rs_job_today_from_at', full); localStorage.setItem('rs_job_today', full); }catch(e){}
+            if(warn) warn.remove();
+          } else if(input){
+            if(!warn){
+              warn = document.createElement('div');
+              warn.id = warnId;
+              warn.style.cssText = 'font-size:11px;color:var(--amber);margin-top:6px;line-height:1.4;';
+              input.parentElement.insertBefore(warn, input.nextSibling);
+            }
+            warn.textContent = '⚠️ Airtable also shows a job today (see banner above) — your typed notes below were kept as-is, not overwritten. Update them by hand if they\'re now out of date.';
+          }
         }
         if(jobs.length > 1 && banner) {
           var badge = document.createElement('div');
@@ -497,7 +553,7 @@ try{
   var sn=localStorage.getItem('rs_site_notes');
   if(sn) document.getElementById('site-notes').value=sn;
 }catch(e){}
-// ═══ INCIDENT LOG ═════════════════════════════════
+// ═══ INCIDENT LOG ════════════════════════════════════════
 function logIncident(){
   var type = document.getElementById('incident-type').value;
   var notes = document.getElementById('incident-notes').value.trim();
@@ -505,7 +561,11 @@ function logIncident(){
   if(!type || !notes){ result.style.color='var(--amber)'; result.textContent='Type and description required.'; return; }
   var incidents = [];
   try { incidents = JSON.parse(localStorage.getItem('rs_incidents'))||[]; } catch(e){}
-  var entry = { type:type, notes:notes, time:new Date().toISOString(), date:new Date().toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) };
+  // This log is described in the app's own copy as being "for insurance and CAA records," but
+  // previously never left the device at all — the exact gap the council flagged as the least
+  // finished part of the whole app. Now pushes to Airtable the same way the Safety Case Log
+  // does, with the same honest, awaited success/failure state instead of an assumed one.
+  var entry = { type:type, notes:notes, time:new Date().toISOString(), date:new Date().toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}), synced:null };
   incidents.unshift(entry);
   try { localStorage.setItem('rs_incidents', JSON.stringify(incidents)); } catch(e){}
   if(navigator.geolocation){
@@ -516,8 +576,36 @@ function logIncident(){
   }
   document.getElementById('incident-type').value='';
   document.getElementById('incident-notes').value='';
-  result.style.color='var(--green)'; result.textContent='✅ Incident logged with timestamp.';
   renderIncidents();
+  if(typeof AT !== 'undefined' && AT.hasToken()){
+    result.style.color='var(--muted)';
+    result.textContent='Saving incident…';
+    // Requires an "Incident Log" table in Airtable with Type/Notes/Logged At fields (matching
+    // the pattern of the existing "Safety Case Log" table) — create it once if it doesn't exist
+    // yet; until then this will fail gracefully and show the same honest "device only" warning.
+    AT.createRecord('Incident Log', {
+      'Type': entry.type,
+      'Notes': entry.notes,
+      'Logged At': entry.time
+    }).then(function(){
+      entry.synced = true;
+      try { localStorage.setItem('rs_incidents', JSON.stringify(incidents)); } catch(e){}
+      result.style.color='var(--green)';
+      result.textContent='✅ Incident logged and saved to Airtable.';
+      renderIncidents();
+    }).catch(function(){
+      entry.synced = false;
+      try { localStorage.setItem('rs_incidents', JSON.stringify(incidents)); } catch(e){}
+      result.style.color='var(--red)';
+      result.textContent='⚠️ Logged on this device only — Airtable save failed. Tell Takhy so this incident isn\'t lost if the device is.';
+      renderIncidents();
+    });
+  } else {
+    entry.synced = false;
+    try { localStorage.setItem('rs_incidents', JSON.stringify(incidents)); } catch(e){}
+    result.style.color='var(--amber)';
+    result.textContent='⚠️ Logged on this device only — no Airtable connection. Connect Airtable in Planning to back this up.';
+  }
 }
 function renderIncidents(){
   var incidents = [];
@@ -526,11 +614,16 @@ function renderIncidents(){
   if(!el) return;
   if(!incidents.length){ el.innerHTML=''; return; }
   el.innerHTML = '<div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:6px;">Recent incidents</div>' + incidents.slice(0,5).map(function(inc){
-    return '<div style="background:var(--rbg);border-radius:8px;padding:8px 10px;margin-bottom:5px;font-size:12px;"><strong style="color:var(--red);">'+inc.type+'</strong> <span style="color:var(--muted);">· '+inc.date+'</span><div style="color:#7B241C;margin-top:2px;">'+inc.notes+'</div></div>';
+    var syncBadge = inc.synced === true
+      ? '<span style="color:var(--green);">✓ saved to Airtable</span>'
+      : inc.synced === false
+        ? '<span style="color:var(--red);font-weight:700;">⚠ device only — not backed up</span>'
+        : '<span style="color:var(--muted);">saving…</span>';
+    return '<div style="background:var(--rbg);border-radius:8px;padding:8px 10px;margin-bottom:5px;font-size:12px;"><strong style="color:var(--red);">'+inc.type+'</strong> <span style="color:var(--muted);">· '+inc.date+'</span><div style="color:#7B241C;margin-top:2px;">'+inc.notes+'</div><div style="margin-top:3px;font-size:11px;">'+syncBadge+'</div></div>';
   }).join('');
 }
 renderIncidents();
-// ═══ PRE-FLIGHT SAFETY CASE (Safety tab) ════════════════════════════════
+// ═══ PRE-FLIGHT SAFETY CASE (Safety tab) ═══════════════════════════
 function tickSC(el){ el.classList.toggle('done'); }
 function logSafetyCase(){
   var boxes = document.querySelectorAll('#tab-safety .chk[data-id^="sc-"]');
@@ -546,20 +639,42 @@ function logSafetyCase(){
   try{ jobTxt = localStorage.getItem('rs_job_today') || ''; }catch(e){}
   var cases = [];
   try{ cases = JSON.parse(localStorage.getItem('rs_safetycase_log'))||[]; }catch(e){}
-  var entry = { job: (jobTxt.split('\n')[0]||'').trim() || 'No job set', time: new Date().toISOString(), date: new Date().toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) };
+  // "synced" starts null (pending/unknown) rather than assumed true — the council flagged that
+  // "Confirm & log" previously always showed success even when the Airtable push silently failed
+  // or there was no token connected on this device, which is the exact gap a CAA/insurance
+  // record request would expose later. Now the UI only ever claims what's actually true.
+  var entry = { job: (jobTxt.split('\n')[0]||'').trim() || 'No job set', time: new Date().toISOString(), date: new Date().toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}), synced: null };
   cases.unshift(entry);
   try{ localStorage.setItem('rs_safetycase_log', JSON.stringify(cases)); }catch(e){}
   boxes.forEach(function(b){ b.classList.remove('done'); });
-  result.style.color='var(--green)';
-  result.textContent='✅ Safety case logged — clear to fly.';
   renderSafetyCases();
-  // Also push to Airtable so it survives beyond this device, if connected
+  // Push to Airtable so the legal record survives beyond this one device — and now the UI
+  // waits for and reports the real outcome instead of assuming success the instant it's tried.
   if(typeof AT !== 'undefined' && AT.hasToken()){
+    result.style.color='var(--muted)';
+    result.textContent='Saving safety case…';
     AT.createRecord('Safety Case Log', {
       'Job': entry.job,
       'Status': 'Cleared to fly',
       'Logged At': entry.time
-    }).catch(function(){ /* local log already saved; don't block on network */ });
+    }).then(function(){
+      entry.synced = true;
+      try{ localStorage.setItem('rs_safetycase_log', JSON.stringify(cases)); }catch(e){}
+      result.style.color='var(--green)';
+      result.textContent='✅ Safety case logged and saved to Airtable — clear to fly.';
+      renderSafetyCases();
+    }).catch(function(err){
+      entry.synced = false;
+      try{ localStorage.setItem('rs_safetycase_log', JSON.stringify(cases)); }catch(e){}
+      result.style.color='var(--red)';
+      result.textContent='⚠️ Logged on this device only — Airtable save failed. This record will not survive if this device is lost or reset. You can still fly (checks were genuinely done), but tell Takhy about the sync failure.';
+      renderSafetyCases();
+    });
+  } else {
+    entry.synced = false;
+    try{ localStorage.setItem('rs_safetycase_log', JSON.stringify(cases)); }catch(e){}
+    result.style.color='var(--amber)';
+    result.textContent='⚠️ Logged on this device only — no Airtable connection. Connect Airtable in Planning to back this up.';
   }
 }
 function renderSafetyCases(){
@@ -569,11 +684,17 @@ function renderSafetyCases(){
   if(!el) return;
   if(!cases.length){ el.innerHTML=''; return; }
   el.innerHTML = '<div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:6px;">Recent safety cases logged</div>' + cases.slice(0,5).map(function(c){
-    return '<div style="background:var(--rbg);border-radius:8px;padding:8px 10px;margin-bottom:5px;font-size:12px;"><strong style="color:var(--green);">✓ Cleared to fly</strong> <span style="color:var(--muted);">· '+c.date+'</span><div style="color:#333;margin-top:2px;">'+c.job+'</div></div>';
+    // synced === true -> green "saved"; false -> red "device only" warning; null/pending -> muted "saving…"
+    var syncBadge = c.synced === true
+      ? '<span style="color:var(--green);">✓ saved to Airtable</span>'
+      : c.synced === false
+        ? '<span style="color:var(--red);font-weight:700;">⚠ device only — not backed up</span>'
+        : '<span style="color:var(--muted);">saving…</span>';
+    return '<div style="background:var(--rbg);border-radius:8px;padding:8px 10px;margin-bottom:5px;font-size:12px;"><strong style="color:var(--green);">✓ Cleared to fly</strong> <span style="color:var(--muted);">· '+c.date+'</span><div style="color:#333;margin-top:2px;">'+c.job+'</div><div style="margin-top:3px;font-size:11px;">'+syncBadge+'</div></div>';
   }).join('');
 }
 renderSafetyCases();
-// ═══ EQUIPMENT CHECK (Quick Ref) ══════════════════════════════════
+// ═══ EQUIPMENT CHECK (Quick Ref) ════════════════════════════════════
 var EQUIP_ITEMS = [
   'Drone (aircraft)',
   '3× batteries charged',
@@ -614,7 +735,7 @@ function updateEquipCount(){
   if(el) el.textContent = done.length+' / '+all.length+' packed';
 }
 renderEquip();
-// ═══ JOB FLOW — live weather + overdue ════════════════════════════════════
+// ═══ JOB FLOW — live weather + overdue ════════════════════════════
 async function loadJobFlowLive(){
   if(typeof AT === 'undefined' || !AT.hasToken()) return;
   loadWeatherCard();
@@ -653,7 +774,7 @@ async function loadOverdueCard(){
   }catch(e){ card.style.display='none'; card.innerHTML=''; }
 }
 loadJobFlowLive();
-// ═══ PLANNING TAB — calendar + monthly stats ═══════════════════════════════
+// ═══ PLANNING TAB — calendar + monthly stats ═══════════════════════
 function atRefreshKeyUI(){
   var connected = typeof AT !== 'undefined' && AT.hasToken();
   var entry = document.getElementById('at-key-entry');
