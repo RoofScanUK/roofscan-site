@@ -228,6 +228,27 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
   </div>
   <div id="job-picker-loading" style="display:none;text-align:center;padding:12px;color:#6B7A8D;font-size:13px;">Loading jobs from Airtable...</div>
 
+  <!-- CLIENT INFO CARD — populated by loadJobFromAirtable(); the CSS for this existed but the
+       markup never did, so every set('ci-client', ...) etc. was silently hitting a null element
+       and doing nothing. Added the actual card so the client info Airtable already sends through
+       (contact details, status, add-ons, notes) is visible instead of vanishing into thin air. -->
+  <div class="client-info-card" id="client-info-card" style="display:none;">
+    <div class="client-info-title">Client details <span id="ci-status-badge" style="background:#D6EAF8;color:#1A5276;border-radius:12px;padding:2px 10px;font-size:10px;font-weight:700;"></span></div>
+    <div class="client-info-grid">
+      <div class="ci-item"><span class="ci-label">Client</span><span class="ci-val" id="ci-client">—</span></div>
+      <div class="ci-item"><span class="ci-label">Property type</span><span class="ci-val" id="ci-proptype">—</span></div>
+      <div class="ci-item"><span class="ci-label">Email</span><a class="ci-val ci-link" id="ci-email" href="#">—</a></div>
+      <div class="ci-item"><span class="ci-label">Phone</span><a class="ci-val ci-link" id="ci-phone" href="#">—</a></div>
+      <div class="ci-item"><span class="ci-label">Report ref</span><span class="ci-val" id="ci-ref">—</span></div>
+      <div class="ci-item"><span class="ci-label">Job total</span><span class="ci-val" id="ci-total">—</span></div>
+    </div>
+    <div class="addons-row" id="ci-addons-row" style="display:none;"></div>
+    <div id="ci-notes-row" style="display:none;margin-top:8px;">
+      <span class="ci-label">Notes</span>
+      <div class="ci-val" id="ci-notes" style="font-weight:500;margin-top:2px;"></div>
+    </div>
+  </div>
+
 <!-- RESUME CARD -->
 <div class="resume-card" id="resume-card" style="display:none;">
   <div class="resume-icon">💾</div>
@@ -403,6 +424,18 @@ async function callClaude(model, maxTokens, messages){
     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getStaffKey() },
     body: JSON.stringify({ model: model, max_tokens: maxTokens, messages: messages })
   });
+  // Centralised check so every AI feature (summaries, polish, RoofScore refine, bulk photo
+  // sorting) shows the same clear, actionable message instead of each one separately hitting
+  // "Cannot read properties of undefined" — the exact silent-failure pattern that cost hours
+  // debugging the passphrase mismatch last time. A 401/403 here almost always means the
+  // passphrase saved on this device doesn't match STAFF_API_KEY on the Worker.
+  if(!res.ok){
+    var bodyText = await res.text().catch(function(){ return ''; });
+    if(res.status === 401 || res.status === 403){
+      throw new Error('Passphrase rejected by the Worker (HTTP '+res.status+'). Go to Bulk photo import below, click "change", and re-enter the exact passphrase set as STAFF_API_KEY on the Worker.');
+    }
+    throw new Error('AI proxy error (HTTP '+res.status+')'+(bodyText?': '+bodyText.slice(0,150):''));
+  }
   return res;
 }
 
@@ -816,7 +849,7 @@ async function generateSummaries(){
     document.getElementById("keyRisks").value=parsed.keyRisks||"";
     document.getElementById("maintenance").value=parsed.maintenance||"";
     document.getElementById("aiStatus").textContent="Done - review and edit as needed.";
-  }catch(err){document.getElementById("aiStatus").textContent="Error - please fill in manually.";console.error(err);}
+  }catch(err){document.getElementById("aiStatus").textContent=(err&&err.message?err.message:"Error")+" — please fill in manually.";console.error(err);}
   finally{btn.disabled=false;}
 }
 
@@ -958,9 +991,29 @@ function collectReportData(){
 }
 async function generateReport(){
   var btn=document.getElementById("genBtn");var msg=document.getElementById("statusMsg");
+
+  // Pre-send sanity gate — before anything is built, hosted, or written to Airtable, show a
+  // one-glance summary and require explicit confirmation. This exists because every AI step
+  // upstream (photo classification, RoofScore refine, summaries, polish) can be wrong, and a
+  // flag buried in the UI is easy to miss on job #47 when tired — this makes it impossible to
+  // send without seeing it once, right before the click that actually ships the report.
+  var obs=collectObsFinal();
+  var withPhoto=obs.filter(function(o){ return !!o.photoB64; }).length;
+  var unresolvedAiFlags=document.querySelectorAll('[id^="aiflag_"]').length;
+  var scoreLine=_currentRoofScore ? (_currentRoofScore+'/100') : 'not calculated';
+  var gateLines=[
+    'Ready to generate this report?','',
+    obs.length+' observation(s), '+withPhoto+' with a photo attached.',
+    'RoofScore: '+scoreLine+'.'
+  ];
+  if(unresolvedAiFlags>0){
+    gateLines.push('','⚠️ '+unresolvedAiFlags+' observation(s) still marked "AI-placed — check before sending". These will go into the report as-is if you continue.');
+  }
+  gateLines.push('','Click OK to build and download the Word document.');
+  if(!window.confirm(gateLines.join('\n'))) return;
+
   btn.disabled=true;msg.className="status-msg";msg.textContent="Building your Word document...";
   try{
-    var obs=collectObsFinal();
     var d=collectReportData();
     var doc=buildDoc(d,obs);
     var blob=await docx.Packer.toBlob(doc);
