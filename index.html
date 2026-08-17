@@ -41,6 +41,16 @@ nav.topnav{background:var(--paper);border-bottom:1px solid var(--line);position:
 .nav-link::after{content:"";position:absolute;left:0;bottom:-3px;width:0;height:1px;background:var(--navy);transition:width .18s ease;}
 .nav-link:hover::after{width:100%;}
 @media (max-width:720px){ .nav-links span.nav-link{display:none;} }
+.nav-cta-short{display:none;}
+.mobile-info-bar{display:none;}
+@media (max-width:720px){
+  .nav-cta-full{display:none;}
+  .nav-cta-short{display:inline;}
+  .nav-links span.nav-link-login{display:inline;font-size:11px;}
+  .mobile-info-bar{display:flex;align-items:center;justify-content:center;gap:8px;padding:9px 14px;background:var(--paper);border-bottom:1px solid var(--line);font-size:12px;}
+  .mobile-info-bar a{color:var(--navy);}
+  .mobile-info-bar .sep{color:var(--line);}
+}
 
 /* BUTTONS */
 .btn{display:inline-block;background:var(--navy);color:var(--paper);border:1px solid var(--navy);border-radius:2px;padding:13px 26px;font-size:14px;font-weight:600;letter-spacing:.01em;transition:opacity .15s;}
@@ -118,6 +128,18 @@ h2.section-title{font-size:clamp(1.7rem,3.2vw,2.35rem);}
 /* REPORT SECTION */
 .report-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:start;}
 @media (max-width:820px){ .report-grid{grid-template-columns:1fr;} }
+@media (max-width:480px){
+  .how-steps{grid-template-columns:1fr !important;gap:24px !important;}
+}
+@media (max-width:720px){
+  .report-grid{display:flex;flex-direction:row;align-items:flex-start;gap:12px;}
+  .report-grid > div:first-child{flex:1;min-width:0;}
+  .report-grid .check-list{display:none;}
+  .report-grid .panel{flex:0 0 120px;padding:8px;}
+  .report-grid .panel iframe{height:140px;}
+  .report-grid .panel .eyebrow{font-size:10px;margin-bottom:6px;}
+  .report-grid .panel .btn.small{font-size:10px;padding:6px 6px;width:100%;text-align:center;}
+}
 .check-list{display:grid;gap:12px;margin-bottom:28px;}
 .check-item{display:flex;gap:12px;align-items:baseline;font-size:14.5px;color:var(--ink);}
 .check-item .dash{color:var(--gold);font-weight:700;}
@@ -295,11 +317,17 @@ textarea{resize:vertical;}
       <span class="nav-link" onclick="go('pricing')">Pricing</span>
       <span class="nav-link" onclick="go('about')">About</span>
       <span class="nav-link" onclick="go('contact')">Contact</span>
-      <span class="nav-link" style="color:var(--muted);" onclick="openLoginModal()">Client Login</span>
-      <button class="btn small" style="background:var(--gold);border-color:var(--gold);color:var(--navy);" onclick="go('book')">Get instant quote</button>
+      <span class="nav-link nav-link-login" style="color:var(--muted);" onclick="openLoginModal()">Client Login</span>
+      <button class="btn small" style="background:var(--gold);border-color:var(--gold);color:var(--navy);" onclick="go('book')"><span class="nav-cta-full">Get instant quote</span><span class="nav-cta-short">Quote from £199</span></button>
     </div>
   </div>
 </nav>
+
+<div class="mobile-info-bar">
+  <a href="tel:07498364197">Call: 07498 364197</a>
+  <span class="sep">·</span>
+  <a href="#how-it-works">See how it works</a>
+</div>
 
 <div class="login-overlay" id="login-overlay" onclick="if(event.target===this)closeLoginModal()">
   <div class="login-modal">
@@ -390,9 +418,8 @@ textarea{resize:vertical;}
       <div class="panel" style="padding:6px 28px;">
         <div style="display:flex;justify-content:space-between;align-items:center;padding:15px 0;border-bottom:1px solid var(--line);"><span class="muted" style="font-size:14px;">CAA Operator ID</span><span style="font-size:13px;font-weight:700;color:#1E7A46;">✓ Verified</span></div>
         <div style="display:flex;justify-content:space-between;align-items:center;padding:15px 0;border-bottom:1px solid var(--line);"><span class="muted" style="font-size:14px;">Pilot competency</span><span style="font-size:13px;font-weight:700;color:#1E7A46;">✓ GVC qualified</span></div>
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:15px 0;border-bottom:1px solid var(--line);"><span class="muted" style="font-size:14px;">Public liability insurance</span><span style="font-size:13px;font-weight:700;color:#1E7A46;">✓ Active, £2M+ cover</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:15px 0;border-bottom:1px solid var(--line);"><span class="muted" style="font-size:14px;">Public liability insurance</span><span style="font-size:13px;font-weight:700;color:#1E7A46;">✓ Active</span></div>
         <div style="display:flex;justify-content:space-between;align-items:center;padding:15px 0;border-bottom:1px solid var(--line);"><span class="muted" style="font-size:14px;">A2 Certificate of Competency</span><span style="font-size:13px;font-weight:700;color:#1E7A46;">✓ Held</span></div>
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:15px 0;border-bottom:1px solid var(--line);"><span class="muted" style="font-size:14px;">Aircraft</span><span style="font-size:13px;font-weight:700;color:#1E7A46;">✓ DJI Air 3S</span></div>
         <div style="display:flex;justify-content:space-between;align-items:center;padding:15px 0;border-bottom:1px solid var(--line);"><span class="muted" style="font-size:14px;">Coverage area</span><span style="font-size:13px;font-weight:700;color:#1E7A46;">✓ All of Sussex</span></div>
         <div style="display:flex;justify-content:space-between;align-items:center;padding:15px 0;"><span class="muted" style="font-size:14px;">Report delivery</span><span style="font-size:13px;font-weight:700;color:#1E7A46;">✓ Within 48 hours</span></div>
       </div>
@@ -429,7 +456,7 @@ textarea{resize:vertical;}
     </div>
   </section>
 
-  <section class="pad reveal">
+  <section class="pad reveal" style="background:#F3EEE1;">
     <div class="wrap report-grid">
       <div>
         <div class="eyebrow">The report</div>
@@ -443,7 +470,7 @@ textarea{resize:vertical;}
           <div class="check-item"><span class="dash">—</span><span>PDF delivered within 48 hours</span></div>
         </div>
       </div>
-      <div class="panel" style="padding:16px;">
+      <div class="panel" style="padding:16px;background:var(--white);">
         <div class="eyebrow" style="margin-bottom:12px;">Sample report</div>
         <iframe src="sample-report.pdf" title="Sample RoofScan UK inspection report" style="width:100%;height:340px;border:1px solid var(--line);border-radius:2px;">
           <p style="padding:14px;font-size:13px;color:var(--muted);">Your browser can't preview PDFs inline. <a class="textlink" href="sample-report.pdf" target="_blank" rel="noopener noreferrer">View the sample report →</a></p>
@@ -455,7 +482,33 @@ textarea{resize:vertical;}
     </div>
   </section>
 
-  <section class="cta-banner reveal">
+  <section class="pad reveal" style="padding-top:0;padding-bottom:0;">
+    <div class="wrap-n">
+      <div class="section-head center" style="margin-bottom:32px;">
+        <div class="eyebrow">How it works</div>
+        <h2 class="section-title" style="font-size:clamp(1.4rem,2.4vw,1.7rem);">Three steps, start to finish</h2>
+      </div>
+      <div class="how-steps" style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;">
+        <div style="text-align:center;">
+          <div style="width:44px;height:44px;border-radius:50%;background:var(--navy);color:var(--gold);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;margin:0 auto 12px;">01</div>
+          <h3 style="font-size:15px;margin-bottom:6px;">Get your quote</h3>
+          <p class="muted" style="font-size:12.5px;line-height:1.6;">Answer a few quick questions and see your instant price. No call needed.</p>
+        </div>
+        <div style="text-align:center;">
+          <div style="width:44px;height:44px;border-radius:50%;background:var(--navy);color:var(--gold);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;margin:0 auto 12px;">02</div>
+          <h3 style="font-size:15px;margin-bottom:6px;">We fly and inspect</h3>
+          <p class="muted" style="font-size:12.5px;line-height:1.6;">Our licensed pilot captures every chimney, ridge, and flashing in high resolution.</p>
+        </div>
+        <div style="text-align:center;">
+          <div style="width:44px;height:44px;border-radius:50%;background:var(--navy);color:var(--gold);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;margin:0 auto 12px;">03</div>
+          <h3 style="font-size:15px;margin-bottom:6px;">Receive your report</h3>
+          <p class="muted" style="font-size:12.5px;line-height:1.6;">A full written condition report with ratings, delivered within 48 hours.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-banner reveal" style="padding-top:44px;">
     <div class="wrap-b">
       <h2>Ready to see what's happening on your roof?</h2>
       <p>No scaffolding. No disruption. Full report within 48 hours, covering all of Sussex.</p>
@@ -604,7 +657,7 @@ textarea{resize:vertical;}
       <div class="cred-grid">
         <div><div class="t">CAA</div><div class="d">Operator ID &amp; qualified pilot</div></div>
         <div><div class="t">Insured</div><div class="d">Commercial drone cover</div></div>
-        <div><div class="t">DJI Air 3S</div><div class="d">Professional inspection drone</div></div>
+        <div><div class="t">Equipped</div><div class="d">Professional inspection drone</div></div>
         <div><div class="t">Sussex</div><div class="d">Full county coverage</div></div>
       </div>
     </div>
@@ -809,7 +862,7 @@ textarea{resize:vertical;}
     </div>
     <div class="footer-bottom">
       <div>© 2026 RoofScan UK. Sole trader registered in England &amp; Wales.</div>
-      <div>CAA Licensed · Fully Insured · DJI Air 3S</div>
+      <div>CAA Licensed · Fully Insured</div>
     </div>
   </div>
 </footer>
