@@ -1014,7 +1014,7 @@ async function checkPostcode(raw){
       info.style.display = 'block';
       return;
     }
-    const {latitude, longitude, postcode} = data.result;
+    const {latitude, longitude, postcode, admin_district} = data.result;
     const miles = milesBetween(BRIGHTON_LAT, BRIGHTON_LNG, latitude, longitude);
     const band = bandForDistance(miles);
     if(!band){
@@ -1023,7 +1023,7 @@ async function checkPostcode(raw){
       info.style.display = 'block';
       return;
     }
-    postcodeInfo = {postcode, band, miles};
+    postcodeInfo = {postcode, band, miles, town: admin_district || ''};
     document.getElementById('postcode-clear').style.display='block';
     info.textContent = postcode+' · '+TB[band].label+(TB[band].add>0?' (+£'+TB[band].add+' travel)':' (no travel charge)');
     info.style.display = 'block';
@@ -1081,6 +1081,7 @@ function nextFromStep(n){
   if(n===1 && !prop){ alert('Please select a property type.'); return; }
   if(n===3 && !postcodeInfo){ alert('Please enter a valid postcode within our coverage area.'); return; }
   if(n===4 && !(contact.name && contact.email && contact.phone && contact.address)){ alert('Please fill in all fields.'); return; }
+  if(n===4) captureLead('details');
   goStep(n+1);
 }
 
@@ -1099,6 +1100,33 @@ function renderPrice(){
     `<div class="total-row"><span class="l">${l}</span><span class="v">${fmt(v)}</span></div>`).join('');
 
   document.getElementById('balance-note').innerHTML = 'Balance of '+fmt(Math.max(0,total-50))+' due on completion · <a href="terms.html" class="muted">Terms &amp; Conditions</a>';
+
+  captureLead('quoted', total);
+}
+
+// Best-effort save of the lead at two points in the flow, so Takhy can send a different
+// follow-up email depending on how far someone got: 'details' fires once contact info is
+// entered (step 4→5), 'quoted' fires once they've seen their price (step 5). Both calls
+// write to the same Airtable row — the second upgrades the Status on the record created
+// by the first, so nobody is double-counted. Never blocks or interrupts the booking flow.
+let leadRecordId = null;
+function captureLead(stage, total){
+  if(!(contact.name && contact.email && contact.phone && contact.address)) return;
+  if(stage === 'details' && leadRecordId) return; // already captured this session
+  fetch(LM_API_BASE + '/capture-lead', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({
+      stage,
+      propertyType: prop,
+      town: postcodeInfo && postcodeInfo.town ? postcodeInfo.town : '',
+      quoteTotal: total,
+      contact,
+      existingId: leadRecordId
+    })
+  }).then(r => r.json()).then(data => {
+    if(data && data.quoteId) leadRecordId = data.quoteId;
+  }).catch(err => console.error('Lead capture failed:', err));
 }
 
 // ═══ STEP 6 — date picker + Stripe deposit payment ═══════════════════
