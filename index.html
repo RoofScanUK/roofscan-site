@@ -769,6 +769,10 @@ textarea{resize:vertical;}
               <span class="muted" style="font-size:12px;">Confirmed in step 3 · <a href="#" onclick="event.preventDefault();goStep(3);" class="textlink" style="font-size:12px;">change</a></span>
             </div>
           </div>
+          <label style="display:flex;align-items:flex-start;gap:10px;margin:18px 0 4px;cursor:pointer;">
+            <input type="checkbox" id="c-optout" style="margin-top:3px;width:16px;height:16px;flex-shrink:0;">
+            <span class="muted" style="font-size:12.5px;line-height:1.6;">We may follow up by email about your quote. Tick here if you'd rather we didn't — you can unsubscribe at any time either way.</span>
+          </label>
           <div class="row-btns">
             <button class="back-btn" onclick="goStep(3)">← Back</button>
             <button class="btn" style="flex:2;" id="step4-next" onclick="nextFromStep(4)">See your price →</button>
@@ -1122,6 +1126,7 @@ function captureLead(stage, total){
       town: postcodeInfo && postcodeInfo.town ? postcodeInfo.town : '',
       quoteTotal: total,
       contact,
+      marketingOptOut: !!(document.getElementById('c-optout') && document.getElementById('c-optout').checked),
       existingId: leadRecordId
     })
   }).then(r => r.json()).then(data => {
