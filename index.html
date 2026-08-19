@@ -790,6 +790,7 @@ textarea{resize:vertical;}
           </div>
           <button class="book-cta" id="book-cta-link" onclick="goStep(6)" style="width:100%;border:none;cursor:pointer;font-family:inherit;">Pick your date &amp; pay £50 deposit →</button>
           <div class="muted" style="text-align:center;font-size:12px;line-height:1.8;" id="balance-note"></div>
+          <div id="lead-debug" style="text-align:center;font-size:10px;color:#B0442E;margin-top:8px;"></div>
           <div style="margin-top:22px;"><button class="back-btn" style="width:auto;padding:9px 18px;font-size:12px;" onclick="goStep(4)">← Edit details</button></div>
         </div>
 
@@ -1117,6 +1118,7 @@ let leadRecordId = null;
 function captureLead(stage, total){
   if(!(contact.name && contact.email && contact.phone && contact.address)) return;
   if(stage === 'details' && leadRecordId) return; // already captured this session
+  const debugEl = document.getElementById('lead-debug');
   fetch(LM_API_BASE + '/capture-lead', {
     method: 'POST',
     headers: {'Content-Type':'application/json'},
@@ -1129,9 +1131,15 @@ function captureLead(stage, total){
       marketingOptOut: !!(document.getElementById('c-optout') && document.getElementById('c-optout').checked),
       existingId: leadRecordId
     })
-  }).then(r => r.json()).then(data => {
+  }).then(async r => {
+    const data = await r.json().catch(()=>({}));
+    if(!r.ok){ throw new Error('HTTP '+r.status+': '+(data.error||'unknown error')); }
     if(data && data.quoteId) leadRecordId = data.quoteId;
-  }).catch(err => console.error('Lead capture failed:', err));
+    if(debugEl) debugEl.textContent = 'Lead capture ('+stage+'): saved OK, id '+ (data.quoteId||'?');
+  }).catch(err => {
+    console.error('Lead capture failed:', err);
+    if(debugEl) debugEl.textContent = 'Lead capture ('+stage+') FAILED: ' + err.message;
+  });
 }
 
 // ═══ STEP 6 — date picker + Stripe deposit payment ═══════════════════
