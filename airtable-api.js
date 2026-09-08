@@ -485,12 +485,16 @@ const AT = (function() {
   }
   // Get upcoming scheduled jobs (future Inspection Date, not yet Paid) — for the Hub calendar
   async function getUpcomingJobs(daysAhead) {
-    const today = new Date().toISOString().slice(0,10);
+    // Was IS_AFTER(today) — strictly after — which silently excluded any job dated today itself.
+    // That meant a job scheduled for today never showed on the Planning calendar (or got weather/
+    // airspace-checked there) even though it correctly counted in the monthly stats, which use a
+    // separate, inclusive query. Using yesterday as the lower bound makes today's jobs included.
+    const yesterday = new Date(Date.now() - 24*60*60*1000).toISOString().slice(0,10);
     const future = new Date(Date.now() + (daysAhead||60)*24*60*60*1000).toISOString().slice(0,10);
     return listRecords(
       TABLES.jobs,
       [FIELDS.jobs.client, FIELDS.jobs.address, FIELDS.jobs.propType, FIELDS.jobs.status, FIELDS.jobs.date, FIELDS.jobs.notes, FIELDS.jobs.phone, FIELDS.jobs.total],
-      "AND(IS_AFTER({Inspection Date},'" + today + "'),IS_BEFORE({Inspection Date},'" + future + "'))",
+      "AND(IS_AFTER({Inspection Date},'" + yesterday + "'),IS_BEFORE({Inspection Date},'" + future + "'))",
       [{field: 'Inspection Date', dir: 'asc'}],
       100
     );
