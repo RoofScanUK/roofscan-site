@@ -106,8 +106,35 @@ main{padding:14px;}
 .cal-day.selected{background:var(--navy);color:white;}
 .cal-day .dot{width:5px;height:5px;border-radius:50%;background:var(--blue);margin-top:2px;}
 .cal-day.selected .dot{background:var(--gold);}
+.cal-day .dot.risk-r{background:var(--red);}
+.cal-day .dot.risk-a{background:var(--amber);}
+.cal-day.selected .dot.risk-r,.cal-day.selected .dot.risk-a{background:white;}
+.airspace-badge{font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:20px;display:inline-block;margin-top:4px;}
+.airspace-badge.r{background:var(--rbg);color:var(--red);}
+.airspace-badge.a{background:var(--abg);color:var(--amber);}
+.airspace-override{margin-top:6px;}
+.airspace-override textarea{width:100%;border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:12px;font-family:inherit;color:var(--navy);background:var(--bg);resize:none;min-height:40px;outline:none;}
+.airspace-override button{margin-top:4px;background:var(--navy);color:var(--gold);border:none;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;}
+.airspace-override .saved{font-size:11px;color:var(--green);margin-top:4px;}
 .cal-day-detail{margin-top:12px;}
 .cal-day-detail .job-item{margin-bottom:8px;}
+/* STAGES — progressive one-at-a-time job checklist */
+.stage{border:1px solid var(--border);border-radius:12px;margin-bottom:10px;background:var(--card);overflow:hidden;}
+.stage.locked{opacity:.55;}
+.stage-h{display:flex;align-items:center;gap:10px;padding:13px 16px;cursor:pointer;}
+.stage-num{width:24px;height:24px;border-radius:50%;background:var(--bg);border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--muted);flex-shrink:0;}
+.stage.done .stage-num{background:var(--green);border-color:var(--green);color:white;}
+.stage.done .stage-num::after{content:'✓';}
+.stage-title-wrap{flex:1;}
+.stage-title{font-size:13.5px;font-weight:700;color:var(--navy);}
+.stage-sub{font-size:11px;color:var(--muted);margin-top:1px;}
+.stage-chev{font-size:11px;color:var(--muted);transition:transform 0.15s;}
+.stage[data-open="1"] .stage-chev{transform:rotate(180deg);}
+.stage-b{display:none;padding:0 16px 14px;}
+.stage[data-open="1"] .stage-b{display:block;}
+.stage-b-inner{border-top:1px solid var(--border);padding-top:4px;}
+.safety-note{font-size:11.5px;color:var(--muted);margin-bottom:8px;line-height:1.5;}
+.sc-confirm-btn{width:100%;background:var(--red);color:white;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;margin-top:10px;}
 </style>
 <script src="airtable-api.js"></script>
 </head>
@@ -124,15 +151,14 @@ main{padding:14px;}
     <div class="staff-badge">STAFF</div>
   </div>
   <div class="tabs">
-    <button class="tb active" onclick="showTab('job',this)">📋 Job Flow</button>
-    <button class="tb" onclick="showTab('safety',this)">🛡️ Safety</button>
-    <button class="tb" onclick="showTab('ref',this)">📞 Quick Ref</button>
+    <button class="tb active" onclick="showTab('job',this)">📋 Job</button>
+    <button class="tb" onclick="showTab('ref',this)">📖 Reference</button>
     <button class="tb" onclick="showTab('planning',this)">📅 Planning</button>
   </div>
 </div>
 <main>
 <!-- ══════════════════════════════════════════ -->
-<!-- JOB FLOW -->
+<!-- JOB — the only tab used mid-job. One stage open at a time. -->
 <!-- ══════════════════════════════════════════ -->
 <div class="tc active" id="tab-job">
   <div class="prog-wrap">
@@ -159,64 +185,134 @@ main{padding:14px;}
   <div class="card" id="weather-card" style="display:none;"></div>
   <div class="card" id="airspace-jobflow-card" style="display:none;"></div>
   <div class="card" id="overdue-card" style="display:none;"></div>
-  <div class="sl">Before leaving</div>
-  <div class="card">
-    <div class="chk" data-id="staff-1" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">All batteries charged to 100%<div class="chk-note">All 3 batteries in the Fly More Combo</div></div></div>
-    <div class="chk" data-id="staff-2" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Operator ID label on aircraft<div class="chk-note">CAA legal requirement — must be visible</div></div></div>
-    <div class="chk" data-id="staff-3" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Flock Cover app — account logged in and ready</div></div>
-    <div class="chk" data-id="staff-4" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Memory cards formatted and empty</div></div>
-    <div class="chk" data-id="staff-5" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">ND filters packed<div class="chk-note">ND8 overcast · ND16 bright · ND32 direct sun</div></div></div>
-    <div class="chk" data-id="staff-6" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Hi-vis vest in bag</div></div>
-    <div class="chk" data-id="staff-7" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Phone charged — DJI Fly app open and updated</div></div>
-    <div class="chk" data-id="staff-8" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Client address confirmed</div></div>
-    <div class="chk" data-id="staff-9" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Weather checked — wind under 12m/s, no rain forecast<div class="chk-note">Check windy.com or DJI Fly weather overlay</div></div></div>
+
+  <!-- STAGE 1 — Before leaving -->
+  <div class="stage" data-stage="1" data-open="0">
+    <div class="stage-h" onclick="toggleStage(1)">
+      <div class="stage-num" id="stage-num-1"></div>
+      <div class="stage-title-wrap">
+        <div class="stage-title">Before leaving</div>
+        <div class="stage-sub" id="stage-sub-1">0 of 8</div>
+      </div>
+      <div class="stage-chev">▾</div>
+    </div>
+    <div class="stage-b">
+      <div class="stage-b-inner">
+        <div class="chk" data-id="staff-1" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">All batteries charged to 100%<div class="chk-note">All 3 batteries in the Fly More Combo</div></div></div>
+        <div class="chk" data-id="staff-2" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Operator ID label on aircraft<div class="chk-note">CAA legal requirement — must be visible</div></div></div>
+        <div class="chk" data-id="staff-3" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Flock Cover app — account logged in and ready</div></div>
+        <div class="chk" data-id="staff-4" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Memory cards formatted and empty</div></div>
+        <div class="chk" data-id="staff-5" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">ND filters packed<div class="chk-note">ND8 overcast · ND16 bright · ND32 direct sun</div></div></div>
+        <div class="chk" data-id="staff-6" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Hi-vis vest in bag</div></div>
+        <div class="chk" data-id="staff-7" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Phone charged — DJI Fly app open and updated</div></div>
+        <div class="chk" data-id="staff-8" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Client address confirmed</div></div>
+      </div>
+    </div>
   </div>
-  <div class="sl">On site</div>
-  <div class="card">
-    <div class="chk" data-id="staff-10" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Introduce yourself to client — politely and professionally</div></div>
-    <div class="chk" data-id="staff-11" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Walk the full site before flying<div class="chk-note">Look for power lines, trees, antennas, obstructions</div></div></div>
-    <div class="chk" data-id="staff-12" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Select clear take-off and landing zone — away from people</div></div>
-    <div class="chk" data-id="staff-13" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Start Flock Cover session before takeoff<div class="chk-note">Tap "Start flight" in the app</div></div></div>
-    <div class="chk" data-id="staff-14" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Run DJI preflight check — all sensors showing green</div></div>
-    <div class="chk" data-id="staff-15" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Capture front elevation — slow, steady, level pass</div></div>
-    <div class="chk" data-id="staff-16" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Capture rear elevation</div></div>
-    <div class="chk" data-id="staff-17" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Capture both side elevations</div></div>
-    <div class="chk" data-id="staff-18" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Capture all chimneys — close-up of each</div></div>
-    <div class="chk" data-id="staff-19" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Capture flashings, ridge, gutters, any visible defects</div></div>
-    <div class="chk" data-id="staff-20" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Top-down overview shot of full roof</div></div>
-    <div class="chk" data-id="staff-21" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Review footage on phone before landing — reshoot if needed</div></div>
-    <div class="chk" data-id="staff-22" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Land safely — stop Flock Cover session</div></div>
+
+  <!-- STAGE 2 — On site, before flying (arrival + the legal pre-flight safety case) -->
+  <div class="stage" data-stage="2" data-open="0">
+    <div class="stage-h" onclick="toggleStage(2)">
+      <div class="stage-num" id="stage-num-2"></div>
+      <div class="stage-title-wrap">
+        <div class="stage-title">On site — before flying</div>
+        <div class="stage-sub" id="stage-sub-2">0 of 8</div>
+      </div>
+      <div class="stage-chev">▾</div>
+    </div>
+    <div class="stage-b">
+      <div class="stage-b-inner">
+        <div class="chk" data-id="staff-10" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Introduce yourself to client — politely and professionally</div></div>
+        <div class="chk" data-id="staff-11" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Walk the full site before flying<div class="chk-note">Look for power lines, trees, antennas, obstructions</div></div></div>
+        <div class="chk" data-id="staff-12" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Select clear take-off and landing zone — away from people</div></div>
+        <div class="alert red" style="margin-top:10px;margin-bottom:6px;"><div class="alert-icon">🚫</div><div><strong>Never fly if:</strong> wind is above 12m/s, visibility is poor, it's raining, or you feel unsafe about the site.</div></div>
+        <div class="safety-note">This is your written safety case — required before EVERY flight, not just once a day. Tap through the 5 checks then confirm.</div>
+        <div class="chk" data-id="sc-weather" onclick="tickSC(this)"><div class="chk-box"></div><div class="chk-text">Weather checked — wind under 12m/s, no rain, clear visibility</div></div>
+        <div id="airspace-screen" style="display:none;margin-bottom:9px;"></div>
+        <div class="chk" data-id="sc-airspace" onclick="tickSC(this)"><div class="chk-box"></div><div class="chk-text">Airspace checked — no NOTAMs or restrictions for this site<div class="chk-note">First-pass check only — also confirm on the NATS UAS Restrictions Map or DJI Fly geo-zone layer</div></div></div>
+        <div class="chk" data-id="sc-distance" onclick="tickSC(this)"><div class="chk-box"></div><div class="chk-text">CAA distance rules confirmed — 120m max altitude, 50m from uninvolved people</div></div>
+        <div class="chk" data-id="sc-equipment" onclick="tickSC(this)"><div class="chk-box"></div><div class="chk-text">Equipment ready — DJI preflight sensors green, Operator ID visible</div></div>
+        <div class="chk" data-id="sc-insurance" onclick="tickSC(this)"><div class="chk-box"></div><div class="chk-text">Flock Cover session started<div class="chk-note">You are not insured until this is active</div></div></div>
+        <button class="sc-confirm-btn" onclick="logSafetyCase()">✅ Confirm &amp; log safety case for this flight</button>
+        <div id="sc-result" style="font-size:12px;text-align:center;margin-top:6px;"></div>
+        <div id="sc-history" style="margin-top:10px;"></div>
+      </div>
+    </div>
   </div>
-  <div class="sl">After the job</div>
-  <div class="card">
-    <div class="chk" data-id="staff-23" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Transfer all footage to laptop and back up immediately</div></div>
-    <div class="chk" data-id="staff-24" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Select best photos — minimum 20 for the report</div></div>
-    <div class="chk" data-id="staff-25" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Write full report — complete all sections<div class="chk-note">Report due within 48 hours. Aim for 24.</div></div></div>
-    <div class="chk" data-id="staff-26" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Calculate RoofScore</div></div>
-    <div class="chk" data-id="staff-27" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Export report as PDF and upload to client's Google Drive folder</div></div>
-    <div class="chk" data-id="staff-28" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Charge all batteries ready for next job</div></div>
+
+  <!-- STAGE 3 — Flying / capture -->
+  <div class="stage" data-stage="3" data-open="0">
+    <div class="stage-h" onclick="toggleStage(3)">
+      <div class="stage-num" id="stage-num-3"></div>
+      <div class="stage-title-wrap">
+        <div class="stage-title">Flying — capture the roof</div>
+        <div class="stage-sub" id="stage-sub-3">0 of 8</div>
+      </div>
+      <div class="stage-chev">▾</div>
+    </div>
+    <div class="stage-b">
+      <div class="stage-b-inner">
+        <div class="chk" data-id="staff-15" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Capture front elevation — slow, steady, level pass</div></div>
+        <div class="chk" data-id="staff-16" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Capture rear elevation</div></div>
+        <div class="chk" data-id="staff-17" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Capture both side elevations</div></div>
+        <div class="chk" data-id="staff-18" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Capture all chimneys — close-up of each</div></div>
+        <div class="chk" data-id="staff-19" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Capture flashings, ridge, gutters, any visible defects</div></div>
+        <div class="chk" data-id="staff-20" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Top-down overview shot of full roof</div></div>
+        <div class="chk" data-id="staff-21" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Review footage on phone before landing — reshoot if needed</div></div>
+        <div class="chk" data-id="staff-22" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Land safely — stop Flock Cover session</div></div>
+      </div>
+    </div>
   </div>
+
+  <!-- STAGE 4 — After the job -->
+  <div class="stage" data-stage="4" data-open="0">
+    <div class="stage-h" onclick="toggleStage(4)">
+      <div class="stage-num" id="stage-num-4"></div>
+      <div class="stage-title-wrap">
+        <div class="stage-title">After the job</div>
+        <div class="stage-sub" id="stage-sub-4">0 of 6</div>
+      </div>
+      <div class="stage-chev">▾</div>
+    </div>
+    <div class="stage-b">
+      <div class="stage-b-inner">
+        <div class="chk" data-id="staff-23" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Transfer all footage to laptop and back up immediately</div></div>
+        <div class="chk" data-id="staff-24" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Select best photos — minimum 20 for the report</div></div>
+        <div class="chk" data-id="staff-25" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Write full report — complete all sections<div class="chk-note">Report due within 48 hours. Aim for 24.</div></div></div>
+        <div class="chk" data-id="staff-26" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Calculate RoofScore</div></div>
+        <div class="chk" data-id="staff-27" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Export report as PDF and upload to client's Google Drive folder</div></div>
+        <div class="chk" data-id="staff-28" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Charge all batteries ready for next job</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="spacer"></div>
 </div>
+
 <!-- ══════════════════════════════════════════ -->
-<!-- SAFETY -->
+<!-- REFERENCE — everything you look up, not act through -->
 <!-- ══════════════════════════════════════════ -->
-<div class="tc" id="tab-safety">
-  <div class="alert red"><div class="alert-icon">🚫</div><div><strong>Never fly if:</strong> wind is above 12m/s, visibility is poor, it's raining, or you feel unsafe about the site. Cancel and rebook — never take risks.</div></div>
-  <div class="sl">⚠️ Pre-flight safety case — required before EVERY flight</div>
-  <div class="card" style="border:2px solid var(--red);">
-    <div style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.5;">This is your written safety case for the CAA Operational Authorisation. It has to be completed and logged before every single flight, not just once a day. Takes 30 seconds — tap through the 5 checks below then confirm.</div>
-    <div class="chk" data-id="sc-weather" onclick="tickSC(this)"><div class="chk-box"></div><div class="chk-text">Weather checked — wind under 12m/s, no rain, clear visibility</div></div>
-    <div id="airspace-screen" style="display:none;margin-bottom:9px;"></div>
-    <div class="chk" data-id="sc-airspace" onclick="tickSC(this)"><div class="chk-box"></div><div class="chk-text">Airspace checked — no NOTAMs or restrictions for this site<div class="chk-note">Screening result above is a first-pass check only, always also check the NATS UAS Restrictions Map or DJI Fly geo-zone layer on site</div></div></div>
-    <div class="chk" data-id="sc-distance" onclick="tickSC(this)"><div class="chk-box"></div><div class="chk-text">CAA distance rules confirmed — 120m max altitude, 50m from uninvolved people</div></div>
-    <div class="chk" data-id="sc-equipment" onclick="tickSC(this)"><div class="chk-box"></div><div class="chk-text">Equipment ready — DJI preflight sensors green, Operator ID visible</div></div>
-    <div class="chk" data-id="sc-insurance" onclick="tickSC(this)"><div class="chk-box"></div><div class="chk-text">Flock Cover session started<div class="chk-note">You are not insured until this is active</div></div></div>
-    <button onclick="logSafetyCase()" style="width:100%;background:var(--red);color:white;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;margin-top:10px;">✅ Confirm & log safety case for this flight</button>
-    <div id="sc-result" style="font-size:12px;text-align:center;margin-top:6px;"></div>
-    <div id="sc-history" style="margin-top:10px;"></div>
+<div class="tc" id="tab-ref">
+  <div class="sl">Equipment check</div>
+  <div class="card" style="margin-bottom:12px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div style="font-size:12px;color:var(--muted);">Resets automatically each day</div>
+      <div style="font-size:11px;font-weight:700;color:var(--navy);" id="equip-count">0 / 0 packed</div>
+    </div>
+    <div id="equip-list"></div>
+  </div>
+  <div class="sl">On-site notes</div>
+  <div class="card" style="margin-bottom:12px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+      <div style="font-size:12px;font-weight:700;color:var(--navy);">Notes — tap to edit</div>
+      <button onclick="clearSiteNotes()" style="font-size:11px;color:var(--muted);background:none;border:1px solid var(--border);border-radius:6px;padding:2px 8px;cursor:pointer;">Clear</button>
+    </div>
+    <textarea id="site-notes" placeholder="Anything you want to remember or tell Takhy after the job..."
+      style="width:100%;min-height:100px;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;color:var(--navy);background:var(--bg);resize:none;outline:none;line-height:1.5;"
+      oninput="saveSiteNotes()"></textarea>
+    <button onclick="copySiteNotes()" style="width:100%;background:var(--navy);color:var(--gold);border:none;border-radius:8px;padding:8px;font-size:12px;font-weight:700;cursor:pointer;margin-top:6px;">📋 Copy notes to send to Takhy</button>
   </div>
   <div class="sl">Weather limits</div>
-  <div class="card">
+  <div class="card" style="margin-bottom:12px;">
     <div class="row"><span class="rl">Maximum wind speed</span><span class="rv r">12 m/s (27 mph)</span></div>
     <div class="row"><span class="rl">Rain</span><span class="rv r">Never fly in rain</span></div>
     <div class="row"><span class="rl">Minimum visibility</span><span class="rv">Clear visual contact at all times</span></div>
@@ -225,7 +321,7 @@ main{padding:14px;}
     <div class="row"><span class="rl">Strong gusts</span><span class="rv r">Cancel even if avg wind is ok</span></div>
   </div>
   <div class="sl">CAA rules — always follow these</div>
-  <div class="card">
+  <div class="card" style="margin-bottom:12px;">
     <div class="row"><span class="rl">Maximum altitude</span><span class="rv">120 metres (400 feet)</span></div>
     <div class="row"><span class="rl">Keep drone in sight</span><span class="rv">Always — visual line of sight only</span></div>
     <div class="row"><span class="rl">Distance from uninvolved people</span><span class="rv">50 metres minimum</span></div>
@@ -242,7 +338,7 @@ main{padding:14px;}
   <div class="alert amber"><div class="alert-icon">⚠️</div><div><strong>Lost signal or fly-away:</strong> Do not panic. The drone will hover and return to home. Call Takhy on 07498 364197 as soon as it's safe to do so.</div></div>
   <div class="alert blue"><div class="alert-icon">📋</div><div><strong>Flock Cover:</strong> Always start and stop your session in the app. This is your insurance — without it active you are not covered.</div></div>
   <div class="sl">On-site safety</div>
-  <div class="card">
+  <div class="card" style="margin-bottom:12px;">
     <div class="row"><span class="rl">Hi-vis vest</span><span class="rv">Always worn during flight</span></div>
     <div class="row"><span class="rl">Bystanders</span><span class="rv">Ask them to move back 50m before flying</span></div>
     <div class="row"><span class="rl">Power lines</span><span class="rv r">Keep 30 metres minimum distance</span></div>
@@ -251,7 +347,7 @@ main{padding:14px;}
     <div class="row"><span class="rl">Never leave drone unattended</span><span class="rv">Keep eyes on it at all times</span></div>
   </div>
   <div class="sl">Client questions — what to say</div>
-  <div class="card">
+  <div class="card" style="margin-bottom:12px;">
     <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Clients sometimes ask these on the doorstep. Give a calm, canned answer — don't improvise.</div>
     <div class="acc" data-open="0">
       <div class="acc-h" onclick="toggleAcc(this)"><span>"Is this legal?"</span><span class="acc-chev">▾</span></div>
@@ -282,11 +378,37 @@ main{padding:14px;}
       <div class="acc-b">They're stored securely and used only to build your report. We don't share or publish them without your permission.</div>
     </div>
   </div>
-  <div class="sl">What not to say</div>
-  <div class="alert amber"><div class="alert-icon">🤐</div><div>Don't guarantee outcomes ("you'll definitely need a new roof"), don't give structural or legal advice beyond what's in the report, don't badmouth other roofers or trades, and don't negotiate or change the price on site — refer pricing questions to Takhy.</div></div>
-  <div class="sl">If a client complains</div>
-  <div class="alert amber"><div class="alert-icon">😬</div><div>Stay calm and polite. Don't admit fault or promise a refund on the spot. Note down exactly what they said, then tell Takhy as soon as possible so it can be handled properly.</div></div>
+  <div class="alert amber"><div class="alert-icon">🤐</div><div><strong>What not to say:</strong> don't guarantee outcomes ("you'll definitely need a new roof"), don't give structural or legal advice beyond what's in the report, don't badmouth other roofers or trades, and don't negotiate or change the price on site — refer pricing questions to Takhy.</div></div>
+  <div class="alert amber"><div class="alert-icon">😬</div><div><strong>If a client complains:</strong> stay calm and polite. Don't admit fault or promise a refund on the spot. Note down exactly what they said, then tell Takhy as soon as possible so it can be handled properly.</div></div>
+  <div class="sl">Emergency contacts</div>
+  <div class="card" style="margin-bottom:12px;">
+    <div class="row"><span class="rl"><strong>Emergency services</strong></span><span class="rv r">999</span></div>
+    <div class="row"><span class="rl"><strong>Takhy (any issue on site)</strong></span><span class="rv">07498 364197</span></div>
+    <div class="row"><span class="rl">RoofScan UK email</span><span class="rv">info@roofscanuk.co.uk</span></div>
+    <div class="row"><span class="rl">Flock Cover (insurance)</span><span class="rv">flockcover.com</span></div>
+    <div class="row"><span class="rl">CAA emergency (airspace)</span><span class="rv">0330 022 1500</span></div>
+  </div>
+  <div class="sl">Incident log</div>
+  <div class="card" style="margin-bottom:12px;">
+    <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Record any on-site issue for insurance and CAA records — near miss, weather abort, confrontation, equipment fault.</div>
+    <select id="incident-type" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px;font-size:13px;background:white;color:var(--navy);outline:none;margin-bottom:8px;">
+      <option value="">— Incident type —</option>
+      <option>Near miss</option>
+      <option>Weather abort</option>
+      <option>Equipment fault</option>
+      <option>Confrontation / access refused</option>
+      <option>Property damage</option>
+      <option>Other</option>
+    </select>
+    <textarea id="incident-notes" placeholder="What happened, when, where..." style="width:100%;min-height:70px;border:1px solid var(--border);border-radius:8px;padding:9px;font-size:13px;font-family:inherit;color:var(--navy);background:var(--bg);resize:none;outline:none;margin-bottom:8px;"></textarea>
+    <button onclick="logIncident()" style="background:var(--red);color:white;border:none;border-radius:8px;padding:9px;font-size:13px;font-weight:700;cursor:pointer;width:100%;">⚠️ Log incident</button>
+    <div id="incident-result" style="font-size:12px;text-align:center;margin-top:6px;"></div>
+    <div id="incident-history" style="margin-top:10px;"></div>
+  </div>
+  <div class="alert green"><div class="alert-icon">⏱️</div><div><strong>48-hour guarantee:</strong> Every client is told their report will arrive within 48 hours. This is our core promise. Aim for 24 hours where possible. If you are going to miss the deadline for any reason, tell Takhy immediately so the client can be notified.</div></div>
+  <div class="spacer"></div>
 </div>
+
 <!-- ══════════════════════════════════════════ -->
 <!-- PLANNING (calendar + monthly stats) -->
 <!-- ══════════════════════════════════════════ -->
@@ -298,7 +420,7 @@ main{padding:14px;}
       <button onclick="atSaveKey()" style="background:var(--navy);color:var(--gold);border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;">Connect</button>
     </div>
     <div id="at-key-saved" style="display:none;font-size:12px;color:var(--green);font-weight:600;">Airtable connected on this device ✓ <a onclick="atChangeKey()" style="color:var(--blue);cursor:pointer;text-decoration:underline;font-weight:400;margin-left:6px;">change</a></div>
-    <div style="font-size:11px;color:var(--muted);margin-top:8px;line-height:1.5;">Stored only in this browser. Needed for the calendar, stats, and the weather/overdue cards on Job Flow to show live data.</div>
+    <div style="font-size:11px;color:var(--muted);margin-top:8px;line-height:1.5;">Stored only in this browser. Needed for the calendar, stats, and the weather/overdue/airspace cards on the Job tab to show live data.</div>
   </div>
   <!-- Calendar + monthly stats (income, trade accounts, Sussex avg) are collapsed by default —
        the council flagged these as solving for a multi-employee company Takhy doesn't have yet.
@@ -330,58 +452,6 @@ main{padding:14px;}
     <button class="reset-btn" onclick="loadPlanning()">↻ Refresh Planning data</button>
   </div>
 </div>
-<!-- ══════════════════════════════════════════ -->
-<!-- QUICK REF -->
-<!-- ══════════════════════════════════════════ -->
-<div class="tc" id="tab-ref">
-  <div class="sl">Equipment check</div>
-  <div class="card" style="margin-bottom:12px;">
-    <div style="display:flex;justify-content:space-between;align-items:center;">
-      <div style="font-size:12px;color:var(--muted);">Resets automatically each day</div>
-      <div style="font-size:11px;font-weight:700;color:var(--navy);" id="equip-count">0 / 0 packed</div>
-    </div>
-    <div id="equip-list"></div>
-  </div>
-  <div class="sl">on-site notes</div>
-  <div class="card" style="margin-bottom:12px;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-      <div style="font-size:12px;font-weight:700;color:var(--navy);">Notes — tap to edit</div>
-      <button onclick="clearSiteNotes()" style="font-size:11px;color:var(--muted);background:none;border:1px solid var(--border);border-radius:6px;padding:2px 8px;cursor:pointer;">Clear</button>
-    </div>
-    <textarea id="site-notes" placeholder="Anything you want to remember or tell Takhy after the job..."
-      style="width:100%;min-height:100px;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;color:var(--navy);background:var(--bg);resize:none;outline:none;line-height:1.5;"
-      oninput="saveSiteNotes()"></textarea>
-    <button onclick="copySiteNotes()" style="width:100%;background:var(--navy);color:var(--gold);border:none;border-radius:8px;padding:8px;font-size:12px;font-weight:700;cursor:pointer;margin-top:6px;">📋 Copy notes to send to Takhy</button>
-  </div>
-  <div class="sl">Emergency contacts</div>
-  <div class="card">
-    <div class="row"><span class="rl"><strong>Emergency services</strong></span><span class="rv r">999</span></div>
-    <div class="row"><span class="rl"><strong>Takhy (any issue on site)</strong></span><span class="rv">07498 364197</span></div>
-    <div class="row"><span class="rl">RoofScan UK email</span><span class="rv">info@roofscanuk.co.uk</span></div>
-    <div class="row"><span class="rl">Flock Cover (insurance)</span><span class="rv">flockcover.com</span></div>
-    <div class="row"><span class="rl">CAA emergency (airspace)</span><span class="rv">0330 022 1500</span></div>
-  </div>
-  <div class="sl">incident log</div>
-  <div class="card">
-    <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Record any on-site issue for insurance and CAA records — near miss, weather abort, confrontation, equipment fault.</div>
-    <select id="incident-type" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px;font-size:13px;background:white;color:var(--navy);outline:none;margin-bottom:8px;">
-      <option value="">— Incident type —</option>
-      <option>Near miss</option>
-      <option>Weather abort</option>
-      <option>Equipment fault</option>
-      <option>Confrontation / access refused</option>
-      <option>Property damage</option>
-      <option>Other</option>
-    </select>
-    <textarea id="incident-notes" placeholder="What happened, when, where..." style="width:100%;min-height:70px;border:1px solid var(--border);border-radius:8px;padding:9px;font-size:13px;font-family:inherit;color:var(--navy);background:var(--bg);resize:none;outline:none;margin-bottom:8px;"></textarea>
-    <button onclick="logIncident()" style="background:var(--red);color:white;border:none;border-radius:8px;padding:9px;font-size:13px;font-weight:700;cursor:pointer;width:100%;">⚠️ Log incident</button>
-    <div id="incident-result" style="font-size:12px;text-align:center;margin-top:6px;"></div>
-    <div id="incident-history" style="margin-top:10px;"></div>
-  </div>
-  <div class="sl">Report turnaround commitment</div>
-  <div class="alert green"><div class="alert-icon">⏱️</div><div><strong>48-hour guarantee:</strong> Every client is told their report will arrive within 48 hours. This is our core promise. Aim for 24 hours where possible. If you are going to miss the deadline for any reason, tell Takhy immediately so the client can be notified.</div></div>
-  <div class="spacer"></div>
-</div>
 </main>
 <script>
 function showTab(id,btn){
@@ -394,8 +464,7 @@ function showTab(id,btn){
     var adv = document.getElementById('planning-advanced');
     if(adv && adv.style.display !== 'none') loadPlanning();
   }
-  if(id === 'job') loadJobFlowLive();
-  if(id === 'safety') loadAirspaceScreen();
+  if(id === 'job'){ loadJobFlowLive(); loadAirspaceScreen(); }
 }
 function loadAirspaceScreen(){
   var box = document.getElementById('airspace-screen');
@@ -441,11 +510,47 @@ function toggleAcc(headerEl){
   var open = acc.getAttribute('data-open')==='1';
   acc.setAttribute('data-open', open?'0':'1');
 }
+// ═══ STAGES — progressive one-at-a-time job checklist ═══════════════════
+// Each stage auto-collapses when fully ticked and hands off to the next one, so only one stage's
+// items are visible at a time instead of all ~30 tasks at once. Tapping a stage header always
+// still opens it manually (e.g. to go back and check something), this only controls the default.
+var STAGE_COUNT = 4;
+function stageEl(n){ return document.querySelector('.stage[data-stage="'+n+'"]'); }
+function stageChecks(n){ return stageEl(n).querySelectorAll('.chk'); }
+function stageDoneCount(n){ return stageEl(n).querySelectorAll('.chk.done').length; }
+function updateStageUI(){
+  for(var n=1;n<=STAGE_COUNT;n++){
+    var el = stageEl(n);
+    var all = stageChecks(n).length;
+    var done = stageDoneCount(n);
+    var complete = all>0 && done===all;
+    el.classList.toggle('done', complete);
+    document.getElementById('stage-num-'+n).textContent = complete ? '' : n;
+    document.getElementById('stage-sub-'+n).textContent = complete ? 'Done — tap to reopen' : (done+' of '+all);
+  }
+}
+function toggleStage(n, force){
+  document.querySelectorAll('.stage').forEach(function(el){
+    var s = +el.dataset.stage;
+    el.setAttribute('data-open', (s===n && force!==false) ? '1' : '0');
+  });
+}
+function autoAdvance(){
+  updateStageUI();
+  // Open the first stage that isn't fully complete; if everything's done, leave the last stage open.
+  for(var n=1;n<=STAGE_COUNT;n++){
+    var all = stageChecks(n).length;
+    var done = stageDoneCount(n);
+    if(!(all>0 && done===all)){ toggleStage(n); return; }
+  }
+  toggleStage(STAGE_COUNT);
+}
 function tick(el){
   el.classList.toggle('done');
   var id=el.dataset.id;
   if(id) localStorage.setItem('rschk_'+id, el.classList.contains('done')?'1':'0');
   updateProg();
+  autoAdvance();
 }
 function updateProg(){
   const all=document.querySelectorAll('#tab-job .chk');
@@ -461,12 +566,14 @@ function resetChecks(){
     if(e.dataset.id) localStorage.removeItem('rschk_'+e.dataset.id);
   });
   updateProg();
+  autoAdvance();
 }
 // Restore checklist state on load
 document.querySelectorAll('[data-id]').forEach(function(el){
   if(localStorage.getItem('rschk_'+el.dataset.id)==='1') el.classList.add('done');
 });
 updateProg();
+autoAdvance();
 function saveJobDetail(){
   var txt=document.getElementById('job-detail-input').value;
   try{localStorage.setItem('rs_job_today',txt);}catch(e){}
@@ -581,10 +688,6 @@ function logIncident(){
   if(!type || !notes){ result.style.color='var(--amber)'; result.textContent='Type and description required.'; return; }
   var incidents = [];
   try { incidents = JSON.parse(localStorage.getItem('rs_incidents'))||[]; } catch(e){}
-  // This log is described in the app's own copy as being "for insurance and CAA records," but
-  // previously never left the device at all — the exact gap the council flagged as the least
-  // finished part of the whole app. Now pushes to Airtable the same way the Safety Case Log
-  // does, with the same honest, awaited success/failure state instead of an assumed one.
   var entry = { type:type, notes:notes, time:new Date().toISOString(), date:new Date().toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}), synced:null };
   incidents.unshift(entry);
   try { localStorage.setItem('rs_incidents', JSON.stringify(incidents)); } catch(e){}
@@ -600,9 +703,6 @@ function logIncident(){
   if(typeof AT !== 'undefined' && AT.hasToken()){
     result.style.color='var(--muted)';
     result.textContent='Saving incident…';
-    // Requires an "Incident Log" table in Airtable with Type/Notes/Logged At fields (matching
-    // the pattern of the existing "Safety Case Log" table) — create it once if it doesn't exist
-    // yet; until then this will fail gracefully and show the same honest "device only" warning.
     AT.createRecord('Incident Log', {
       'Type': entry.type,
       'Notes': entry.notes,
@@ -643,33 +743,30 @@ function renderIncidents(){
   }).join('');
 }
 renderIncidents();
-// ═══ PRE-FLIGHT SAFETY CASE (Safety tab) ═══════════════════════════
-function tickSC(el){ el.classList.toggle('done'); }
+// ═══ PRE-FLIGHT SAFETY CASE (now lives inside Job → stage 2) ═══════════════════
+function tickSC(el){
+  el.classList.toggle('done');
+  updateProg();
+  autoAdvance();
+}
 function logSafetyCase(){
-  var boxes = document.querySelectorAll('#tab-safety .chk[data-id^="sc-"]');
-  var done = document.querySelectorAll('#tab-safety .chk[data-id^="sc-"].done');
+  var boxes = stageChecks(2);
+  var done = stageEl(2).querySelectorAll('.chk.done');
   var result = document.getElementById('sc-result');
   if(!result) return;
   if(done.length < boxes.length){
     result.style.color='var(--amber)';
-    result.textContent='Tick all 5 checks before logging — this is your legal safety case.';
+    result.textContent='Tick all checks above before logging — this is your legal safety case.';
     return;
   }
   var jobTxt = '';
   try{ jobTxt = localStorage.getItem('rs_job_today') || ''; }catch(e){}
   var cases = [];
   try{ cases = JSON.parse(localStorage.getItem('rs_safetycase_log'))||[]; }catch(e){}
-  // "synced" starts null (pending/unknown) rather than assumed true — the council flagged that
-  // "Confirm & log" previously always showed success even when the Airtable push silently failed
-  // or there was no token connected on this device, which is the exact gap a CAA/insurance
-  // record request would expose later. Now the UI only ever claims what's actually true.
   var entry = { job: (jobTxt.split('\n')[0]||'').trim() || 'No job set', time: new Date().toISOString(), date: new Date().toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}), synced: null };
   cases.unshift(entry);
   try{ localStorage.setItem('rs_safetycase_log', JSON.stringify(cases)); }catch(e){}
-  boxes.forEach(function(b){ b.classList.remove('done'); });
   renderSafetyCases();
-  // Push to Airtable so the legal record survives beyond this one device — and now the UI
-  // waits for and reports the real outcome instead of assuming success the instant it's tried.
   if(typeof AT !== 'undefined' && AT.hasToken()){
     result.style.color='var(--muted)';
     result.textContent='Saving safety case…';
@@ -704,7 +801,6 @@ function renderSafetyCases(){
   if(!el) return;
   if(!cases.length){ el.innerHTML=''; return; }
   el.innerHTML = '<div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:6px;">Recent safety cases logged</div>' + cases.slice(0,5).map(function(c){
-    // synced === true -> green "saved"; false -> red "device only" warning; null/pending -> muted "saving…"
     var syncBadge = c.synced === true
       ? '<span style="color:var(--green);">✓ saved to Airtable</span>'
       : c.synced === false
@@ -714,7 +810,7 @@ function renderSafetyCases(){
   }).join('');
 }
 renderSafetyCases();
-// ═══ EQUIPMENT CHECK (Quick Ref) ════════════════════════════════════
+// ═══ EQUIPMENT CHECK (Reference) ════════════════════════════════════
 var EQUIP_ITEMS = [
   'Drone (aircraft)',
   '3× batteries charged',
@@ -755,7 +851,7 @@ function updateEquipCount(){
   if(el) el.textContent = done.length+' / '+all.length+' packed';
 }
 renderEquip();
-// ═══ JOB FLOW — live weather + overdue ════════════════════════════
+// ═══ JOB — live weather + overdue + airspace ════════════════════════
 async function loadJobFlowLive(){
   if(typeof AT === 'undefined' || !AT.hasToken()) return;
   try{
@@ -802,9 +898,6 @@ async function loadAirspaceJobFlowCard(jobsIn){
     var addr = next.fields[AT.FIELDS.jobs.address];
     var r = await AT.getAirspaceCheck(addr);
     if(!r || r.risk === 'clear'){ card.style.display='none'; card.innerHTML=''; return; }
-    // Only surface this card on Job Flow when there's actually something to flag (restricted or
-    // caution) — a clear result is shown in full on the Safety tab's pre-flight check instead, no
-    // need to clutter Job Flow with a green "all fine" line for every job.
     var cls = r.risk === 'restricted' ? 'red' : 'amber';
     var icon = r.risk === 'restricted' ? '🚫' : '🟡';
     card.style.display='block';
@@ -828,6 +921,7 @@ async function loadOverdueCard(){
   }catch(e){ card.style.display='none'; card.innerHTML=''; }
 }
 loadJobFlowLive();
+loadAirspaceScreen();
 // ═══ PLANNING TAB — calendar + monthly stats ═══════════════════════
 function atRefreshKeyUI(){
   var connected = typeof AT !== 'undefined' && AT.hasToken();
@@ -873,6 +967,23 @@ async function loadPlanning(){
   }catch(e){ calJobsByDate = {}; }
   renderCalendar();
   loadStats();
+  loadAirspaceForCalendar(jobs);
+}
+// Runs the (stored, write-back) airspace check for every upcoming job so the whole month's risk
+// is visible at a glance, not just the next job or whatever's typed into "today's job". Per the
+// council review: this needs to be a stored result keyed to the address, not a live recompute, so
+// it re-checks automatically if a job's address is edited later but stays put otherwise.
+var calAirspaceById = {};
+async function loadAirspaceForCalendar(jobs){
+  if(!jobs || !jobs.length) return;
+  var results = await Promise.all(jobs.map(function(j){
+    var addr = j.fields[AT.FIELDS.jobs.address];
+    if(!addr) return Promise.resolve(null);
+    return AT.ensureAirspaceCheck(j.id, addr).catch(function(){ return null; });
+  }));
+  jobs.forEach(function(j, i){ if(results[i]) calAirspaceById[j.id] = results[i]; });
+  renderCalendar();
+  if(calSelected) renderDayDetail(calSelected);
 }
 function calNav(delta){
   calMonth += delta;
@@ -898,10 +1009,21 @@ function renderCalendar(){
   var grid = document.getElementById('cal-days');
   grid.innerHTML = cells.map(function(c){
     var dateStr = c.other ? '' : (calYear+'-'+String(calMonth+1).padStart(2,'0')+'-'+String(c.day).padStart(2,'0'));
-    var hasJob = dateStr && calJobsByDate[dateStr];
+    var dayJobs = dateStr ? calJobsByDate[dateStr] : null;
+    var hasJob = !!dayJobs;
+    var dotCls = 'dot';
+    if(dayJobs){
+      var worst = dayJobs.reduce(function(w, j){
+        var r = calAirspaceById[j.id];
+        if(r && r.risk === 'restricted') return 'r';
+        if(r && r.risk === 'caution' && w !== 'r') return 'a';
+        return w;
+      }, '');
+      if(worst) dotCls += ' risk-'+worst;
+    }
     var cls = 'cal-day'+(c.other?' other-month':'')+(dateStr===todayStr2?' today':'')+(dateStr && dateStr===calSelected?' selected':'');
     var onclick = c.other ? '' : ' onclick="calSelectDay(\''+dateStr+'\')"';
-    return '<div class="'+cls+'"'+onclick+'>'+c.day+(hasJob?'<div class="dot"></div>':'')+'</div>';
+    return '<div class="'+cls+'"'+onclick+'>'+c.day+(hasJob?'<div class="'+dotCls+'"></div>':'')+'</div>';
   }).join('');
   if(calSelected) renderDayDetail(calSelected);
 }
@@ -919,10 +1041,32 @@ function renderDayDetail(dateStr){
     var f = j.fields;
     var status = f[AT.FIELDS.jobs.status];
     var style = AT.statusStyle(status);
+    var r = calAirspaceById[j.id];
+    var airspaceHtml = '';
+    if(r && (r.risk === 'restricted' || r.risk === 'caution')){
+      var cls = r.risk === 'restricted' ? 'r' : 'a';
+      var label = r.risk === 'restricted' ? '🚫 Restricted' : '🟡 Caution';
+      airspaceHtml = '<div class="airspace-badge '+cls+'">'+label+'</div><div style="font-size:11px;color:var(--muted);margin-top:3px;">'+r.note+'</div>'+
+        '<div class="airspace-override">'+
+          (r.overrideReason
+            ? '<div class="saved">✓ Logged: '+r.overrideReason+'</div>'
+            : '<textarea placeholder="Why are you proceeding despite this flag? (required before flying)" id="override-'+j.id+'"></textarea>'+
+              '<button onclick="saveOverride(\''+j.id+'\')">Log reason &amp; proceed</button>')+
+        '</div>';
+    }
     return '<div class="job-item"><div class="job-client">'+(f[AT.FIELDS.jobs.client]||'Client')+'</div>'+
       '<div class="job-addr">'+(f[AT.FIELDS.jobs.address]||'')+'</div>'+
-      '<div class="job-meta"><span class="job-badge" style="background:'+style.bg+';color:'+style.color+';">'+(status||'—')+'</span></div></div>';
+      '<div class="job-meta"><span class="job-badge" style="background:'+style.bg+';color:'+style.color+';">'+(status||'—')+'</span></div>'+
+      airspaceHtml+'</div>';
   }).join('');
+}
+function saveOverride(jobId){
+  var box = document.getElementById('override-'+jobId);
+  if(!box || !box.value.trim()) return;
+  AT.setAirspaceOverride(jobId, box.value.trim()).then(function(ok){
+    if(ok && calAirspaceById[jobId]) calAirspaceById[jobId].overrideReason = box.value.trim();
+    if(calSelected) renderDayDetail(calSelected);
+  });
 }
 async function loadStats(){
   try{

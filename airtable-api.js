@@ -648,10 +648,64 @@ const AT = (function() {
       return { risk: risk, nearest: nearest, note: note };
     } catch(e) { return null; }
   }
+  // Per the council review (2 Sep 2026): the airspace check needs to be a stored, write-time
+  // result on the job record, not something recomputed silently at render-time off whatever's in
+  // a UI box. This reads/writes four fields by NAME (not field ID, unlike the rest of this file)
+  // so it works as soon as they're created in Airtable — no field-ID lookup round-trip needed:
+  //   Airspace Risk            — Single select: Clear / Caution / Restricted
+  //   Airspace Note            — Long text
+  //   Airspace Checked Address — Long text (used to detect an address edit and re-check)
+  //   Airspace Override Reason — Long text (Takhy's note on why he's proceeding on caution/red)
+  // Returns {risk:'restricted'|'caution'|'clear', note, overrideReason, stale:bool} or null.
+  async function ensureAirspaceCheck(recordId, address) {
+    var token = getToken();
+    if (!token || !recordId || !address) return null;
+    try {
+      var getRes = await fetch(BASE_URL + '/' + BASE_ID + '/' + TABLES.jobs + '/' + recordId + '?returnFieldsByFieldId=false', {
+        headers: { Authorization: 'Bearer ' + token }
+      });
+      if (!getRes.ok) return null;
+      var rec = await getRes.json();
+      var f = rec.fields || {};
+      var riskMap = { 'Clear': 'clear', 'Caution': 'caution', 'Restricted': 'restricted' };
+      if (f['Airspace Checked Address'] === address && f['Airspace Risk']) {
+        return { risk: riskMap[f['Airspace Risk']] || 'clear', note: f['Airspace Note'] || '', overrideReason: f['Airspace Override Reason'] || '' };
+      }
+      // Stale (address changed since last check) or never checked — recompute and write back.
+      var fresh = await getAirspaceCheck(address);
+      if (!fresh) return null;
+      var writeBack = {
+        'Airspace Risk': fresh.risk === 'restricted' ? 'Restricted' : (fresh.risk === 'caution' ? 'Caution' : 'Clear'),
+        'Airspace Note': fresh.note,
+        'Airspace Checked Address': address,
+        'Airspace Override Reason': '' // address changed — any old override no longer applies
+      };
+      try {
+        await fetch(BASE_URL + '/' + BASE_ID + '/' + TABLES.jobs + '/' + recordId, {
+          method: 'PATCH',
+          headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fields: writeBack })
+        });
+      } catch(e) { /* screening result still returned even if the write-back fails */ }
+      return { risk: fresh.risk, note: fresh.note, overrideReason: '' };
+    } catch(e) { return null; }
+  }
+  async function setAirspaceOverride(recordId, reason) {
+    var token = getToken();
+    if (!token || !recordId) return false;
+    try {
+      var res = await fetch(BASE_URL + '/' + BASE_ID + '/' + TABLES.jobs + '/' + recordId, {
+        method: 'PATCH',
+        headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fields: { 'Airspace Override Reason': reason } })
+      });
+      return res.ok;
+    } catch(e) { return false; }
+  }
   // Expose public API
   return {
     TABLES, FIELDS, JOB_STATUSES, OUTREACH_STATUSES,
-    getToken, setToken, hasToken, getAirspaceCheck,
+    getToken, setToken, hasToken, getAirspaceCheck, ensureAirspaceCheck, setAirspaceOverride,
     listRecords, updateRecord, createRecord,
     getTodaysJobs, getActiveJobs, getRecentJobs, getJobsNeedingReport, getUpcomingJobs,
     getOutreachContacts, getRecentQuotes, getTradeAccounts,
