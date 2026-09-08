@@ -205,7 +205,8 @@ main{padding:14px;}
   <div class="card" style="border:2px solid var(--red);">
     <div style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.5;">This is your written safety case for the CAA Operational Authorisation. It has to be completed and logged before every single flight, not just once a day. Takes 30 seconds — tap through the 5 checks below then confirm.</div>
     <div class="chk" data-id="sc-weather" onclick="tickSC(this)"><div class="chk-box"></div><div class="chk-text">Weather checked — wind under 12m/s, no rain, clear visibility</div></div>
-    <div class="chk" data-id="sc-airspace" onclick="tickSC(this)"><div class="chk-box"></div><div class="chk-text">Airspace checked — no NOTAMs or restrictions for this site<div class="chk-note">Check the DJI Fly geo-zone map or drone-assist.co.uk</div></div></div>
+    <div id="airspace-screen" style="display:none;margin-bottom:9px;"></div>
+    <div class="chk" data-id="sc-airspace" onclick="tickSC(this)"><div class="chk-box"></div><div class="chk-text">Airspace checked — no NOTAMs or restrictions for this site<div class="chk-note">Screening result above is a first-pass check only, always also check the NATS UAS Restrictions Map or DJI Fly geo-zone layer on site</div></div></div>
     <div class="chk" data-id="sc-distance" onclick="tickSC(this)"><div class="chk-box"></div><div class="chk-text">CAA distance rules confirmed — 120m max altitude, 50m from uninvolved people</div></div>
     <div class="chk" data-id="sc-equipment" onclick="tickSC(this)"><div class="chk-box"></div><div class="chk-text">Equipment ready — DJI preflight sensors green, Operator ID visible</div></div>
     <div class="chk" data-id="sc-insurance" onclick="tickSC(this)"><div class="chk-box"></div><div class="chk-text">Flock Cover session started<div class="chk-note">You are not insured until this is active</div></div></div>
@@ -393,6 +394,24 @@ function showTab(id,btn){
     if(adv && adv.style.display !== 'none') loadPlanning();
   }
   if(id === 'job') loadJobFlowLive();
+  if(id === 'safety') loadAirspaceScreen();
+}
+function loadAirspaceScreen(){
+  var box = document.getElementById('airspace-screen');
+  if(!box || typeof AT === 'undefined') return;
+  var addr = '';
+  try{
+    var stored = localStorage.getItem('rs_job_today') || '';
+    addr = stored.split('\n')[0].trim();
+  }catch(e){}
+  if(!addr){ box.style.display='none'; box.innerHTML=''; return; }
+  AT.getAirspaceCheck(addr).then(function(r){
+    if(!r){ box.style.display='none'; box.innerHTML=''; return; }
+    var cls = r.risk === 'restricted' ? 'red' : (r.risk === 'caution' ? 'amber' : 'green');
+    var icon = r.risk === 'restricted' ? '🚫' : (r.risk === 'caution' ? '🟡' : '✅');
+    box.style.display = 'block';
+    box.innerHTML = '<div class="alert '+cls+'" style="margin-bottom:0;"><div class="alert-icon">'+icon+'</div><div>'+r.note+'</div></div>';
+  }).catch(function(){ box.style.display='none'; box.innerHTML=''; });
 }
 // Calendar + monthly stats are opt-in now (see council note above the markup) — remembers the
 // choice per device so it doesn't have to be re-expanded every visit once Takhy actually wants it.
@@ -753,9 +772,15 @@ async function loadWeatherCard(){
     var alertClass = w.risk === 'red' ? 'red' : (w.risk === 'amber' ? 'amber' : 'green');
     var icon = w.risk === 'red' ? '⚠️' : (w.risk === 'amber' ? '🟡' : '✅');
     card.style.display='block';
-    card.innerHTML = '<div class="alert '+alertClass+'" style="margin-bottom:0;"><div class="alert-icon">'+icon+'</div><div><strong>Next job — '+
-      (next.fields[AT.FIELDS.jobs.client]||'Client')+', '+AT.fmtDate(w.date)+':</strong> '+w.summary+
-      '. Wind '+w.windSpeed+'m/s, rain '+w.rain+'mm.</div></div>';
+    var detailRows =
+      '<div class="row"><span class="rl">Wind / gusts</span><span class="rv '+(w.windSpeed>12||w.gusts>12?'r':(w.windSpeed>10||w.gusts>10?'a':'g'))+'">'+w.windSpeed+' / '+w.gusts+' m/s</span></div>'+
+      '<div class="row"><span class="rl">Chance of rain</span><span class="rv '+(w.rainChance>50?'r':(w.rainChance>20?'a':'g'))+'">'+w.rainChance+'%</span></div>'+
+      '<div class="row"><span class="rl">Cloud cover</span><span class="rv '+(w.cloudCover>90?'a':'g')+'">'+w.cloudCover+'%</span></div>'+
+      '<div class="row"><span class="rl">Visibility</span><span class="rv '+(w.visibility<3000?'r':(w.visibility<8000?'a':'g'))+'">'+Math.round(w.visibility/1000*10)/10+' km</span></div>'+
+      (w.coldWarning ? '<div class="row"><span class="rl">Cold snap</span><span class="rv a">Below 0°C today — check battery</span></div>' : '');
+    card.innerHTML = '<div class="alert '+alertClass+'" style="margin-bottom:8px;"><div class="alert-icon">'+icon+'</div><div><strong>Next job — '+
+      (next.fields[AT.FIELDS.jobs.client]||'Client')+', '+AT.fmtDate(w.date)+':</strong> '+w.summary+'</div></div>'+
+      detailRows;
   }catch(e){ card.style.display='none'; card.innerHTML=''; }
 }
 async function loadOverdueCard(){

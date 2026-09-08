@@ -495,14 +495,16 @@ const AT = (function() {
       100
     );
   }
-  // Get weather forecast for a UK postcode/town via Open-Meteo (no API key needed)
-  // Returns {windSpeed (m/s), rain (mm), summary, risk: 'ok'|'amber'|'red'}
+  // Get an hourly, drone-relevant weather callout for a job via Open-Meteo (no API key needed).
+  // Checks wind, gusts, cloud cover, visibility and rain chance hour-by-hour across the working
+  // day (07:00-19:00) against the same limits already printed on the staff app's "Weather limits"
+  // card, then reports the best flying window instead of one flattened daily average.
+  // Returns {risk:'ok'|'amber'|'red', summary, windowLabel, windSpeed, gusts, cloudCover,
+  //          visibility, rainChance, coldWarning, date}
   async function getWeatherForJob(propertyAddress, inspectionDate) {
     try {
       // Default to Brighton coords if we can't geocode — good enough for a Sussex-wide business
       var lat = 50.8225, lon = -0.1372;
-      var geoKey = 'rs_geo_' + (propertyAddress||'').split(',').pop().trim().toLowerCase();
-      // Try a simple postcode-based geocode via Open-Meteo's geocoding API (free, no key)
       var townMatch = (propertyAddress||'').split(',');
       var town = townMatch.length > 1 ? townMatch[townMatch.length-2].trim() : '';
       if (town) {
@@ -517,24 +519,139 @@ const AT = (function() {
       }
       var dateStr = (inspectionDate||'').slice(0,10) || new Date().toISOString().slice(0,10);
       var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon +
-        '&daily=wind_speed_10m_max,precipitation_sum,weathercode&timezone=Europe/London&start_date=' + dateStr + '&end_date=' + dateStr;
+        '&hourly=wind_speed_10m,wind_gusts_10m,precipitation_probability,cloud_cover,visibility,temperature_2m' +
+        '&daily=sunrise,sunset&timezone=Europe/London&start_date=' + dateStr + '&end_date=' + dateStr;
       var res = await fetch(url);
       var data = await res.json();
-      if (!data.daily || !data.daily.time || !data.daily.time.length) return null;
-      var windKmh = data.daily.wind_speed_10m_max[0];
-      var windMs = Math.round((windKmh / 3.6) * 10) / 10;
-      var rain = data.daily.precipitation_sum[0];
-      var risk = 'ok';
-      var summary = 'Flyable';
-      if (windMs > 12 || rain > 60) { risk = 'red'; summary = 'Do not fly — reschedule'; }
-      else if (windMs > 10) { risk = 'amber'; summary = 'Flyable but monitor'; }
-      return { windSpeed: windMs, rain: rain, summary: summary, risk: risk, date: dateStr };
+      if (!data.hourly || !data.hourly.time || !data.hourly.time.length) return null;
+
+      // Working window: 07:00-19:00, clipped to actual daylight if sunrise/sunset returned
+      var dayStartHr = 7, dayEndHr = 19;
+      if (data.daily && data.daily.sunrise && data.daily.sunrise[0]) {
+        dayStartHr = Math.max(dayStartHr, new Date(data.daily.sunrise[0]).getHours());
+      }
+      if (data.daily && data.daily.sunset && data.daily.sunset[0]) {
+        dayEndHr = Math.min(dayEndHr, new Date(data.daily.sunset[0]).getHours());
+      }
+
+      var hours = [];
+      for (var i = 0; i < data.hourly.time.length; i++) {
+        var hr = new Date(data.hourly.time[i]).getHours();
+        if (hr < dayStartHr || hr > dayEndHr) continue;
+        var windMs = Math.round((data.hourly.wind_speed_10m[i] / 3.6) * 10) / 10;
+        var gustMs = Math.round((data.hourly.wind_gusts_10m[i] / 3.6) * 10) / 10;
+        var rainChance = data.hourly.precipitation_probability[i];
+        var cloudPct = data.hourly.cloud_cover[i];
+        var visM = data.hourly.visibility[i];
+        var tempC = data.hourly.temperature_2m[i];
+        // Matches the "Weather limits" card: 12m/s max, gusts cancel even if avg ok,
+        // never fly in rain, fog/low cloud = no fly, clear visibility required.
+        var hourRisk = 'ok';
+        if (windMs > 12 || gustMs > 12 || rainChance > 50 || visM < 3000) hourRisk = 'red';
+        else if (windMs > 10 || gustMs > 10 || rainChance > 20 || visM < 8000 || cloudPct > 90) hourRisk = 'amber';
+        hours.push({ hr: hr, windMs: windMs, gustMs: gustMs, rainChance: rainChance, cloudPct: cloudPct, visM: visM, tempC: tempC, risk: hourRisk });
+      }
+      if (!hours.length) return null;
+
+      // Find the longest window of a given risk tier, preferring 'ok' then 'amber'
+      function bestWindow(tier) {
+        var best = null, cur = [];
+        hours.forEach(function(h, idx) {
+          var qualifies = tier === 'ok' ? h.risk === 'ok' : (h.risk === 'ok' || h.risk === 'amber');
+          if (qualifies) { cur.push(h); }
+          else { if (cur.length && (!best || cur.length > best.length)) best = cur; cur = []; }
+        });
+        if (cur.length && (!best || cur.length > best.length)) best = cur;
+        return best;
+      }
+      var okWindow = bestWindow('ok');
+      var amberWindow = !okWindow ? bestWindow('amber') : null;
+      var chosen = okWindow || amberWindow;
+      var risk, summary, rep;
+      if (chosen) {
+        rep = chosen[Math.floor(chosen.length / 2)]; // representative hour from the middle of the window
+        var label = chosen[0].hr + ':00-' + (chosen[chosen.length-1].hr + 1) + ':00';
+        risk = okWindow ? 'ok' : 'amber';
+        summary = okWindow
+          ? 'Best window ' + label + ' — calm and dry'
+          : 'Best window ' + label + ' — flyable but monitor closely';
+        var windowLabel = label;
+      } else {
+        // No usable window at all — report the least-bad hour so the summary isn't empty
+        rep = hours.reduce(function(a,b){ return (a.windMs+a.gustMs) < (b.windMs+b.gustMs) ? a : b; });
+        risk = 'red';
+        summary = 'No safe flying window today — reschedule';
+        var windowLabel = null;
+      }
+      var coldWarning = hours.some(function(h){ return h.tempC < 0; });
+      return {
+        risk: risk, summary: summary, windowLabel: windowLabel,
+        windSpeed: rep.windMs, gusts: rep.gustMs, cloudCover: rep.cloudPct,
+        visibility: rep.visM, rainChance: rep.rainChance, coldWarning: coldWarning,
+        date: dateStr
+      };
+    } catch(e) { return null; }
+  }
+  // ── Airspace screening ──────────────────────────────────────────────────
+  // IMPORTANT: this is a proximity check against a hand-maintained list of the airports/
+  // aerodromes most likely to matter for a Sussex-based business (protected aerodromes have a
+  // legal Flight Restriction Zone, roughly 5km around the runway, where flying without ATC
+  // permission is illegal). It is NOT the CAA/NATS's official, exhaustive, regularly-updated FRZ
+  // dataset — that dataset requires a registered NATS AIS account to download and isn't fetchable
+  // automatically. Treat this as a first-pass screen only. Always confirm with the official NATS
+  // UAS Restrictions Map or the DJI Fly geo-zone map before flying, same as the manual step this
+  // sits alongside on the safety case.
+  const AERODROMES = [
+    { name: 'Gatwick Airport', lat: 51.1481, lon: -0.1903 },
+    { name: 'Heathrow Airport', lat: 51.4700, lon: -0.4543 },
+    { name: 'Shoreham (Brighton City) Airport', lat: 50.8356, lon: -0.2971 },
+    { name: 'Southampton Airport', lat: 50.9503, lon: -1.3568 },
+    { name: 'Farnborough Airport', lat: 51.2757, lon: -0.7764 },
+    { name: 'Biggin Hill Airport', lat: 51.3308, lon: 0.0325 },
+    { name: 'London City Airport', lat: 51.5053, lon: 0.0553 },
+    { name: 'Redhill Aerodrome', lat: 51.2064, lon: -0.1467 },
+    { name: 'Goodwood Aerodrome', lat: 50.8564, lon: -0.7589 },
+    { name: 'Lydd Airport', lat: 50.9558, lon: 0.9391 },
+    { name: 'Manston (Kent International) Airport', lat: 51.3444, lon: 1.3489 },
+    { name: 'Dunsfold Aerodrome', lat: 51.1150, lon: -0.5397 },
+    { name: 'Blackbushe Airport', lat: 51.3237, lon: -0.8478 },
+    { name: 'Stansted Airport', lat: 51.8860, lon: 0.2389 },
+    { name: 'Luton Airport', lat: 51.8747, lon: -0.3683 },
+  ];
+  function haversineKm(lat1, lon1, lat2, lon2) {
+    var R = 6371;
+    var dLat = (lat2 - lat1) * Math.PI / 180;
+    var dLon = (lon2 - lon1) * Math.PI / 180;
+    var a = Math.sin(dLat/2)*Math.sin(dLat/2) +
+      Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  }
+  // Returns {risk:'restricted'|'caution'|'clear', nearest:{name,km}, note}
+  async function getAirspaceCheck(propertyAddress) {
+    try {
+      var parts = (propertyAddress||'').split(',');
+      var town = parts.length > 1 ? parts[parts.length-2].trim() : parts[0].trim();
+      if (!town) return null;
+      var geoRes = await fetch('https://geocoding-api.open-meteo.com/v1/search?name=' + encodeURIComponent(town) + '&count=1&country=GB');
+      var geoData = await geoRes.json();
+      if (!geoData.results || !geoData.results[0]) return null;
+      var lat = geoData.results[0].latitude, lon = geoData.results[0].longitude;
+      var nearest = null;
+      AERODROMES.forEach(function(a) {
+        var km = Math.round(haversineKm(lat, lon, a.lat, a.lon) * 10) / 10;
+        if (!nearest || km < nearest.km) nearest = { name: a.name, km: km };
+      });
+      var risk = 'clear', note;
+      if (nearest.km <= 5) { risk = 'restricted'; note = 'Likely inside ' + nearest.name + '\'s Flight Restriction Zone — do not fly without ATC permission. Confirm on the NATS UAS Restrictions Map before this job.'; }
+      else if (nearest.km <= 8) { risk = 'caution'; note = 'Close to ' + nearest.name + ' (' + nearest.km + 'km) — check the NATS UAS Restrictions Map or DJI Fly geo-zone layer before flying.'; }
+      else { note = 'Nearest listed aerodrome is ' + nearest.name + ', ' + nearest.km + 'km away — no flag from this screen, but this list only covers major South East/national aerodromes and permanent restrictions, not NOTAMs. Always check the DJI Fly geo-zone map on site.'; }
+      return { risk: risk, nearest: nearest, note: note };
     } catch(e) { return null; }
   }
   // Expose public API
   return {
     TABLES, FIELDS, JOB_STATUSES, OUTREACH_STATUSES,
-    getToken, setToken, hasToken,
+    getToken, setToken, hasToken, getAirspaceCheck,
     listRecords, updateRecord, createRecord,
     getTodaysJobs, getActiveJobs, getRecentJobs, getJobsNeedingReport, getUpcomingJobs,
     getOutreachContacts, getRecentQuotes, getTradeAccounts,
