@@ -157,6 +157,7 @@ main{padding:14px;}
     </div>
   </div>
   <div class="card" id="weather-card" style="display:none;"></div>
+  <div class="card" id="airspace-jobflow-card" style="display:none;"></div>
   <div class="card" id="overdue-card" style="display:none;"></div>
   <div class="sl">Before leaving</div>
   <div class="card">
@@ -757,14 +758,22 @@ renderEquip();
 // ═══ JOB FLOW — live weather + overdue ════════════════════════════
 async function loadJobFlowLive(){
   if(typeof AT === 'undefined' || !AT.hasToken()) return;
-  loadWeatherCard();
+  try{
+    var jobs = await AT.getUpcomingJobs(60);
+    loadWeatherCard(jobs);
+    loadAirspaceJobFlowCard(jobs);
+  }catch(e){
+    // Fall back to independent calls so one bad request doesn't blank both cards
+    loadWeatherCard();
+    loadAirspaceJobFlowCard();
+  }
   loadOverdueCard();
 }
-async function loadWeatherCard(){
+async function loadWeatherCard(jobsIn){
   var card = document.getElementById('weather-card');
   if(!card) return;
   try{
-    var jobs = await AT.getUpcomingJobs(60);
+    var jobs = jobsIn || await AT.getUpcomingJobs(60);
     if(!jobs.length){ card.style.display='none'; card.innerHTML=''; return; }
     var next = jobs[0];
     var w = await AT.getWeatherForJob(next.fields[AT.FIELDS.jobs.address], next.fields[AT.FIELDS.jobs.date]);
@@ -781,6 +790,26 @@ async function loadWeatherCard(){
     card.innerHTML = '<div class="alert '+alertClass+'" style="margin-bottom:8px;"><div class="alert-icon">'+icon+'</div><div><strong>Next job — '+
       (next.fields[AT.FIELDS.jobs.client]||'Client')+', '+AT.fmtDate(w.date)+':</strong> '+w.summary+'</div></div>'+
       detailRows;
+  }catch(e){ card.style.display='none'; card.innerHTML=''; }
+}
+async function loadAirspaceJobFlowCard(jobsIn){
+  var card = document.getElementById('airspace-jobflow-card');
+  if(!card) return;
+  try{
+    var jobs = jobsIn || await AT.getUpcomingJobs(60);
+    if(!jobs.length){ card.style.display='none'; card.innerHTML=''; return; }
+    var next = jobs[0];
+    var addr = next.fields[AT.FIELDS.jobs.address];
+    var r = await AT.getAirspaceCheck(addr);
+    if(!r || r.risk === 'clear'){ card.style.display='none'; card.innerHTML=''; return; }
+    // Only surface this card on Job Flow when there's actually something to flag (restricted or
+    // caution) — a clear result is shown in full on the Safety tab's pre-flight check instead, no
+    // need to clutter Job Flow with a green "all fine" line for every job.
+    var cls = r.risk === 'restricted' ? 'red' : 'amber';
+    var icon = r.risk === 'restricted' ? '🚫' : '🟡';
+    card.style.display='block';
+    card.innerHTML = '<div class="alert '+cls+'" style="margin-bottom:0;"><div class="alert-icon">'+icon+'</div><div><strong>Next job — '+
+      (next.fields[AT.FIELDS.jobs.client]||'Client')+':</strong> '+r.note+'</div></div>';
   }catch(e){ card.style.display='none'; card.innerHTML=''; }
 }
 async function loadOverdueCard(){
