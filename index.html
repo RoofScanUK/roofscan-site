@@ -44,12 +44,22 @@ nav.topnav{background:var(--paper);border-bottom:1px solid var(--line);position:
 .nav-cta-short{display:none;}
 .mobile-info-bar{display:none;}
 @media (max-width:720px){
-  .nav-cta-full{display:none;}
-  .nav-cta-short{display:inline;}
-  .nav-links span.nav-link-login{display:inline;font-size:11px;}
-  .mobile-info-bar{display:flex;align-items:center;justify-content:center;gap:7px;padding:8px 10px;background:var(--paper);border-bottom:1px solid var(--line);font-size:10.5px;overflow-x:auto;white-space:nowrap;}
-  .mobile-info-bar a,.mobile-info-bar span{color:var(--navy);cursor:pointer;}
-  .mobile-info-bar .sep{color:var(--line);}
+  .nav-links span.nav-link-login{display:none;}
+}
+/* MOBILE HAMBURGER + DROPDOWN — replaces the old horizontal scrolling link strip with a
+   standard toggled menu, since a thin scrollable row of links is easy to miss on a phone. */
+.hamburger{display:none;flex-direction:column;justify-content:center;align-items:flex-end;gap:5px;width:32px;height:32px;background:none;border:none;padding:0;flex-shrink:0;}
+.hamburger span{display:block;height:2px;width:100%;background:var(--navy);border-radius:1px;transition:transform .2s ease,opacity .2s ease;}
+.hamburger.open span:nth-child(1){transform:translateY(7px) rotate(45deg);}
+.hamburger.open span:nth-child(2){opacity:0;}
+.hamburger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg);width:100%;}
+.mobile-menu{display:none;flex-direction:column;background:rgba(251,250,247,0.6);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:4px;box-shadow:0 24px 64px rgba(28,43,74,.18);position:fixed;top:84px;right:16px;z-index:199;width:190px;overflow:hidden;}
+.mobile-menu.open{display:flex;}
+.mobile-menu-link{display:block;padding:12px 16px;font-size:14px;font-weight:500;color:var(--ink);border-bottom:1px solid var(--line);cursor:pointer;transition:background .15s,color .15s;}
+.mobile-menu-link:hover{background:rgba(184,148,95,.1);color:var(--navy);}
+.mobile-menu-link:last-child{border-bottom:none;}
+@media (max-width:720px){
+  .hamburger{display:flex;}
 }
 
 /* BUTTONS */
@@ -336,21 +346,21 @@ textarea{resize:vertical;}
       <span class="nav-link" onclick="go('about')">About</span>
       <span class="nav-link" onclick="go('contact')">Contact</span>
       <span class="nav-link nav-link-login" style="color:var(--muted);" onclick="openLoginModal()">Client Login</span>
-      <button class="btn small" style="background:var(--gold);border-color:var(--gold);color:var(--navy);" onclick="go('book')"><span class="nav-cta-full">Get instant quote</span><span class="nav-cta-short">Quote from £175</span></button>
+      <button class="btn small" style="background:var(--gold);border-color:var(--gold);color:var(--navy);" onclick="go('book')">Get instant quote</button>
+      <button class="hamburger" id="hamburger-btn" onclick="toggleMobileMenu()" aria-label="Menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
     </div>
   </div>
 </nav>
 
-<div class="mobile-info-bar">
-  <span onclick="go('services')">Services</span>
-  <span class="sep">·</span>
-  <span onclick="go('pricing')">Pricing</span>
-  <span class="sep">·</span>
-  <span onclick="go('about')">About</span>
-  <span class="sep">·</span>
-  <span onclick="go('contact')">Contact</span>
-  <span class="sep">·</span>
-  <a href="tel:07498364197">Call</a>
+<div class="mobile-menu" id="mobile-menu">
+  <span class="mobile-menu-link" onclick="mobileNavGo('services')">Services</span>
+  <span class="mobile-menu-link" onclick="mobileNavGo('pricing')">Pricing</span>
+  <span class="mobile-menu-link" onclick="mobileNavGo('about')">About</span>
+  <span class="mobile-menu-link" onclick="mobileNavGo('contact')">Contact</span>
+  <span class="mobile-menu-link" onclick="mobileNavLogin()">Client Login</span>
+  <a class="mobile-menu-link" href="tel:07498364197">Call 07498 364197</a>
 </div>
 
 <div class="login-overlay" id="login-overlay" onclick="if(event.target===this)closeLoginModal()">
@@ -795,7 +805,7 @@ textarea{resize:vertical;}
             <div style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(251,250,247,.12);color:rgba(251,250,247,.5);font-size:12px;line-height:1.7;">Drone survey · full written report · photos · condition ratings · Schedule of Works · 48hr delivery · fully insured</div>
           </div>
           <div id="exact-price-offer" style="display:none;margin-top:14px;padding:14px 16px;border:1px solid var(--line);border-radius:10px;background:var(--paper);">
-            <div style="font-size:13px;line-height:1.6;margin-bottom:10px;">We couldn't automatically confirm your roof's exact area, so this uses a typical estimate for your property type. Know the actual figure? <a href="#" onclick="event.preventDefault();showExactAreaInput();" class="textlink" id="exact-price-link" style="font-size:13px;">Enter it for an exact price</a></div>
+            <div id="exact-price-message" style="font-size:13px;line-height:1.6;margin-bottom:10px;"></div>
             <div id="exact-area-input-wrap" style="display:none;">
               <div style="display:flex;gap:8px;align-items:center;">
                 <input id="exact-area-input" type="number" min="1" placeholder="e.g. 90" style="flex:1;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:15px;font-family:inherit;">
@@ -901,6 +911,27 @@ function go(page){
   renderPage(page);
   location.hash = page;
 }
+function toggleMobileMenu(){
+  const menu = document.getElementById('mobile-menu');
+  const btn = document.getElementById('hamburger-btn');
+  const open = !menu.classList.contains('open');
+  menu.classList.toggle('open', open);
+  btn.classList.toggle('open', open);
+  btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+}
+function closeMobileMenu(){
+  document.getElementById('mobile-menu').classList.remove('open');
+  document.getElementById('hamburger-btn').classList.remove('open');
+  document.getElementById('hamburger-btn').setAttribute('aria-expanded','false');
+}
+function mobileNavGo(page){
+  go(page);
+  closeMobileMenu();
+}
+function mobileNavLogin(){
+  openLoginModal();
+  closeMobileMenu();
+}
 window.addEventListener('hashchange', ()=>{
   const h = location.hash.replace('#','');
   renderPage(VALID_PAGES.includes(h) ? h : 'home');
@@ -933,11 +964,16 @@ window.addEventListener('resize', checkReveals);
 // area (see AREA_CALLOUT/AREA_RATE below). typicalArea is only used as the fallback when the
 // automated roof-area lookup can't return a trustworthy result, and as a quick, familiar tap
 // for the customer to answer while that lookup runs in the background.
+// typicalRange is the plausible roof-footprint window for that property type (rough UK norms,
+// generous on both ends so we only flag genuine outliers, not just "a bit bigger than average").
+// Used by isAreaUnusualForProperty() below to catch cases where a *real, measured* footprint
+// doesn't look like it matches the property type the customer selected — e.g. OS's building
+// polygon merged two houses, or the customer picked the wrong property type by mistake.
 const PT=[
-  {id:"terrace",label:"Terraced house",desc:"Mid or end terrace",badge:"T",typicalArea:45},
-  {id:"semi",label:"Semi-detached",desc:"Semi-detached house",badge:"S",typicalArea:65},
-  {id:"detached",label:"Detached house",desc:"Standalone property",badge:"D",typicalArea:100},
-  {id:"large_detached",label:"Large detached",desc:"5+ beds or large footprint",badge:"L",typicalArea:160},
+  {id:"terrace",label:"Terraced house",desc:"Mid or end terrace",badge:"T",typicalArea:45,typicalRange:[28,90]},
+  {id:"semi",label:"Semi-detached",desc:"Semi-detached house",badge:"S",typicalArea:65,typicalRange:[40,130]},
+  {id:"detached",label:"Detached house",desc:"Standalone property",badge:"D",typicalArea:100,typicalRange:[60,220]},
+  {id:"large_detached",label:"Large detached",desc:"5+ beds or large footprint",badge:"L",typicalArea:160,typicalRange:[110,400]},
 ];
 const PITCH=[
   {id:"pitched",label:"Pitched",desc:"Standard sloped roof"},
@@ -1061,7 +1097,7 @@ function initBooking(){
 
   const ac = document.getElementById('addon-card');
   ac.innerHTML = AD.map(a=>`
-    <div class="addon-row">
+    <div class="addon-row" id="addon-row-${a.id}">
       <div class="info"><div class="t">${a.label}</div><div class="d">${a.desc}</div></div>
       <div class="counter">
         <button onclick="stepCount('${a.id}',-1,${a.max})" id="minus-${a.id}">−</button>
@@ -1253,6 +1289,12 @@ function goStep(n){
   };
   document.getElementById('book-step-title').textContent = titles[n][0];
   document.getElementById('book-step-sub').textContent = titles[n][1];
+  if(n===3){
+    syncExtensionsVisibility();
+    // If the lookup is still running when they land on this step, update the row live the
+    // moment it settles rather than leaving it in whatever state it started in.
+    if(roofAreaPromise) roofAreaPromise.finally(()=>{ if(bstep===3) syncExtensionsVisibility(); });
+  }
   if(n===4){
     // Show the postcode already confirmed in step 1 as a locked chip, so the
     // customer only ever types the house number/street — the postcode itself
@@ -1301,6 +1343,40 @@ function roofPriceForArea(areaM2){
   return Math.max(AREA_MIN_PRICE, Math.round(raw));
 }
 
+// Flags a *real, measured* footprint that falls outside the normal range for the property type
+// the customer selected — e.g. OS's building polygon merged two adjoining properties, or the
+// customer picked the wrong property type. Never fires for an estimate (that's just the property
+// type's own typical figure, it can't be "unusual for itself") or a manually-entered area (the
+// customer already told us the real number, we don't need to second-guess it). Doesn't change
+// the price or block booking — it's purely a heads-up so the customer can self-correct if
+// something looks off, same spirit as the manual "enter exact area" override.
+function isAreaUnusualForProperty(area, propId){
+  const property = PT.find(p=>p.id===propId);
+  if(!property || !property.typicalRange) return false;
+  const [lo, hi] = property.typicalRange;
+  return area < lo || area > hi;
+}
+
+// The "Extensions / flat roofs" add-on only makes sense when we're pricing off the property
+// type's typical area (an estimate) — an extension's roof is already part of whatever we
+// actually measured for a real building footprint, so charging for it again on top of a
+// measured area would double-count the same square metres. Hidden (and zeroed) once a real
+// measurement is trusted; shown while the price is still running on a fallback estimate, or
+// while the lookup hasn't resolved yet (safer to ask than to silently skip it).
+function syncExtensionsVisibility(){
+  const row = document.getElementById('addon-row-extensions');
+  if(!row) return;
+  const stillPending = roofAreaPromise && !roofAreaInfo && manualAreaM2==null;
+  const { isEstimate } = resolvedRoofArea();
+  const show = stillPending || isEstimate;
+  row.style.display = show ? '' : 'none';
+  if(!show && counts.extensions>0){
+    counts.extensions = 0;
+    const countEl = document.getElementById('count-extensions');
+    if(countEl) countEl.textContent = '0';
+  }
+}
+
 function renderPrice(){
   // The lookup started back on step 1, so by now it's almost always already resolved. On the
   // rare chance it hasn't, show a short, purposeful "calculating" state rather than a wrong
@@ -1311,7 +1387,9 @@ function renderPrice(){
     roofAreaPromise.finally(renderPrice);
     return;
   }
+  syncExtensionsVisibility();
   const {area, isEstimate} = resolvedRoofArea();
+  const areaFlagged = !isEstimate && manualAreaM2==null && isAreaUnusualForProperty(area, prop);
   const roofPrice = roofPriceForArea(area);
   const travCharge = postcodeInfo ? postcodeInfo.charge : 0;
   const addonTotal = AD.reduce((s,a)=>s+counts[a.id]*a.unit,0);
@@ -1325,10 +1403,19 @@ function renderPrice(){
   document.getElementById('total-lines').innerHTML = lines.map(([l,v])=>
     `<div class="total-row"><span class="l">${l}</span><span class="v">${fmt(v)}</span></div>`).join('');
 
-  // Only offer the manual "exact price" option when we're actually on the fallback estimate —
-  // never shown on the fast, fully-automated path, so it adds zero friction to the majority
-  // of quotes and only appears exactly where automation couldn't confirm the roof itself.
-  document.getElementById('exact-price-offer').style.display = isEstimate ? 'block' : 'none';
+  // Offer the manual "exact price" option whenever we're not fully confident in the area we're
+  // pricing from — either because automation couldn't confirm it (isEstimate) or because it did
+  // confirm something, but that measurement looks unusual for the property type selected
+  // (areaFlagged). Never shown on a normal, unremarkable automated result, so it adds zero
+  // friction to the majority of quotes.
+  const propertyLabel = (PT.find(p=>p.id===prop)||{}).label || 'this property type';
+  const exactPriceMsg = document.getElementById('exact-price-message');
+  if(areaFlagged){
+    exactPriceMsg.innerHTML = `Heads up — the measured roof area (${Math.round(area)}m²) is larger or smaller than typical for a ${propertyLabel.toLowerCase()}. If that doesn't sound right for your property, let us know the actual figure. <a href="#" onclick="event.preventDefault();showExactAreaInput();" class="textlink" id="exact-price-link" style="font-size:13px;">Enter it for an exact price</a>`;
+  } else {
+    exactPriceMsg.innerHTML = `We couldn't automatically confirm your roof's exact area, so this uses a typical estimate for your property type. Know the actual figure? <a href="#" onclick="event.preventDefault();showExactAreaInput();" class="textlink" id="exact-price-link" style="font-size:13px;">Enter it for an exact price</a>`;
+  }
+  document.getElementById('exact-price-offer').style.display = (isEstimate || areaFlagged) ? 'block' : 'none';
 
   document.getElementById('balance-note').innerHTML = 'Balance of '+fmt(Math.max(0,total-50))+' due on completion · <a href="terms.html" class="muted">Terms &amp; Conditions</a>';
 
