@@ -1085,6 +1085,11 @@ let addressList=[], selectedAddress=null;
 // True once a manually-entered roof area overrides the automated/fallback estimate, from the
 // "get an exact price" option shown when the automated lookup couldn't confirm the roof.
 let manualAreaM2=null;
+// Set by renderPrice() whenever the measured area looks unusual for the selected property type
+// (see isAreaUnusualForProperty). Carried through to captureLead and confirm-booking so Takhy
+// can see in Airtable which bookings were flagged, even if the customer books anyway without
+// correcting it — the customer-facing note alone wouldn't leave any record of that.
+let lastAreaFlagged=false;
 
 function fmt(n){ return "£"+n.toLocaleString("en-GB"); }
 
@@ -1390,6 +1395,7 @@ function renderPrice(){
   syncExtensionsVisibility();
   const {area, isEstimate} = resolvedRoofArea();
   const areaFlagged = !isEstimate && manualAreaM2==null && isAreaUnusualForProperty(area, prop);
+  lastAreaFlagged = areaFlagged;
   const roofPrice = roofPriceForArea(area);
   const travCharge = postcodeInfo ? postcodeInfo.charge : 0;
   const addonTotal = AD.reduce((s,a)=>s+counts[a.id]*a.unit,0);
@@ -1453,7 +1459,8 @@ function captureLead(stage, total){
       quoteTotal: total,
       contact,
       marketingOptOut: !!(document.getElementById('c-optout') && document.getElementById('c-optout').checked),
-      existingId: leadRecordId
+      existingId: leadRecordId,
+      areaFlagged: lastAreaFlagged
     })
   }).then(async r => {
     const data = await r.json().catch(()=>({}));
@@ -1641,7 +1648,8 @@ async function submitPayment(){
         travelMiles: postcodeInfo ? postcodeInfo.miles : 0,
         roofAreaM2: resolvedRoofArea().area,
         pitchType: pitchType,
-        contact
+        contact,
+        areaFlagged: lastAreaFlagged
       })
     });
     const data = await res.json();
