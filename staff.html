@@ -21,7 +21,15 @@
   --red:#C0392B;--rbg:#FDECEA;--blue:#2980B9;--bbg:#EAF4FB;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--navy);min-height:100vh;max-width:520px;margin:0 auto;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--navy);min-height:100vh;}
+/* On phones (this app's main use case) the app fills the screen edge-to-edge as before.
+   On anything wider (laptop/desktop), the old fixed 520px column just left huge blank
+   margins either side, which read as "broken" rather than deliberate — this instead
+   centres a comfortably-sized panel with its own card styling, so it looks like an
+   intentional app view on a big screen rather than a tiny strip of a page. */
+@media (min-width:640px){
+  body{max-width:520px;margin:32px auto;border-radius:20px;overflow:hidden;box-shadow:0 12px 40px rgba(28,43,74,0.14);min-height:calc(100vh - 64px);}
+}
 .hdr{background:linear-gradient(135deg,#1C2B4A 0%,#2C3E6A 100%);padding:16px 16px 0;}
 .hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
 .hdr-left{display:flex;align-items:center;gap:10px;}
@@ -252,13 +260,17 @@ main{padding:14px;}
     </div>
     <div class="stage-b">
       <div class="stage-b-inner">
-        <div class="chk" data-id="staff-15" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Capture front elevation — slow, steady, level pass</div></div>
-        <div class="chk" data-id="staff-16" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Capture rear elevation</div></div>
-        <div class="chk" data-id="staff-17" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Capture both side elevations</div></div>
-        <div class="chk" data-id="staff-18" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Capture all chimneys — close-up of each</div></div>
-        <div class="chk" data-id="staff-19" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Capture flashings, ridge, gutters, any visible defects</div></div>
-        <div class="chk" data-id="staff-20" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Top-down overview shot of full roof</div></div>
-        <div class="chk" data-id="staff-21" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Review footage on phone before landing — reshoot if needed</div></div>
+        <div class="chk" data-id="staff-15" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Front elevation<div class="chk-note">Hover level with the roofline, ~10-15m back, slow steady pass left to right. Include the full front slope and gutter line in frame — this is the "cover shot" for the report.</div></div></div>
+        <div class="chk" data-id="staff-16" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Rear elevation<div class="chk-note">Same height and distance as the front pass. Check gardens/neighbours for anyone in frame before flying over.</div></div></div>
+        <div class="chk" data-id="staff-17" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Both side elevations<div class="chk-note">One pass per side, perpendicular to the wall. These catch valleys and hip ends the front/rear shots miss.</div></div></div>
+        <div class="chk" data-id="staff-18" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Every chimney — close-up<div class="chk-note">One shot per stack, close enough to see individual pots, flaunching/mortar cracks, and the chimney-to-roof flashing seal. Circle it if you can — flashing failures often show up on the side you'd otherwise miss.</div></div></div>
+        <div class="chk" data-id="staff-19" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Ridge line — full length<div class="chk-note">Slow pass directly along the ridge, close enough to spot slipped/cracked ridge tiles or open joints.</div></div></div>
+        <div class="chk" data-id="staff-19b" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">All flashings and valleys<div class="chk-note">Close-up on every roof-to-wall junction, valley, and any skylight/vent — these are the most common leak points and easy to under-shoot from a distance.</div></div></div>
+        <div class="chk" data-id="staff-19c" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Guttering — full run<div class="chk-note">Follow every gutter run close enough to see sagging, blockages, or missing sections, not just from the elevation shots.</div></div></div>
+        <div class="chk" data-id="staff-19d" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Any visible defect — extra close-up<div class="chk-note">Slipped/missing tiles, moss buildup, cracked sections, staining. If you spot something during the fly-through, stop and get a dedicated close shot of it — don't rely on it appearing in a wider pass.</div></div></div>
+        <div class="chk" data-id="staff-20" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Top-down overview of the full roof<div class="chk-note">Straight-down, high enough to fit the entire roof (all slopes) in one frame. This is the shot the area/footprint measurement and the report's overview image both rely on.</div></div></div>
+        <div class="chk" data-id="staff-20b" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Angled 3/4 overview<div class="chk-note">A higher, angled shot showing the roof in context with the rest of the property — gives the client a "whole picture" shot the straight-down one doesn't.</div></div></div>
+        <div class="chk" data-id="staff-21" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Review footage on phone before landing<div class="chk-note">Check every elevation, chimney, and defect shot is sharp and in frame. Reshoot anything blurry or cut off now — going back up later means a second trip.</div></div></div>
         <div class="chk" data-id="staff-22" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Land safely — stop Flock Cover session</div></div>
       </div>
     </div>
@@ -278,9 +290,7 @@ main{padding:14px;}
       <div class="stage-b-inner">
         <div class="chk" data-id="staff-23" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Transfer all footage to laptop and back up immediately</div></div>
         <div class="chk" data-id="staff-24" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Select best photos — minimum 20 for the report</div></div>
-        <div class="chk" data-id="staff-25" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Write full report — complete all sections<div class="chk-note">Report due within 48 hours. Aim for 24.</div></div></div>
-        <div class="chk" data-id="staff-26" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Calculate RoofScore</div></div>
-        <div class="chk" data-id="staff-27" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Export report as PDF and upload to client's Google Drive folder</div></div>
+        <div class="alert blue" style="margin-top:2px;"><div class="alert-icon">📝</div><div>Writing the report itself happens on the separate report generator site, not here. Report due within 48 hours — aim for 24.</div></div>
         <div class="chk" data-id="staff-28" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Charge all batteries ready for next job</div></div>
       </div>
     </div>
