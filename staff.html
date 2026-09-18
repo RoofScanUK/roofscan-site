@@ -28,7 +28,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
    centres a comfortably-sized panel with its own card styling, so it looks like an
    intentional app view on a big screen rather than a tiny strip of a page. */
 @media (min-width:640px){
-  body{max-width:520px;margin:32px auto;border-radius:20px;overflow:hidden;box-shadow:0 12px 40px rgba(28,43,74,0.14);min-height:calc(100vh - 64px);}
+  body{max-width:520px;margin:32px auto;border-radius:20px;overflow-y:auto;overflow-x:hidden;box-shadow:0 12px 40px rgba(28,43,74,0.14);min-height:calc(100vh - 64px);max-height:calc(100vh - 64px);}
 }
 .hdr{background:linear-gradient(135deg,#1C2B4A 0%,#2C3E6A 100%);padding:16px 16px 0;}
 .hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
