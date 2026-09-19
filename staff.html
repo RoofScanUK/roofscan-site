@@ -182,6 +182,12 @@ main{padding:14px;}
   <!-- OWNER: Set today's job details -->
   <div id="set-job-section" style="background:var(--card);border:1px dashed var(--border);border-radius:12px;padding:12px 14px;margin-bottom:12px;">
     <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">📋 Set today's job (owner only)</div>
+    <div id="staff-job-picker" style="display:none;margin-bottom:8px;">
+      <select id="staff-job-picker-select" onchange="selectStaffJob(this.value)" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;color:var(--navy);background:var(--bg);outline:none;">
+        <option value="">— Load a job from Airtable —</option>
+      </select>
+    </div>
+    <div id="staff-job-picker-loading" style="display:none;font-size:11px;color:var(--muted);margin-bottom:8px;">Loading jobs from Airtable…</div>
     <textarea id="job-detail-input" placeholder="e.g. 14 Marine Parade, Brighton BN2 1TL&#10;Client: Sarah Wheeler&#10;Access: side gate, code 1234&#10;Note: dog in garden"
       style="width:100%;min-height:80px;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;color:var(--navy);background:var(--bg);resize:none;outline:none;line-height:1.5;"
       oninput="saveJobDetail()"></textarea>
@@ -194,37 +200,28 @@ main{padding:14px;}
   <div class="card" id="airspace-jobflow-card" style="display:none;"></div>
   <div class="card" id="overdue-card" style="display:none;"></div>
 
-  <!-- STAGE 1 — Before leaving -->
+  <!-- MORNING EQUIPMENT CHECK — deliberately NOT a numbered stage. It sits above the per-job
+       stages so you naturally see it first, but it's day-scoped (resets automatically each
+       morning, not per job) and untouched by "Reset checklist for new job" — do it once before
+       your first job, not again between jobs on a multi-job day. -->
+  <div class="sl">Morning equipment check <span id="equip-count" style="margin-left:auto;font-weight:700;color:var(--navy);text-transform:none;letter-spacing:normal;"></span></div>
+  <div class="card" id="equip-card" style="margin-bottom:12px;">
+    <div class="safety-note" style="margin-top:0;">Resets automatically each morning — do this once before your first job, not before every job today.</div>
+    <div id="equip-list"></div>
+  </div>
+
+  <!-- Per-job stages — this is what "Reset checklist for new job" clears, so on a multi-job day
+       you tap that button between jobs and only these three reset, not the daily cards above/below. -->
+  <div id="gate-warning" class="alert red" style="display:none;margin-bottom:10px;"><div class="alert-icon">🔒</div><div>Flying and after-the-job steps are locked until the safety case below is logged.</div></div>
+  <div id="unsynced-banner" style="display:none;margin-bottom:10px;"></div>
+  <div id="job-stages">
+  <!-- STAGE 1 — On site, before flying (arrival + the legal pre-flight safety case) -->
   <div class="stage" data-stage="1" data-open="0">
     <div class="stage-h" onclick="toggleStage(1)">
       <div class="stage-num" id="stage-num-1"></div>
       <div class="stage-title-wrap">
-        <div class="stage-title">Before leaving</div>
-        <div class="stage-sub" id="stage-sub-1">0 of 8</div>
-      </div>
-      <div class="stage-chev">▾</div>
-    </div>
-    <div class="stage-b">
-      <div class="stage-b-inner">
-        <div class="chk" data-id="staff-1" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">All batteries charged to 100%<div class="chk-note">All 3 batteries in the Fly More Combo</div></div></div>
-        <div class="chk" data-id="staff-2" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Operator ID label on aircraft<div class="chk-note">CAA legal requirement — must be visible</div></div></div>
-        <div class="chk" data-id="staff-3" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Flock Cover app — account logged in and ready</div></div>
-        <div class="chk" data-id="staff-4" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Memory cards formatted and empty</div></div>
-        <div class="chk" data-id="staff-5" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">ND filters packed<div class="chk-note">ND8 overcast · ND16 bright · ND32 direct sun</div></div></div>
-        <div class="chk" data-id="staff-6" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Hi-vis vest in bag</div></div>
-        <div class="chk" data-id="staff-7" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Phone charged — DJI Fly app open and updated</div></div>
-        <div class="chk" data-id="staff-8" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Client address confirmed</div></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- STAGE 2 — On site, before flying (arrival + the legal pre-flight safety case) -->
-  <div class="stage" data-stage="2" data-open="0">
-    <div class="stage-h" onclick="toggleStage(2)">
-      <div class="stage-num" id="stage-num-2"></div>
-      <div class="stage-title-wrap">
         <div class="stage-title">On site — before flying</div>
-        <div class="stage-sub" id="stage-sub-2">0 of 8</div>
+        <div class="stage-sub" id="stage-sub-1">0 of 9</div>
       </div>
       <div class="stage-chev">▾</div>
     </div>
@@ -233,6 +230,7 @@ main{padding:14px;}
         <div class="chk" data-id="staff-10" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Introduce yourself to client — politely and professionally</div></div>
         <div class="chk" data-id="staff-11" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Walk the full site before flying<div class="chk-note">Look for power lines, trees, antennas, obstructions</div></div></div>
         <div class="chk" data-id="staff-12" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Select clear take-off and landing zone — away from people</div></div>
+        <div class="chk" data-id="staff-13" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Attach the correct filter for today's light<div class="chk-note">ND8 — overcast or cloudy. ND32 — bright but hazy, or partial sun. ND128 — direct strong sunlight. CPL — cuts glare and reflection off tiles and wet roofs; stack it with whichever ND you're using any time there's glare, regardless of brightness.</div></div></div>
         <div class="alert red" style="margin-top:10px;margin-bottom:6px;"><div class="alert-icon">🚫</div><div><strong>Never fly if:</strong> wind is above 12m/s, visibility is poor, it's raining, or you feel unsafe about the site.</div></div>
         <div class="safety-note">This is your written safety case — required before EVERY flight, not just once a day. Tap through the 5 checks then confirm.</div>
         <div class="chk" data-id="sc-weather" onclick="tickSC(this)"><div class="chk-box"></div><div class="chk-text">Weather checked — wind under 12m/s, no rain, clear visibility</div></div>
@@ -248,13 +246,13 @@ main{padding:14px;}
     </div>
   </div>
 
-  <!-- STAGE 3 — Flying / capture -->
-  <div class="stage" data-stage="3" data-open="0">
-    <div class="stage-h" onclick="toggleStage(3)">
-      <div class="stage-num" id="stage-num-3"></div>
+  <!-- STAGE 2 — Flying / capture -->
+  <div class="stage" data-stage="2" data-open="0">
+    <div class="stage-h" onclick="toggleStage(2)">
+      <div class="stage-num" id="stage-num-2"></div>
       <div class="stage-title-wrap">
         <div class="stage-title">Flying — capture the roof</div>
-        <div class="stage-sub" id="stage-sub-3">0 of 8</div>
+        <div class="stage-sub" id="stage-sub-2">0 of 8</div>
       </div>
       <div class="stage-chev">▾</div>
     </div>
@@ -276,13 +274,13 @@ main{padding:14px;}
     </div>
   </div>
 
-  <!-- STAGE 4 — After the job -->
-  <div class="stage" data-stage="4" data-open="0">
-    <div class="stage-h" onclick="toggleStage(4)">
-      <div class="stage-num" id="stage-num-4"></div>
+  <!-- STAGE 3 — After the job -->
+  <div class="stage" data-stage="3" data-open="0">
+    <div class="stage-h" onclick="toggleStage(3)">
+      <div class="stage-num" id="stage-num-3"></div>
       <div class="stage-title-wrap">
         <div class="stage-title">After the job</div>
-        <div class="stage-sub" id="stage-sub-4">0 of 6</div>
+        <div class="stage-sub" id="stage-sub-3">0 of 5</div>
       </div>
       <div class="stage-chev">▾</div>
     </div>
@@ -291,9 +289,18 @@ main{padding:14px;}
         <div class="chk" data-id="staff-23" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Transfer all footage to laptop and back up immediately</div></div>
         <div class="chk" data-id="staff-24" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Select best photos — minimum 20 for the report</div></div>
         <div class="alert blue" style="margin-top:2px;"><div class="alert-icon">📝</div><div>Writing the report itself happens on the separate report generator site, not here. Report due within 48 hours — aim for 24.</div></div>
-        <div class="chk" data-id="staff-28" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Charge all batteries ready for next job</div></div>
       </div>
     </div>
+  </div>
+  </div>
+
+  <!-- READY FOR TOMORROW — same treatment as the morning equipment check: day-scoped, not a
+       numbered stage, untouched by "Reset checklist for new job". Sits after the per-job stages
+       so it's naturally the last thing you see, once after your last job of the day. -->
+  <div class="sl">Ready for tomorrow <span id="ready-count" style="margin-left:auto;font-weight:700;color:var(--navy);text-transform:none;letter-spacing:normal;"></span></div>
+  <div class="card" id="ready-card" style="margin-bottom:12px;">
+    <div class="safety-note" style="margin-top:0;">Do this once at the end of your last job of the day, so tomorrow's equipment check is a quick confirm, not a scramble.</div>
+    <div id="ready-list"></div>
   </div>
   <div class="spacer"></div>
 </div>
@@ -302,14 +309,7 @@ main{padding:14px;}
 <!-- REFERENCE — everything you look up, not act through -->
 <!-- ══════════════════════════════════════════ -->
 <div class="tc" id="tab-ref">
-  <div class="sl">Equipment check</div>
-  <div class="card" style="margin-bottom:12px;">
-    <div style="display:flex;justify-content:space-between;align-items:center;">
-      <div style="font-size:12px;color:var(--muted);">Resets automatically each day</div>
-      <div style="font-size:11px;font-weight:700;color:var(--navy);" id="equip-count">0 / 0 packed</div>
-    </div>
-    <div id="equip-list"></div>
-  </div>
+  <div class="alert blue"><div class="alert-icon">🧰</div><div><strong>Equipment check:</strong> lives at the top of the Job tab now, above the per-job checklist — do it there once each morning, not here.</div></div>
   <div class="sl">On-site notes</div>
   <div class="card" style="margin-bottom:12px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
@@ -474,7 +474,58 @@ function showTab(id,btn){
     var adv = document.getElementById('planning-advanced');
     if(adv && adv.style.display !== 'none') loadPlanning();
   }
-  if(id === 'job'){ loadJobFlowLive(); loadAirspaceScreen(); }
+  if(id === 'job'){ loadJobFlowLive(); loadAirspaceScreen(); loadStaffJobPicker(); }
+}
+// ═══ JOB PICKER — same idea as the report generator's "Load job from Airtable" dropdown ═══
+// Lists jobs in the next 14 days (today included) so you can pick tomorrow's or a later one too,
+// not just whatever's dated today. Selecting one fills the same box the manual "Set today's job"
+// textarea uses, going through the existing manual-edit-protection logic so it won't silently
+// clobber anything hand-typed.
+async function loadStaffJobPicker(){
+  var wrap = document.getElementById('staff-job-picker');
+  var loading = document.getElementById('staff-job-picker-loading');
+  var sel = document.getElementById('staff-job-picker-select');
+  if(!wrap || !sel) return;
+  if(typeof AT === 'undefined' || !AT.hasToken()){ wrap.style.display='none'; return; }
+  if(loading) loading.style.display='block';
+  try{
+    var jobs = await AT.getUpcomingJobs(14);
+    if(loading) loading.style.display='none';
+    if(!jobs.length){ wrap.style.display='none'; return; }
+    sel.innerHTML = '<option value="">— Load a job from Airtable —</option>' + jobs.map(function(j){
+      var f = j.fields;
+      var label = AT.fmtDate(f[AT.FIELDS.jobs.date]) + ' — ' + (f[AT.FIELDS.jobs.client]||'Client') + ', ' + (f[AT.FIELDS.jobs.address]||'');
+      return '<option value="'+j.id+'">'+label.replace(/"/g,'&quot;')+'</option>';
+    }).join('');
+    wrap.style.display='block';
+  }catch(e){
+    if(loading) loading.style.display='none';
+    wrap.style.display='none';
+  }
+}
+function selectStaffJob(recordId){
+  if(!recordId || typeof AT === 'undefined') return;
+  AT.listRecords(AT.TABLES.jobs, [AT.FIELDS.jobs.client, AT.FIELDS.jobs.address, AT.FIELDS.jobs.propType, AT.FIELDS.jobs.notes], "RECORD_ID()='"+recordId+"'", null, 1).then(function(recs){
+    if(!recs || !recs.length) return;
+    var f = recs[0].fields;
+    var details = [
+      f[AT.FIELDS.jobs.client] || '',
+      f[AT.FIELDS.jobs.address] || '',
+      f[AT.FIELDS.jobs.propType] ? (f[AT.FIELDS.jobs.propType].name || f[AT.FIELDS.jobs.propType]) : '',
+    ].filter(Boolean).join('\n');
+    var notes = f[AT.FIELDS.jobs.notes] || '';
+    var full = details + (notes ? '\n\nNotes: ' + notes : '');
+    var input = document.getElementById('job-detail-input');
+    if(input){ input.value = full; }
+    try{
+      localStorage.setItem('rs_job_today', full);
+      localStorage.setItem('rs_job_today_from_at', full);
+    }catch(e){}
+    var warn = document.getElementById('job-conflict-note');
+    if(warn) warn.remove();
+    updateJobBanner();
+    loadAirspaceScreen();
+  }).catch(function(){});
 }
 function loadAirspaceScreen(){
   var box = document.getElementById('airspace-screen');
@@ -524,22 +575,42 @@ function toggleAcc(headerEl){
 // Each stage auto-collapses when fully ticked and hands off to the next one, so only one stage's
 // items are visible at a time instead of all ~30 tasks at once. Tapping a stage header always
 // still opens it manually (e.g. to go back and check something), this only controls the default.
-var STAGE_COUNT = 4;
+var STAGE_COUNT = 3;
+// ── HARD GATE — per council review: ticking the 5 safety-case checkboxes was never actually
+// tied to pressing "Confirm & log safety case", so a stage could show as "complete" (and
+// auto-advance let you into Flying) without the safety case ever really being logged. That's
+// a real gap on a legally/insurance-load-bearing check, not just a UX nicety. Now Stage 2
+// (Flying) and Stage 3 (After the job) are hard-locked — can't be opened, and their items can't
+// be ticked — until logSafetyCase() has actually run and passed for this job. Cleared per job by
+// "Reset checklist for new job", same as everything else in #job-stages.
+function flightCleared(){ try{ return localStorage.getItem('rs_flight_cleared')==='1'; }catch(e){ return false; } }
+function setFlightCleared(v){ try{ if(v) localStorage.setItem('rs_flight_cleared','1'); else localStorage.removeItem('rs_flight_cleared'); }catch(e){} }
 function stageEl(n){ return document.querySelector('.stage[data-stage="'+n+'"]'); }
 function stageChecks(n){ return stageEl(n).querySelectorAll('.chk'); }
 function stageDoneCount(n){ return stageEl(n).querySelectorAll('.chk.done').length; }
+function stageLocked(n){ return (n===2 || n===3) && !flightCleared(); }
+function flashGateWarning(){
+  var el = document.getElementById('gate-warning');
+  if(!el) return;
+  el.style.display = 'block';
+  clearTimeout(window._gateWarnTimer);
+  window._gateWarnTimer = setTimeout(function(){ el.style.display = 'none'; }, 3500);
+}
 function updateStageUI(){
   for(var n=1;n<=STAGE_COUNT;n++){
     var el = stageEl(n);
     var all = stageChecks(n).length;
     var done = stageDoneCount(n);
     var complete = all>0 && done===all;
-    el.classList.toggle('done', complete);
-    document.getElementById('stage-num-'+n).textContent = complete ? '' : n;
-    document.getElementById('stage-sub-'+n).textContent = complete ? 'Done — tap to reopen' : (done+' of '+all);
+    var locked = stageLocked(n);
+    el.classList.toggle('done', complete && !locked);
+    el.classList.toggle('locked', locked);
+    document.getElementById('stage-num-'+n).textContent = locked ? '🔒' : (complete ? '' : n);
+    document.getElementById('stage-sub-'+n).textContent = locked ? 'Log the safety case above first' : (complete ? 'Done — tap to reopen' : (done+' of '+all));
   }
 }
 function toggleStage(n, force){
+  if(stageLocked(n) && force!==false){ flashGateWarning(); n = 1; }
   document.querySelectorAll('.stage').forEach(function(el){
     var s = +el.dataset.stage;
     el.setAttribute('data-open', (s===n && force!==false) ? '1' : '0');
@@ -549,6 +620,7 @@ function autoAdvance(){
   updateStageUI();
   // Open the first stage that isn't fully complete; if everything's done, leave the last stage open.
   for(var n=1;n<=STAGE_COUNT;n++){
+    if(stageLocked(n)){ toggleStage(1); return; }
     var all = stageChecks(n).length;
     var done = stageDoneCount(n);
     if(!(all>0 && done===all)){ toggleStage(n); return; }
@@ -556,6 +628,11 @@ function autoAdvance(){
   toggleStage(STAGE_COUNT);
 }
 function tick(el){
+  // Hard stop, not just a dimmed-looking stage — if the safety case isn't logged, items inside
+  // stage 2/3 simply cannot be ticked, even if someone finds a way to open the stage.
+  var stageParent = el.closest('.stage');
+  var stageNum = stageParent ? +stageParent.dataset.stage : 0;
+  if(stageLocked(stageNum)){ flashGateWarning(); toggleStage(1); return; }
   el.classList.toggle('done');
   var id=el.dataset.id;
   if(id) localStorage.setItem('rschk_'+id, el.classList.contains('done')?'1':'0');
@@ -563,21 +640,85 @@ function tick(el){
   autoAdvance();
 }
 function updateProg(){
-  const all=document.querySelectorAll('#tab-job .chk');
-  const done=document.querySelectorAll('#tab-job .chk.done');
+  // Scoped to #job-stages only — the daily equipment/ready-for-tomorrow cards have their own
+  // small counters instead, since they're once-a-day, not once-per-job, and shouldn't dilute
+  // (or be wiped by) the per-job progress bar/reset button.
+  const all=document.querySelectorAll('#job-stages .chk');
+  const done=document.querySelectorAll('#job-stages .chk.done');
   const p=all.length?Math.round((done.length/all.length)*100):0;
   document.getElementById('prog').style.width=p+'%';
   document.getElementById('prog-txt').textContent=done.length+' of '+all.length+' complete';
   document.getElementById('prog-pct').textContent=p+'%';
 }
 function resetChecks(){
-  document.querySelectorAll('#tab-job .chk').forEach(function(e){
+  document.querySelectorAll('#job-stages .chk').forEach(function(e){
     e.classList.remove('done');
     if(e.dataset.id) localStorage.removeItem('rschk_'+e.dataset.id);
   });
+  setFlightCleared(false);
   updateProg();
   autoAdvance();
 }
+// ═══ DAILY CARDS — morning equipment check & ready for tomorrow ════════════
+// Both use date-scoped keys (rs_equip_/rs_ready_ + today's date), so they reset themselves
+// automatically each morning rather than being tied to "Reset checklist for new job" — that
+// button only touches #job-stages, so ticking through several jobs in a day won't wipe either
+// of these. Each has its own small counter next to its heading rather than feeding the main
+// per-job progress bar.
+var EQUIP_ITEMS = [
+  'Drone (aircraft)',
+  '3× batteries charged to 100%',
+  'Charger packed',
+  'All filters packed — ND8, ND32, ND128, CPL',
+  'Memory cards formatted and empty (+ spare)',
+  'Phone charged — DJI Fly app open and updated',
+  'Hi-vis vest packed',
+  'Operator ID label visible on aircraft',
+  'Controller/tablet charged',
+  'Flock Cover app — account logged in and ready'
+];
+var READY_ITEMS = [
+  'Charge all batteries used today',
+  'Format and empty memory cards for tomorrow',
+  'Re-pack the bag — all filters, hi-vis, charger, spare card',
+  'Check tomorrow\'s job is set (Airtable or the box at the top of this tab)',
+  'Anything broken or low? Note it for Takhy now, not tomorrow morning'
+];
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+function renderDailyList(listId, countId, items, storagePrefix, dataAttr, tickFn){
+  var list = document.getElementById(listId);
+  if(!list) return;
+  var today = todayStr();
+  list.innerHTML = items.map(function(item,i){
+    var key = storagePrefix+today+'_'+i;
+    var done = false;
+    try{ done = localStorage.getItem(key)==='1'; }catch(e){}
+    return '<div class="chk'+(done?' done':'')+'" data-'+dataAttr+'="'+i+'" onclick="'+tickFn+'(this)"><div class="chk-box"></div><div class="chk-text">'+item+'</div></div>';
+  }).join('');
+  updateDailyCount(listId, countId);
+}
+function updateDailyCount(listId, countId){
+  var all = document.querySelectorAll('#'+listId+' .chk');
+  var done = document.querySelectorAll('#'+listId+' .chk.done');
+  var el = document.getElementById(countId);
+  if(el) el.textContent = done.length+' of '+all.length;
+}
+function renderEquip(){ renderDailyList('equip-list','equip-count',EQUIP_ITEMS,'rs_equip_','equip','tickEquip'); }
+function tickEquip(el){
+  el.classList.toggle('done');
+  var key = 'rs_equip_'+todayStr()+'_'+el.dataset.equip;
+  try{ if(el.classList.contains('done')) localStorage.setItem(key,'1'); else localStorage.removeItem(key); }catch(e){}
+  updateDailyCount('equip-list','equip-count');
+}
+function renderReady(){ renderDailyList('ready-list','ready-count',READY_ITEMS,'rs_ready_','ready','tickReady'); }
+function tickReady(el){
+  el.classList.toggle('done');
+  var key = 'rs_ready_'+todayStr()+'_'+el.dataset.ready;
+  try{ if(el.classList.contains('done')) localStorage.setItem(key,'1'); else localStorage.removeItem(key); }catch(e){}
+  updateDailyCount('ready-list','ready-count');
+}
+renderEquip();
+renderReady();
 // Restore checklist state on load
 document.querySelectorAll('[data-id]').forEach(function(el){
   if(localStorage.getItem('rschk_'+el.dataset.id)==='1') el.classList.add('done');
@@ -751,8 +892,79 @@ function renderIncidents(){
         : '<span style="color:var(--muted);">saving…</span>';
     return '<div style="background:var(--rbg);border-radius:8px;padding:8px 10px;margin-bottom:5px;font-size:12px;"><strong style="color:var(--red);">'+inc.type+'</strong> <span style="color:var(--muted);">· '+inc.date+'</span><div style="color:#7B241C;margin-top:2px;">'+inc.notes+'</div><div style="margin-top:3px;font-size:11px;">'+syncBadge+'</div></div>';
   }).join('');
+  updateUnsyncedBanner();
 }
 renderIncidents();
+// ═══ UNSYNCED-RECORD BANNER — per council review ════════════════════════
+// A safety case or incident that only saved to this device is a compliance record one dropped
+// phone away from not existing. The per-entry badges below the history lists are easy to miss on
+// a long day, so this puts a persistent, hard-to-miss banner above the job flow whenever anything
+// hasn't confirmed as synced to Airtable, with a one-tap retry once you're back in signal.
+function getUnsyncedEntries(){
+  var cases = [], incidents = [];
+  try{ cases = JSON.parse(localStorage.getItem('rs_safetycase_log'))||[]; }catch(e){}
+  try{ incidents = JSON.parse(localStorage.getItem('rs_incidents'))||[]; }catch(e){}
+  return {
+    cases: cases.filter(function(c){ return c.synced === false; }),
+    incidents: incidents.filter(function(i){ return i.synced === false; })
+  };
+}
+function updateUnsyncedBanner(){
+  var banner = document.getElementById('unsynced-banner');
+  if(!banner) return;
+  var u = getUnsyncedEntries();
+  var count = u.cases.length + u.incidents.length;
+  if(!count){ banner.style.display='none'; banner.innerHTML=''; return; }
+  banner.style.display='block';
+  var parts = [];
+  if(u.cases.length) parts.push(u.cases.length+' safety case'+(u.cases.length>1?'s':''));
+  if(u.incidents.length) parts.push(u.incidents.length+' incident'+(u.incidents.length>1?'s':''));
+  banner.innerHTML = '<div class="alert red" style="margin-bottom:0;"><div class="alert-icon">⚠️</div><div>'+
+    '<strong>'+parts.join(' and ')+' saved on this device only</strong> — not backed up to Airtable yet. '+
+    '<a href="#" onclick="event.preventDefault();retrySync();" style="color:inherit;font-weight:700;text-decoration:underline;">Retry sync now</a>'+
+    '<div id="unsynced-retry-status" style="margin-top:4px;font-size:11px;"></div></div></div>';
+}
+function retrySync(){
+  var status = document.getElementById('unsynced-retry-status');
+  if(typeof AT === 'undefined' || !AT.hasToken()){
+    if(status) status.textContent = 'No Airtable connection — connect it in Planning first.';
+    return;
+  }
+  var u = getUnsyncedEntries();
+  var total = u.cases.length + u.incidents.length;
+  if(!total) return;
+  if(status) status.textContent = 'Retrying '+total+'…';
+  var jobs = u.cases.map(function(entry){
+    return AT.createRecord('Safety Case Log', { 'Job': entry.job, 'Status': 'Cleared to fly', 'Logged At': entry.time })
+      .then(function(){ entry.synced = true; })
+      .catch(function(){});
+  }).concat(u.incidents.map(function(entry){
+    return AT.createRecord('Incident Log', { 'Type': entry.type, 'Notes': entry.notes, 'Logged At': entry.time })
+      .then(function(){ entry.synced = true; })
+      .catch(function(){});
+  }));
+  Promise.all(jobs).then(function(){
+    // Write back whichever entries flipped to synced=true, matched by timestamp within each list.
+    try{
+      var allCases = JSON.parse(localStorage.getItem('rs_safetycase_log'))||[];
+      allCases.forEach(function(c){ var m = u.cases.find(function(x){return x.time===c.time;}); if(m && m.synced) c.synced = true; });
+      localStorage.setItem('rs_safetycase_log', JSON.stringify(allCases));
+    }catch(e){}
+    try{
+      var allIncidents = JSON.parse(localStorage.getItem('rs_incidents'))||[];
+      allIncidents.forEach(function(i){ var m = u.incidents.find(function(x){return x.time===i.time;}); if(m && m.synced) i.synced = true; });
+      localStorage.setItem('rs_incidents', JSON.stringify(allIncidents));
+    }catch(e){}
+    renderSafetyCases();
+    renderIncidents();
+    var stillUnsynced = getUnsyncedEntries();
+    var stillCount = stillUnsynced.cases.length + stillUnsynced.incidents.length;
+    if(stillCount > 0){
+      var freshStatus = document.getElementById('unsynced-retry-status');
+      if(freshStatus) freshStatus.textContent = stillCount+' still failed — check your connection and try again.';
+    }
+  });
+}
 // ═══ PRE-FLIGHT SAFETY CASE (now lives inside Job → stage 2) ═══════════════════
 function tickSC(el){
   el.classList.toggle('done');
@@ -760,15 +972,21 @@ function tickSC(el){
   autoAdvance();
 }
 function logSafetyCase(){
-  var boxes = stageChecks(2);
-  var done = stageEl(2).querySelectorAll('.chk.done');
+  // Only the 5 sc-* checks count toward "is the safety case actually done" — not the whole of
+  // stage 1 (which also has intro/site-walk/filter items that aren't part of the legal safety
+  // case itself). Was previously checking stage 2 entirely, a leftover from before the stages
+  // were renumbered — silently comparing against the wrong stage's items.
+  var scBoxes = stageEl(1).querySelectorAll('.chk[data-id^="sc-"]');
+  var scDone = stageEl(1).querySelectorAll('.chk[data-id^="sc-"].done');
   var result = document.getElementById('sc-result');
   if(!result) return;
-  if(done.length < boxes.length){
+  if(scDone.length < scBoxes.length){
     result.style.color='var(--amber)';
-    result.textContent='Tick all checks above before logging — this is your legal safety case.';
+    result.textContent='Tick all 5 checks above before logging — this is your legal safety case.';
     return;
   }
+  setFlightCleared(true);
+  autoAdvance();
   var jobTxt = '';
   try{ jobTxt = localStorage.getItem('rs_job_today') || ''; }catch(e){}
   var cases = [];
@@ -818,49 +1036,10 @@ function renderSafetyCases(){
         : '<span style="color:var(--muted);">saving…</span>';
     return '<div style="background:var(--rbg);border-radius:8px;padding:8px 10px;margin-bottom:5px;font-size:12px;"><strong style="color:var(--green);">✓ Cleared to fly</strong> <span style="color:var(--muted);">· '+c.date+'</span><div style="color:#333;margin-top:2px;">'+c.job+'</div><div style="margin-top:3px;font-size:11px;">'+syncBadge+'</div></div>';
   }).join('');
+  updateUnsyncedBanner();
 }
 renderSafetyCases();
-// ═══ EQUIPMENT CHECK (Reference) ════════════════════════════════════
-var EQUIP_ITEMS = [
-  'Drone (aircraft)',
-  '3× batteries charged',
-  'Charger',
-  'ND filter set',
-  'Memory cards formatted (+ spare)',
-  'Phone charged — DJI Fly app ready',
-  'Hi-vis vest',
-  'Operator ID label visible on aircraft',
-  'Controller/tablet charged'
-];
-function equipTodayStr(){ return new Date().toISOString().slice(0,10); }
-function renderEquip(){
-  var list = document.getElementById('equip-list');
-  if(!list) return;
-  var today = equipTodayStr();
-  list.innerHTML = EQUIP_ITEMS.map(function(item,i){
-    var key = 'rs_equip_'+today+'_'+i;
-    var done = false;
-    try{ done = localStorage.getItem(key)==='1'; }catch(e){}
-    return '<div class="chk'+(done?' done':'')+'" data-equip="'+i+'" onclick="tickEquip(this)"><div class="chk-box"></div><div class="chk-text">'+item+'</div></div>';
-  }).join('');
-  updateEquipCount();
-}
-function tickEquip(el){
-  el.classList.toggle('done');
-  var i = el.dataset.equip;
-  var key = 'rs_equip_'+equipTodayStr()+'_'+i;
-  try{
-    if(el.classList.contains('done')) localStorage.setItem(key,'1'); else localStorage.removeItem(key);
-  }catch(e){}
-  updateEquipCount();
-}
-function updateEquipCount(){
-  var all = document.querySelectorAll('#equip-list .chk');
-  var done = document.querySelectorAll('#equip-list .chk.done');
-  var el = document.getElementById('equip-count');
-  if(el) el.textContent = done.length+' / '+all.length+' packed';
-}
-renderEquip();
+updateUnsyncedBanner();
 // ═══ JOB — live weather + overdue + airspace ════════════════════════
 async function loadJobFlowLive(){
   if(typeof AT === 'undefined' || !AT.hasToken()) return;
@@ -932,6 +1111,7 @@ async function loadOverdueCard(){
 }
 loadJobFlowLive();
 loadAirspaceScreen();
+loadStaffJobPicker();
 // ═══ PLANNING TAB — calendar + monthly stats ═══════════════════════
 function atRefreshKeyUI(){
   var connected = typeof AT !== 'undefined' && AT.hasToken();
@@ -947,6 +1127,7 @@ function atSaveKey(){
   atRefreshKeyUI();
   loadPlanning();
   loadJobFlowLive();
+  loadStaffJobPicker();
 }
 function atChangeKey(){
   if(typeof AT !== 'undefined') AT.setToken('');
