@@ -204,10 +204,12 @@ main{padding:14px;}
        stages so you naturally see it first, but it's day-scoped (resets automatically each
        morning, not per job) and untouched by "Reset checklist for new job" — do it once before
        your first job, not again between jobs on a multi-job day. -->
-  <div class="sl">Morning equipment check <span id="equip-count" style="margin-left:auto;font-weight:700;color:var(--navy);text-transform:none;letter-spacing:normal;"></span></div>
+  <div class="sl" onclick="toggleEquipCollapse()" style="cursor:pointer;">Morning equipment check <span id="equip-count" style="margin-left:auto;font-weight:700;color:var(--navy);text-transform:none;letter-spacing:normal;"></span><span id="equip-chevron" style="margin-left:6px;color:var(--muted);font-size:10px;transition:transform .15s;">▾</span></div>
   <div class="card" id="equip-card" style="margin-bottom:12px;">
-    <div class="safety-note" style="margin-top:0;">Resets automatically each morning — do this once before your first job, not before every job today.</div>
-    <div id="equip-list"></div>
+    <div id="equip-card-body">
+      <div class="safety-note" style="margin-top:0;">Resets automatically each morning — do this once before your first job, not before every job today.</div>
+      <div id="equip-list"></div>
+    </div>
   </div>
 
   <!-- Per-job stages — this is what "Reset checklist for new job" clears, so on a multi-job day
@@ -270,6 +272,7 @@ main{padding:14px;}
         <div class="chk" data-id="staff-20b" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Angled 3/4 overview<div class="chk-note">A higher, angled shot showing the roof in context with the rest of the property — gives the client a "whole picture" shot the straight-down one doesn't.</div></div></div>
         <div class="chk" data-id="staff-21" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Review footage on phone before landing<div class="chk-note">Check every elevation, chimney, and defect shot is sharp and in frame. Reshoot anything blurry or cut off now — going back up later means a second trip.</div></div></div>
         <div class="chk" data-id="staff-22" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Land safely — stop Flock Cover session</div></div>
+        <div id="job-complete-status" style="display:none;font-size:12px;margin-top:8px;"></div>
       </div>
     </div>
   </div>
@@ -523,6 +526,7 @@ function selectStaffJob(recordId){
     }catch(e){}
     var warn = document.getElementById('job-conflict-note');
     if(warn) warn.remove();
+    setCurrentJobId(recordId);
     updateJobBanner();
     loadAirspaceScreen();
   }).catch(function(){});
@@ -638,6 +642,36 @@ function tick(el){
   if(id) localStorage.setItem('rschk_'+id, el.classList.contains('done')?'1':'0');
   updateProg();
   autoAdvance();
+  if(stageNum === 2) maybeSyncJobComplete();
+}
+// ── Marks the linked Airtable job Complete as soon as Stage 2 (Flying) is fully ticked, not
+// waiting for Stage 3 — per Tak's request, since a multi-job day means footage transfer/photo
+// selection (Stage 3) might not happen until much later, and the office side shouldn't have to
+// wait for that to know the flight itself is done. Only fires once per job (rs_job_status_synced),
+// and only if a specific Airtable job was actually linked via the picker or auto-fill — if Tak
+// typed the job in by hand with no Airtable record behind it, there's nothing to write back to.
+function maybeSyncJobComplete(){
+  var all = stageChecks(2).length, done = stageDoneCount(2);
+  if(!(all>0 && done===all)) return;
+  var jobId = ''; try{ jobId = localStorage.getItem('rs_job_today_id') || ''; }catch(e){}
+  var already = ''; try{ already = localStorage.getItem('rs_job_status_synced') || ''; }catch(e){}
+  var statusEl = document.getElementById('job-complete-status');
+  if(!jobId){
+    if(statusEl){ statusEl.style.display='block'; statusEl.style.color='var(--muted)'; statusEl.textContent='No Airtable job linked — pick one from the dropdown above to auto-update its status.'; }
+    return;
+  }
+  if(already === '1') return;
+  if(typeof AT === 'undefined' || !AT.hasToken()){
+    if(statusEl){ statusEl.style.display='block'; statusEl.style.color='var(--amber)'; statusEl.textContent='Flying complete — connect Airtable in Planning to mark the job Complete automatically.'; }
+    return;
+  }
+  if(statusEl){ statusEl.style.display='block'; statusEl.style.color='var(--muted)'; statusEl.textContent='Marking job Complete in Airtable…'; }
+  AT.setJobStatus(jobId, 'Complete').then(function(){
+    try{ localStorage.setItem('rs_job_status_synced','1'); }catch(e){}
+    if(statusEl){ statusEl.style.color='var(--green)'; statusEl.textContent='✓ Job marked Complete in Airtable — safe to move on to the next one.'; }
+  }).catch(function(){
+    if(statusEl){ statusEl.style.color='var(--red)'; statusEl.textContent='⚠ Could not update Airtable — mark this job Complete manually later.'; }
+  });
 }
 function updateProg(){
   // Scoped to #job-stages only — the daily equipment/ready-for-tomorrow cards have their own
@@ -656,6 +690,11 @@ function resetChecks(){
     if(e.dataset.id) localStorage.removeItem('rschk_'+e.dataset.id);
   });
   setFlightCleared(false);
+  // Moving to a new job — unlink the previous one so its completion sync can't leak onto
+  // whichever job comes next until it's explicitly (re)selected.
+  try{ localStorage.removeItem('rs_job_today_id'); localStorage.removeItem('rs_job_status_synced'); }catch(e){}
+  var statusEl = document.getElementById('job-complete-status');
+  if(statusEl){ statusEl.style.display='none'; statusEl.textContent=''; }
   updateProg();
   autoAdvance();
 }
@@ -703,12 +742,36 @@ function updateDailyCount(listId, countId){
   var el = document.getElementById(countId);
   if(el) el.textContent = done.length+' of '+all.length;
 }
-function renderEquip(){ renderDailyList('equip-list','equip-count',EQUIP_ITEMS,'rs_equip_','equip','tickEquip'); }
+function renderEquip(){ renderDailyList('equip-list','equip-count',EQUIP_ITEMS,'rs_equip_','equip','tickEquip'); applyEquipCollapse(); }
 function tickEquip(el){
   el.classList.toggle('done');
   var key = 'rs_equip_'+todayStr()+'_'+el.dataset.equip;
   try{ if(el.classList.contains('done')) localStorage.setItem(key,'1'); else localStorage.removeItem(key); }catch(e){}
   updateDailyCount('equip-list','equip-count');
+  applyEquipCollapse();
+}
+// ── Equipment card auto-collapse — per Tak's request, once every item is ticked the card
+// tucks itself away (like the numbered stages do) instead of sitting there fully expanded
+// taking up screen space. Header stays tappable to reopen/re-close manually at any time.
+var equipManualOpen = null; // null = auto (collapse only when complete), true/false = user override
+function equipComplete(){
+  var all = document.querySelectorAll('#equip-list .chk').length;
+  var done = document.querySelectorAll('#equip-list .chk.done').length;
+  return all>0 && done===all;
+}
+function applyEquipCollapse(){
+  var body = document.getElementById('equip-card-body');
+  var chevron = document.getElementById('equip-chevron');
+  if(!body) return;
+  var collapsed = equipManualOpen === true ? false : (equipManualOpen === false ? true : equipComplete());
+  body.style.display = collapsed ? 'none' : 'block';
+  if(chevron) chevron.style.transform = collapsed ? 'rotate(-90deg)' : 'rotate(0deg)';
+}
+function toggleEquipCollapse(){
+  var body = document.getElementById('equip-card-body');
+  var isCollapsed = body && body.style.display === 'none';
+  equipManualOpen = isCollapsed ? true : false;
+  applyEquipCollapse();
 }
 function renderReady(){ renderDailyList('ready-list','ready-count',READY_ITEMS,'rs_ready_','ready','tickReady'); }
 function tickReady(el){
@@ -733,7 +796,21 @@ function saveJobDetail(){
 function clearJobDetail(){
   document.getElementById('job-detail-input').value='';
   try{localStorage.removeItem('rs_job_today');}catch(e){}
+  setCurrentJobId('');
   updateJobBanner();
+}
+// ── Links the checklist to a specific Airtable job record so Stage 2 completion (see
+// maybeSyncJobComplete, near tick()) knows which record to mark Complete. Changing which job
+// is linked clears the "already synced" flag, so a newly-selected job gets its own fresh sync
+// rather than silently reusing whatever the last job's sync state was.
+function setCurrentJobId(id){
+  var prev = '';
+  try{ prev = localStorage.getItem('rs_job_today_id') || ''; }catch(e){}
+  if(id === prev) return;
+  try{
+    if(id) localStorage.setItem('rs_job_today_id', id); else localStorage.removeItem('rs_job_today_id');
+    localStorage.removeItem('rs_job_status_synced');
+  }catch(e){}
 }
 function updateJobBanner(){
   // First try Airtable for today's jobs
@@ -756,6 +833,7 @@ function updateJobBanner(){
           banner.style.display = 'block';
           display.textContent = full;
           banner.dataset.jobId = job.id;
+          setCurrentJobId(job.id);
           // Previously this always overwrote whatever was manually typed in the "Set today's
           // job" box with the live Airtable value, silently — a data-loss pattern the council
           // flagged (access notes, gate codes etc. typed by hand could vanish with no warning).
