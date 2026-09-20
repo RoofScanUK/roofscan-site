@@ -357,6 +357,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
         <div style="flex:1;min-width:120px;background:#E8E4D8;border-radius:8px;height:6px;overflow:hidden;"><div id="bp-progress-fill" style="height:100%;width:0%;background:#27AE60;border-radius:8px;transition:width .3s;"></div></div>
         <div style="font-size:11px;color:#6B7A8D;" id="bp-progress-label">No photos yet</div>
       </div>
+      <div id="bp-zonestrip-wrap" style="display:none;margin-top:14px;">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#6B7A8D;margin-bottom:4px;">Tag roof zones — set once, it carries forward until you change it</div>
+        <div style="font-size:11px;color:#6B7A8D;margin-bottom:8px;line-height:1.4;">Shown in the order you shot them. Each one defaults to whatever the last one was set to, so if you shot front-to-back-to-sides, just change the zone at each transition and leave the rest alone.</div>
+        <div id="bp-zonestrip-row" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+      </div>
       <div id="bp-extras-wrap" style="display:none;margin-top:14px;">
         <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#6B7A8D;margin-bottom:8px;">Set aside — duplicates, overview shots &amp; anything unsure</div>
         <div id="bp-extras-grid" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
@@ -823,7 +828,8 @@ function collectObs(){
     var status=state[key]?state[key].status||"":"";
     var photoB64=state[key]?state[key].photoB64||null:null;
     var photoMime=state[key]?state[key].photoMime||"image/jpeg":"image/jpeg";
-    if(status||(txt&&txt.value)){obs.push({ref:ref,title:title,status:status,priority:pri?pri.value||"":"",observation:txt?txt.value||"":"",photoB64:photoB64,photoMime:photoMime});}
+    var zone=state[key]?state[key].zone||"":"";
+    if(status||(txt&&txt.value)){obs.push({ref:ref,title:title,status:status,priority:pri?pri.value||"":"",observation:txt?txt.value||"":"",photoB64:photoB64,photoMime:photoMime,zone:zone});}
   });
   return obs;
 }
@@ -839,7 +845,14 @@ async function generateSummaries(){
   var covering=document.getElementById("covering").value||"slate/tile";
   var roofAge=document.getElementById("roofAge").value||"unknown age";
   var obsText=obs.map(function(o){return"- "+o.ref+" "+o.title+": ["+o.status+"] "+o.observation+" | Priority: "+o.priority;}).join("\n");
-  var prompt="You are writing an executive summary for a professional UK drone roof inspection report.\nProperty: "+address+", Roof: "+roofType+" "+covering+" ~"+roofAge+", Condition: "+conds[conditionIdx]+"\nObservations:\n"+obsText+"\nWrite in formal British English. Return ONLY valid JSON:\n{\"summary\":\"2-3 sentences\",\"keyRisks\":\"1-2 sentences\",\"maintenance\":\"2-3 sentences\"}";
+  var prompt="You are a senior drone roof inspection specialist writing the executive summary for a professional UK drone roof inspection report. This is a diagnostic report, not a repair quote or proposal — RoofScan inspects and reports, a separate contractor (if the client chooses one) does any repair work. Keep that boundary firm in your wording.\n\n"
+    +"Judgment rules to apply:\n"
+    +"- Describe only what the observations support. Never invent damage, causes, or a source for an issue that wasn't recorded — if something is genuinely unclear from the aerial imagery, say so rather than guessing.\n"
+    +"- This is aerial/drone imagery, not a ground or attic inspection. If findings suggest something a physical inspection would confirm better (e.g. suspected but unconfirmed water ingress, anything only checkable from inside the loft), say that plainly instead of overstating certainty.\n"
+    +"- Match tone to severity — don't dramatise a Monitor-level finding or undersell a Repair required one. A homeowner reading this should come away with an accurate sense of urgency, not more or less alarm than the findings justify.\n"
+    +"- No pricing, no scope-of-work, no promises about fixing anything. Maintenance guidance is about care and monitoring, not instructions for a contractor.\n"
+    +"- Insurance-safe language throughout: 'observed', 'noted during inspection', 'consistent with visible aerial imagery' — never 'caused by', 'resulted from', or any coverage/compliance claim, since clients sometimes forward these reports to insurers or letting agents.\n\n"
+    +"Property: "+address+", Roof: "+roofType+" "+covering+" ~"+roofAge+", Condition: "+conds[conditionIdx]+"\nObservations:\n"+obsText+"\nWrite in formal British English. Return ONLY valid JSON:\n{\"summary\":\"2-3 sentences\",\"keyRisks\":\"1-2 sentences\",\"maintenance\":\"2-3 sentences\"}";
   try{
     var res=await callClaude("claude-sonnet-4-20250514",600,[{role:"user",content:prompt}]);
     var data=await res.json();
@@ -1490,6 +1503,67 @@ var BP_CLASSIFY_PROMPT = "You are triaging a photo from a UK drone roof inspecti
   "And <note> is ONE short factual sentence describing exactly what's visible (e.g. \"Cracked flaunching at the base of the chimney pot, mortar eroding.\"). If nothing notable is visible, use the word NONE instead of a sentence. Do not guess at severity or invent detail you can't see. This note is a DRAFT for a human to check and edit before it goes in a client report — it is never sent as-is.";
 var bpTotal = 0, bpDone = 0, bpExtraId = 1;
 var bpRefHashes = {}; // ref -> [aHash,...] already placed, for duplicate detection
+// ═══ ROOF ZONE TAGGING — Tak's idea: shoot in a fixed walk order (front, rear, sides, chimney,
+// ridge...) so the report can say WHICH slope a finding is on, not just what it is. The AI
+// classifier above only ever guessed the component type (chimney/ridge/guttering/etc), never
+// position — this adds that as a second, non-AI axis, tagged from capture order instead of
+// guessed from the image. Photos naturally cluster by zone during a real walkthrough (several
+// front-elevation shots in a row, then several chimney shots, etc), so the "Tag roof zones"
+// strip below (rendered synchronously in file order, independent of the async AI classify pool
+// which finishes out of order) uses a sticky/cascading default: tap one photo to a new zone and
+// every later untouched photo in the strip follows it, so Tak only taps at the actual transitions
+// instead of tagging all ~20+ photos individually.
+var BP_ZONES = ['Front elevation','Rear elevation','Left side','Right side','Chimney area','Ridge','Flashings / valleys','Guttering','Top-down / overview','Other / not sure'];
+var bpZoneMap = new Map(); // File object -> zone string, read by bpProcessFile/bpPlacePhoto
+function bpBuildZoneStrip(files){
+  var wrap = document.getElementById('bp-zonestrip-wrap');
+  var row = document.getElementById('bp-zonestrip-row');
+  if(!wrap || !row) return;
+  wrap.style.display = 'block';
+  // Multiple upload batches append to the same strip — only the newly-added indices should be
+  // touched here, and they should carry on from whatever zone the strip last ended on (if any),
+  // not reset the whole strip back to "Front elevation".
+  var startIdx = row.children.length;
+  var carryZone = BP_ZONES[0];
+  if(startIdx > 0){
+    var lastSel = row.children[startIdx-1].querySelector('select');
+    if(lastSel) carryZone = lastSel.value;
+  }
+  var zoneOpts = BP_ZONES.map(function(z){ return '<option value="'+z+'">'+z+'</option>'; }).join('');
+  files.forEach(function(file, i){
+    var globalIdx = startIdx + i;
+    var thumb = document.createElement('div');
+    thumb.className = 'bp-extra-thumb';
+    thumb.dataset.touched = '0';
+    var url = URL.createObjectURL(file);
+    thumb.innerHTML = '<img src="'+url+'">'
+      + '<select onchange="bpZoneChanged('+globalIdx+',this)">'+zoneOpts+'</select>';
+    row.appendChild(thumb);
+  });
+  bpCascadeZones(startIdx, carryZone);
+}
+function bpZoneChanged(startIdx, selectEl){
+  var row = document.getElementById('bp-zonestrip-row');
+  if(!row) return;
+  row.children[startIdx].dataset.touched = '1';
+  bpCascadeZones(startIdx, selectEl.value);
+}
+function bpCascadeZones(fromIdx, zone){
+  var row = document.getElementById('bp-zonestrip-row');
+  if(!row) return;
+  for(var i=fromIdx;i<row.children.length;i++){
+    var thumb = row.children[i];
+    if(i>fromIdx && thumb.dataset.touched==='1') continue; // user already set this one manually — stop overwriting it
+    var sel = thumb.querySelector('select');
+    if(sel){ sel.value = zone; }
+  }
+  // Re-sync bpZoneMap for every file against whatever its select now shows.
+  bpZoneFiles.forEach(function(file, i){
+    var sel = row.children[i] && row.children[i].querySelector('select');
+    if(sel) bpZoneMap.set(file, sel.value);
+  });
+}
+var bpZoneFiles = [];
 // Roof covering + approx. age auto-fill: as photos come in during bulk import, keep the single
 // best candidate shot for judging the roof as a whole (a wide overview beats a close-up defect
 // crop), then run one extra AI call once the batch finishes to guess Covering and Approx. age.
@@ -1535,6 +1609,16 @@ function bpHandleFiles(fileList){
   var files = [];
   for(var i=0;i<fileList.length;i++){ if(fileList[i].type.indexOf('image/')===0) files.push(fileList[i]); }
   if(!files.length) return;
+  // Sort into capture order (filename, which for drone photos increments sequentially — falls
+  // back to lastModified if names don't sort meaningfully) before anything else touches this
+  // batch, since the zone strip's sticky defaults only make sense in true shot order, and the
+  // async AI classify pool below finishes in whatever order the API calls happen to return.
+  files.sort(function(a,b){
+    if(a.name && b.name && a.name !== b.name) return a.name < b.name ? -1 : 1;
+    return (a.lastModified||0) - (b.lastModified||0);
+  });
+  bpZoneFiles = bpZoneFiles.concat(files);
+  bpBuildZoneStrip(files);
   bpTotal += files.length;
   bpUpdateProgress();
   bpRunPool(files, 4, bpProcessFile).then(bpMaybeDetectRoofSpecs);
@@ -1619,13 +1703,14 @@ async function bpClassify(base64){
   return {catIdx: idx, note: note};
 }
 async function bpProcessFile(file){
+  var zone = bpZoneMap.get(file) || '';
   try{
     var proc = await bpProcessImage(file);
     var result = await bpClassify(proc.base64);
-    bpPlacePhoto(file, proc, BP_CATS[result.catIdx], result.note);
+    bpPlacePhoto(file, proc, BP_CATS[result.catIdx], result.note, zone);
     bpCaptureRoofSpecCandidate(result.catIdx, proc.base64);
   }catch(e){
-    bpAddExtra(file, null, 'Failed to sort — add manually');
+    bpAddExtra(file, null, 'Failed to sort — add manually', '', zone);
   }
   bpDone++;
   bpUpdateProgress();
@@ -1700,11 +1785,12 @@ function bpFindBlockByRef(ref){
   }
   return null;
 }
-function bpAttachPhotoToBlock(block, proc, note){
+function bpAttachPhotoToBlock(block, proc, note, zone){
   var key = block.id.replace('obsblock_','');
   state[key] = state[key] || {status:null};
   state[key].photoB64 = proc.base64;
   state[key].photoMime = 'image/jpeg';
+  if(zone) state[key].zone = zone;
   var area = document.getElementById('photo_'+key);
   if(area){
     area.classList.add('has-photo');
@@ -1719,7 +1805,11 @@ function bpAttachPhotoToBlock(block, proc, note){
     img.src = 'data:image/jpeg;base64,'+proc.base64;
   }
   var ta = document.getElementById('obstext_'+key);
-  if(ta && note && !ta.value.trim()) ta.value = note;
+  if(ta && !ta.value.trim()){
+    var prefix = zone ? zone+' — ' : '';
+    if(note) ta.value = prefix + note;
+    else if(zone) ta.value = prefix.replace(/ — $/, '');
+  }
   bpMarkNeedsReview(key);
 }
 // Nothing an AI classified or drafted should reach the final report unreviewed — this puts a
@@ -1742,38 +1832,38 @@ function bpMarkNeedsReview(key){
   var statusSel = body ? body.querySelector('select') : null;
   if(statusSel) statusSel.addEventListener('change', clearFlag, {once:true});
 }
-function bpPlacePhoto(file, proc, cat, note){
+function bpPlacePhoto(file, proc, cat, note, zone){
   if(!cat.ref){
-    bpAddExtra(file, proc, cat.label, note);
+    bpAddExtra(file, proc, cat.label, note, zone);
     return;
   }
   var already = bpRefHashes[cat.ref] || [];
   for(var i=0;i<already.length;i++){
     if(bpHamming(proc.hash, already[i]) <= 8){
-      bpAddExtra(file, proc, 'Possible duplicate — '+cat.ref, note);
+      bpAddExtra(file, proc, 'Possible duplicate — '+cat.ref, note, zone);
       return;
     }
   }
   var block = bpFindBlockByRef(cat.ref);
-  if(!block){ bpAddExtra(file, proc, cat.ref+' (section not found)', note); return; }
+  if(!block){ bpAddExtra(file, proc, cat.ref+' (section not found)', note, zone); return; }
   already.push(proc.hash);
   bpRefHashes[cat.ref] = already;
   var key = block.id.replace('obsblock_','');
   var hasPhoto = state[key] && state[key].photoB64;
   if(!hasPhoto){
-    bpAttachPhotoToBlock(block, proc, note);
+    bpAttachPhotoToBlock(block, proc, note, zone);
   } else {
     // default slot for this exact element already has a photo — this is a
     // second genuine shot (e.g. a second chimney), so give it its own row.
     var secId = block.getAttribute('data-sec');
     var body = document.getElementById('secbody_'+secId);
-    if(!body){ bpAddExtra(file, proc, cat.ref+' (section not found)', note); return; }
+    if(!body){ bpAddExtra(file, proc, cat.ref+' (section not found)', note, zone); return; }
     addObservation(secId, body);
     var blocks = body.querySelectorAll('.obs-block');
-    bpAttachPhotoToBlock(blocks[blocks.length-1], proc, note);
+    bpAttachPhotoToBlock(blocks[blocks.length-1], proc, note, zone);
   }
 }
-function bpAddExtra(file, proc, label, note){
+function bpAddExtra(file, proc, label, note, zone){
   var wrap = document.getElementById('bp-extras-wrap');
   var grid = document.getElementById('bp-extras-grid');
   if(wrap) wrap.style.display = 'block';
@@ -1783,13 +1873,15 @@ function bpAddExtra(file, proc, label, note){
   var div = document.createElement('div');
   div.className = 'bp-extra-thumb';
   div.id = id;
+  var tagText = zone ? (zone+' — '+label) : label;
   div.innerHTML = '<img src="'+url+'">'
-    + '<div class="bp-tag">'+label+'</div>'
+    + '<div class="bp-tag">'+tagText+'</div>'
     + '<select onchange="bpAssignExtra(\''+id+'\',this.value)"><option value="">Attach to…</option>'+secOpts+'</select>'
     + '<button onclick="bpRemoveExtra(\''+id+'\')">Discard</button>';
   grid.appendChild(div);
   div._proc = proc;
   div._note = note || '';
+  div._zone = zone || '';
 }
 function bpAssignExtra(id, secId){
   if(!secId) return;
@@ -1799,7 +1891,7 @@ function bpAssignExtra(id, secId){
   if(!body) return;
   addObservation(secId, body);
   var blocks = body.querySelectorAll('.obs-block');
-  bpAttachPhotoToBlock(blocks[blocks.length-1], el._proc, el._note);
+  bpAttachPhotoToBlock(blocks[blocks.length-1], el._proc, el._note, el._zone);
   el.remove();
 }
 function bpRemoveExtra(id){
@@ -1939,14 +2031,19 @@ async function refineScoreWithAI(){
   }
 
   var sectionNames = {chimneys:'Chimneys & leadwork',coverings:'Roof coverings',rainwater:'Rainwater goods',ancillary:'Ancillary elements'};
-  var prompt = 'You are a senior chartered building surveyor reviewing a drone roof inspection report for a property in Sussex, UK.\n\n'
+  var prompt = 'You are a senior drone roof inspection specialist scoring a RoofScan UK aerial inspection report. This score is diagnostic only — it reflects what the aerial imagery shows, not a warranty, valuation, or repair quote.\n\n'
     + 'Based on the following findings, calculate a RoofScore from 0-100 where:\n'
     + '90-100 = Excellent (no action needed)\n'
     + '70-89  = Good (minor issues, monitor)\n'
     + '50-69  = Fair (attention needed within 1-2 years)\n'
     + 'Below 50 = Poor (urgent action required)\n\n'
-    + 'Scoring weights: Chimneys & leadwork 25%, Roof coverings 40%, Rainwater goods 25%, Ancillary 10%\n\n'
+    + 'Scoring weights: Chimneys & leadwork 25%, Roof coverings 40%, Rainwater goods 25%, Ancillary 10%\n'
+    + '(Weights reflect failure consequence if left unaddressed, not just how much area or how many findings a section has — a single serious chimney/leadwork defect can outweigh several cosmetic coverings notes.)\n\n'
     + 'Status guide: "Repair required" = urgent issue found, "Monitor" = minor issue to watch, "Satisfactory" = no issues\n\n'
+    + 'Judgment rules:\n'
+    + '- Score consistently: the same finding described the same way should score the same regardless of which job it appears on. Do not let one severe finding in a section drag down a score more than its real-world consequence justifies, and do not let several minor notes stack into a score more alarming than any one of them alone.\n'
+    + '- These findings come from aerial imagery only. If a finding notes uncertainty (e.g. "possible", "appears to", "not fully visible"), treat it as Monitor-level at most unless the status field says otherwise — do not let an ambiguous observation drive an urgent score.\n'
+    + '- Justification must name the specific finding(s) driving the score, not a generic restatement of the band ("Good condition overall" is not useful; "chimney flashing showing early lifting" is).\n\n'
     + 'Findings:\n' + JSON.stringify(findings, null, 2) + '\n\n'
     + 'Respond ONLY with valid JSON in this exact format (no markdown, no preamble):\n'
     + '{"roofscore":75,"chimneys":80,"coverings":72,"rainwater":75,"ancillary":90,'
