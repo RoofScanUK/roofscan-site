@@ -236,6 +236,7 @@ main{padding:14px;}
         <div class="alert red" style="margin-top:10px;margin-bottom:6px;"><div class="alert-icon">🚫</div><div><strong>Never fly if:</strong> wind is above 12m/s, visibility is poor, it's raining, or you feel unsafe about the site.</div></div>
         <div class="safety-note">This is your written safety case — required before EVERY flight, not just once a day. Tap through the 5 checks then confirm.</div>
         <div class="chk" data-id="sc-weather" onclick="tickSC(this)"><div class="chk-box"></div><div class="chk-text">Weather checked — wind under 12m/s, no rain, clear visibility</div></div>
+        <div id="weather-screen" style="display:none;margin-bottom:9px;"></div>
         <div id="airspace-screen" style="display:none;margin-bottom:9px;"></div>
         <div class="chk" data-id="sc-airspace" onclick="tickSC(this)"><div class="chk-box"></div><div class="chk-text">Airspace checked — no NOTAMs or restrictions for this site<div class="chk-note">First-pass check only — also confirm on the NATS UAS Restrictions Map or DJI Fly geo-zone layer</div></div></div>
         <div class="chk" data-id="sc-distance" onclick="tickSC(this)"><div class="chk-box"></div><div class="chk-text">CAA distance rules confirmed — 120m max altitude, 50m from uninvolved people</div></div>
@@ -477,7 +478,7 @@ function showTab(id,btn){
     var adv = document.getElementById('planning-advanced');
     if(adv && adv.style.display !== 'none') loadPlanning();
   }
-  if(id === 'job'){ loadJobFlowLive(); loadAirspaceScreen(); loadStaffJobPicker(); }
+  if(id === 'job'){ loadJobFlowLive(); loadAirspaceScreen(); loadWeatherScreen(); loadStaffJobPicker(); }
 }
 // ═══ JOB PICKER — same idea as the report generator's "Load job from Airtable" dropdown ═══
 // Lists jobs in the next 14 days (today included) so you can pick tomorrow's or a later one too,
@@ -511,9 +512,14 @@ function selectStaffJob(recordId){
   AT.listRecords(AT.TABLES.jobs, [AT.FIELDS.jobs.client, AT.FIELDS.jobs.address, AT.FIELDS.jobs.propType, AT.FIELDS.jobs.notes], "RECORD_ID()='"+recordId+"'", null, 1).then(function(recs){
     if(!recs || !recs.length) return;
     var f = recs[0].fields;
+    // Address must be first line — loadAirspaceScreen()/loadWeatherScreen() both parse line 1
+    // as the address (matching the manual-entry placeholder's own convention). This was
+    // previously client-first, which silently broke the airspace/weather safety-case checks
+    // for any job loaded via this picker (worked fine for hand-typed jobs, since those followed
+    // the placeholder's address-first convention) — caught in council round 2 review.
     var details = [
-      f[AT.FIELDS.jobs.client] || '',
       f[AT.FIELDS.jobs.address] || '',
+      f[AT.FIELDS.jobs.client] || '',
       f[AT.FIELDS.jobs.propType] ? (f[AT.FIELDS.jobs.propType].name || f[AT.FIELDS.jobs.propType]) : '',
     ].filter(Boolean).join('\n');
     var notes = f[AT.FIELDS.jobs.notes] || '';
@@ -529,7 +535,30 @@ function selectStaffJob(recordId){
     setCurrentJobId(recordId);
     updateJobBanner();
     loadAirspaceScreen();
+    loadWeatherScreen();
   }).catch(function(){});
+}
+// Per council round 2: the "Weather checked" safety-case item was a bare checkbox with no
+// actual number next to it — ticking it meant taking your own word for the wind speed rather
+// than looking at one. This pulls the real, current reading for today's job's address right
+// next to the tap target, same pattern as the existing airspace check below it.
+function loadWeatherScreen(){
+  var box = document.getElementById('weather-screen');
+  if(!box || typeof AT === 'undefined') return;
+  var addr = '', dateLine = '';
+  try{
+    var stored = localStorage.getItem('rs_job_today') || '';
+    addr = stored.split('\n')[0].trim();
+  }catch(e){}
+  if(!addr){ box.style.display='none'; box.innerHTML=''; return; }
+  AT.getWeatherForJob(addr, new Date().toISOString()).then(function(w){
+    if(!w){ box.style.display='none'; box.innerHTML=''; return; }
+    var cls = w.risk === 'red' ? 'red' : (w.risk === 'amber' ? 'amber' : 'green');
+    var icon = w.risk === 'red' ? '⚠️' : (w.risk === 'amber' ? '🟡' : '✅');
+    box.style.display = 'block';
+    box.innerHTML = '<div class="alert '+cls+'" style="margin-bottom:0;"><div class="alert-icon">'+icon+'</div><div>'+
+      '<strong>Right now: '+w.windSpeed+'m/s wind ('+w.gusts+'m/s gusts), '+w.rainChance+'% rain chance.</strong> '+w.summary+'</div></div>';
+  }).catch(function(){ box.style.display='none'; box.innerHTML=''; });
 }
 function loadAirspaceScreen(){
   var box = document.getElementById('airspace-screen');
@@ -670,7 +699,15 @@ function maybeSyncJobComplete(){
     try{ localStorage.setItem('rs_job_status_synced','1'); }catch(e){}
     if(statusEl){ statusEl.style.color='var(--green)'; statusEl.textContent='✓ Job marked Complete in Airtable — safe to move on to the next one.'; }
   }).catch(function(){
-    if(statusEl){ statusEl.style.color='var(--red)'; statusEl.textContent='⚠ Could not update Airtable — mark this job Complete manually later.'; }
+    // Per council round 2: this used to just show a line of text that scrolled out of view —
+    // a failed write here (job never actually marked Complete) was as invisible as the
+    // safety-case sync failures round 1 fixed. Now it queues into the same persistent
+    // unsynced-banner/retry system instead of silently disappearing.
+    if(statusEl){ statusEl.style.color='var(--red)'; statusEl.textContent='⚠ Could not update Airtable — queued to retry.'; }
+    var pending = []; try{ pending = JSON.parse(localStorage.getItem('rs_pending_job_status'))||[]; }catch(e){}
+    if(!pending.some(function(p){ return p.jobId === jobId; })) pending.push({ jobId: jobId, time: new Date().toISOString() });
+    try{ localStorage.setItem('rs_pending_job_status', JSON.stringify(pending)); }catch(e){}
+    updateUnsyncedBanner();
   });
 }
 function updateProg(){
@@ -720,7 +757,7 @@ var READY_ITEMS = [
   'Charge all batteries used today',
   'Format and empty memory cards for tomorrow',
   'Re-pack the bag — all filters, hi-vis, charger, spare card',
-  'Check tomorrow\'s job is set (Airtable or the box at the top of this tab)',
+  'Know your first stop tomorrow — check Airtable, or if nothing\'s booked yet, that\'s fine too',
   'Anything broken or low? Note it for Takhy now, not tomorrow morning'
 ];
 function todayStr(){ return new Date().toISOString().slice(0,10); }
@@ -819,9 +856,11 @@ function updateJobBanner(){
       if(jobs && jobs.length > 0) {
         var job = jobs[0];
         var f = job.fields;
+        // Same address-first fix as selectStaffJob() — this is the other Airtable auto-fill
+        // path (today's job via getTodaysJobs()) and had the identical client-first bug.
         var details = [
-          f['fld8R0gd2hcYSnmi5'] || '',
           f['fldk2TDM0kE3BJkc3'] || '',
+          f['fld8R0gd2hcYSnmi5'] || '',
           f['fldTecfNE5C0HTUYP'] ? (f['fldTecfNE5C0HTUYP'].name || f['fldTecfNE5C0HTUYP']) : '',
         ].filter(Boolean).join('\n');
         var notes = f['fldvym9yUybOyvoq4'] || '';
@@ -979,26 +1018,29 @@ renderIncidents();
 // a long day, so this puts a persistent, hard-to-miss banner above the job flow whenever anything
 // hasn't confirmed as synced to Airtable, with a one-tap retry once you're back in signal.
 function getUnsyncedEntries(){
-  var cases = [], incidents = [];
+  var cases = [], incidents = [], jobStatuses = [];
   try{ cases = JSON.parse(localStorage.getItem('rs_safetycase_log'))||[]; }catch(e){}
   try{ incidents = JSON.parse(localStorage.getItem('rs_incidents'))||[]; }catch(e){}
+  try{ jobStatuses = JSON.parse(localStorage.getItem('rs_pending_job_status'))||[]; }catch(e){}
   return {
     cases: cases.filter(function(c){ return c.synced === false; }),
-    incidents: incidents.filter(function(i){ return i.synced === false; })
+    incidents: incidents.filter(function(i){ return i.synced === false; }),
+    jobStatuses: jobStatuses
   };
 }
 function updateUnsyncedBanner(){
   var banner = document.getElementById('unsynced-banner');
   if(!banner) return;
   var u = getUnsyncedEntries();
-  var count = u.cases.length + u.incidents.length;
+  var count = u.cases.length + u.incidents.length + u.jobStatuses.length;
   if(!count){ banner.style.display='none'; banner.innerHTML=''; return; }
   banner.style.display='block';
   var parts = [];
   if(u.cases.length) parts.push(u.cases.length+' safety case'+(u.cases.length>1?'s':''));
   if(u.incidents.length) parts.push(u.incidents.length+' incident'+(u.incidents.length>1?'s':''));
+  if(u.jobStatuses.length) parts.push(u.jobStatuses.length+' job status update'+(u.jobStatuses.length>1?'s':''));
   banner.innerHTML = '<div class="alert red" style="margin-bottom:0;"><div class="alert-icon">⚠️</div><div>'+
-    '<strong>'+parts.join(' and ')+' saved on this device only</strong> — not backed up to Airtable yet. '+
+    '<strong>'+parts.join(', ')+' saved on this device only</strong> — not backed up to Airtable yet. '+
     '<a href="#" onclick="event.preventDefault();retrySync();" style="color:inherit;font-weight:700;text-decoration:underline;">Retry sync now</a>'+
     '<div id="unsynced-retry-status" style="margin-top:4px;font-size:11px;"></div></div></div>';
 }
@@ -1009,7 +1051,7 @@ function retrySync(){
     return;
   }
   var u = getUnsyncedEntries();
-  var total = u.cases.length + u.incidents.length;
+  var total = u.cases.length + u.incidents.length + u.jobStatuses.length;
   if(!total) return;
   if(status) status.textContent = 'Retrying '+total+'…';
   var jobs = u.cases.map(function(entry){
@@ -1019,6 +1061,10 @@ function retrySync(){
   }).concat(u.incidents.map(function(entry){
     return AT.createRecord('Incident Log', { 'Type': entry.type, 'Notes': entry.notes, 'Logged At': entry.time })
       .then(function(){ entry.synced = true; })
+      .catch(function(){});
+  })).concat(u.jobStatuses.map(function(entry){
+    return AT.setJobStatus(entry.jobId, 'Complete')
+      .then(function(){ entry.resolved = true; })
       .catch(function(){});
   }));
   Promise.all(jobs).then(function(){
@@ -1033,10 +1079,15 @@ function retrySync(){
       allIncidents.forEach(function(i){ var m = u.incidents.find(function(x){return x.time===i.time;}); if(m && m.synced) i.synced = true; });
       localStorage.setItem('rs_incidents', JSON.stringify(allIncidents));
     }catch(e){}
+    try{
+      var stillPending = u.jobStatuses.filter(function(entry){ return !entry.resolved; });
+      localStorage.setItem('rs_pending_job_status', JSON.stringify(stillPending));
+    }catch(e){}
     renderSafetyCases();
     renderIncidents();
+    updateUnsyncedBanner();
     var stillUnsynced = getUnsyncedEntries();
-    var stillCount = stillUnsynced.cases.length + stillUnsynced.incidents.length;
+    var stillCount = stillUnsynced.cases.length + stillUnsynced.incidents.length + stillUnsynced.jobStatuses.length;
     if(stillCount > 0){
       var freshStatus = document.getElementById('unsynced-retry-status');
       if(freshStatus) freshStatus.textContent = stillCount+' still failed — check your connection and try again.';
@@ -1189,6 +1240,7 @@ async function loadOverdueCard(){
 }
 loadJobFlowLive();
 loadAirspaceScreen();
+loadWeatherScreen();
 loadStaffJobPicker();
 // ═══ PLANNING TAB — calendar + monthly stats ═══════════════════════
 function atRefreshKeyUI(){
