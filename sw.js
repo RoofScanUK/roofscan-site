@@ -1,5 +1,5 @@
 // ═══ RoofScan UK Service Worker — Offline + Push ═══
-const CACHE_NAME = 'roofscan-v1';
+const CACHE_NAME = 'roofscan-v2';
 const APP_SHELL = [
   'hub.html',
   'ops.html',
@@ -85,7 +85,7 @@ self.addEventListener('fetch', function(e) {
   }
 });
 
-// ─── PUSH NOTIFICATIONS ─────────────────────────
+// ─── PUSH NOTIFICATIONS ─────────────────────────────────────────
 self.addEventListener('push', function(e) {
   var data = {};
   try { data = e.data ? e.data.json() : {}; } catch(err) { data = {title: 'RoofScan UK', body: e.data ? e.data.text() : 'New update'}; }
@@ -118,7 +118,7 @@ self.addEventListener('notificationclick', function(e) {
   );
 });
 
-// ─── BACKGROUND SYNC for offline checklist/status changes ─────────
+// ─── BACKGROUND SYNC for offline checklist/status changes ───────
 self.addEventListener('sync', function(e) {
   if (e.tag === 'roofscan-sync') {
     e.waitUntil(syncPendingChanges());
