@@ -241,6 +241,7 @@ main{padding:14px;}
         <div class="chk" data-id="sc-airspace" onclick="tickSC(this)"><div class="chk-box"></div><div class="chk-text">Airspace checked — no NOTAMs or restrictions for this site<div class="chk-note">First-pass check only — also confirm on the NATS UAS Restrictions Map or DJI Fly geo-zone layer</div></div></div>
         <div class="chk" data-id="sc-distance" onclick="tickSC(this)"><div class="chk-box"></div><div class="chk-text">CAA distance rules confirmed — 120m max altitude, 50m from uninvolved people</div></div>
         <div class="chk" data-id="sc-equipment" onclick="tickSC(this)"><div class="chk-box"></div><div class="chk-text">Equipment ready — DJI preflight sensors green, Operator ID visible</div></div>
+        <div id="equip-status-line" style="font-size:11px;color:var(--muted);margin:-4px 0 9px 30px;"></div>
         <div class="chk" data-id="sc-insurance" onclick="tickSC(this)"><div class="chk-box"></div><div class="chk-text">Flock Cover session started<div class="chk-note">You are not insured until this is active</div></div></div>
         <button class="sc-confirm-btn" onclick="logSafetyCase()">✅ Confirm &amp; log safety case for this flight</button>
         <div id="sc-result" style="font-size:12px;text-align:center;margin-top:6px;"></div>
@@ -542,6 +543,27 @@ function selectStaffJob(recordId){
 // actual number next to it — ticking it meant taking your own word for the wind speed rather
 // than looking at one. This pulls the real, current reading for today's job's address right
 // next to the tap target, same pattern as the existing airspace check below it.
+// ── Live "checked Xm ago" labels — a single ticker updates every timestamped status line every
+// 30s without re-fetching anything, so weather/airspace/equipment all read their actual age
+// instead of a frozen "just now" from whenever the page happened to load.
+function timeAgo(iso){
+  if(!iso) return '';
+  var diffMs = Date.now() - new Date(iso).getTime();
+  var mins = Math.floor(diffMs/60000);
+  if(mins < 1) return 'just now';
+  if(mins < 60) return mins+'m ago';
+  var hrs = Math.floor(mins/60);
+  var remMins = mins%60;
+  if(hrs < 24) return hrs+'h'+(remMins?' '+remMins+'m':'')+' ago';
+  return Math.floor(hrs/24)+'d ago';
+}
+function updateLiveAgoLabels(){
+  ['weather-checked-ago','airspace-checked-ago','equip-checked-ago'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(el && el.dataset.checkedAt) el.textContent = timeAgo(el.dataset.checkedAt);
+  });
+}
+setInterval(updateLiveAgoLabels, 30000);
 function loadWeatherScreen(){
   var box = document.getElementById('weather-screen');
   if(!box || typeof AT === 'undefined') return;
@@ -551,13 +573,21 @@ function loadWeatherScreen(){
     addr = stored.split('\n')[0].trim();
   }catch(e){}
   if(!addr){ box.style.display='none'; box.innerHTML=''; return; }
+  box.style.display = 'block';
+  box.innerHTML = '<div class="alert" style="margin-bottom:0;color:var(--muted);"><div class="alert-icon">⏳</div><div>Checking live weather…</div></div>';
   AT.getWeatherForJob(addr, new Date().toISOString()).then(function(w){
     if(!w){ box.style.display='none'; box.innerHTML=''; return; }
     var cls = w.risk === 'red' ? 'red' : (w.risk === 'amber' ? 'amber' : 'green');
     var icon = w.risk === 'red' ? '⚠️' : (w.risk === 'amber' ? '🟡' : '✅');
+    var now = new Date().toISOString();
+    try{ localStorage.setItem('rs_weather_checked_at', now); }catch(e){}
     box.style.display = 'block';
     box.innerHTML = '<div class="alert '+cls+'" style="margin-bottom:0;"><div class="alert-icon">'+icon+'</div><div>'+
-      '<strong>Right now: '+w.windSpeed+'m/s wind ('+w.gusts+'m/s gusts), '+w.rainChance+'% rain chance.</strong> '+w.summary+'</div></div>';
+      '<strong>Right now: '+w.windSpeed+'m/s wind ('+w.gusts+'m/s gusts), '+w.rainChance+'% rain chance.</strong> '+w.summary+
+      '<div style="margin-top:5px;font-size:11px;color:var(--muted);display:flex;justify-content:space-between;align-items:center;">'+
+      '<span>Checked <span id="weather-checked-ago" data-checked-at="'+now+'">just now</span></span>'+
+      '<a onclick="loadWeatherScreen()" style="cursor:pointer;color:var(--blue);text-decoration:underline;font-weight:600;">🔄 Refresh</a>'+
+      '</div></div></div>';
   }).catch(function(){ box.style.display='none'; box.innerHTML=''; });
 }
 function loadAirspaceScreen(){
@@ -569,12 +599,20 @@ function loadAirspaceScreen(){
     addr = stored.split('\n')[0].trim();
   }catch(e){}
   if(!addr){ box.style.display='none'; box.innerHTML=''; return; }
+  box.style.display = 'block';
+  box.innerHTML = '<div class="alert" style="margin-bottom:0;color:var(--muted);"><div class="alert-icon">⏳</div><div>Checking airspace…</div></div>';
   AT.getAirspaceCheck(addr).then(function(r){
     if(!r){ box.style.display='none'; box.innerHTML=''; return; }
     var cls = r.risk === 'restricted' ? 'red' : (r.risk === 'caution' ? 'amber' : 'green');
     var icon = r.risk === 'restricted' ? '🚫' : (r.risk === 'caution' ? '🟡' : '✅');
+    var now = new Date().toISOString();
+    try{ localStorage.setItem('rs_airspace_checked_at', now); }catch(e){}
     box.style.display = 'block';
-    box.innerHTML = '<div class="alert '+cls+'" style="margin-bottom:0;"><div class="alert-icon">'+icon+'</div><div>'+r.note+'</div></div>';
+    box.innerHTML = '<div class="alert '+cls+'" style="margin-bottom:0;"><div class="alert-icon">'+icon+'</div><div>'+r.note+
+      '<div style="margin-top:5px;font-size:11px;color:var(--muted);display:flex;justify-content:space-between;align-items:center;">'+
+      '<span>Checked <span id="airspace-checked-ago" data-checked-at="'+now+'">just now</span></span>'+
+      '<a onclick="loadAirspaceScreen()" style="cursor:pointer;color:var(--blue);text-decoration:underline;font-weight:600;">🔄 Refresh</a>'+
+      '</div></div></div>';
   }).catch(function(){ box.style.display='none'; box.innerHTML=''; });
 }
 // Calendar + monthly stats are opt-in now (see council note above the markup) — remembers the
@@ -779,13 +817,38 @@ function updateDailyCount(listId, countId){
   var el = document.getElementById(countId);
   if(el) el.textContent = done.length+' of '+all.length;
 }
-function renderEquip(){ renderDailyList('equip-list','equip-count',EQUIP_ITEMS,'rs_equip_','equip','tickEquip'); applyEquipCollapse(); }
+function renderEquip(){ renderDailyList('equip-list','equip-count',EQUIP_ITEMS,'rs_equip_','equip','tickEquip'); applyEquipCollapse(); renderEquipStatusLine(); }
 function tickEquip(el){
   el.classList.toggle('done');
   var key = 'rs_equip_'+todayStr()+'_'+el.dataset.equip;
   try{ if(el.classList.contains('done')) localStorage.setItem(key,'1'); else localStorage.removeItem(key); }catch(e){}
   updateDailyCount('equip-list','equip-count');
   applyEquipCollapse();
+  // Stamp (or clear) the completion time as soon as the last item is ticked — this is what the
+  // safety-case "Equipment ready" line reads from, so Tak can see it was actually confirmed this
+  // morning rather than just trusting a stale tick from yesterday.
+  var doneAtKey = 'rs_equip_completed_at_'+todayStr();
+  try{
+    if(equipComplete()){ if(!localStorage.getItem(doneAtKey)) localStorage.setItem(doneAtKey, new Date().toISOString()); }
+    else localStorage.removeItem(doneAtKey);
+  }catch(e){}
+  renderEquipStatusLine();
+}
+// Reads back the local, already-tracked equipment-check state for the safety-case "Equipment
+// ready" line — no external API for this one (it's a physical sensor/label check), so the best
+// live source is the morning checklist Tak already ticks through.
+function renderEquipStatusLine(){
+  var el = document.getElementById('equip-status-line');
+  if(!el) return;
+  var doneAt = null;
+  try{ doneAt = localStorage.getItem('rs_equip_completed_at_'+todayStr()); }catch(e){}
+  if(doneAt){
+    el.innerHTML = '✅ Confirmed this morning — <span id="equip-checked-ago" data-checked-at="'+doneAt+'">'+timeAgo(doneAt)+'</span>';
+    el.style.color = 'var(--green)';
+  } else {
+    el.innerHTML = '⚠️ Not yet confirmed today — finish the morning equipment list above';
+    el.style.color = 'var(--amber)';
+  }
 }
 // ── Equipment card auto-collapse — per Tak's request, once every item is ticked the card
 // tucks itself away (like the numbered stages do) instead of sitting there fully expanded
