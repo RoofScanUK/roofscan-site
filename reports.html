@@ -47,6 +47,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .status-badge{font-size:11px;font-weight:500;padding:2px 9px;border-radius:99px;color:white;white-space:nowrap;}
 .badge-red{background:#C0392B;}.badge-amber{background:#E67E22;}.badge-green{background:#27AE60;}
 .badge-none{background:#CBD5E0;color:#4A5568;}
+.zone-chip{font-size:10.5px;font-weight:600;padding:2px 8px;border-radius:99px;background:#EAF4FB;color:#1A5276;white-space:nowrap;}
 .obs-body{padding:1rem;display:none;border-top:1px solid #E0E8F0;}
 .obs-layout{display:grid;grid-template-columns:200px 1fr;gap:16px;margin-bottom:12px;}
 .photo-area{border:2px dashed #D0DBE8;border-radius:8px;background:#F8FAFC;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:160px;cursor:pointer;position:relative;overflow:hidden;}
@@ -761,6 +762,7 @@ function makeObsEl(secId,idx,ref,title,removable){
     +'<span class="obs-ref">'+ref+'</span>'
     +'<span class="obs-title-text">'+title+'</span>'
     +'<span id="badge_'+key+'" class="status-badge badge-none">Not set</span>'
+    +'<span id="zonechip_'+key+'" class="zone-chip" style="display:none;"></span>'
     +(removable?'<button class="remove-btn" onclick="event.stopPropagation();removeObs(\''+key+'\')">&times;</button>':"")
     +'<span class="chevron" id="chev_'+key+'">&#9660;</span>'
     +'</div>'
@@ -1184,7 +1186,7 @@ function buildDoc(d,obs){
       lc=[new D.Paragraph({alignment:D.AlignmentType.CENTER,spacing:{before:180,after:120},children:[new D.TextRun({text:"[ INSERT DRONE IMAGE ]",font:"Arial",size:17,color:"AAAAAA",italics:true})]}),new D.Paragraph({alignment:D.AlignmentType.CENTER,children:[new D.TextRun({text:"Replace with cropped drone photo",font:"Arial",size:15,color:"BBBBBB",italics:true})]})];
     }
     return[new D.Table({width:{size:CONTENT_W,type:D.WidthType.DXA},columnWidths:[lw,rw],rows:[
-      new D.TableRow({children:[new D.TableCell({columnSpan:2,borders:{top:OB,left:OB,right:OB,bottom:{style:D.BorderStyle.SINGLE,size:2,color:BLUE_LIGHT}},shading:{fill:BLUE_LIGHT,type:D.ShadingType.CLEAR},width:{size:CONTENT_W,type:D.WidthType.DXA},margins:{top:100,bottom:100,left:200,right:200},children:[new D.Paragraph({children:[new D.TextRun({text:"Ref "+o.ref+"  ",font:"Arial",size:18,bold:true,color:BLUE_MID}),new D.TextRun({text:o.title,font:"Arial",size:20,bold:true,color:DARK})]})]})]}) ,
+      new D.TableRow({children:[new D.TableCell({columnSpan:2,borders:{top:OB,left:OB,right:OB,bottom:{style:D.BorderStyle.SINGLE,size:2,color:BLUE_LIGHT}},shading:{fill:BLUE_LIGHT,type:D.ShadingType.CLEAR},width:{size:CONTENT_W,type:D.WidthType.DXA},margins:{top:100,bottom:100,left:200,right:200},children:[new D.Paragraph({children:[new D.TextRun({text:"Ref "+o.ref+"  ",font:"Arial",size:18,bold:true,color:BLUE_MID}),new D.TextRun({text:o.title,font:"Arial",size:20,bold:true,color:DARK})].concat(o.zone?[new D.TextRun({text:"   |   "+o.zone,font:"Arial",size:17,italics:true,color:BLUE_MID})]:[])})]})]}) ,
       new D.TableRow({children:[
         new D.TableCell({borders:{top:NB,bottom:OB,left:OB,right:{style:D.BorderStyle.SINGLE,size:2,color:BLUE_LIGHT}},width:{size:lw,type:D.WidthType.DXA},shading:{fill:GREY_BG,type:D.ShadingType.CLEAR},verticalAlign:D.VerticalAlign.CENTER,margins:{top:80,bottom:80,left:100,right:100},children:lc}),
         new D.TableCell({borders:{top:NB,bottom:OB,right:OB,left:NB},width:{size:rw,type:D.WidthType.DXA},margins:{top:140,bottom:140,left:200,right:160},children:[bT,sp(100,60),new D.Paragraph({spacing:{before:0,after:40},children:[new D.TextRun({text:"Observation",font:"Arial",size:17,bold:true,color:BLUE_MID})]}),new D.Paragraph({spacing:{before:0,after:120},children:[new D.TextRun({text:o.observation||"[No observation entered]",font:"Arial",size:18,color:DARK})]}),new D.Paragraph({spacing:{before:0,after:40},children:[new D.TextRun({text:"Priority",font:"Arial",size:17,bold:true,color:BLUE_MID})]}),new D.Paragraph({spacing:{before:0,after:0},children:[new D.TextRun({text:o.priority||"[No priority set]",font:"Arial",size:18,bold:true,color:sc})]})]})]})
@@ -1193,10 +1195,10 @@ function buildDoc(d,obs){
 
   function lb(text){return new D.Table({width:{size:CONTENT_W,type:D.WidthType.DXA},columnWidths:[CONTENT_W],rows:[new D.TableRow({children:[new D.TableCell({borders:{top:{style:D.BorderStyle.SINGLE,size:4,color:AMBER},bottom:{style:D.BorderStyle.SINGLE,size:4,color:AMBER},left:{style:D.BorderStyle.SINGLE,size:16,color:AMBER},right:NB},shading:{fill:"FFF8F0",type:D.ShadingType.CLEAR},width:{size:CONTENT_W,type:D.WidthType.DXA},margins:{top:100,bottom:100,left:200,right:200},children:[new D.Paragraph({spacing:{before:0,after:40},children:[new D.TextRun({text:"Inspection Limitation",font:"Arial",size:17,bold:true,color:AMBER})]}),new D.Paragraph({children:[new D.TextRun({text:text,font:"Arial",size:18,color:DARK})]})]})]})]});}
 
-  var cr=Math.floor(CONTENT_W*.10),ce=Math.floor(CONTENT_W*.25),co=Math.floor(CONTENT_W*.42),cp=CONTENT_W-cr-ce-co;
+  var cr=Math.floor(CONTENT_W*.08),cz=Math.floor(CONTENT_W*.14),ce=Math.floor(CONTENT_W*.20),co=Math.floor(CONTENT_W*.38),cp=CONTENT_W-cr-cz-ce-co;
   function hc(t,w){return new D.TableCell({borders:AB,shading:{fill:BLUE,type:D.ShadingType.CLEAR},width:{size:w,type:D.WidthType.DXA},margins:{top:100,bottom:100,left:140,right:120},children:[new D.Paragraph({children:[new D.TextRun({text:t,font:"Arial",size:17,bold:true,color:WHITE})]})]});}
-  var sRows=obs.map(function(o,i){var sc=statusColor(o.status);var bg=i%2===0?GREY_BG:WHITE;return new D.TableRow({children:[new D.TableCell({borders:AB,shading:{fill:bg,type:D.ShadingType.CLEAR},width:{size:cr,type:D.WidthType.DXA},margins:{top:80,bottom:80,left:140,right:80},children:[new D.Paragraph({children:[new D.TextRun({text:o.ref,font:"Arial",size:17,bold:true,color:BLUE_MID})]})]}),new D.TableCell({borders:AB,shading:{fill:bg,type:D.ShadingType.CLEAR},width:{size:ce,type:D.WidthType.DXA},margins:{top:80,bottom:80,left:120,right:80},children:[new D.Paragraph({children:[new D.TextRun({text:o.title,font:"Arial",size:17,color:DARK})]})]}),new D.TableCell({borders:AB,shading:{fill:bg,type:D.ShadingType.CLEAR},width:{size:co,type:D.WidthType.DXA},margins:{top:80,bottom:80,left:120,right:80},children:[new D.Paragraph({children:[new D.TextRun({text:o.observation||"",font:"Arial",size:17,color:DARK})]})]}),new D.TableCell({borders:AB,shading:{fill:bg,type:D.ShadingType.CLEAR},width:{size:cp,type:D.WidthType.DXA},margins:{top:80,bottom:80,left:120,right:80},children:[new D.Paragraph({children:[new D.TextRun({text:o.priority||"",font:"Arial",size:17,bold:true,color:sc})]})]})]});});
-  var sT=new D.Table({width:{size:CONTENT_W,type:D.WidthType.DXA},columnWidths:[cr,ce,co,cp],rows:[new D.TableRow({children:[hc("Ref",cr),hc("Element",ce),hc("Observation Summary",co),hc("Priority",cp)]}),].concat(sRows)});
+  var sRows=obs.map(function(o,i){var sc=statusColor(o.status);var bg=i%2===0?GREY_BG:WHITE;return new D.TableRow({children:[new D.TableCell({borders:AB,shading:{fill:bg,type:D.ShadingType.CLEAR},width:{size:cr,type:D.WidthType.DXA},margins:{top:80,bottom:80,left:140,right:80},children:[new D.Paragraph({children:[new D.TextRun({text:o.ref,font:"Arial",size:17,bold:true,color:BLUE_MID})]})]}),new D.TableCell({borders:AB,shading:{fill:bg,type:D.ShadingType.CLEAR},width:{size:cz,type:D.WidthType.DXA},margins:{top:80,bottom:80,left:120,right:80},children:[new D.Paragraph({children:[new D.TextRun({text:o.zone||"—",font:"Arial",size:17,color:DARK})]})]}),new D.TableCell({borders:AB,shading:{fill:bg,type:D.ShadingType.CLEAR},width:{size:ce,type:D.WidthType.DXA},margins:{top:80,bottom:80,left:120,right:80},children:[new D.Paragraph({children:[new D.TextRun({text:o.title,font:"Arial",size:17,color:DARK})]})]}),new D.TableCell({borders:AB,shading:{fill:bg,type:D.ShadingType.CLEAR},width:{size:co,type:D.WidthType.DXA},margins:{top:80,bottom:80,left:120,right:80},children:[new D.Paragraph({children:[new D.TextRun({text:o.observation||"",font:"Arial",size:17,color:DARK})]})]}),new D.TableCell({borders:AB,shading:{fill:bg,type:D.ShadingType.CLEAR},width:{size:cp,type:D.WidthType.DXA},margins:{top:80,bottom:80,left:120,right:80},children:[new D.Paragraph({children:[new D.TextRun({text:o.priority||"",font:"Arial",size:17,bold:true,color:sc})]})]})]});});
+  var sT=new D.Table({width:{size:CONTENT_W,type:D.WidthType.DXA},columnWidths:[cr,cz,ce,co,cp],rows:[new D.TableRow({children:[hc("Ref",cr),hc("Zone",cz),hc("Element",ce),hc("Observation Summary",co),hc("Priority",cp)]}),].concat(sRows)});
 
   var ch=obs.filter(function(o){return o.ref.indexOf("2.1")===0;});
   var cv=obs.filter(function(o){return o.ref.indexOf("2.2")===0;});
@@ -1228,7 +1230,10 @@ function buildDoc(d,obs){
     h2("Condition Dashboard"),sp(60,100),dashT,sp(160,80),
     h2("Overall Roof Condition"),sp(60,80),condT,sp(160,80),
     h2("RoofScore"),sp(60,100),rsTable(d),sp(160,80),
-    h2("Summary of Findings"),bod(d.summary),sp(80,80),
+    h2("Summary of Findings"),bod(d.summary),sp(80,80)
+  ].concat(
+    zoneOverviewTable(obs) ? [h2("Findings by Zone"),sp(60,100),zoneOverviewTable(obs),sp(160,80)] : []
+  ).concat([
     h2("Key Risks"),bod(d.keyRisks),sp(80,80),
     h2("Maintenance Overview"),bod(d.maintenance),pb()
   ].concat(
@@ -1267,7 +1272,7 @@ function buildDoc(d,obs){
     bod("The table below summarises all observations. Obtain written quotations from suitably qualified contractors before any works commence."),
     sp(120,80),sT,sp(160,80),tl(),sp(80,80),
     new D.Paragraph({alignment:D.AlignmentType.CENTER,children:[new D.TextRun({text: d.whiteLabel ? ("End of Schedule of Works  -  "+BRAND+" - produced by RoofScan UK") : "End of Schedule of Works  -  RoofScan UK",font:"Arial",size:17,color:"6B7A8D",italics:true})]})]
-  );
+  ));
 
 
   // RoofScore table for DOCX
@@ -1317,6 +1322,38 @@ function buildDoc(d,obs){
         })
       ]})]
     });
+  }
+
+  // Groups findings by the roof zone they were tagged with (front elevation, chimney area, etc —
+  // set once per photo during bulk import, see bpBuildZoneStrip), so the reader gets a single
+  // at-a-glance list of "what's going on where" before wading into the section-by-section detail.
+  // Each zone shows its worst status only (Repair required beats Monitor beats Satisfactory),
+  // mirroring the AiroTech-style severity-dashboard idea Tak asked to borrow, but built from data
+  // this app already captures rather than pixel-drawn bounding boxes on the photo itself.
+  function zoneOverviewTable(obsList){
+    var tagged = obsList.filter(function(o){ return !!o.zone; });
+    if(!tagged.length) return null;
+    var groups = {};
+    var order = [];
+    tagged.forEach(function(o){
+      if(!groups[o.zone]){ groups[o.zone] = []; order.push(o.zone); }
+      groups[o.zone].push(o);
+    });
+    var rank = {"Repair required":3,"Monitor":2,"Satisfactory":1};
+    var zoneCol=Math.floor(CONTENT_W*0.38),statusCol=CONTENT_W-260-zoneCol;
+    var rows = order.map(function(zone,i){
+      var items = groups[zone];
+      var worst = "";
+      items.forEach(function(o){ if(rank[o.status]>(rank[worst]||0)) worst = o.status; });
+      var sc = statusColor(worst);
+      var bg = i%2===0?GREY_BG:WHITE;
+      return new D.TableRow({children:[
+        new D.TableCell({borders:NBS,width:{size:260,type:D.WidthType.DXA},shading:{fill:bg,type:D.ShadingType.CLEAR},verticalAlign:D.VerticalAlign.CENTER,margins:{top:80,bottom:80,left:160,right:0},children:[new D.Paragraph({children:[new D.TextRun({text:"●",font:"Arial",size:19,color:sc})]})]}),
+        new D.TableCell({borders:NBS,width:{size:zoneCol,type:D.WidthType.DXA},shading:{fill:bg,type:D.ShadingType.CLEAR},verticalAlign:D.VerticalAlign.CENTER,margins:{top:80,bottom:80,left:0,right:80},children:[new D.Paragraph({children:[new D.TextRun({text:zone,font:"Arial",size:18,color:DARK})]})]}),
+        new D.TableCell({borders:NBS,width:{size:statusCol,type:D.WidthType.DXA},shading:{fill:bg,type:D.ShadingType.CLEAR},verticalAlign:D.VerticalAlign.CENTER,margins:{top:80,bottom:80,left:0,right:160},children:[new D.Paragraph({alignment:D.AlignmentType.RIGHT,children:[new D.TextRun({text:statusLabel(worst),font:"Arial",size:18,bold:true,color:sc})]})]})
+      ]});
+    });
+    return new D.Table({width:{size:CONTENT_W,type:D.WidthType.DXA},columnWidths:[260,zoneCol,statusCol],borders:{top:{style:D.BorderStyle.NONE},bottom:{style:D.BorderStyle.NONE},left:{style:D.BorderStyle.NONE},right:{style:D.BorderStyle.NONE},insideH:{style:D.BorderStyle.SINGLE,size:2,color:LIGHT_GREY},insideV:{style:D.BorderStyle.NONE}},rows:rows});
   }
 
   return new D.Document({
@@ -1785,12 +1822,24 @@ function bpFindBlockByRef(ref){
   }
   return null;
 }
+// Reflects a tagged zone onto its finding's header chip so it stays visible after the bulk-tag
+// step is over — previously the zone was captured into state[key].zone and used silently to
+// prefix the observation text, but never actually shown anywhere once you left the import
+// screen, so there was no way to see or double check what zone a photo had been tagged to.
+function renderZoneChip(key){
+  var chip = document.getElementById('zonechip_' + key);
+  if(!chip) return;
+  var zone = state[key] ? state[key].zone : '';
+  if(zone){ chip.textContent = zone; chip.style.display = 'inline-block'; }
+  else { chip.style.display = 'none'; }
+}
 function bpAttachPhotoToBlock(block, proc, note, zone){
   var key = block.id.replace('obsblock_','');
   state[key] = state[key] || {status:null};
   state[key].photoB64 = proc.base64;
   state[key].photoMime = 'image/jpeg';
   if(zone) state[key].zone = zone;
+  renderZoneChip(key);
   var area = document.getElementById('photo_'+key);
   if(area){
     area.classList.add('has-photo');

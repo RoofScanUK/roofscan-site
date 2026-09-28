@@ -59,6 +59,13 @@ main{padding:14px;}
 .chk.done .chk-text{color:var(--muted);text-decoration:line-through;}
 .chk-text{flex:1;font-size:14px;line-height:1.45;}
 .chk-note{font-size:11px;color:var(--muted);margin-top:2px;}
+/* Reference-shot thumbnails — generic stock photos (Unsplash License: free for commercial use,
+   no permission or attribution required) showing roughly the right framing/distance for each
+   shot type. Not RoofScan's own work and not meant to be — swap for real past-job photos
+   whenever Tak has a set ready, see bpZoneMap/BP_ZONES for where those already get tagged. */
+.ref-shot{display:inline-flex;align-items:center;gap:6px;margin-top:6px;text-decoration:none;}
+.ref-shot img{width:52px;height:40px;object-fit:cover;border-radius:6px;border:1px solid var(--border);flex-shrink:0;}
+.ref-shot span{font-size:10.5px;color:var(--blue);font-weight:600;}
 /* PROGRESS */
 .prog-wrap{margin-bottom:12px;}
 .prog-bar{background:var(--border);border-radius:8px;height:8px;overflow:hidden;}
@@ -176,8 +183,10 @@ main{padding:14px;}
   <button class="reset-btn" onclick="resetChecks()">↺ Reset checklist for new job</button>
   <!-- JOB OF THE DAY - set by owner, seen by staff -->
   <div id="job-banner" style="background:var(--slate);border-radius:12px;padding:14px 16px;margin-bottom:12px;display:none;">
-    <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--gold);margin-bottom:4px;">Today's Job</div>
-    <div id="job-detail-display" style="font-size:14px;color:white;line-height:1.5;"></div>
+    <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--gold);margin-bottom:6px;">Today's Job</div>
+    <div id="job-banner-addr" style="font-size:16px;font-weight:700;color:white;line-height:1.35;"></div>
+    <div id="job-banner-meta" style="font-size:12px;color:rgba(255,255,255,0.65);margin-top:3px;"></div>
+    <div id="job-banner-notes" style="display:none;"></div>
   </div>
   <!-- OWNER: Set today's job details -->
   <div id="set-job-section" style="background:var(--card);border:1px dashed var(--border);border-radius:12px;padding:12px 14px;margin-bottom:12px;">
@@ -262,15 +271,15 @@ main{padding:14px;}
     </div>
     <div class="stage-b">
       <div class="stage-b-inner">
-        <div class="chk" data-id="staff-15" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Front elevation<div class="chk-note">Hover level with the roofline, ~10-15m back, slow steady pass left to right. Include the full front slope and gutter line in frame — this is the "cover shot" for the report.</div></div></div>
+        <div class="chk" data-id="staff-15" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Front elevation<div class="chk-note">Hover level with the roofline, ~10-15m back, slow steady pass left to right. Include the full front slope and gutter line in frame — this is the "cover shot" for the report.<br><a class="ref-shot" href="https://images.unsplash.com/photo-1602987603453-82f21f7a1f72?w=1200&q=75&auto=format" target="_blank" rel="noopener" onclick="event.stopPropagation()"><img src="https://images.unsplash.com/photo-1602987603453-82f21f7a1f72?w=200&q=60&fit=crop&auto=format" loading="lazy" alt="Reference: angled roof/elevation framing"><span>Example framing ↗</span></a></div></div></div>
         <div class="chk" data-id="staff-16" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Rear elevation<div class="chk-note">Same height and distance as the front pass. Check gardens/neighbours for anyone in frame before flying over.</div></div></div>
         <div class="chk" data-id="staff-17" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Both side elevations<div class="chk-note">One pass per side, perpendicular to the wall. These catch valleys and hip ends the front/rear shots miss.</div></div></div>
-        <div class="chk" data-id="staff-18" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Every chimney — close-up<div class="chk-note">One shot per stack, close enough to see individual pots, flaunching/mortar cracks, and the chimney-to-roof flashing seal. Circle it if you can — flashing failures often show up on the side you'd otherwise miss.</div></div></div>
-        <div class="chk" data-id="staff-19" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Ridge line — full length<div class="chk-note">Slow pass directly along the ridge, close enough to spot slipped/cracked ridge tiles or open joints.</div></div></div>
+        <div class="chk" data-id="staff-18" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Every chimney — close-up<div class="chk-note">One shot per stack, close enough to see individual pots, flaunching/mortar cracks, and the chimney-to-roof flashing seal. Circle it if you can — flashing failures often show up on the side you'd otherwise miss.<br><a class="ref-shot" href="https://images.unsplash.com/photo-1563993356056-b23a9cd265ad?w=1200&q=75&auto=format" target="_blank" rel="noopener" onclick="event.stopPropagation()"><img src="https://images.unsplash.com/photo-1563993356056-b23a9cd265ad?w=200&q=60&fit=crop&auto=format" loading="lazy" alt="Reference: chimney close-up framing"><span>Example framing ↗</span></a></div></div></div>
+        <div class="chk" data-id="staff-19" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Ridge line — full length<div class="chk-note">Slow pass directly along the ridge, close enough to spot slipped/cracked ridge tiles or open joints.<br><a class="ref-shot" href="https://images.unsplash.com/photo-1605450099279-533bd3ce379a?w=1200&q=75&auto=format" target="_blank" rel="noopener" onclick="event.stopPropagation()"><img src="https://images.unsplash.com/photo-1605450099279-533bd3ce379a?w=200&q=60&fit=crop&auto=format" loading="lazy" alt="Reference: ridge line framing"><span>Example framing ↗</span></a></div></div></div>
         <div class="chk" data-id="staff-19b" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">All flashings and valleys<div class="chk-note">Close-up on every roof-to-wall junction, valley, and any skylight/vent — these are the most common leak points and easy to under-shoot from a distance.</div></div></div>
-        <div class="chk" data-id="staff-19c" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Guttering — full run<div class="chk-note">Follow every gutter run close enough to see sagging, blockages, or missing sections, not just from the elevation shots.</div></div></div>
+        <div class="chk" data-id="staff-19c" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Guttering — full run<div class="chk-note">Follow every gutter run close enough to see sagging, blockages, or missing sections, not just from the elevation shots.<br><a class="ref-shot" href="https://images.unsplash.com/photo-1744044155829-610dded4cead?w=1200&q=75&auto=format" target="_blank" rel="noopener" onclick="event.stopPropagation()"><img src="https://images.unsplash.com/photo-1744044155829-610dded4cead?w=200&q=60&fit=crop&auto=format" loading="lazy" alt="Reference: guttering close-up framing"><span>Example framing ↗</span></a></div></div></div>
         <div class="chk" data-id="staff-19d" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Any visible defect — extra close-up<div class="chk-note">Slipped/missing tiles, moss buildup, cracked sections, staining. If you spot something during the fly-through, stop and get a dedicated close shot of it — don't rely on it appearing in a wider pass.</div></div></div>
-        <div class="chk" data-id="staff-20" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Top-down overview of the full roof<div class="chk-note">Straight-down, high enough to fit the entire roof (all slopes) in one frame. This is the shot the area/footprint measurement and the report's overview image both rely on.</div></div></div>
+        <div class="chk" data-id="staff-20" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Top-down overview of the full roof<div class="chk-note">Straight-down, high enough to fit the entire roof (all slopes) in one frame. This is the shot the area/footprint measurement and the report's overview image both rely on.<br><a class="ref-shot" href="https://images.unsplash.com/photo-1755114203680-d39d95efa82c?w=1200&q=75&auto=format" target="_blank" rel="noopener" onclick="event.stopPropagation()"><img src="https://images.unsplash.com/photo-1755114203680-d39d95efa82c?w=200&q=60&fit=crop&auto=format" loading="lazy" alt="Reference: top-down overview framing"><span>Example framing ↗</span></a></div></div></div>
         <div class="chk" data-id="staff-20b" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Angled 3/4 overview<div class="chk-note">A higher, angled shot showing the roof in context with the rest of the property — gives the client a "whole picture" shot the straight-down one doesn't.</div></div></div>
         <div class="chk" data-id="staff-21" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Review footage on phone before landing<div class="chk-note">Check every elevation, chimney, and defect shot is sharp and in frame. Reshoot anything blurry or cut off now — going back up later means a second trip.</div></div></div>
         <div class="chk" data-id="staff-22" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Land safely — stop Flock Cover session</div></div>
@@ -912,6 +921,46 @@ function setCurrentJobId(id){
     localStorage.removeItem('rs_job_status_synced');
   }catch(e){}
 }
+// Splits the free-text job blob (address line, then client/property-type lines, then an
+// optional "\n\nNotes: ..." tail — the convention both the Airtable auto-fill and the manual
+// textarea placeholder follow) into separate address / meta / notes elements instead of one
+// run-on paragraph. Notes over 140 chars collapse behind a "Show more" toggle since test/real
+// notes can run long and shouldn't push the address off screen.
+function setJobBannerContent(full){
+  var addrEl = document.getElementById('job-banner-addr');
+  var metaEl = document.getElementById('job-banner-meta');
+  var notesEl = document.getElementById('job-banner-notes');
+  if(!addrEl || !metaEl || !notesEl || !full) return;
+  var notesIdx = full.indexOf('\n\nNotes:');
+  var header = notesIdx > -1 ? full.slice(0, notesIdx) : full;
+  var notes = notesIdx > -1 ? full.slice(notesIdx + '\n\nNotes:'.length).trim() : '';
+  var lines = header.split('\n').map(function(l){ return l.trim(); }).filter(Boolean);
+  addrEl.textContent = lines[0] || '';
+  metaEl.textContent = lines.slice(1).join('   •   ');
+  metaEl.style.display = lines.length > 1 ? 'block' : 'none';
+  notesEl.innerHTML = '';
+  if(notes){
+    var label = document.createElement('div');
+    label.style.cssText = 'font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:rgba(255,255,255,0.45);margin-top:9px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.15);margin-bottom:3px;';
+    label.textContent = 'Notes';
+    var body = document.createElement('div');
+    body.style.cssText = 'font-size:12.5px;color:rgba(255,255,255,0.8);line-height:1.55;white-space:pre-line;';
+    var isLong = notes.length > 140;
+    body.textContent = isLong ? notes.slice(0,140).trim() + '…' : notes;
+    notesEl.appendChild(label);
+    notesEl.appendChild(body);
+    if(isLong){
+      var moreBtn = document.createElement('a');
+      moreBtn.textContent = 'Show more';
+      moreBtn.style.cssText = 'font-size:11px;color:var(--gold);cursor:pointer;display:inline-block;margin-top:3px;';
+      moreBtn.onclick = function(){ body.textContent = notes; moreBtn.remove(); };
+      notesEl.appendChild(moreBtn);
+    }
+    notesEl.style.display = 'block';
+  } else {
+    notesEl.style.display = 'none';
+  }
+}
 function updateJobBanner(){
   // First try Airtable for today's jobs
   if(typeof AT !== 'undefined' && AT.hasToken()) {
@@ -929,11 +978,10 @@ function updateJobBanner(){
         var notes = f['fldvym9yUybOyvoq4'] || '';
         var full = details + (notes ? '\n\nNotes: ' + notes : '');
         var banner = document.getElementById('job-banner');
-        var display = document.getElementById('job-detail-display');
         var input = document.getElementById('job-detail-input');
-        if(banner && display && full.trim()) {
+        if(banner && full.trim()) {
           banner.style.display = 'block';
-          display.textContent = full;
+          setJobBannerContent(full);
           banner.dataset.jobId = job.id;
           setCurrentJobId(job.id);
           // Previously this always overwrote whatever was manually typed in the "Set today's
@@ -980,10 +1028,9 @@ function _loadBannerFromStorage(){
   try{
     var txt=localStorage.getItem('rs_job_today');
     var banner=document.getElementById('job-banner');
-    var display=document.getElementById('job-detail-display');
     if(txt&&txt.trim()){
       banner.style.display='block';
-      display.textContent=txt;
+      setJobBannerContent(txt);
       document.getElementById('job-detail-input').value=txt;
     } else {
       banner.style.display='none';

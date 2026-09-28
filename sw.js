@@ -1,5 +1,5 @@
 // ═══ RoofScan UK Service Worker — Offline + Push ═══
-const CACHE_NAME = 'roofscan-v2';
+const CACHE_NAME = 'roofscan-v3';
 const APP_SHELL = [
   'hub.html',
   'ops.html',
