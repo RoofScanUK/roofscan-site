@@ -43,9 +43,24 @@ h1{font-size:20px;font-weight:800;}
 <body>
 <div id="login" style="display:none;padding-top:60px;">
   <h1>RoofScan UK jobs</h1>
-  <p class="sub" style="margin:6px 0 18px;">Enter the personal code RoofScan gave you. Please don't share it.</p>
-  <input class="inp" id="code" type="password" autocomplete="off" autocapitalize="off" placeholder="Your code">
-  <button class="btn" style="width:100%;padding:13px;" onclick="doLogin()">Log in</button>
+  <div id="step-email">
+    <p class="sub" style="margin:6px 0 18px;">Enter the email address you gave RoofScan. We'll send you a 6-digit code.</p>
+    <input class="inp" id="email" type="email" autocomplete="email" placeholder="you@example.com" style="letter-spacing:0;">
+    <button class="btn" style="width:100%;padding:13px;" onclick="sendCode()">Email me a code</button>
+    <p class="sub" style="margin-top:14px;text-align:center;"><a href="#" onclick="showCodeLogin();return false;" style="color:var(--mu);">Use a personal code instead</a></p>
+  </div>
+  <div id="step-otp" style="display:none;">
+    <p class="sub" style="margin:6px 0 18px;">We've sent a code to <strong id="sent-to"></strong>. It lasts 10 minutes. Check your junk folder if it hasn't arrived.</p>
+    <input class="inp" id="otp" inputmode="numeric" autocomplete="one-time-code" placeholder="6-digit code" maxlength="6">
+    <button class="btn" style="width:100%;padding:13px;" onclick="verifyCode()">Log in</button>
+    <p class="sub" style="margin-top:14px;text-align:center;"><a href="#" onclick="backToEmail();return false;" style="color:var(--mu);">Use a different email</a></p>
+  </div>
+  <div id="step-code" style="display:none;">
+    <p class="sub" style="margin:6px 0 18px;">Enter the personal code RoofScan gave you. Please don't share it.</p>
+    <input class="inp" id="code" type="password" autocomplete="off" autocapitalize="off" placeholder="Your code">
+    <button class="btn" style="width:100%;padding:13px;" onclick="doLogin()">Log in</button>
+    <p class="sub" style="margin-top:14px;text-align:center;"><a href="#" onclick="backToEmail();return false;" style="color:var(--mu);">Log in with email instead</a></p>
+  </div>
   <div id="login-err" class="banner b-red" style="display:none;margin-top:12px;"></div>
 </div>
 
@@ -94,6 +109,25 @@ async function api(path, method, body){
 }
 
 // ── Login ──
+let loginEmail = '';
+function showStep(id){ ['step-email','step-otp','step-code'].forEach(x => $(x).style.display = (x === id ? 'block' : 'none')); }
+function backToEmail(){ showStep('step-email'); $('login-err').style.display='none'; }
+function showCodeLogin(){ showStep('step-code'); }
+async function sendCode(){
+  loginEmail = $('email').value.trim().toLowerCase();
+  if(!loginEmail.includes('@')){ showLogin('Please enter a valid email address.'); return; }
+  try {
+    await api('/contractor/request-code','POST',{email:loginEmail});
+    $('sent-to').textContent = loginEmail; showStep('step-otp'); $('login-err').style.display='none'; $('otp').focus();
+  } catch(e){ showLogin('Could not connect. Check your signal and try again.'); }
+}
+async function verifyCode(){
+  try {
+    const r = await api('/contractor/verify','POST',{email:loginEmail, code:$('otp').value.trim()});
+    if(!r.ok){ showLogin(r.data.error || 'That code is not right.'); return; }
+    localStorage.setItem(LS.tok, r.data.token); $('otp').value=''; boot();
+  } catch(e){ showLogin('Could not connect. Check your signal and try again.'); }
+}
 function showLogin(msg){
   $('app').style.display='none'; $('login').style.display='block';
   const e = $('login-err'); if(msg){ e.textContent = msg; e.style.display='block'; } else e.style.display='none';
@@ -295,6 +329,8 @@ function boot(){
   if (board) render();
   refresh(false);
 }
+$('otp').addEventListener('keydown', e => { if(e.key === 'Enter') verifyCode(); });
+$('email').addEventListener('keydown', e => { if(e.key === 'Enter') sendCode(); });
 $('code').addEventListener('keydown', e => { if(e.key === 'Enter') doLogin(); });
 boot();
 </script>
