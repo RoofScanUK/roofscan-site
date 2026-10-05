@@ -51,7 +51,7 @@ const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let email='', data=null;
 async function api(p,m,b){const t=localStorage.getItem(TK);const r=await fetch(API+p,{method:m||'GET',headers:Object.assign({'Content-Type':'application/json'},t?{Authorization:'Bearer '+t}:{}),body:b?JSON.stringify(b):undefined});let d={};try{d=await r.json();}catch(e){}if(r.status===401&&p.indexOf('/owner/verify')<0&&p.indexOf('request-code')<0){localStorage.removeItem(TK);showLogin();}return{ok:r.ok,status:r.status,data:d};}
-function showLogin(msg){$('app').style.display='none';$('login').style.display='block';const e=$('err');if(msg){e.textContent=msg;e.style.display='block';}else e.style.display='none';}
+function showLogin(msg){location.href='login.html?next=owner.html';return;$('app').style.display='none';$('login').style.display='block';const e=$('err');if(msg){e.textContent=msg;e.style.display='block';}else e.style.display='none';}
 async function sendCode(){email=$('email').value.trim().toLowerCase();await api('/owner/request-code','POST',{email});$('s1').style.display='none';$('s2').style.display='block';$('err').style.display='none';}
 async function verifyCode(){const r=await api('/owner/verify','POST',{email,code:$('otp').value.trim()});if(!r.ok){showLogin(r.data.error||'That code is not right.');return;}localStorage.setItem(TK,r.data.token);load();}
 function logout(){localStorage.removeItem(TK);showLogin();}

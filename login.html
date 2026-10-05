@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
-<title>Portal Login — RoofScan UK</title>
+<title>Login — RoofScan UK</title>
 <style>
 :root{--n:#1C2B4A;--s:#1E4080;--g:#C9A84C;--bg:#F8F6F0;--cd:#FFF;--br:#E8E4D8;--mu:#6B7A8D;--gr:#27AE60;--am:#E67E22;--rd:#C0392B;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
@@ -47,8 +47,8 @@ main{padding:16px;}
 <body>
 <div class="hdr">
   <div class="logo">RoofScan UK</div>
-  <div class="hdr-title">Portal Login</div>
-  <div class="hdr-sub">My Roof & Trade Accounts — one login for both</div>
+  <div class="hdr-title">Login</div>
+  <div class="hdr-sub">One login for everyone. We'll take you to the right place.</div>
 </div>
 <main>
 
@@ -56,8 +56,8 @@ main{padding:16px;}
     <div class="login-card">
 
       <div id="login-step-email">
-        <div class="login-title">Sign in to your account</div>
-        <div class="login-sub">Enter the email address you used to book an inspection, or your trade account email. We'll email you a 6-digit code to confirm it's you — and take you straight to the right place.</div>
+        <div class="login-title">Sign in</div>
+        <div class="login-sub">Enter the email address RoofScan has on file for you: the one you booked with, your trade or agency account email, or the one you gave us as part of the team. We'll email you a 6-digit code and take you straight to the right place.</div>
         <input type="email" id="login-email" class="email-inp" placeholder="your@email.com" onkeydown="if(event.key==='Enter')requestCode()">
         <button class="login-btn" id="request-code-btn" onclick="requestCode()">Send me a code →</button>
         <div class="login-error" id="login-error"></div>
@@ -65,7 +65,7 @@ main{padding:16px;}
 
       <div id="login-step-code" style="display:none;">
         <div class="login-title">Enter your code</div>
-        <div class="login-sub">We sent a 6-digit code to <span id="code-sent-to" style="font-weight:700;color:var(--n);"></span>. It expires in 10 minutes.</div>
+        <div class="login-sub">We sent a 6-digit code to <span id="code-sent-to" style="font-weight:700;color:var(--n);"></span>. It expires in 10 minutes. Check your junk folder if it hasn't arrived.</div>
         <input type="text" inputmode="numeric" maxlength="6" id="login-code" class="email-inp" placeholder="123456" onkeydown="if(event.key==='Enter')verifyCode()">
         <button class="login-btn" id="verify-code-btn" onclick="verifyCode()">Verify & continue →</button>
         <div class="login-error" id="code-error"></div>
@@ -84,11 +84,8 @@ main{padding:16px;}
 
       <div id="login-step-choose" style="display:none;">
         <div class="login-title">Which account would you like to open?</div>
-        <div class="login-sub">This email is linked to both a homeowner and a trade account.</div>
-        <div class="choose-row">
-          <button class="choose-btn" onclick="goToPortal('homeowner')">My Roof<div class="d">Your inspection history & reports</div></button>
-          <button class="choose-btn" onclick="goToPortal('trade')">Trade Account<div class="d">Jobs, invoices & submissions</div></button>
-        </div>
+        <div class="login-sub">This email is linked to more than one account.</div>
+        <div class="choose-row" id="choose-row"></div>
       </div>
 
       <div id="login-step-notfound" style="display:none;">
@@ -106,6 +103,11 @@ main{padding:16px;}
 var API_BASE = 'https://roofscan-api.tiny-voice-ac40.workers.dev';
 var _pendingEmail = '';
 var _pendingToken = '';
+// Where the owner should land after login (staff pages send people here with ?next=staff.html etc.)
+var _next = (function(){
+  var n = new URLSearchParams(location.search).get('next') || '';
+  return /^[a-z0-9\-]+\.html$/i.test(n) ? n : '';
+})();
 
 function showStep(id){
   ['login-step-email','login-step-code','login-step-checking','login-step-choose','login-step-notfound'].forEach(function(s){
@@ -167,8 +169,22 @@ async function verifyCode(){
     await routeToAccount(_pendingEmail, _pendingToken);
   } catch(e){
     document.getElementById('code-error').textContent = e.message || 'Incorrect or expired code.';
+    showStep('login-step-code');
     btn.disabled = false; btn.textContent = 'Verify & continue →';
   }
+}
+
+async function checkTeam(email, token){
+  try{
+    var res = await fetch(API_BASE + '/team/session', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ email: email })
+    });
+    if(!res.ok) return null;
+    var d = await res.json();
+    return d.role ? d : null;
+  } catch(e){ return null; }
 }
 
 async function checkHomeowner(email, token){
@@ -191,37 +207,55 @@ async function checkTrade(email, token){
   } catch(e){ return false; }
 }
 
-function saveHomeownerSession(email, token){
-  try{ localStorage.setItem('rs_portal_email', email); localStorage.setItem('rs_portal_token', token); }catch(e){}
-}
-function saveTradeSession(email, token){
-  try{ localStorage.setItem('rs_trade_email', email); localStorage.setItem('rs_trade_token', token); }catch(e){}
+async function checkAgent(email, token){
+  try{
+    var res = await fetch(API_BASE + '/agent-account?email=' + encodeURIComponent(email), {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    return res.ok;
+  } catch(e){ return false; }
 }
 
+function save(keys, email, token){
+  try{ localStorage.setItem(keys[0], email); localStorage.setItem(keys[1], token); }catch(e){}
+}
+function saveHomeownerSession(email, token){ save(['rs_portal_email','rs_portal_token'], email, token); }
+function saveTradeSession(email, token){ save(['rs_trade_email','rs_trade_token'], email, token); }
+function saveAgentSession(email, token){ save(['rs_referral_email','rs_referral_token'], email, token); }
+
+var DEST = {
+  homeowner: function(){ saveHomeownerSession(_pendingEmail, _pendingToken); window.location.href = 'my-roof.html'; },
+  trade:     function(){ saveTradeSession(_pendingEmail, _pendingToken); window.location.href = 'trade-portal.html'; },
+  agent:     function(){ saveAgentSession(_pendingEmail, _pendingToken); window.location.href = 'referral-portal.html'; }
+};
+var _team = null;
 function goToPortal(which){
-  if(which==='homeowner'){ saveHomeownerSession(_pendingEmail, _pendingToken); window.location.href = 'my-roof.html'; }
-  else { saveTradeSession(_pendingEmail, _pendingToken); window.location.href = 'trade-portal.html'; }
+  if(which === 'owner'){ try{ localStorage.setItem('rs_owner_token', _team.token); }catch(e){} window.location.href = _next || 'owner.html'; return; }
+  if(which === 'contractor'){ try{ localStorage.setItem('rs_ct_token', _team.token); }catch(e){} window.location.href = 'jobs.html'; return; }
+  DEST[which]();
 }
 
 async function routeToAccount(email, token){
-  var results = await Promise.all([checkHomeowner(email, token), checkTrade(email, token)]);
-  var isHomeowner = results[0], isTrade = results[1];
+  // Team members (owner, flyers, report writers) first; then customers, trade and agents.
+  _team = await checkTeam(email, token);
+  if(_team && _team.role === 'owner'){ goToPortal('owner'); return; }
+  if(_team && _team.role === 'contractor'){ goToPortal('contractor'); return; }
 
-  if(isHomeowner && isTrade){
+  var results = await Promise.all([checkHomeowner(email, token), checkTrade(email, token), checkAgent(email, token)]);
+  var found = [];
+  if(results[0]) found.push({k:'homeowner', t:'My Roof', d:'Your inspection history & reports'});
+  if(results[1]) found.push({k:'trade', t:'Trade Account', d:'Jobs, invoices & submissions'});
+  if(results[2]) found.push({k:'agent', t:'Referral Portal', d:'Your referrals and referral link'});
+
+  if(found.length === 1){ DEST[found[0].k](); return; }
+  if(found.length > 1){
+    document.getElementById('choose-row').innerHTML = found.map(function(f){
+      return '<button class="choose-btn" onclick="goToPortal(\''+f.k+'\')">'+f.t+'<div class="d">'+f.d+'</div></button>';
+    }).join('');
     showStep('login-step-choose');
     return;
   }
-  if(isHomeowner){
-    saveHomeownerSession(email, token);
-    window.location.href = 'my-roof.html';
-    return;
-  }
-  if(isTrade){
-    saveTradeSession(email, token);
-    window.location.href = 'trade-portal.html';
-    return;
-  }
-  document.getElementById('notfound-msg').innerHTML = 'We couldn\'t find a homeowner or trade account for <strong>'+email+'</strong>.<br><br>Double check it\'s the exact email you used, or <a href="mailto:info@roofscanuk.co.uk" style="color:var(--s);font-weight:600;">contact us</a> for help.<br><br>New here? <a href="index.html#book" style="color:var(--s);font-weight:600;">Book an inspection →</a>';
+  document.getElementById('notfound-msg').innerHTML = 'We couldn\'t find an account for <strong>'+email.replace(/[<>&"]/g,'')+'</strong>.<br><br>Double check it\'s the exact email you used, or <a href="mailto:info@roofscanuk.co.uk" style="color:var(--s);font-weight:600;">contact us</a> for help.<br><br>New here? <a href="index.html#book" style="color:var(--s);font-weight:600;">Book an inspection →</a>';
   showStep('login-step-notfound');
 }
 

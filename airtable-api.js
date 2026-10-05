@@ -129,7 +129,12 @@ const AT = (function() {
   }
   // Full-screen owner login, shown automatically on any page that loads this file without a session.
   function ownerLogin() {
-    if (hasToken() || document.getElementById('rs-owner-login')) return;
+    if (hasToken()) return;
+    // One front door: send the owner to the shared login page and bring them back here afterwards.
+    var here = (location.pathname.split('/').pop() || 'staff.html');
+    location.href = 'login.html?next=' + encodeURIComponent(here);
+    return;
+    if (document.getElementById('rs-owner-login')) return;
     const el = document.createElement('div');
     el.id = 'rs-owner-login';
     el.style.cssText = 'position:fixed;inset:0;background:#F8F6F0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;font-family:-apple-system,Segoe UI,sans-serif;';

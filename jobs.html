@@ -129,6 +129,8 @@ async function verifyCode(){
   } catch(e){ showLogin('Could not connect. Check your signal and try again.'); }
 }
 function showLogin(msg){
+  // One front door: everyone signs in at login.html. (Add ?code=1 to this page to use a personal code for testing.)
+  if(!new URLSearchParams(location.search).has('code')){ location.href = 'login.html'; return; }
   $('app').style.display='none'; $('login').style.display='block';
   const e = $('login-err'); if(msg){ e.textContent = msg; e.style.display='block'; } else e.style.display='none';
 }
