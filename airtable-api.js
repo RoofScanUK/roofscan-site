@@ -3,7 +3,8 @@
 // Token stored in localStorage as 'rs_at_token'
 const AT = (function() {
   const BASE_ID = 'appPATYbyCttGeTCL';
-  const BASE_URL = 'https://api.airtable.com/v0';
+  const WORKER = 'https://roofscan-api.tiny-voice-ac40.workers.dev';
+  const BASE_URL = WORKER + '/owner/at'; // owner-only passthrough; no Airtable token lives in the browser
   // Table IDs
   const TABLES = {
     jobs:     'tbldFSer2uWycCZ0z',
@@ -12,6 +13,7 @@ const AT = (function() {
     outreach: 'tblZxQIsc5DqLl8X5',
     careplans:'tblQbtLYU2WR6ZlzK',
     settings: 'tblkH7q5OEevbrxLD',
+    contractors: 'tblWfA9jo2RZmKvhg',
   };
   // Field IDs
   const FIELDS = {
@@ -31,6 +33,35 @@ const AT = (function() {
       roofscore:'fldCWxHxCghBnjemX',
       company:  'fldkibwZ0z68rPMAl',
       payment:  'fldaq6odXbJ1UGKbi',
+      // Job-claiming pool (scanners / report writers pick these up themselves)
+      scanStatus:      'fldoeFgKgYbMpEfiP', // Unclaimed / Claimed / Completed
+      scanClaimedBy:   'fldOaKDHGCuTPTru6', // link to Contractors
+      scanCompletedAt: 'fldujaUnvsyICgbgM', // dateTime — also the anchor for the report release clock
+      reportStatus:    'fldLSu1H9leulHWkY', // Not Ready / Unclaimed / Claimed / Completed
+      reportClaimedBy: 'fldoo4liucO2EiXHA', // link to Contractors
+      // Reminder emails — reset to false on every fresh claim so a new claim cycle gets its own warning window
+      scanReminderSent:   'fldSSdNKqs1nTfwNl',
+      reportReminderSent: 'fldeCl2ikbGzd8KMb',
+      // Missed-job record — stamped when a claim auto-releases unactioned, so it counts against
+      // that contractor's monthly clean-record bonus. Never cleared, even if someone else later
+      // claims and finishes the job — it's a historical strike, not a live status.
+      scanMissedBy:    'fldruNZOtzQoFHBZZ', // link to Contractors
+      scanMissedAt:    'fldnEkaxDlqXVUykq', // dateTime
+      reportMissedBy:  'fldsB5MRWnARisNti', // link to Contractors
+      reportMissedAt:  'fld8t1zfb8jQl7am4', // dateTime
+      // In-app + email reminders — formula fields that flip true 12hrs before the 24hr auto-release
+      scanReminderDue:    'fldIljKACOKe6ue49',
+      reportReminderDue:  'fldcu3WsSwV9v0xsW',
+      scanPayoutAtRisk:   'fldUT4bumfTdKKpLm',
+      reportPayoutAtRisk: 'fldLnEDXpvO5FEfQX',
+    },
+    contractors: {
+      name:   'fldQpGofgypU9xa9D',
+      role:   'fldYCnXtPYIQCwQM6', // Scanner / Report Writer / Both
+      email:  'fldvi6y67juWWWOuk',
+      phone:  'fldKod1Oxj05btwe2',
+      active: 'fld5ZMbnyDDgwKBY7',
+      notes:  'fld80xDlu0sXdLiOA',
     },
     outreach: {
       name:    'fldVHCQKVJYK5vewS',
@@ -87,9 +118,48 @@ const AT = (function() {
     {name:'Not Interested', color:'#C0392B', bg:'#FDECEA'},
   ];
   // Token management
-  function getToken() { try { return localStorage.getItem('rs_at_token') || ''; } catch(e) { return ''; } }
-  function setToken(t) { try { localStorage.setItem('rs_at_token', t); } catch(e) {} }
+  // "Token" is now the owner's signed login token from the email-code login (see ownerLogin below).
+  function getToken() { try { return localStorage.getItem('rs_owner_token') || ''; } catch(e) { return ''; } }
+  function setToken(t) { /* old manual Airtable-token entry is retired; log in with the owner email code instead */ }
   function hasToken() { return !!getToken(); }
+  async function ownerApi(path, body) {
+    const res = await fetch(WORKER + path, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    let data = {}; try { data = await res.json(); } catch(e) {}
+    return { ok: res.ok, data };
+  }
+  // Full-screen owner login, shown automatically on any page that loads this file without a session.
+  function ownerLogin() {
+    if (hasToken() || document.getElementById('rs-owner-login')) return;
+    const el = document.createElement('div');
+    el.id = 'rs-owner-login';
+    el.style.cssText = 'position:fixed;inset:0;background:#F8F6F0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;font-family:-apple-system,Segoe UI,sans-serif;';
+    el.innerHTML = '<div style="max-width:340px;width:100%;"><h2 style="color:#1C2B4A;margin-bottom:6px;">RoofScan owner login</h2>'
+      + '<p id="rsl-msg" style="font-size:13px;color:#6B7A8D;margin-bottom:14px;">Enter your owner email and we will send a 6-digit code.</p>'
+      + '<input id="rsl-in" style="width:100%;padding:12px;border:1px solid #E8E4D8;border-radius:9px;font-size:16px;margin-bottom:10px;" placeholder="owner email" type="email">'
+      + '<button id="rsl-btn" style="width:100%;padding:13px;border:none;border-radius:9px;background:#1C2B4A;color:#C9A84C;font-weight:700;font-size:14px;cursor:pointer;">Email me a code</button>'
+      + '<div id="rsl-err" style="color:#B3261E;font-size:13px;margin-top:10px;"></div></div>';
+    document.body.appendChild(el);
+    let step = 1, email = '';
+    const $ = id => document.getElementById(id);
+    $('rsl-btn').onclick = async function() {
+      $('rsl-err').textContent = '';
+      if (step === 1) {
+        email = $('rsl-in').value.trim().toLowerCase();
+        await ownerApi('/owner/request-code', { email });
+        step = 2; $('rsl-in').value = ''; $('rsl-in').type = 'text'; $('rsl-in').placeholder = '6-digit code';
+        $('rsl-msg').textContent = 'Enter the code we emailed you.'; $('rsl-btn').textContent = 'Log in';
+      } else {
+        const r = await ownerApi('/owner/verify', { email, code: $('rsl-in').value.trim() });
+        if (!r.ok) { $('rsl-err').textContent = r.data.error || 'That code is not right.'; return; }
+        try { localStorage.setItem('rs_owner_token', r.data.token); } catch(e) {}
+        location.reload();
+      }
+    };
+  }
+  function ownerLogout() { try { localStorage.removeItem('rs_owner_token'); } catch(e) {} location.reload(); }
+  if (typeof document !== 'undefined') {
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ownerLogin); else ownerLogin();
+  }
   // Cache management (session-level, clears on close)
   const cache = {};
   function cacheKey(tableId, params) { return tableId + JSON.stringify(params); }
@@ -112,9 +182,10 @@ const AT = (function() {
     };
     if (body) opts.body = JSON.stringify(body);
     const res = await fetch(BASE_URL + '/' + BASE_ID + '/' + path, opts);
+    if (res.status === 401) { try { localStorage.removeItem('rs_owner_token'); } catch(e) {} ownerLogin(); throw new Error('Session ended. Please log in again.'); }
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.error?.message || 'API error ' + res.status);
+      throw new Error(err.error?.message || err.error || 'API error ' + res.status);
     }
     return res.json();
   }
@@ -694,6 +765,174 @@ const AT = (function() {
       return { risk: fresh.risk, note: fresh.note, overrideReason: '' };
     } catch(e) { return null; }
   }
+  // ── Job-claiming pool ───────────────────────────────────────────────────
+  // Contractors claim their own scan/report jobs instead of being assigned one, which keeps the
+  // arrangement genuinely self-employed (they choose whether to take a job) and gives a built-in
+  // fallback: if nobody's taken a job, or someone claimed it and didn't action it, it's visible
+  // again for someone else to pick up. Release timing is anchored to real-world triggers, not an
+  // arbitrary "time since claimed": a scan release counts from the job's own Inspection Date
+  // (since that's fixed at booking — if nobody's flown it by then, it needs to go back in the
+  // pool), and a report release counts from when the scan was actually completed (there's no
+  // fixed appointment for writing a report, so the scan's completion is the natural anchor).
+  const RELEASE_HOURS = 24;
+  function getActiveContractors() {
+    return listRecords(
+      TABLES.contractors,
+      [FIELDS.contractors.name, FIELDS.contractors.role, FIELDS.contractors.email, FIELDS.contractors.phone],
+      "{Active}=1",
+      [{field: 'Name', dir: 'asc'}]
+    );
+  }
+  // Jobs with a scan up for grabs (field blank counts as Unclaimed — older records predate this field)
+  function getAvailableScanJobs() {
+    return listRecords(
+      TABLES.jobs,
+      [FIELDS.jobs.client, FIELDS.jobs.address, FIELDS.jobs.propType, FIELDS.jobs.date, FIELDS.jobs.total, FIELDS.jobs.scanStatus],
+      "OR({Scan Status}='Unclaimed',{Scan Status}='')",
+      [{field: 'Inspection Date', dir: 'asc'}],
+      50
+    );
+  }
+  // Jobs with a report up for grabs (only ready once the scan's actually done)
+  function getAvailableReportJobs() {
+    return listRecords(
+      TABLES.jobs,
+      [FIELDS.jobs.client, FIELDS.jobs.address, FIELDS.jobs.propType, FIELDS.jobs.date, FIELDS.jobs.total, FIELDS.jobs.reportStatus, FIELDS.jobs.scanCompletedAt],
+      "{Report Status}='Unclaimed'",
+      [{field: 'Scan Completed At', dir: 'asc'}],
+      50
+    );
+  }
+  // Everything one contractor currently has claimed, scan or report side
+  function getMyClaimedJobs(contractorId) {
+    return listRecords(
+      TABLES.jobs,
+      [FIELDS.jobs.client, FIELDS.jobs.address, FIELDS.jobs.date, FIELDS.jobs.scanStatus, FIELDS.jobs.reportStatus, FIELDS.jobs.scanClaimedBy, FIELDS.jobs.reportClaimedBy],
+      "OR(FIND('" + contractorId + "',ARRAYJOIN({Scan Claimed By})),FIND('" + contractorId + "',ARRAYJOIN({Report Claimed By})))",
+      null,
+      50
+    );
+  }
+  function claimScan(jobId, contractorId) {
+    return updateRecord(TABLES.jobs, jobId, {
+      [FIELDS.jobs.scanStatus]: 'Claimed',
+      [FIELDS.jobs.scanClaimedBy]: [contractorId],
+      [FIELDS.jobs.scanReminderSent]: false,
+    });
+  }
+  function claimReport(jobId, contractorId) {
+    return updateRecord(TABLES.jobs, jobId, {
+      [FIELDS.jobs.reportStatus]: 'Claimed',
+      [FIELDS.jobs.reportClaimedBy]: [contractorId],
+      [FIELDS.jobs.reportReminderSent]: false,
+    });
+  }
+  // Marking the scan done also flips Report Status from "Not Ready" to "Unclaimed" — the
+  // report-writer pool only ever shows jobs that genuinely have photos to write up.
+  function completeScan(jobId) {
+    return updateRecord(TABLES.jobs, jobId, {
+      [FIELDS.jobs.scanStatus]: 'Completed',
+      [FIELDS.jobs.scanCompletedAt]: new Date().toISOString(),
+      [FIELDS.jobs.reportStatus]: 'Unclaimed',
+    });
+  }
+  function completeReport(jobId) {
+    return updateRecord(TABLES.jobs, jobId, {[FIELDS.jobs.reportStatus]: 'Completed'});
+  }
+  // Checks every currently-claimed job against its own release trigger and reopens any that have
+  // gone stale. Called on load of the Available Jobs tab — there's no background cron here, so a
+  // stale claim only actually gets released once someone next opens the app, which is an
+  // acceptable trade-off for a small team rather than standing up a separate scheduled job.
+  async function releaseStaleClaims() {
+    const now = Date.now();
+    const released = [];
+    const claimedScans = await listRecords(
+      TABLES.jobs,
+      [FIELDS.jobs.date, FIELDS.jobs.scanStatus, FIELDS.jobs.client, FIELDS.jobs.scanClaimedBy, FIELDS.jobs.scanMissedBy],
+      "{Scan Status}='Claimed'",
+      null, 100
+    );
+    for (const j of claimedScans) {
+      const insp = j.fields[FIELDS.jobs.date];
+      if (insp && now - new Date(insp).getTime() > RELEASE_HOURS*60*60*1000) {
+        // Whoever had it claimed missed it — stamp that as a strike before clearing the claim,
+        // so it counts against their monthly clean-record bonus even after the job gets reclaimed.
+        const missedBy = (j.fields[FIELDS.jobs.scanClaimedBy] || []).map(c => c.id);
+        const priorMisses = (j.fields[FIELDS.jobs.scanMissedBy] || []).map(c => c.id);
+        await updateRecord(TABLES.jobs, j.id, {
+          [FIELDS.jobs.scanStatus]: 'Unclaimed',
+          [FIELDS.jobs.scanClaimedBy]: [],
+          [FIELDS.jobs.scanReminderSent]: false,
+          [FIELDS.jobs.scanMissedBy]: [...new Set([...priorMisses, ...missedBy])],
+          [FIELDS.jobs.scanMissedAt]: new Date().toISOString(),
+        });
+        released.push({id:j.id, client:j.fields[FIELDS.jobs.client], type:'scan'});
+      }
+    }
+    const claimedReports = await listRecords(
+      TABLES.jobs,
+      [FIELDS.jobs.scanCompletedAt, FIELDS.jobs.reportStatus, FIELDS.jobs.client, FIELDS.jobs.reportClaimedBy, FIELDS.jobs.reportMissedBy],
+      "{Report Status}='Claimed'",
+      null, 100
+    );
+    for (const j of claimedReports) {
+      const done = j.fields[FIELDS.jobs.scanCompletedAt];
+      if (done && now - new Date(done).getTime() > RELEASE_HOURS*60*60*1000) {
+        const missedBy = (j.fields[FIELDS.jobs.reportClaimedBy] || []).map(c => c.id);
+        const priorMisses = (j.fields[FIELDS.jobs.reportMissedBy] || []).map(c => c.id);
+        await updateRecord(TABLES.jobs, j.id, {
+          [FIELDS.jobs.reportStatus]: 'Unclaimed',
+          [FIELDS.jobs.reportClaimedBy]: [],
+          [FIELDS.jobs.reportReminderSent]: false,
+          [FIELDS.jobs.reportMissedBy]: [...new Set([...priorMisses, ...missedBy])],
+          [FIELDS.jobs.reportMissedAt]: new Date().toISOString(),
+        });
+        released.push({id:j.id, client:j.fields[FIELDS.jobs.client], type:'report'});
+      }
+    }
+    return released;
+  }
+  // In-app version of the same reminder the email sends — call this whenever the app loads with a
+  // contractor selected, so the warning shows up even if they never check their inbox.
+  async function getMyReminders(contractorId) {
+    if (!contractorId) return [];
+    const alerts = [];
+    const myScans = await listRecords(
+      TABLES.jobs,
+      [FIELDS.jobs.client, FIELDS.jobs.address, FIELDS.jobs.scanClaimedBy, FIELDS.jobs.scanReminderDue, FIELDS.jobs.scanPayoutAtRisk],
+      "{Scan Status}='Claimed'",
+      null, 100
+    );
+    for (const j of myScans) {
+      const mine = (j.fields[FIELDS.jobs.scanClaimedBy] || []).some(c => c.id === contractorId);
+      if (mine && j.fields[FIELDS.jobs.scanReminderDue]) {
+        alerts.push({
+          id: j.id, type: 'scan',
+          client: j.fields[FIELDS.jobs.client] || '',
+          address: j.fields[FIELDS.jobs.address] || '',
+          atRisk: j.fields[FIELDS.jobs.scanPayoutAtRisk] || 0,
+        });
+      }
+    }
+    const myReports = await listRecords(
+      TABLES.jobs,
+      [FIELDS.jobs.client, FIELDS.jobs.address, FIELDS.jobs.reportClaimedBy, FIELDS.jobs.reportReminderDue, FIELDS.jobs.reportPayoutAtRisk],
+      "{Report Status}='Claimed'",
+      null, 100
+    );
+    for (const j of myReports) {
+      const mine = (j.fields[FIELDS.jobs.reportClaimedBy] || []).some(c => c.id === contractorId);
+      if (mine && j.fields[FIELDS.jobs.reportReminderDue]) {
+        alerts.push({
+          id: j.id, type: 'report',
+          client: j.fields[FIELDS.jobs.client] || '',
+          address: j.fields[FIELDS.jobs.address] || '',
+          atRisk: j.fields[FIELDS.jobs.reportPayoutAtRisk] || 0,
+        });
+      }
+    }
+    return alerts;
+  }
   async function setAirspaceOverride(recordId, reason) {
     var token = getToken();
     if (!token || !recordId) return false;
@@ -709,7 +948,7 @@ const AT = (function() {
   // Expose public API
   return {
     TABLES, FIELDS, JOB_STATUSES, OUTREACH_STATUSES,
-    getToken, setToken, hasToken, getAirspaceCheck, ensureAirspaceCheck, setAirspaceOverride,
+    getToken, setToken, hasToken, ownerLogin, ownerLogout, getAirspaceCheck, ensureAirspaceCheck, setAirspaceOverride,
     listRecords, updateRecord, createRecord,
     getTodaysJobs, getActiveJobs, getRecentJobs, getJobsNeedingReport, getUpcomingJobs,
     getOutreachContacts, getRecentQuotes, getTradeAccounts,
@@ -720,5 +959,7 @@ const AT = (function() {
     getReferralStats, getSussexAverage, getCarePlanRenewals, duplicateJob,
     batchSetStatus, getPipelineForecast, getWeatherForJob,
     fmt, fmtDate, isToday, statusStyle, outreachStyle,
+    getActiveContractors, getAvailableScanJobs, getAvailableReportJobs, getMyClaimedJobs,
+    claimScan, claimReport, completeScan, completeReport, releaseStaleClaims, getMyReminders,
   };
 })();

@@ -423,7 +423,7 @@ document.getElementById("headerLogo").src = "data:image/png;base64,iVBORw0KGgoAA
 // key server-side. getStaffKey() is a throwaway passphrase Takhy makes up himself — it never
 // touches Anthropic, it just proves the request came from an authorised device.
 var WORKER_BASE = 'https://roofscan-api.tiny-voice-ac40.workers.dev';
-function getStaffKey(){ try{ return localStorage.getItem('rs_staff_key') || ''; }catch(e){ return ''; } }
+function getStaffKey(){ try{ return localStorage.getItem('rs_owner_token') || localStorage.getItem('rs_staff_key') || ''; }catch(e){ return ''; } }
 async function callClaude(model, maxTokens, messages){
   var res = await fetch(WORKER_BASE + '/ai-proxy', {
     method: 'POST',
@@ -2226,7 +2226,7 @@ async function _doLoadJob(recordId, fallbackData) {
       // this flag every lookup below silently returns undefined even though the record has data
       // (same root cause as the airtable-api.js job-picker bug, fixed the same way here).
       var res = await fetch(
-        'https://api.airtable.com/v0/appPATYbyCttGeTCL/tbldFSer2uWycCZ0z/' + recordId + '?returnFieldsByFieldId=true',
+        'https://roofscan-api.tiny-voice-ac40.workers.dev/owner/at/appPATYbyCttGeTCL/tbldFSer2uWycCZ0z/' + recordId + '?returnFieldsByFieldId=true',
         {headers: {'Authorization': 'Bearer ' + AT.getToken()}}
       );
       var data = await res.json();

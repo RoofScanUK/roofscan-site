@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Staff referral link — RoofScan UK</title>
+<title>Agency partner signup — RoofScan UK</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -51,47 +51,68 @@ textarea{min-height:90px;resize:vertical;}
 <body>
 <div class="wrap">
   <div class="eyebrow">RoofScan UK Partner Program</div>
-  <h1>Get your referral link</h1>
-  <p class="lede">Offer vendors a drone roof condition report from RoofScan UK. When a vendor books through your personal link and pays in full, your agency receives a £50 referral fee. You don't earn anything personally and you don't need to give any bank details.</p>
+  <h1>Set up your agency</h1>
+  <p class="lede">Your branches offer vendors an optional drone roof condition report. For every report booked through one of your team's links and paid in full, your agency receives £50, paid once a month. Complete this once for the whole agency. You'll then get a staff signup link to send to your team.</p>
 
   <div class="card">
-    <div class="notice" id="no-agency"></div>
-    <form id="signup-form">
+    <form id="agency-form">
       <div class="field">
-        <label>Your agency</label>
-        <div class="agency-pill" id="agency-name">Checking your link…</div>
+        <label for="a-name">Agency name</label>
+        <input type="text" id="a-name" required placeholder="e.g. Smith &amp; Co Estate Agents">
       </div>
       <div class="field">
-        <label for="f-name">Your full name</label>
-        <input type="text" id="f-name" required autocomplete="name">
+        <label for="a-contact">Contact for payments and questions</label>
+        <input type="text" id="a-contact" required autocomplete="name" placeholder="Full name">
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label for="a-email">Email</label>
+          <input type="email" id="a-email" required autocomplete="email">
+        </div>
+        <div class="field">
+          <label for="a-phone">Phone (optional)</label>
+          <input type="tel" id="a-phone" autocomplete="tel">
+        </div>
       </div>
       <div class="field">
-        <label for="f-branch">Branch / office</label>
-        <input type="text" id="f-branch" required placeholder="e.g. Brighton">
+        <label for="a-branches">Branches in the trial</label>
+        <textarea id="a-branches" placeholder="One per line, e.g. Brighton, Hove, Worthing"></textarea>
       </div>
+
+      <div class="section-label">Where should we pay the agency?</div>
       <div class="field">
-        <label for="f-email">Work email</label>
-        <input type="email" id="f-email" required autocomplete="email">
+        <label for="a-payee">Account name</label>
+        <input type="text" id="a-payee" required placeholder="The agency's registered name">
       </div>
-      <div class="field">
-        <label for="f-phone">Phone (optional)</label>
-        <input type="tel" id="f-phone" autocomplete="tel">
+      <div class="row2">
+        <div class="field">
+          <label for="a-sort">Sort code</label>
+          <input type="text" id="a-sort" required placeholder="12-34-56">
+        </div>
+        <div class="field">
+          <label for="a-acct">Account number</label>
+          <input type="text" id="a-acct" required placeholder="12345678">
+        </div>
       </div>
+      <div class="hint">Only used to pay the monthly referral fee. Never shared with clients or shown publicly.</div>
+
+      <div class="section-label">Telling vendors</div>
       <div class="check-row">
-        <input type="checkbox" id="f-disc" required>
-        <label for="f-disc">I'll tell vendors the report is optional and that my agency receives a referral fee if they book.</label>
+        <input type="checkbox" id="a-disc" required>
+        <label for="a-disc">We will tell vendors, in writing and before they book, that the report is optional and that we receive a referral fee from RoofScan UK.</label>
       </div>
-      <button type="submit" class="btn" id="submit-btn" disabled>Get my referral link →</button>
+
+      <button type="submit" class="btn" id="submit-btn">Set up our agency →</button>
       <div class="error" id="form-error"></div>
     </form>
 
     <div class="success" id="success-block">
       <div class="check">✓</div>
-      <h2>You're all set</h2>
-      <p class="muted" style="margin-top:8px;">Send this link to a vendor when you take on a new instruction. Please tell them the report is optional and that your agency receives a referral fee.</p>
+      <h2>Your agency is set up</h2>
+      <p class="muted" style="margin-top:8px;">Send this link to your team. Each person uses it to get their own referral link, so we can see which branch and which person each booking came from. Nobody is paid personally.</p>
       <div class="link-box" id="result-link"></div>
-      <button class="copy-btn" id="copy-btn">Copy link</button>
-      <p class="muted" style="margin-top:16px;font-size:13px;">We've also emailed this link to you for safekeeping.</p>
+      <button class="copy-btn" id="copy-btn">Copy staff link</button>
+      <p class="muted" style="margin-top:16px;font-size:13px;">Keep this link for your team only.</p>
     </div>
   </div>
 
@@ -100,72 +121,48 @@ textarea{min-height:90px;resize:vertical;}
 
 <script>
 const API_BASE = 'https://roofscan-api.tiny-voice-ac40.workers.dev';
-let generatedLink = '';
-const agencyCode = new URLSearchParams(location.search).get('agency') || '';
-const btn = document.getElementById('submit-btn');
-
-(async function checkAgency(){
-  const notice = document.getElementById('no-agency');
-  const pill = document.getElementById('agency-name');
-  if(!agencyCode){
-    pill.textContent = 'No agency link used';
-    notice.textContent = 'This page needs the staff signup link from your agency owner. Please ask them for it, or email info@roofscanuk.co.uk.';
-    notice.style.display = 'block';
-    return;
-  }
-  try{
-    const r = await fetch(API_BASE + '/validate-agency?code=' + encodeURIComponent(agencyCode));
-    const d = await r.json();
-    if(d.valid){ pill.textContent = d.agencyName; btn.disabled = false; }
-    else{
-      pill.textContent = 'Link not recognised';
-      notice.textContent = 'That agency link is not valid. Please ask your agency owner for the correct one.';
-      notice.style.display = 'block';
-    }
-  }catch(e){
-    pill.textContent = 'Could not check link';
-    notice.textContent = 'We could not check your link just now. Please refresh and try again.';
-    notice.style.display = 'block';
-  }
-})();
-
-document.getElementById('signup-form').addEventListener('submit', async function(e){
+let staffLink = '';
+document.getElementById('agency-form').addEventListener('submit', async function(e){
   e.preventDefault();
+  const btn = document.getElementById('submit-btn');
   const errEl = document.getElementById('form-error');
   errEl.style.display = 'none';
   btn.disabled = true;
-  btn.textContent = 'Setting up your link…';
+  btn.textContent = 'Setting up…';
   const payload = {
-    agencyCode: agencyCode,
-    name: document.getElementById('f-name').value.trim(),
-    branch: document.getElementById('f-branch').value.trim(),
-    email: document.getElementById('f-email').value.trim(),
-    phone: document.getElementById('f-phone').value.trim()
+    agencyName: document.getElementById('a-name').value.trim(),
+    contactName: document.getElementById('a-contact').value.trim(),
+    contactEmail: document.getElementById('a-email').value.trim(),
+    contactPhone: document.getElementById('a-phone').value.trim(),
+    branches: document.getElementById('a-branches').value.trim(),
+    payeeName: document.getElementById('a-payee').value.trim(),
+    sortCode: document.getElementById('a-sort').value.trim(),
+    accountNumber: document.getElementById('a-acct').value.trim(),
+    disclosureConfirmed: document.getElementById('a-disc').checked
   };
   try{
-    const res = await fetch(API_BASE + '/agent-signup', {
+    const res = await fetch(API_BASE + '/agency-signup', {
       method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)
     });
     const data = await res.json();
     if(!res.ok) throw new Error(data.error || 'Something went wrong — please try again.');
-    generatedLink = data.link;
+    staffLink = data.link;
     document.getElementById('result-link').textContent = data.link;
-    document.getElementById('signup-form').style.display = 'none';
+    document.getElementById('agency-form').style.display = 'none';
     document.getElementById('success-block').style.display = 'block';
   }catch(err){
     errEl.textContent = err.message;
     errEl.style.display = 'block';
     btn.disabled = false;
-    btn.textContent = 'Get my referral link →';
+    btn.textContent = 'Set up our agency →';
   }
 });
-
 document.getElementById('copy-btn').addEventListener('click', function(ev){
   const b = ev.target;
-  navigator.clipboard.writeText(generatedLink).then(function(){
+  navigator.clipboard.writeText(staffLink).then(function(){
     b.textContent = 'Copied!';
-    setTimeout(function(){ b.textContent = 'Copy link'; }, 2000);
-  }).catch(function(){ prompt('Your referral link:', generatedLink); });
+    setTimeout(function(){ b.textContent = 'Copy staff link'; }, 2000);
+  }).catch(function(){ prompt('Staff signup link:', staffLink); });
 });
 </script>
 </body>

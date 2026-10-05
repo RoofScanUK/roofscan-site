@@ -108,10 +108,8 @@ main{padding:14px;}
     <div class="acct-sub" id="acct-sub"></div>
     <div class="acct-stats">
       <div><div class="as-val" id="stat-referrals" style="color:var(--g);">0</div><div class="as-label">Referrals</div></div>
-      <div><div class="as-val" id="stat-paid" style="color:rgba(255,255,255,0.7);">£0</div><div class="as-label">Paid out</div></div>
-      <div><div class="as-val" id="stat-owed" style="color:var(--am);">£0</div><div class="as-label">Owed</div></div>
     </div>
-    <div style="font-size:11px;color:rgba(255,255,255,0.45);margin-top:10px;">Paid out once your referral's inspection is complete and their invoice is settled.</div>
+    <div style="font-size:11px;color:rgba(255,255,255,0.45);margin-top:10px;">Your agency receives the referral fee once your referral's inspection is complete and paid. Nothing is paid to individuals.</div>
   </div>
 
   <div class="link-card">
@@ -140,8 +138,8 @@ function statusCaption(s){
   var m = {
     'Booked': 'Inspection scheduled — nothing to do yet.',
     'Complete': 'Inspection done, report being prepared.',
-    'Report Sent': 'Report delivered to your client — your reward is being processed.',
-    'Paid': 'Reward paid to you.'
+    'Report Sent': 'Report delivered to your client — your agency's referral fee is being processed.',
+    'Paid': 'Referral fee paid to your agency.'
   };
   return m[s] || 'Inspection scheduled — nothing to do yet.';
 }
@@ -244,6 +242,8 @@ async function loadPortal(email, token){
   }catch(e){
     if(e && e.status === 401){
       showLoginError('Your session has expired. Please log back in below to keep viewing your referrals.');
+    } else if(e && e.status === 404){
+      showLoginError('No referral account found for that email.<br><a href="agent-signup.html" style="color:var(--s);font-weight:600;">Sign up here</a> to get your link.');
     } else {
       showLoginError('Something went wrong loading your account. Please log in again, or call/WhatsApp 07498 364197 if it keeps happening.');
     }
@@ -265,8 +265,6 @@ function showPortal(acct, email){
   document.getElementById('acct-name').textContent=acct.name||'Your account';
   document.getElementById('acct-sub').textContent=[acct.agency, acct.branch].filter(Boolean).join(' · ') || email;
   document.getElementById('stat-referrals').textContent=acct.totalReferrals||0;
-  document.getElementById('stat-paid').textContent=fmtMoney(acct.totalPaid);
-  document.getElementById('stat-owed').textContent=fmtMoney(acct.totalOwed);
   _referralLink = acct.referralLink||'';
   document.getElementById('referral-link-value').textContent=_referralLink||'—';
 }
