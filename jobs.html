@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>RoofScan UK — Jobs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--n:#1C2B4A;--g:#C9A84C;--bg:#F8F6F0;--cd:#FFF;--br:#E8E4D8;--mu:#6B7A8D;--gr:#1E8E4E;--am:#C2710C;--rd:#B3261E;--gbg:#E8F8EF;--abg:#FEF3E2;--rbg:#FDECEA;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--n);min-height:100vh;max-width:560px;margin:0 auto;padding:0 14px 60px;}
+h1{font-size:20px;font-weight:800;}
+.top{display:flex;justify-content:space-between;align-items:center;padding:16px 0 6px;}
+.sub{font-size:12px;color:var(--mu);}
+.card{background:var(--cd);border:1px solid var(--br);border-radius:12px;padding:14px;margin-bottom:12px;}
+.sl{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--mu);margin:18px 0 8px;}
+.btn{border:none;border-radius:9px;padding:9px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;background:var(--n);color:var(--g);}
+.btn.ghost{background:none;color:var(--mu);border:1px solid var(--br);}
+.btn.warn{background:var(--rd);color:#fff;}
+.btn:disabled{opacity:.45;cursor:default;}
+.inp{width:100%;border:1px solid var(--br);border-radius:9px;padding:12px 14px;font-size:16px;font-family:inherit;margin-bottom:10px;background:#fff;color:var(--n);letter-spacing:.05em;}
+.banner{border-radius:10px;padding:10px 12px;font-size:13px;margin-bottom:10px;}
+.b-red{background:var(--rbg);color:#8A1C14;border:1px solid #F3B6B1;}
+.b-amber{background:var(--abg);color:#7A4A07;border:1px solid #F0D3A0;}
+.b-green{background:var(--gbg);color:#14663A;border:1px solid #B5E2C8;}
+.b-grey{background:#EFEDE6;color:var(--mu);}
+.row{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;}
+.jt{font-weight:700;font-size:14px;}
+.jm{font-size:12px;color:var(--mu);margin-top:2px;}
+.pay{font-weight:800;color:var(--n);font-size:15px;white-space:nowrap;}
+.acts{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;}
+.chk{display:flex;gap:10px;align-items:flex-start;font-size:13px;padding:7px 0;border-top:1px solid var(--br);}
+.chk input{margin-top:3px;}
+.chk.locked{color:var(--mu);}
+.empty{font-size:13px;color:var(--mu);padding:6px 0;}
+#sync{font-size:11px;font-weight:600;border-radius:99px;padding:3px 10px;}
+.s-ok{background:var(--gbg);color:#14663A;}.s-off{background:var(--abg);color:#7A4A07;}
+</style>
+</head>
+<body>
+<div id="login" style="display:none;padding-top:60px;">
+  <h1>RoofScan UK jobs</h1>
+  <p class="sub" style="margin:6px 0 18px;">Enter the personal code RoofScan gave you. Please don't share it.</p>
+  <input class="inp" id="code" type="password" autocomplete="off" autocapitalize="off" placeholder="Your code">
+  <button class="btn" style="width:100%;padding:13px;" onclick="doLogin()">Log in</button>
+  <div id="login-err" class="banner b-red" style="display:none;margin-top:12px;"></div>
+</div>
+
+<div id="app" style="display:none;">
+  <div class="top">
+    <div><h1 id="who">Jobs</h1><div class="sub" id="who-sub"></div></div>
+    <div style="text-align:right;"><span id="sync" class="s-ok">Synced</span><div class="sub" id="sync-sub" style="margin-top:4px;"></div></div>
+  </div>
+  <div id="notices"></div>
+  <div id="lock-box"></div>
+  <div id="drone-line" class="sub" style="margin-bottom:6px;"></div>
+
+  <div class="sl">Your jobs</div>
+  <div id="mine"></div>
+  <div id="scans-wrap"><div class="sl">Available scans</div><div id="scans"></div></div>
+  <div id="reports-wrap"><div class="sl">Available reports</div><div id="reports"></div></div>
+  <div style="text-align:center;margin-top:18px;">
+    <button class="btn ghost" onclick="refresh(true)">Refresh</button>
+    <button class="btn ghost" onclick="logout()">Log out</button>
+  </div>
+</div>
+
+<script>
+const API = 'https://roofscan-api.tiny-voice-ac40.workers.dev';
+const LS = { tok:'rs_ct_token', board:'rs_ct_board', queue:'rs_ct_queue', synced:'rs_ct_synced', pass:'rs_ct_pass', checks:'rs_ct_checks' };
+const $ = id => document.getElementById(id);
+const get = (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch(e){ return d; } };
+const put = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} };
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let board = get(LS.board, null), notices = [], busy = false;
+
+function fmtDate(d){ if(!d) return ''; const x = new Date(d); return isNaN(x) ? d : x.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}); }
+function money(n){ return '£' + (Number(n)||0); }
+function notice(msg, kind){ notices.push({msg, kind: kind||'amber'}); renderNotices(); }
+function renderNotices(){
+  $('notices').innerHTML = notices.map((n,i) => `<div class="banner b-${n.kind}" onclick="notices.splice(${i},1);renderNotices()" style="cursor:pointer;">${esc(n.msg)} <span style="float:right;opacity:.6;">✕</span></div>`).join('');
+}
+
+// ── API with auth ──
+async function api(path, method, body){
+  const tok = localStorage.getItem(LS.tok);
+  const res = await fetch(API + path, { method: method||'GET', headers: Object.assign({'Content-Type':'application/json'}, tok ? {Authorization:'Bearer '+tok} : {}), body: body ? JSON.stringify(body) : undefined });
+  let data = {}; try { data = await res.json(); } catch(e){}
+  if (res.status === 401 && path !== '/contractor/login') { localStorage.removeItem(LS.tok); showLogin('Your session has ended. Please log in again.'); throw new Error('auth'); }
+  return { ok: res.ok, status: res.status, data };
+}
+
+// ── Login ──
+function showLogin(msg){
+  $('app').style.display='none'; $('login').style.display='block';
+  const e = $('login-err'); if(msg){ e.textContent = msg; e.style.display='block'; } else e.style.display='none';
+}
+async function doLogin(){
+  const code = $('code').value.trim();
+  try {
+    const r = await api('/contractor/login','POST',{code});
+    if(!r.ok){ showLogin(r.data.error || 'That code is not recognised.'); return; }
+    localStorage.setItem(LS.tok, r.data.token); $('code').value='';
+    boot();
+  } catch(e){ showLogin('Could not connect. Check your signal and try again.'); }
+}
+function logout(){ if(queue().length && !confirm('You have changes waiting to sync. Log out anyway?')) return; Object.values(LS).forEach(k => localStorage.removeItem(k)); board=null; showLogin(); }
+
+// ── Offline queue ──
+const queue = () => get(LS.queue, []);
+function enqueue(item){ const q = queue(); q.push(Object.assign({qid: Date.now()+'-'+Math.random().toString(36).slice(2,6)}, item)); put(LS.queue, q); }
+async function sendAction(a){
+  const path = { claim:'/contractor/claim', complete:'/contractor/complete', standdown:'/contractor/standdown' }[a.type];
+  return api(path, 'POST', { jobId:a.jobId, kind:a.kind, reason:a.reason });
+}
+async function act(a){
+  // apply to the cached board right away so the screen responds even with no signal
+  applyLocal(a);
+  if (!navigator.onLine) { enqueue(a); notice('Saved on your phone. It will send when you have signal.', 'amber'); render(); return; }
+  try {
+    const r = await sendAction(a);
+    if (!r.ok) { handleFail(a, r); }
+  } catch(e){ if(e.message !== 'auth'){ enqueue(a); notice('No signal. Saved and will send when you reconnect.', 'amber'); } }
+  await refresh(false);
+}
+function handleFail(a, r){
+  notice(r.data.error || 'That did not go through.', r.data.locked || r.data.gone ? 'red' : 'amber');
+}
+async function syncQueue(){
+  const q = queue(); if(!q.length || !navigator.onLine) return;
+  const rest = [];
+  for (const a of q) {
+    try {
+      const r = await sendAction(a);
+      if (!r.ok && r.status >= 500) rest.push(a);
+      else if (!r.ok) handleFail(a, r);
+    } catch(e){ if(e.message === 'auth') return; rest.push(a); }
+  }
+  put(LS.queue, rest);
+}
+function applyLocal(a){
+  if(!board) return;
+  const take = list => { const i = list.findIndex(j => j.id === a.jobId); return i >= 0 ? list.splice(i,1)[0] : null; };
+  if (a.type === 'claim') {
+    const j = take(a.kind === 'scan' ? board.scans : board.reports);
+    if (j) { j.pending = true; board.mine.push(Object.assign(j, { scanMine: a.kind==='scan', reportMine: a.kind==='report', client:'(syncing…)', address:'Details appear once you are back online' })); }
+  } else if (a.type === 'complete' || a.type === 'standdown') {
+    const j = board.mine.find(x => x.id === a.jobId);
+    if (j) { if (a.kind === 'scan' || a.type === 'standdown') j.scanMine = false; if (a.kind === 'report') j.reportMine = false; }
+    board.mine = board.mine.filter(x => x.scanMine || x.reportMine);
+  }
+  put(LS.board, board);
+}
+
+// ── Load / sync ──
+async function refresh(manual){
+  if (busy) return; busy = true;
+  try {
+    await syncQueue();
+    if (navigator.onLine) {
+      const r = await api('/contractor/board');
+      if (r.ok) { board = r.data; put(LS.board, board); put(LS.synced, Date.now()); }
+      else if (manual) notice(r.data.error || 'Could not refresh.', 'amber');
+    }
+  } catch(e){ /* offline: keep showing the saved copy */ }
+  busy = false; render();
+}
+
+// ── Rendering ──
+function windLine(){
+  const m = board.me;
+  if (m.role === 'Report Writer') return '';
+  return m.droneModel ? `Your drone: ${esc(m.droneModel)} · your wind limit ${m.windLimit} m/s (80% of the rated ${m.ratedWind} m/s)` : 'No drone on file yet.';
+}
+function render(){
+  if (!board) return;
+  $('login').style.display='none'; $('app').style.display='block';
+  const m = board.me;
+  $('who').textContent = m.name; $('who-sub').textContent = m.role;
+  const q = queue().length, last = get(LS.synced, 0), off = !navigator.onLine;
+  const sync = $('sync');
+  sync.className = (off || q) ? 's-off' : 's-ok';
+  sync.textContent = off ? 'Offline' : (q ? q + ' waiting' : 'Synced');
+  $('sync-sub').textContent = last ? 'Last synced ' + new Date(last).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) : '';
+  $('drone-line').textContent = windLine();
+  $('lock-box').innerHTML = (m.role !== 'Report Writer' && !m.scansAllowed) ? `<div class="banner b-red"><strong>Scans are switched off.</strong> ${esc(m.scansBlockedReason)}</div>` : '';
+  const pass = get(LS.pass, {});
+  // mine
+  $('mine').innerHTML = board.mine.length ? board.mine.map(mineCard).join('') : '<div class="card"><div class="empty">Nothing claimed yet.</div></div>';
+  // pools
+  const canScan = m.role !== 'Report Writer', canRep = m.role !== 'Scanner';
+  $('scans-wrap').style.display = canScan ? 'block' : 'none';
+  $('reports-wrap').style.display = canRep ? 'block' : 'none';
+  const pool = (list, kind) => { const l = list.filter(j => !pass[j.id]); return l.length ? l.map(j => poolCard(j, kind)).join('') : '<div class="card"><div class="empty">Nothing available right now.</div></div>'; };
+  $('scans').innerHTML = pool(board.scans, 'scan');
+  $('reports').innerHTML = pool(board.reports, 'report');
+}
+function poolCard(j, kind){
+  const pay = kind === 'scan' ? j.scanPay : j.reportPay;
+  const locked = kind === 'scan' && !board.me.scansAllowed;
+  return `<div class="card"><div class="row"><div><div class="jt">${esc(j.area)} · ${esc(j.propertyType)||'Property'}</div><div class="jm">${esc(fmtDate(j.date))}</div></div><div class="pay">from ${money(pay)}</div></div>
+  <div class="acts"><button class="btn" ${locked?'disabled':''} onclick="claim('${j.id}','${kind}')">Claim ${kind}</button><button class="btn ghost" onclick="passJob('${j.id}')">Not for me</button></div></div>`;
+}
+function passJob(id){ const p = get(LS.pass, {}); p[id] = 1; put(LS.pass, p); render(); }
+function claim(id, kind){ act({type:'claim', jobId:id, kind}); }
+
+function mineCard(j){
+  let html = `<div class="card"><div class="jt">${esc(j.client)}</div><div class="jm">${esc(j.address)}${j.phone?' · '+esc(j.phone):''}</div><div class="jm">${esc(fmtDate(j.date))}</div>`;
+  if (j.scanReminder && j.scanMine) html += `<div class="banner b-amber" style="margin-top:8px;">Not marked done yet. If it auto-releases you miss out on up to ${money(j.scanAtRisk)}.</div>`;
+  if (j.reportReminder && j.reportMine) html += `<div class="banner b-amber" style="margin-top:8px;">Report not marked done yet. If it auto-releases you miss out on up to ${money(j.reportAtRisk)}.</div>`;
+  if (j.scanMine) html += scanPanel(j);
+  if (j.reportMine) html += reportPanel(j);
+  return html + '</div>';
+}
+
+// ── On-site checklist (weather + airspace items are locked: they tick themselves from the live check) ──
+const CK = { weather:'Weather is within your drone\'s limit', airspace:'Airspace checked and clear', batteries:'Batteries charged and spare packed', docs:'Operator ID, Flyer ID and insurance with you', site:'Site is safe and you have permission to be on it' };
+function scanPanel(j){
+  const st = get(LS.checks, {})[j.id] || {};
+  const manual = ['batteries','docs','site'].map(k => `<label class="chk"><input type="checkbox" ${st[k]?'checked':''} onchange="setManual('${j.id}','${k}',this.checked)"> <span>${CK[k]}</span></label>`).join('');
+  const locked = k => `<div class="chk locked"><input type="checkbox" disabled ${st[k]==='ok'?'checked':''}> <span>${CK[k]} <em>(checked for you)</em></span></div>`;
+  const w = st.weatherMsg ? `<div class="banner ${st.weather==='ok'?'b-green':(st.weather==='red'?'b-red':'b-amber')}" style="margin:8px 0;">${esc(st.weatherMsg)}</div>` : '';
+  const a = st.airspaceMsg ? `<div class="banner ${st.airspace==='ok'?'b-green':(st.airspace==='red'?'b-red':'b-amber')}" style="margin:8px 0;">${esc(st.airspaceMsg)}</div>` : '';
+  const fresh = st.checkedAt && (Date.now() - st.checkedAt) < 6*3600*1000;
+  const ready = fresh && st.weather==='ok' && st.airspace==='ok' && st.batteries && st.docs && st.site && board.me.scansAllowed;
+  const blocked = st.weather==='red' || st.airspace==='red';
+  return `<div style="margin-top:12px;border-top:1px solid var(--br);padding-top:10px;"><div class="jt" style="font-size:13px;">Scan checklist</div>
+  <div class="acts" style="margin-top:6px;"><button class="btn ghost" onclick="runChecks('${j.id}')">${st.weather?'Re-check':'Check'} weather and airspace</button></div>
+  ${w}${a}${locked('weather')}${locked('airspace')}${manual}
+  <div class="acts">
+    <button class="btn" ${ready?'':'disabled'} onclick="completeScan('${j.id}')">Mark scan done</button>
+    ${blocked?`<button class="btn warn" onclick="standDown('${j.id}')">Unsafe to fly. Stand down</button>`:`<button class="btn ghost" onclick="standDown('${j.id}')">Stand down (unsafe)</button>`}
+  </div></div>`;
+}
+function setManual(id, k, v){ const c = get(LS.checks, {}); c[id] = c[id] || {}; c[id][k] = v; put(LS.checks, c); render(); }
+function reportPanel(j){
+  return `<div style="margin-top:12px;border-top:1px solid var(--br);padding-top:10px;"><label class="chk"><input type="checkbox" id="rep-${j.id}" onchange="document.getElementById('repbtn-${j.id}').disabled=!this.checked"> <span>The report is uploaded and ready for RoofScan to approve</span></label>
+  <div class="acts"><button class="btn" id="repbtn-${j.id}" disabled onclick="act({type:'complete',jobId:'${j.id}',kind:'report'})">Mark report done</button></div></div>`;
+}
+function completeScan(id){ act({type:'complete', jobId:id, kind:'scan'}); }
+function standDown(id){
+  const st = get(LS.checks, {})[id] || {};
+  const reason = st.weatherMsg && st.weather === 'red' ? st.weatherMsg : (st.airspaceMsg && st.airspace === 'red' ? st.airspaceMsg : (prompt('What makes it unsafe? (this goes to RoofScan, no penalty)') || 'Unsafe to fly'));
+  act({type:'standdown', jobId:id, kind:'scan', reason});
+}
+
+// ── Weather + airspace (same rules as the staff app; wind judged against YOUR drone) ──
+const AERO = [['Gatwick Airport',51.1481,-0.1903],['Heathrow Airport',51.47,-0.4543],['Shoreham (Brighton City) Airport',50.8356,-0.2971],['Southampton Airport',50.9503,-1.3568],['Farnborough Airport',51.2757,-0.7764],['Biggin Hill Airport',51.3308,0.0325],['London City Airport',51.5053,0.0553],['Redhill Aerodrome',51.2064,-0.1467],['Goodwood Aerodrome',50.8564,-0.7589],['Lydd Airport',50.9558,0.9391],['Manston (Kent International) Airport',51.3444,1.3489],['Dunsfold Aerodrome',51.115,-0.5397],['Blackbushe Airport',51.3237,-0.8478],['Stansted Airport',51.886,0.2389],['Luton Airport',51.8747,-0.3683]];
+function km(a,b,c,d){ const R=6371,r=Math.PI/180,dl=(c-a)*r,dn=(d-b)*r,x=Math.sin(dl/2)**2+Math.cos(a*r)*Math.cos(c*r)*Math.sin(dn/2)**2; return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x)); }
+async function geocode(address){
+  const parts = String(address||'').split(','); const town = (parts.length>1 ? parts[parts.length-2] : parts[0]).trim();
+  const r = await fetch('https://geocoding-api.open-meteo.com/v1/search?name='+encodeURIComponent(town)+'&count=1&country=GB'); const d = await r.json();
+  if(!d.results || !d.results[0]) return { lat:50.8225, lon:-0.1372, guessed:true };
+  return { lat:d.results[0].latitude, lon:d.results[0].longitude };
+}
+async function runChecks(id){
+  const j = board.mine.find(x => x.id === id); const c = get(LS.checks, {}); c[id] = c[id] || {};
+  if (!navigator.onLine) { notice('You need signal to check weather and airspace. They stay locked until you do.', 'amber'); return; }
+  try {
+    const pos = await geocode(j.address);
+    // airspace
+    let near = null; AERO.forEach(a => { const d = km(pos.lat,pos.lon,a[1],a[2]); if(!near || d < near.d) near = {n:a[0], d}; });
+    const d1 = Math.round(near.d*10)/10;
+    if (near.d <= 5) { c[id].airspace='red'; c[id].airspaceMsg = `Likely inside ${near.n}'s Flight Restriction Zone (${d1} km). Do not fly without ATC permission.`; }
+    else if (near.d <= 8) { c[id].airspace='amber'; c[id].airspaceMsg = `Close to ${near.n} (${d1} km). Check the NATS UAS Restrictions Map or DJI geo-zone layer before flying. Contact RoofScan to confirm.`; }
+    else { c[id].airspace='ok'; c[id].airspaceMsg = `Nearest listed aerodrome is ${near.n}, ${d1} km away. Still check the DJI Fly geo-zone map on site.`; }
+    // weather: next hours on the job date, judged against this drone's limit
+    const date = (j.date||'').slice(0,10) || new Date().toISOString().slice(0,10);
+    const wr = await fetch('https://api.open-meteo.com/v1/forecast?latitude='+pos.lat+'&longitude='+pos.lon+'&hourly=wind_speed_10m,wind_gusts_10m,precipitation_probability,visibility&timezone=Europe/London&start_date='+date+'&end_date='+date);
+    const w = await wr.json(); const h = w.hourly; if(!h) throw new Error('no weather');
+    const nowH = new Date().getHours(), todayStr = new Date().toISOString().slice(0,10);
+    let worst = { wind:0, gust:0, rain:0, vis:99999 }, n = 0;
+    h.time.forEach((t,i) => { const hr = new Date(t).getHours(); if (hr < 7 || hr > 19) return; if (date === todayStr && hr < nowH) return; n++;
+      worst.wind = Math.max(worst.wind, h.wind_speed_10m[i]/3.6); worst.gust = Math.max(worst.gust, h.wind_gusts_10m[i]/3.6); worst.rain = Math.max(worst.rain, h.precipitation_probability[i]); worst.vis = Math.min(worst.vis, h.visibility[i]); });
+    const limit = board.me.windLimit || 10; // falls back to 10 m/s if no drone rating on file
+    const ws = Math.round(worst.wind*10)/10, gs = Math.round(worst.gust*10)/10;
+    if (!n) { c[id].weather='amber'; c[id].weatherMsg='No remaining flying hours today. Check the forecast for the job date.'; }
+    else if (gs > limit || worst.rain > 50 || worst.vis < 3000) { c[id].weather='red'; c[id].weatherMsg = `Unsafe to fly: gusts up to ${gs} m/s against your ${limit} m/s limit, ${worst.rain}% rain chance. You can stand down with no penalty.`; }
+    else if (ws > limit*0.85 || gs > limit*0.9 || worst.rain > 20 || worst.vis < 8000) { c[id].weather='amber'; c[id].weatherMsg = `Marginal: wind ${ws} m/s, gusts ${gs} m/s (your limit ${limit}), ${worst.rain}% rain. Re-check before you fly.`; }
+    else { c[id].weather='ok'; c[id].weatherMsg = `Good to fly: wind ${ws} m/s, gusts ${gs} m/s (your limit ${limit}), ${worst.rain}% rain chance.`; }
+    c[id].checkedAt = Date.now();
+    put(LS.checks, c); render();
+  } catch(e){ notice('Could not run the checks just now. They stay locked until they succeed.', 'amber'); }
+}
+
+window.addEventListener('online', () => { refresh(false); });
+window.addEventListener('offline', render);
+setInterval(() => { if (navigator.onLine && !busy) refresh(false); }, 120000);
+
+function boot(){
+  if (!localStorage.getItem(LS.tok)) { showLogin(); return; }
+  if (board) render();
+  refresh(false);
+}
+$('code').addEventListener('keydown', e => { if(e.key === 'Enter') doLogin(); });
+boot();
+</script>
+</body>
+</html>
