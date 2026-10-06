@@ -69,6 +69,12 @@ h1{font-size:20px;font-weight:800;}
 .cal .ev{display:block;margin-top:3px;font-size:10px;font-weight:700;border-radius:5px;padding:2px 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;}
 .cal .ev.scan{background:#E3ECFB;color:#1F4DA8;}.cal .ev.rep{background:#F3E8FB;color:#6B2FA3;}
 @media(max-width:900px){.cols{grid-template-columns:1fr;}.stats{grid-template-columns:repeat(2,1fr);}.wrap,.bar{padding-left:14px;padding-right:14px;}.cal .d{min-height:46px;}}
+.slide{position:relative;flex:1;min-width:210px;height:44px;border-radius:99px;background:var(--n);overflow:hidden;user-select:none;touch-action:none;}
+.slide-t{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#C9D2E3;font-size:13px;font-weight:700;padding-left:36px;pointer-events:none;}
+.slide-h{position:absolute;left:4px;top:4px;width:36px;height:36px;border-radius:50%;background:var(--g);color:var(--n);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;cursor:grab;}
+.slide.done{background:var(--gr);}.slide.done .slide-t{color:#fff;}
+.slide.dis{opacity:.45;pointer-events:none;}
+.slide:focus-visible{outline:3px solid var(--g);}
 </style>
 </head>
 <body>
@@ -251,7 +257,7 @@ function windLine(){
   return m.droneModel ? `Your drone: ${esc(m.droneModel)} · your wind limit ${m.windLimit} m/s (80% of the rated ${m.ratedWind} m/s)` : 'No drone on file yet.';
 }
 function render(){
-  if (!board) return;
+  if (!board || sliding) return;
   $('login').style.display='none'; $('app').style.display='block';
   const m = board.me;
   $('who').textContent = m.name; $('who-sub').textContent = m.role;
@@ -302,9 +308,27 @@ function poolCard(j, kind){
   const pay = kind === 'scan' ? j.scanPay : j.reportPay;
   const locked = kind === 'scan' && !board.me.scansAllowed;
   return `<div class="card pool"><div class="row"><div><span class="tag ${kind==='scan'?'t-scan':'t-rep'}">${kind}</span><div class="jt">${esc(j.area)} · ${esc(j.propertyType)||'Property'}</div><div class="jm">${esc(fmtDate(j.date))}</div></div><div class="pay">from ${money(pay)}</div></div>
-  <div class="acts"><button class="btn" ${locked?'disabled':''} onclick="claim('${j.id}','${kind}')">Claim ${kind}</button><button class="btn ghost" onclick="passJob('${j.id}')">Not for me</button></div></div>`;
+  <div class="acts"><div class="slide${locked?' dis':''}" data-id="${j.id}" data-kind="${kind}" tabindex="0" role="button" aria-label="Slide right to claim this ${kind}"><div class="slide-t">${locked?'Scans switched off':'Slide to claim '+kind}</div><div class="slide-h">&rarr;</div></div><button class="btn ghost" onclick="passJob('${j.id}')">Not for me</button></div></div>`;
 }
 function passJob(id){ const p = get(LS.pass, {}); p[id] = 1; put(LS.pass, p); render(); }
+
+// ── Slide-to-claim: must be dragged most of the way across so it can't be tapped by accident ──
+let sliding = false;
+document.addEventListener('pointerdown', e => {
+  const h = e.target.closest && e.target.closest('.slide-h'); if (!h) return;
+  const box = h.parentElement; if (box.classList.contains('dis') || box.classList.contains('done')) return;
+  sliding = true; h.setPointerCapture(e.pointerId);
+  const startX = e.clientX, max = box.clientWidth - h.offsetWidth - 8;
+  const move = ev => { const x = Math.max(0, Math.min(max, ev.clientX - startX)); h.style.transform = `translateX(${x}px)`; h._x = x; };
+  const up = () => {
+    h.removeEventListener('pointermove', move); h.removeEventListener('pointerup', up); h.removeEventListener('pointercancel', up);
+    if ((h._x||0) >= max*0.85) { h.style.transform = `translateX(${max}px)`; box.classList.add('done'); box.querySelector('.slide-t').textContent = 'Claimed'; setTimeout(() => { sliding = false; claim(box.dataset.id, box.dataset.kind); }, 150); }
+    else { h.style.transition = 'transform .2s'; h.style.transform = 'translateX(0)'; h._x = 0; setTimeout(() => { h.style.transition = ''; sliding = false; }, 220); }
+  };
+  h.addEventListener('pointermove', move); h.addEventListener('pointerup', up); h.addEventListener('pointercancel', up);
+});
+// keyboard fallback: focus the slider and press Right Arrow (needs three presses so it is still deliberate)
+document.addEventListener('keydown', e => { const b = e.target.classList && e.target.classList.contains('slide') ? e.target : null; if (!b || e.key !== 'ArrowRight') return; b._k = (b._k||0)+1; if (b._k >= 3) { b._k = 0; claim(b.dataset.id, b.dataset.kind); } });
 function claim(id, kind){ flashId = id; act({type:'claim', jobId:id, kind}); }
 
 function mineCard(j){
