@@ -9,16 +9,31 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-:root{--n:#1C2B4A;--g:#C9A84C;--bg:#F8F6F0;--cd:#FFF;--br:#E8E4D8;--mu:#6B7A8D;--gr:#1E8E4E;--am:#C2710C;--rd:#B3261E;--gbg:#E8F8EF;--abg:#FEF3E2;--rbg:#FDECEA;}
+:root{--n:#12203B;--n2:#1C2B4A;--g:#C9A84C;--bg:#EEF0F4;--cd:#FFF;--br:#E1E5EC;--mu:#64748B;--gr:#1E8E4E;--am:#C2710C;--rd:#B3261E;--gbg:#E8F8EF;--abg:#FEF3E2;--rbg:#FDECEA;}
 *{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--n);min-height:100vh;max-width:560px;margin:0 auto;padding:0 14px 60px;}
+body{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--n);min-height:100vh;}
 h1{font-size:20px;font-weight:800;}
-.top{display:flex;justify-content:space-between;align-items:center;padding:16px 0 6px;}
+#login{max-width:420px;margin:0 auto;padding:60px 18px;}
+.bar{background:linear-gradient(135deg,var(--n),var(--n2));color:#fff;padding:0 28px;}
+.bar-in{max-width:1240px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;padding:18px 0;gap:16px;flex-wrap:wrap;}
+.brand{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--g);}
+.bar h1{color:#fff;font-size:24px;margin-top:2px;}
+.bar .sub{color:#B8C2D6;}
+.wrap{max-width:1240px;margin:0 auto;padding:22px 28px 70px;}
 .sub{font-size:12px;color:var(--mu);}
-.card{background:var(--cd);border:1px solid var(--br);border-radius:12px;padding:14px;margin-bottom:12px;}
-.sl{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--mu);margin:18px 0 8px;}
-.btn{border:none;border-radius:9px;padding:9px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;background:var(--n);color:var(--g);}
-.btn.ghost{background:none;color:var(--mu);border:1px solid var(--br);}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px;}
+.stat{background:var(--cd);border:1px solid var(--br);border-radius:14px;padding:16px 18px;border-top:4px solid var(--g);box-shadow:0 1px 3px rgba(18,32,59,.05);}
+.stat b{display:block;font-size:30px;font-weight:800;line-height:1.1;}
+.stat span{font-size:12px;color:var(--mu);font-weight:600;}
+.cols{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:22px;align-items:start;}
+.card{background:var(--cd);border:1px solid var(--br);border-radius:14px;padding:18px;margin-bottom:14px;box-shadow:0 1px 3px rgba(18,32,59,.05);}
+.panel{background:var(--cd);border:1px solid var(--br);border-radius:16px;padding:20px;margin-bottom:22px;box-shadow:0 2px 8px rgba(18,32,59,.06);}
+.sl{font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--n);margin:0 0 12px;display:flex;justify-content:space-between;align-items:center;}
+.sl em{font-style:normal;background:var(--n);color:var(--g);border-radius:99px;padding:2px 10px;font-size:11px;}
+.btn{border:none;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;background:var(--n);color:var(--g);transition:transform .08s,box-shadow .15s;}
+.btn:hover:not(:disabled){box-shadow:0 4px 12px rgba(18,32,59,.25);transform:translateY(-1px);}
+.btn.ghost{background:#fff;color:var(--n);border:1px solid var(--br);}
+.bar .btn.ghost{background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.25);}
 .btn.warn{background:var(--rd);color:#fff;}
 .btn:disabled{opacity:.45;cursor:default;}
 .inp{width:100%;border:1px solid var(--br);border-radius:9px;padding:12px 14px;font-size:16px;font-family:inherit;margin-bottom:10px;background:#fff;color:var(--n);letter-spacing:.05em;}
@@ -26,22 +41,38 @@ h1{font-size:20px;font-weight:800;}
 .b-red{background:var(--rbg);color:#8A1C14;border:1px solid #F3B6B1;}
 .b-amber{background:var(--abg);color:#7A4A07;border:1px solid #F0D3A0;}
 .b-green{background:var(--gbg);color:#14663A;border:1px solid #B5E2C8;}
-.b-grey{background:#EFEDE6;color:var(--mu);}
 .row{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;}
-.jt{font-weight:700;font-size:14px;}
+.jt{font-weight:700;font-size:15px;}
 .jm{font-size:12px;color:var(--mu);margin-top:2px;}
-.pay{font-weight:800;color:var(--n);font-size:15px;white-space:nowrap;}
-.acts{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;}
-.chk{display:flex;gap:10px;align-items:flex-start;font-size:13px;padding:7px 0;border-top:1px solid var(--br);}
+.pay{font-weight:800;color:var(--gr);font-size:17px;white-space:nowrap;}
+.acts{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;}
+.chk{display:flex;gap:10px;align-items:flex-start;font-size:13px;padding:8px 0;border-top:1px solid var(--br);}
 .chk input{margin-top:3px;}
 .chk.locked{color:var(--mu);}
 .empty{font-size:13px;color:var(--mu);padding:6px 0;}
-#sync{font-size:11px;font-weight:600;border-radius:99px;padding:3px 10px;}
+.pool{border-left:4px solid var(--g);}
+.mine{border-left:4px solid var(--gr);}
+.mine.flash{animation:fl 1.6s ease;}
+@keyframes fl{0%{background:#E8F8EF;transform:scale(1.015);}100%{background:#fff;transform:none;}}
+.tag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;border-radius:99px;padding:3px 9px;margin-bottom:6px;}
+.t-scan{background:#E3ECFB;color:#1F4DA8;}.t-rep{background:#F3E8FB;color:#6B2FA3;}
+#sync{font-size:11px;font-weight:700;border-radius:99px;padding:4px 12px;}
 .s-ok{background:var(--gbg);color:#14663A;}.s-off{background:var(--abg);color:#7A4A07;}
+.calhd{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.calhd b{font-size:16px;}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+.cal .dn{font-size:11px;font-weight:700;color:var(--mu);text-align:center;padding:4px 0;text-transform:uppercase;}
+.cal .d{min-height:62px;border:1px solid var(--br);border-radius:9px;padding:5px 6px;font-size:12px;background:#FAFBFC;cursor:default;}
+.cal .d.off{opacity:.35;}
+.cal .d.today{border-color:var(--g);box-shadow:inset 0 0 0 1px var(--g);background:#FFFBEF;}
+.cal .d .n{font-weight:700;}
+.cal .ev{display:block;margin-top:3px;font-size:10px;font-weight:700;border-radius:5px;padding:2px 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;}
+.cal .ev.scan{background:#E3ECFB;color:#1F4DA8;}.cal .ev.rep{background:#F3E8FB;color:#6B2FA3;}
+@media(max-width:900px){.cols{grid-template-columns:1fr;}.stats{grid-template-columns:repeat(2,1fr);}.wrap,.bar{padding-left:14px;padding-right:14px;}.cal .d{min-height:46px;}}
 </style>
 </head>
 <body>
-<div id="login" style="display:none;padding-top:60px;">
+<div id="login" style="display:none;">
   <h1>RoofScan UK jobs</h1>
   <div id="step-email">
     <p class="sub" style="margin:6px 0 18px;">Enter the email address you gave RoofScan. We'll send you a 6-digit code.</p>
@@ -65,21 +96,29 @@ h1{font-size:20px;font-weight:800;}
 </div>
 
 <div id="app" style="display:none;">
-  <div class="top">
-    <div><h1 id="who">Jobs</h1><div class="sub" id="who-sub"></div></div>
-    <div style="text-align:right;"><span id="sync" class="s-ok">Synced</span><div class="sub" id="sync-sub" style="margin-top:4px;"></div></div>
-  </div>
-  <div id="notices" style="position:sticky;top:0;z-index:50;"></div>
-  <div id="lock-box"></div>
-  <div id="drone-line" class="sub" style="margin-bottom:6px;"></div>
-
-  <div class="sl">Your jobs</div>
-  <div id="mine"></div>
-  <div id="scans-wrap"><div class="sl">Available scans</div><div id="scans"></div></div>
-  <div id="reports-wrap"><div class="sl">Available reports</div><div id="reports"></div></div>
-  <div style="text-align:center;margin-top:18px;">
-    <button class="btn ghost" onclick="refresh(true)">Refresh</button>
-    <button class="btn ghost" onclick="logout()">Log out</button>
+  <div class="bar"><div class="bar-in">
+    <div><div class="brand">RoofScan UK</div><h1 id="who">Jobs</h1><div class="sub" id="who-sub"></div><div id="drone-line" class="sub" style="margin-top:2px;"></div></div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <div style="text-align:right;"><span id="sync" class="s-ok">Synced</span><div class="sub" id="sync-sub" style="margin-top:4px;"></div></div>
+      <button class="btn ghost" onclick="refresh(true)">Refresh</button>
+      <button class="btn ghost" onclick="logout()">Log out</button>
+    </div>
+  </div></div>
+  <div class="wrap">
+    <div id="notices" style="position:sticky;top:0;z-index:50;"></div>
+    <div id="lock-box"></div>
+    <div class="stats" id="stats"></div>
+    <div class="cols">
+      <div>
+        <div class="panel"><div class="sl">My calendar</div><div id="calendar"></div></div>
+        <div class="sl">My jobs <em id="mine-n">0</em></div>
+        <div id="mine"></div>
+      </div>
+      <div>
+        <div id="scans-wrap"><div class="sl">Available scans <em id="scans-n">0</em></div><div id="scans"></div></div>
+        <div id="reports-wrap"><div class="sl">Available reports <em id="reports-n">0</em></div><div id="reports"></div></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -225,26 +264,51 @@ function render(){
   $('lock-box').innerHTML = (m.role !== 'Report Writer' && !m.scansAllowed) ? `<div class="banner b-red"><strong>Scans are switched off.</strong> ${esc(m.scansBlockedReason)}</div>` : '';
   const pass = get(LS.pass, {});
   // mine
-  $('mine').innerHTML = board.mine.length ? board.mine.map(mineCard).join('') : '<div class="card"><div class="empty">Nothing claimed yet.</div></div>';
+  const mineSorted = board.mine.slice().sort((x,y) => String(x.date||'').localeCompare(String(y.date||'')));
+  $('mine').innerHTML = mineSorted.length ? mineSorted.map(mineCard).join('') : '<div class="card"><div class="empty">Nothing claimed yet. Claim a job on the right and it will appear here and on your calendar.</div></div>';
   // pools
   const canScan = m.role !== 'Report Writer', canRep = m.role !== 'Scanner';
   $('scans-wrap').style.display = canScan ? 'block' : 'none';
   $('reports-wrap').style.display = canRep ? 'block' : 'none';
-  const pool = (list, kind) => { const l = list.filter(j => !pass[j.id]); return l.length ? l.map(j => poolCard(j, kind)).join('') : '<div class="card"><div class="empty">Nothing available right now.</div></div>'; };
+  const vis = list => list.filter(j => !pass[j.id]);
+  const pool = (list, kind) => { const l = vis(list); return l.length ? l.map(j => poolCard(j, kind)).join('') : '<div class="card"><div class="empty">Nothing available right now.</div></div>'; };
   $('scans').innerHTML = pool(board.scans, 'scan');
   $('reports').innerHTML = pool(board.reports, 'report');
+  $('scans-n').textContent = vis(board.scans).length; $('reports-n').textContent = vis(board.reports).length; $('mine-n').textContent = board.mine.length;
+  const nextJob = mineSorted.find(j => j.date && new Date(j.date) >= new Date(new Date().toDateString()));
+  const tiles = [[board.mine.length,'My jobs'],[canScan?vis(board.scans).length:'-','Scans available'],[canRep?vis(board.reports).length:'-','Reports available'],[nextJob?fmtDate(nextJob.date):'None','Next job']];
+  $('stats').innerHTML = tiles.map(t => `<div class="stat"><b style="${String(t[0]).length>5?'font-size:20px;padding:6px 0;':''}">${esc(t[0])}</b><span>${t[1]}</span></div>`).join('');
+  $('calendar').innerHTML = calendarHtml(mineSorted);
+  if (flashId) { const el = document.getElementById('job-'+flashId); if (el) { el.classList.add('flash'); el.scrollIntoView({behavior:'smooth',block:'center'}); } flashId = null; }
 }
+let calMonth = new Date(); calMonth.setDate(1); let flashId = null;
+function calNav(d){ calMonth = new Date(calMonth.getFullYear(), calMonth.getMonth()+d, 1); render(); }
+function calendarHtml(jobs){
+  const y = calMonth.getFullYear(), mo = calMonth.getMonth();
+  const first = new Date(y, mo, 1), days = new Date(y, mo+1, 0).getDate(), lead = (first.getDay()+6)%7;
+  const todayKey = new Date().toISOString().slice(0,10);
+  let h = `<div class="calhd"><button class="btn ghost" onclick="calNav(-1)">&larr;</button><b>${first.toLocaleDateString('en-GB',{month:'long',year:'numeric'})}</b><button class="btn ghost" onclick="calNav(1)">&rarr;</button></div><div class="cal">`;
+  ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].forEach(d => h += `<div class="dn">${d}</div>`);
+  for (let i=0;i<lead;i++) h += '<div class="d off"></div>';
+  for (let d=1; d<=days; d++){
+    const key = `${y}-${String(mo+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const ev = jobs.filter(j => String(j.date||'').slice(0,10) === key).map(j => `<span class="ev ${j.scanMine?'scan':'rep'}" onclick="goJob('${j.id}')">${j.scanMine?'Scan':'Report'} · ${esc(j.pending?'syncing':(j.address||'').split(',')[0])}</span>`).join('');
+    h += `<div class="d${key===todayKey?' today':''}"><span class="n">${d}</span>${ev}</div>`;
+  }
+  return h + '</div>';
+}
+function goJob(id){ const el = document.getElementById('job-'+id); if (el) { el.scrollIntoView({behavior:'smooth',block:'center'}); el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); } }
 function poolCard(j, kind){
   const pay = kind === 'scan' ? j.scanPay : j.reportPay;
   const locked = kind === 'scan' && !board.me.scansAllowed;
-  return `<div class="card"><div class="row"><div><div class="jt">${esc(j.area)} · ${esc(j.propertyType)||'Property'}</div><div class="jm">${esc(fmtDate(j.date))}</div></div><div class="pay">from ${money(pay)}</div></div>
+  return `<div class="card pool"><div class="row"><div><span class="tag ${kind==='scan'?'t-scan':'t-rep'}">${kind}</span><div class="jt">${esc(j.area)} · ${esc(j.propertyType)||'Property'}</div><div class="jm">${esc(fmtDate(j.date))}</div></div><div class="pay">from ${money(pay)}</div></div>
   <div class="acts"><button class="btn" ${locked?'disabled':''} onclick="claim('${j.id}','${kind}')">Claim ${kind}</button><button class="btn ghost" onclick="passJob('${j.id}')">Not for me</button></div></div>`;
 }
 function passJob(id){ const p = get(LS.pass, {}); p[id] = 1; put(LS.pass, p); render(); }
-function claim(id, kind){ act({type:'claim', jobId:id, kind}); }
+function claim(id, kind){ flashId = id; act({type:'claim', jobId:id, kind}); }
 
 function mineCard(j){
-  let html = `<div class="card"><div class="jt">${esc(j.client)}</div><div class="jm">${esc(j.address)}${j.phone?' · '+esc(j.phone):''}</div><div class="jm">${esc(fmtDate(j.date))}</div>`;
+  let html = `<div class="card mine" id="job-${j.id}"><span class="tag ${j.scanMine?'t-scan':'t-rep'}">${j.scanMine?'scan':'report'}</span><div class="jt">${esc(j.client)}</div><div class="jm">${esc(j.address)}${j.phone?' · '+esc(j.phone):''}</div><div class="jm">${esc(fmtDate(j.date))}</div>`;
   if (j.scanReminder && j.scanMine) html += `<div class="banner b-amber" style="margin-top:8px;">Not marked done yet. If it auto-releases you miss out on up to ${money(j.scanAtRisk)}.</div>`;
   if (j.reportReminder && j.reportMine) html += `<div class="banner b-amber" style="margin-top:8px;">Report not marked done yet. If it auto-releases you miss out on up to ${money(j.reportAtRisk)}.</div>`;
   if (j.scanMine) html += scanPanel(j);
