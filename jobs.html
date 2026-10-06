@@ -69,7 +69,7 @@ h1{font-size:20px;font-weight:800;}
     <div><h1 id="who">Jobs</h1><div class="sub" id="who-sub"></div></div>
     <div style="text-align:right;"><span id="sync" class="s-ok">Synced</span><div class="sub" id="sync-sub" style="margin-top:4px;"></div></div>
   </div>
-  <div id="notices"></div>
+  <div id="notices" style="position:sticky;top:0;z-index:50;"></div>
   <div id="lock-box"></div>
   <div id="drone-line" class="sub" style="margin-bottom:6px;"></div>
 
@@ -159,11 +159,11 @@ async function act(a){
   try {
     const r = await sendAction(a);
     if (!r.ok) { handleFail(a, r); }
-  } catch(e){ if(e.message !== 'auth'){ enqueue(a); notice('No signal. Saved and will send when you reconnect.', 'amber'); } }
+  } catch(e){ if(e.message !== 'auth'){ enqueue(a); notice('Could not send (' + (e.message||'error') + '). Saved and will retry.', 'amber'); } }
   await refresh(false);
 }
 function handleFail(a, r){
-  notice(r.data.error || 'That did not go through.', r.data.locked || r.data.gone ? 'red' : 'amber');
+  notice((r.data.error || 'That did not go through.') + ' [' + r.status + ']', r.data.locked || r.data.gone ? 'red' : 'amber');
 }
 async function syncQueue(){
   const q = queue(); if(!q.length || !navigator.onLine) return;
