@@ -1777,9 +1777,31 @@ function lmGoToPortal(which){
   else { lmSaveTradeSession(lmPendingEmail, lmPendingToken); window.location.href = 'referral-portal.html'; }
 }
 
+async function lmCheckTeam(email, token){
+  try{
+    var res = await fetch(LM_API_BASE + '/team/session', { method:'POST', headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer ' + token }, body: JSON.stringify({ email: email }) });
+    if(!res.ok) return null;
+    var d = await res.json();
+    return d.role ? d : null;
+  } catch(e){ return null; }
+}
+async function lmCheckAgent(email, token){
+  try{
+    var res = await fetch(LM_API_BASE + '/agent-account?email=' + encodeURIComponent(email), { headers: { 'Authorization': 'Bearer ' + token } });
+    return res.ok;
+  } catch(e){ return false; }
+}
 async function lmRouteToAccount(email, token){
+  // One front door: team members (owner, flyers, report writers) are sent to their own pages first.
+  var team = await lmCheckTeam(email, token);
+  if(team && team.role === 'owner'){ try{ localStorage.setItem('rs_owner_token', team.token); }catch(e){} window.location.href = 'owner.html'; return; }
+  if(team && team.role === 'contractor'){ try{ localStorage.setItem('rs_ct_token', team.token); }catch(e){} window.location.href = 'jobs.html'; return; }
   var results = await Promise.all([lmCheckHomeowner(email, token), lmCheckTrade(email, token)]);
   var isHomeowner = results[0], isTrade = results[1];
+  if(!isHomeowner && !isTrade && await lmCheckAgent(email, token)){
+    try{ localStorage.setItem('rs_referral_email', email); localStorage.setItem('rs_referral_token', token); }catch(e){}
+    window.location.href = 'referral-portal.html'; return;
+  }
   if(isHomeowner && isTrade){ lmShowStep('lm-step-choose'); return; }
   if(isHomeowner){ lmSaveHomeownerSession(email, token); window.location.href = 'my-roof.html'; return; }
   if(isTrade){ lmSaveTradeSession(email, token); window.location.href = 'referral-portal.html'; return; }
