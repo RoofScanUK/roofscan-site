@@ -325,12 +325,12 @@ const AT = (function() {
     );
     const now = new Date();
     const alerts = [];
-    const twoDaysAgo = new Date(now.getTime() - 48*60*60*1000).toISOString().slice(0,10);
+    const twoDaysAgo = new Date(now.getTime() - 7*24*60*60*1000).toISOString().slice(0,10);
     jobs.forEach(function(j) {
       var f = j.fields;
       var status = f[FIELDS.jobs.status];
       var date = f[FIELDS.jobs.date];
-      // Report overdue: Complete but no Report Sent, inspection was >48hrs ago
+      // Report overdue: Complete but no Report Sent, inspection was more than 5 working days (7 days) ago
       if(status === 'Complete' && date && date <= twoDaysAgo) {
         alerts.push({type:'overdue', id:j.id, client:f[FIELDS.jobs.client]||'Client', date:fmtDate(date), msg:'Report overdue'});
       }

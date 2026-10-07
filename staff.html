@@ -171,6 +171,7 @@ main{padding:14px;}
     <button class="tb active" onclick="showTab('job',this)">📋 Job</button>
     <button class="tb" onclick="showTab('ref',this)">📖 Reference</button>
     <button class="tb" onclick="showTab('planning',this)">📅 Planning</button>
+    <button class="tb" id="claim-tab-btn" onclick="showTab('claim',this)">🗂️ Jobs<span id="claim-tab-badge" style="display:none;background:#DC2626;color:#fff;border-radius:99px;font-size:10px;font-weight:700;padding:1px 6px;margin-left:4px;">!</span></button>
   </div>
 </div>
 <main>
@@ -304,7 +305,7 @@ main{padding:14px;}
       <div class="stage-b-inner">
         <div class="chk" data-id="staff-23" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Transfer all footage to laptop and back up immediately</div></div>
         <div class="chk" data-id="staff-24" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Select best photos — minimum 20 for the report</div></div>
-        <div class="alert blue" style="margin-top:2px;"><div class="alert-icon">📝</div><div>Writing the report itself happens on the separate report generator site, not here. Report due within 48 hours — aim for 24.</div></div>
+        <div class="alert blue" style="margin-top:2px;"><div class="alert-icon">📝</div><div>Writing the report itself happens on the separate report generator site, not here. Report due within 5 working days — aim for 3.</div></div>
       </div>
     </div>
   </div>
@@ -431,7 +432,7 @@ main{padding:14px;}
     <div id="incident-result" style="font-size:12px;text-align:center;margin-top:6px;"></div>
     <div id="incident-history" style="margin-top:10px;"></div>
   </div>
-  <div class="alert green"><div class="alert-icon">⏱️</div><div><strong>48-hour guarantee:</strong> Every client is told their report will arrive within 48 hours. This is our core promise. Aim for 24 hours where possible. If you are going to miss the deadline for any reason, tell Takhy immediately so the client can be notified.</div></div>
+  <div class="alert green"><div class="alert-icon">⏱️</div><div><strong>5-working-day guarantee:</strong> Every client is told their report will arrive within 5 working days. This is our core promise. Aim for 3 working days where possible. If you are going to miss the deadline for any reason, tell Takhy immediately so the client can be notified.</div></div>
   <div class="spacer"></div>
 </div>
 
@@ -478,6 +479,48 @@ main{padding:14px;}
     <button class="reset-btn" onclick="loadPlanning()">↻ Refresh Planning data</button>
   </div>
 </div>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- JOBS — the claim board. Contractors (scanners / report writers) claim jobs themselves    -->
+<!-- instead of being assigned one, which keeps the arrangement genuinely self-employed and   -->
+<!-- gives a natural fallback: an unclaimed or stale-claimed job is always visible for someone -->
+<!-- else to pick up. See airtable-api.js's "Job-claiming pool" section for the release logic. -->
+<!-- ══════════════════════════════════════════ -->
+<div class="tc" id="tab-claim">
+  <div class="sl">Who are you</div>
+  <div class="card" style="margin-bottom:12px;">
+    <select id="claim-who-select" onchange="onClaimWhoChange(this.value)" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;color:var(--navy);background:var(--bg);outline:none;">
+      <option value="">— Select your name —</option>
+    </select>
+    <div style="font-size:11px;color:var(--muted);margin-top:8px;">Remembered on this device. Only your matching role (scanner / report writer) sees jobs it can claim.</div>
+  </div>
+
+  <div id="claim-board-locked" class="empty-state" style="display:none;">Connect Airtable on the Planning tab to see available jobs.</div>
+
+  <div id="claim-board" style="display:none;">
+    <div id="claim-reminders" style="display:none;margin-bottom:14px;"></div>
+
+    <div class="sl">Your claimed jobs</div>
+    <div class="card" id="claim-mine-card">
+      <div class="empty-state" id="claim-mine-empty">Nothing claimed yet.</div>
+      <div id="claim-mine-list"></div>
+    </div>
+
+    <div class="sl">Available scans</div>
+    <div class="card" id="claim-scans-card">
+      <div class="empty-state" id="claim-scans-empty">No unclaimed scans right now.</div>
+      <div id="claim-scans-list"></div>
+    </div>
+
+    <div class="sl">Available reports</div>
+    <div class="card" id="claim-reports-card">
+      <div class="empty-state" id="claim-reports-empty">No unclaimed reports right now.</div>
+      <div id="claim-reports-list"></div>
+    </div>
+
+    <button class="reset-btn" onclick="loadClaimBoard()">↻ Refresh available jobs</button>
+  </div>
+</div>
 </main>
 <script>
 function showTab(id,btn){
@@ -491,6 +534,179 @@ function showTab(id,btn){
     if(adv && adv.style.display !== 'none') loadPlanning();
   }
   if(id === 'job'){ loadJobFlowLive(); loadAirspaceScreen(); loadWeatherScreen(); loadStaffJobPicker(); }
+  if(id === 'claim'){ initClaimTab(); }
+}
+// ═══ JOB CLAIM BOARD — contractors claim their own scan/report jobs ═══
+// "Who you are" is just a remembered Contractors record id in localStorage — there's no separate
+// per-person login here (the app already sits behind the shared staff passphrase), this is only
+// so the board knows which role/jobs to show and who a claim belongs to.
+function getClaimWhoId(){ try{ return localStorage.getItem('rs_claim_who') || ''; }catch(e){ return ''; } }
+function setClaimWhoId(id){ try{ localStorage.setItem('rs_claim_who', id||''); }catch(e){} }
+var _claimContractors = []; // cached list from the last load, keyed for role lookups
+
+async function initClaimTab(){
+  var locked = document.getElementById('claim-board-locked');
+  var board = document.getElementById('claim-board');
+  if(typeof AT === 'undefined' || !AT.hasToken()){
+    if(locked) locked.style.display='block';
+    if(board) board.style.display='none';
+    return;
+  }
+  if(locked) locked.style.display='none';
+  if(board) board.style.display='block';
+  await loadClaimWhoSelect();
+  await loadClaimBoard();
+}
+async function loadClaimWhoSelect(){
+  var sel = document.getElementById('claim-who-select');
+  if(!sel) return;
+  try{
+    _claimContractors = await AT.getActiveContractors();
+  }catch(e){ _claimContractors = []; }
+  var saved = getClaimWhoId();
+  sel.innerHTML = '<option value="">— Select your name —</option>' + _claimContractors.map(function(c){
+    var f = c.fields;
+    var role = f[AT.FIELDS.contractors.role] ? (f[AT.FIELDS.contractors.role].name || f[AT.FIELDS.contractors.role]) : '';
+    var label = (f[AT.FIELDS.contractors.name]||'Unnamed') + (role ? ' (' + role + ')' : '');
+    var selected = (c.id === saved) ? ' selected' : '';
+    return '<option value="'+c.id+'"'+selected+'>'+label.replace(/"/g,'&quot;')+'</option>';
+  }).join('');
+}
+function onClaimWhoChange(id){
+  setClaimWhoId(id);
+  loadClaimBoard();
+}
+function _claimContractorRole(id){
+  var c = _claimContractors.find(function(x){ return x.id === id; });
+  if(!c) return '';
+  var r = c.fields[AT.FIELDS.contractors.role];
+  return r ? (r.name || r) : '';
+}
+function _jobLabel(f){
+  return (f[AT.FIELDS.jobs.client]||'Client') + ' — ' + (f[AT.FIELDS.jobs.address]||'') + (f[AT.FIELDS.jobs.date] ? (' · ' + AT.fmtDate(f[AT.FIELDS.jobs.date])) : '');
+}
+// In-app notification for an idle claimed job — same warning the reminder email sends, shown as a
+// banner inside the Jobs tab plus a red badge on the tab button so it's visible without opening it.
+async function refreshClaimReminders(whoId){
+  var box = document.getElementById('claim-reminders');
+  var badge = document.getElementById('claim-tab-badge');
+  if(!whoId){ if(box) box.style.display='none'; if(badge) badge.style.display='none'; return; }
+  var alerts = [];
+  try{ alerts = await AT.getMyReminders(whoId); }catch(e){ alerts = []; }
+  if(badge) badge.style.display = alerts.length ? 'inline-block' : 'none';
+  if(!box) return;
+  if(!alerts.length){ box.style.display='none'; box.innerHTML=''; return; }
+  box.style.display = 'block';
+  box.innerHTML = alerts.map(function(a){
+    var what = a.type === 'scan' ? 'scan' : 'report';
+    var money = AT.fmt ? AT.fmt(a.atRisk) : ('£'+a.atRisk);
+    return '<div style="background:#FEF2F2;border:1px solid #FCA5A5;border-radius:10px;padding:10px 14px;margin-bottom:8px;font-size:13px;color:#991B1B;">'
+      + '<strong>Reminder:</strong> your claimed ' + what + ' for ' + (a.client||'a client') + ' at ' + (a.address||'') + ' hasn\'t been marked done. '
+      + 'If it auto-releases you\'ll miss out on up to <strong>' + money + '</strong>.'
+      + '</div>';
+  }).join('');
+}
+// Check for reminders as soon as the app opens (if someone's already selected on this device),
+// not just when the Jobs tab is opened, so the badge is visible right away.
+(function(){
+  function checkOnLoad(){
+    if(typeof AT === 'undefined' || !AT.hasToken()) return;
+    var whoId = getClaimWhoId();
+    if(whoId) refreshClaimReminders(whoId);
+  }
+  if(document.readyState === 'complete' || document.readyState === 'interactive'){
+    setTimeout(checkOnLoad, 800);
+  } else {
+    document.addEventListener('DOMContentLoaded', function(){ setTimeout(checkOnLoad, 800); });
+  }
+})();
+async function loadClaimBoard(){
+  var whoId = getClaimWhoId();
+  var role = whoId ? _claimContractorRole(whoId) : '';
+  // Quietly reopen any stale claims before showing the board, so nobody sees a job as
+  // "claimed" that's actually been sitting untouched past its release window.
+  try{ await AT.releaseStaleClaims(); }catch(e){}
+  await refreshClaimReminders(whoId);
+
+  var mineList = document.getElementById('claim-mine-list');
+  var mineEmpty = document.getElementById('claim-mine-empty');
+  var scansList = document.getElementById('claim-scans-list');
+  var scansEmpty = document.getElementById('claim-scans-empty');
+  var scansCard = document.getElementById('claim-scans-card');
+  var reportsList = document.getElementById('claim-reports-list');
+  var reportsEmpty = document.getElementById('claim-reports-empty');
+  var reportsCard = document.getElementById('claim-reports-card');
+
+  // Your claimed jobs (only meaningful once you've picked who you are)
+  if(whoId){
+    try{
+      var mine = await AT.getMyClaimedJobs(whoId);
+      if(mine.length){
+        mineEmpty.style.display='none';
+        mineList.innerHTML = mine.map(function(j){
+          var f = j.fields;
+          var scanStatus = f[AT.FIELDS.jobs.scanStatus] ? (f[AT.FIELDS.jobs.scanStatus].name||f[AT.FIELDS.jobs.scanStatus]) : '';
+          var reportStatus = f[AT.FIELDS.jobs.reportStatus] ? (f[AT.FIELDS.jobs.reportStatus].name||f[AT.FIELDS.jobs.reportStatus]) : '';
+          var scanIsMine = (f[AT.FIELDS.jobs.scanClaimedBy]||[]).indexOf(whoId) !== -1;
+          var reportIsMine = (f[AT.FIELDS.jobs.reportClaimedBy]||[]).indexOf(whoId) !== -1;
+          var actions = '';
+          if(scanIsMine && scanStatus === 'Claimed') actions += '<button onclick="claimAction(\'completeScan\',\''+j.id+'\')" style="background:var(--navy);color:var(--gold);border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;margin-right:6px;">Mark scan done</button>';
+          if(reportIsMine && reportStatus === 'Claimed') actions += '<button onclick="claimAction(\'completeReport\',\''+j.id+'\')" style="background:var(--navy);color:var(--gold);border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;">Mark report done</button>';
+          return '<div class="job-item"><div class="job-client">'+_jobLabel(f)+'</div><div class="job-meta">'+(scanIsMine?('Scan: '+scanStatus):'')+(reportIsMine?(' · Report: '+reportStatus):'')+'</div><div style="margin-top:8px;">'+actions+'</div></div>';
+        }).join('');
+      } else {
+        mineEmpty.style.display='block'; mineList.innerHTML='';
+      }
+    }catch(e){ mineEmpty.style.display='block'; mineEmpty.textContent='Could not load your jobs.'; mineList.innerHTML=''; }
+  } else {
+    mineEmpty.style.display='block'; mineEmpty.textContent='Select your name above to see your claimed jobs.'; mineList.innerHTML='';
+  }
+
+  // Available scans — hidden entirely if your role can't do scans
+  var canScan = !whoId || role === 'Scanner' || role === 'Both';
+  scansCard.style.display = canScan ? 'block' : 'none';
+  if(canScan){
+    try{
+      var scans = await AT.getAvailableScanJobs();
+      if(scans.length){
+        scansEmpty.style.display='none';
+        scansList.innerHTML = scans.map(function(j){
+          var f = j.fields;
+          var btn = whoId ? '<button onclick="claimAction(\'claimScan\',\''+j.id+'\')" style="background:var(--navy);color:var(--gold);border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;">Claim scan</button>' : '<span style="font-size:11px;color:var(--muted);">Select your name to claim</span>';
+          return '<div class="job-item"><div class="job-client">'+_jobLabel(f)+'</div><div style="margin-top:8px;">'+btn+'</div></div>';
+        }).join('');
+      } else { scansEmpty.style.display='block'; scansList.innerHTML=''; }
+    }catch(e){ scansEmpty.style.display='block'; scansEmpty.textContent='Could not load available scans.'; scansList.innerHTML=''; }
+  }
+
+  // Available reports — hidden entirely if your role can't write reports
+  var canReport = !whoId || role === 'Report Writer' || role === 'Both';
+  reportsCard.style.display = canReport ? 'block' : 'none';
+  if(canReport){
+    try{
+      var reports = await AT.getAvailableReportJobs();
+      if(reports.length){
+        reportsEmpty.style.display='none';
+        reportsList.innerHTML = reports.map(function(j){
+          var f = j.fields;
+          var btn = whoId ? '<button onclick="claimAction(\'claimReport\',\''+j.id+'\')" style="background:var(--navy);color:var(--gold);border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;">Claim report</button>' : '<span style="font-size:11px;color:var(--muted);">Select your name to claim</span>';
+          return '<div class="job-item"><div class="job-client">'+_jobLabel(f)+'</div><div style="margin-top:8px;">'+btn+'</div></div>';
+        }).join('');
+      } else { reportsEmpty.style.display='block'; reportsList.innerHTML=''; }
+    }catch(e){ reportsEmpty.style.display='block'; reportsEmpty.textContent='Could not load available reports.'; reportsList.innerHTML=''; }
+  }
+}
+async function claimAction(action, jobId){
+  var whoId = getClaimWhoId();
+  try{
+    if(action === 'claimScan') await AT.claimScan(jobId, whoId);
+    else if(action === 'claimReport') await AT.claimReport(jobId, whoId);
+    else if(action === 'completeScan') await AT.completeScan(jobId);
+    else if(action === 'completeReport') await AT.completeReport(jobId);
+    await loadClaimBoard();
+  }catch(e){
+    alert('Couldn\'t update that job — check your connection and try again.');
+  }
 }
 // ═══ JOB PICKER — same idea as the report generator's "Load job from Airtable" dropdown ═══
 // Lists jobs in the next 14 days (today included) so you can pick tomorrow's or a later one too,
