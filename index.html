@@ -511,7 +511,7 @@ textarea{resize:vertical;}
       </div>
       <div class="num-list">
         <div class="num-row"><div class="idx">01</div><div><h3>Residential Inspections</h3><p>One-off inspections for homeowners across Sussex. Full report, photos, and ratings. No scaffolding, no disruption.</p></div><button class="go" onclick="go('book')">Get a quote →</button></div>
-        <div class="num-row"><div class="idx">02</div><div><h3>A Referral Partnership <span style="font-weight:600;color:var(--gold);font-size:0.7em;">— for businesses, not homeowners</span></h3><p>For estate agents, letting agents, block management, and solicitors. Your clients get a discount, your business gets a reward for every completed referral, no contract, no minimum.</p></div><button class="go" onclick="go('services')">Learn more →</button></div>
+        <div class="num-row"><div class="idx">02</div><div><h3>A Referral Partnership <span style="font-weight:600;color:var(--gold);font-size:0.7em;">— for businesses, not homeowners</span></h3><p>For estate agents, letting agents, block management, and solicitors. Your branch receives £50 for every referred report that is paid in full. No contract, no minimum.</p></div><button class="go" onclick="go('services')">Learn more →</button></div>
         <div class="num-row"><div class="idx">03</div><div><h3>Surveyor & Lender Support</h3><p>Independent drone evidence to support a RICS survey or lending decision. Fast, unbiased, and attachable to your own paperwork.</p></div><button class="go" onclick="go('contact')">Get in touch →</button></div>
       </div>
     </div>
@@ -612,10 +612,10 @@ textarea{resize:vertical;}
         <div>
           <div class="svc-tag">For estate agents, letting agents, block management & solicitors</div>
           <h2>A Referral Partnership for Your Business</h2>
-          <p class="body">If your business works with clients who ever need a roof looked at, before a sale, a let, a conveyancing check, or a resident concern, we'd like to set up a referral partnership with you. Your clients get a discount, and there's a reward for every referral that comes through your business. No contract, no minimum, no cost to sign up.</p>
+          <p class="body">If your business works with clients who ever need a roof looked at, before a sale, a let, a conveyancing check, or a resident concern, we'd like to set up a referral partnership with you. Your branch receives £50 for every referred report that is paid in full, paid once a month. Clients pay our standard price and are told, before they book, that you receive a referral fee. No contract, no minimum, no cost to sign up.</p>
           <div class="check-list" style="margin-bottom:20px;">
-            <div class="check-item"><span class="dash">—</span><span>A discount for every client you refer to us</span></div>
-            <div class="check-item"><span class="dash">—</span><span>A reward for your business on each completed referral</span></div>
+            <div class="check-item"><span class="dash">—</span><span>An optional, no-pressure report you can offer your vendors and landlords</span></div>
+            <div class="check-item"><span class="dash">—</span><span>£50 for your branch on each referred report paid in full, paid monthly</span></div>
             <div class="check-item"><span class="dash">—</span><span>Your own tracked referral link, so everything's automatic</span></div>
           </div>
           <button class="btn small" onclick="go('contact')">Get in touch →</button>
@@ -695,7 +695,7 @@ textarea{resize:vertical;}
         <div>
           <div class="eyebrow" style="margin-bottom:6px;">For businesses</div>
           <div style="font-weight:600;font-size:15.5px;color:var(--navy);margin-bottom:4px;">Estate agent, letting agent, block management, or solicitor?</div>
-          <div class="muted" style="font-size:13.5px;">Set up a referral partnership. Your clients get a discount, your business gets a reward for every completed referral. No contract, no minimum.</div>
+          <div class="muted" style="font-size:13.5px;">Set up a referral partnership. Your branch receives £50 for every referred report paid in full. No contract, no minimum.</div>
         </div>
         <a class="btn" style="background:var(--gold);border-color:var(--gold);color:var(--navy);white-space:nowrap;" href="mailto:info@roofscanuk.co.uk?subject=Referral%20partnership">Get in touch →</a>
       </div>
@@ -814,6 +814,7 @@ textarea{resize:vertical;}
               <div class="muted" style="font-size:12px;margin-top:8px;line-height:1.6;">A rough figure is fine — you can find this on an EPC certificate or floor plan, or just pace out the footprint of the house and add a bit for the roof's slope.</div>
             </div>
           </div>
+          <div class="agent-disc" style="display:none;background:#F8F6F0;border:1px solid #E8E4D8;border-radius:8px;padding:12px 14px;font-size:13px;line-height:1.6;margin-bottom:14px;"></div>
           <button class="book-cta" id="book-cta-link" onclick="goStep(6)" style="width:100%;border:none;cursor:pointer;font-family:inherit;">Pick your date &amp; pay £50 deposit →</button>
           <div class="muted" style="text-align:center;font-size:12px;line-height:1.8;" id="balance-note"></div>
           <div style="margin-top:22px;"><button class="back-btn" style="width:auto;padding:9px 18px;font-size:12px;" onclick="goStep(4)">← Edit details</button></div>
@@ -835,6 +836,7 @@ textarea{resize:vertical;}
           <div id="slot-empty" class="muted" style="display:none;font-size:13px;margin-top:10px;">No available times this week — try Later →.</div>
 
           <div id="payment-section" style="display:none;margin-top:24px;">
+            <div class="agent-disc" style="display:none;background:#F8F6F0;border:1px solid #E8E4D8;border-radius:8px;padding:12px 14px;font-size:13px;line-height:1.6;margin-bottom:14px;"></div>
             <div class="total-card" style="margin-bottom:18px;">
               <div class="label">Deposit due now</div>
               <div class="amt">£50</div>
@@ -935,10 +937,33 @@ window.addEventListener('hashchange', ()=>{
   const h = location.hash.replace('#','');
   renderPage(VALID_PAGES.includes(h) ? h : 'home');
 });
+// Referral link handling: ?agent=CODE is remembered for the visit, checked with the Worker, and
+// (only if valid) shown to the customer as a referral-fee disclosure before they pay. The code is sent
+// with the booking so the branch gets credited. An invalid code is dropped quietly.
+var referralAgentCode = '';
+async function initReferral(){
+  let code = '';
+  try{ code = (new URLSearchParams(location.search).get('agent') || '').trim(); }catch(e){}
+  try{
+    if(code){ localStorage.setItem('rs_agent_code', code); }
+    else { code = localStorage.getItem('rs_agent_code') || ''; }
+  }catch(e){}
+  if(!code) return;
+  try{
+    const res = await fetch('https://roofscan-api.tiny-voice-ac40.workers.dev/validate-agent?code=' + encodeURIComponent(code));
+    const d = await res.json();
+    if(!d.valid){ try{ localStorage.removeItem('rs_agent_code'); }catch(e){} return; }
+    referralAgentCode = code;
+    const who = d.agency || 'The agency that referred you';
+    const txt = '<b>' + who.replace(/[<>&"]/g, '') + '</b> referred you to RoofScan UK and receives a referral fee from us if you book. This report is optional, and the price is the same whether or not you book through them.';
+    document.querySelectorAll('.agent-disc').forEach(el=>{ el.innerHTML = txt; el.style.display = 'block'; });
+  }catch(e){}
+}
 window.addEventListener('DOMContentLoaded', ()=>{
   const h = location.hash.replace('#','');
   renderPage(VALID_PAGES.includes(h) ? h : 'home');
   initBooking();
+  initReferral();
   checkReveals();
 });
 
@@ -1648,7 +1673,8 @@ async function submitPayment(){
         roofAreaM2: resolvedRoofArea().area,
         pitchType: pitchType,
         contact,
-        areaFlagged: lastAreaFlagged
+        areaFlagged: lastAreaFlagged,
+        agentCode: referralAgentCode || undefined
       })
     });
     const data = await res.json();
