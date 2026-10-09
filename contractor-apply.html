@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Work with RoofScan UK: apply</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<style>
+:root{
+  --navy:#1C2B4A; --navy-2:#233658; --gold:#B8945F; --ink:#20262F;
+  --paper:#FBFAF7; --line:#DEDACE; --muted:#71716C; --white:#FFFFFF; --red:#B33A3A; --green:#2F7D4F;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Inter',-apple-system,sans-serif;background:var(--paper);color:var(--ink);min-height:100vh;font-size:16px;line-height:1.5;}
+h1,h2{font-family:'Fraunces',Georgia,serif;font-weight:500;letter-spacing:-0.01em;color:var(--navy);}
+.muted{color:var(--muted);}
+.wrap{max-width:620px;margin:0 auto;padding:56px 24px 80px;}
+.eyebrow{color:var(--gold);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.14em;margin-bottom:14px;}
+h1{font-size:2rem;margin-bottom:10px;}
+.lede{color:var(--muted);font-size:15px;margin-bottom:28px;line-height:1.6;}
+.card{background:var(--white);border:1px solid var(--line);border-radius:6px;padding:32px;}
+.field{margin-bottom:18px;}
+label.l{display:block;font-size:13px;font-weight:600;color:var(--navy);margin-bottom:6px;}
+.hint{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.45;}
+input[type=text],input[type=email],input[type=tel],input[type=date],input[type=number],select,textarea{width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:4px;font-family:inherit;font-size:15px;color:var(--ink);background:var(--paper);}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold);}
+textarea{min-height:96px;resize:vertical;}
+.section-label{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:30px 0 14px;padding-top:20px;border-top:1px solid var(--line);}
+.section-label:first-of-type{margin-top:0;padding-top:0;border-top:none;}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+@media(max-width:520px){.row2{grid-template-columns:1fr;gap:0;} .card{padding:22px;} .wrap{padding:36px 18px 60px;}}
+.roles{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:6px;}
+@media(max-width:520px){.roles{grid-template-columns:1fr;}}
+.role{border:1px solid var(--line);border-radius:6px;padding:14px;cursor:pointer;background:var(--paper);text-align:left;font-family:inherit;}
+.role b{display:block;color:var(--navy);font-size:15px;margin-bottom:2px;}
+.role span{font-size:12.5px;color:var(--muted);line-height:1.4;display:block;}
+.role.on{border-color:var(--gold);background:#FFF9EE;box-shadow:0 0 0 1px var(--gold) inset;}
+.check-row{display:flex;gap:10px;align-items:flex-start;margin:6px 0 14px;}
+.check-row input{width:auto;margin-top:4px;flex:0 0 auto;}
+.check-row label{font-weight:500;margin:0;font-size:14px;line-height:1.5;}
+.btn{display:block;width:100%;background:var(--navy);color:var(--paper);border:1px solid var(--navy);border-radius:4px;padding:14px 26px;font-size:15px;font-weight:600;letter-spacing:.01em;cursor:pointer;font-family:inherit;margin-top:8px;}
+.btn:disabled{opacity:.5;cursor:default;}
+.error{color:var(--red);font-size:14px;margin-top:14px;display:none;line-height:1.5;}
+.notice{background:#FFF7E8;border:1px solid #EBD9B0;border-radius:6px;padding:14px 16px;font-size:14px;color:#6A5314;margin:0 0 22px;line-height:1.55;}
+.hidden{display:none !important;}
+.drop{border:1.5px dashed var(--line);border-radius:6px;padding:16px;background:var(--paper);text-align:center;cursor:pointer;font-size:14px;color:var(--navy);font-weight:600;}
+.drop:hover{border-color:var(--gold);}
+.drop small{display:block;font-weight:400;color:var(--muted);font-size:12px;margin-top:3px;}
+.files{list-style:none;margin-top:8px;}
+.files li{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:8px 11px;font-size:13.5px;margin-top:6px;word-break:break-all;}
+.files li button{background:none;border:none;color:var(--red);cursor:pointer;font-size:13px;font-family:inherit;flex:0 0 auto;}
+.files li .sz{color:var(--muted);font-size:12px;flex:0 0 auto;}
+.progress{display:none;}
+.progress h2{font-size:1.4rem;margin-bottom:6px;}
+.pl{list-style:none;margin-top:14px;}
+.pl li{padding:9px 0;border-bottom:1px solid var(--line);font-size:14px;display:flex;justify-content:space-between;gap:10px;}
+.pl li:last-child{border-bottom:none;}
+.st-ok{color:var(--green);font-weight:600;} .st-bad{color:var(--red);font-weight:600;} .st-wait{color:var(--muted);}
+.success{display:none;text-align:center;}
+.success .check{width:52px;height:52px;border-radius:50%;background:var(--navy);color:var(--white);display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 20px;}
+.success ol{text-align:left;margin:18px auto 0;max-width:440px;padding-left:20px;font-size:14.5px;color:var(--ink);line-height:1.7;}
+footer{text-align:center;margin-top:40px;font-size:12.5px;color:var(--muted);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">RoofScan UK</div>
+  <h1>Apply to work with us</h1>
+  <p class="lede">We are looking for drone flyers and report writers for roof inspections in Brighton and Sussex. You choose which jobs you take, and you are paid per job. Fill this in once, upload your documents here, and we will check everything and come back to you by email. It takes about ten minutes.</p>
+
+  <div class="card">
+    <form id="apply-form" novalidate>
+
+      <div class="section-label">What are you applying for?</div>
+      <div class="roles" id="roles">
+        <button type="button" class="role" data-role="Scanner"><b>Drone flyer</b><span>Fly and capture the roof scans</span></button>
+        <button type="button" class="role" data-role="Report Writer"><b>Report writer</b><span>Turn the photos into the report</span></button>
+      </div>
+
+      <div id="main-fields" class="hidden">
+
+      <div class="section-label">About you</div>
+      <div class="field">
+        <label class="l" for="f-name">Full name</label>
+        <input type="text" id="f-name" autocomplete="name" placeholder="As on your certificates">
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label class="l" for="f-email">Email</label>
+          <input type="email" id="f-email" autocomplete="email">
+        </div>
+        <div class="field">
+          <label class="l" for="f-phone">Mobile number</label>
+          <input type="tel" id="f-phone" autocomplete="tel">
+        </div>
+      </div>
+      <div class="field">
+        <label class="l" for="f-payee">Name to be paid under</label>
+        <input type="text" id="f-payee" placeholder="Your own name, or your business name">
+        <div class="hint">We do not ask for bank details here. Once you are approved, we will send you a secure way to share them.</div>
+      </div>
+      <div class="field">
+        <label class="l" for="f-emerg">Emergency contact</label>
+        <input type="text" id="f-emerg" placeholder="Name and phone number">
+        <div class="hint">Someone we can call if we cannot reach you while you are on a job.</div>
+      </div>
+
+      <!-- FLYER SECTION -->
+      <div id="flyer-sec" class="hidden">
+        <div class="section-label">Your drone</div>
+        <div class="row2">
+          <div class="field">
+            <label class="l" for="f-drone">Make and model</label>
+            <input type="text" id="f-drone" placeholder="e.g. DJI Mavic 3 Enterprise">
+          </div>
+          <div class="field">
+            <label class="l" for="f-serial">Serial number</label>
+            <input type="text" id="f-serial">
+          </div>
+        </div>
+        <div class="field">
+          <label class="l" for="f-wind">Maximum wind speed the manufacturer rates it for (m/s)</label>
+          <input type="number" id="f-wind" min="3" max="25" step="0.1" inputmode="decimal" placeholder="e.g. 12">
+          <div class="hint">Find this in the drone's specifications. Our app applies a safety margin below this number, so a stronger drone gets a higher limit.</div>
+        </div>
+
+        <div class="section-label">Your CAA details</div>
+        <div class="row2">
+          <div class="field">
+            <label class="l" for="f-opid">Operator ID</label>
+            <input type="text" id="f-opid" placeholder="GBR-OP-...">
+          </div>
+          <div class="field">
+            <label class="l" for="f-opexp">Operator ID expiry</label>
+            <input type="date" id="f-opexp">
+          </div>
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label class="l" for="f-flid">Flyer ID</label>
+            <input type="text" id="f-flid" placeholder="GBR-RP-...">
+          </div>
+          <div class="field">
+            <label class="l" for="f-flexp">Flyer ID expiry</label>
+            <input type="date" id="f-flexp">
+          </div>
+        </div>
+        <div class="field">
+          <label class="l" for="f-other">Other drone qualifications (optional)</label>
+          <input type="text" id="f-other" placeholder="e.g. A2 CofC, GVC">
+        </div>
+        <div class="field">
+          <label class="l">Upload your CAA certificates</label>
+          <div class="drop" data-slot="caa">Tap to add files<small>Operator ID, Flyer ID, A2 CofC or GVC. PDF or photo, up to 5 MB each.</small></div>
+          <ul class="files" id="files-caa"></ul>
+        </div>
+      </div>
+
+      <!-- WRITER SECTION -->
+      <div id="writer-sec" class="hidden">
+        <div class="section-label">Your experience</div>
+        <div class="field">
+          <label class="l" for="f-exp">Tell us about your background</label>
+          <textarea id="f-exp" placeholder="Any roofing, surveying, building inspection or report writing work, and anything relevant you have studied. A few lines is fine."></textarea>
+        </div>
+        <div class="check-row">
+          <input type="checkbox" id="f-pc">
+          <label for="f-pc">I will write reports on my own password-protected computer, not a shared or public one.</label>
+        </div>
+      </div>
+
+      <div class="section-label" id="ins-label">Your insurance</div>
+      <div id="ins-note" class="notice hidden"></div>
+      <div class="row2">
+        <div class="field">
+          <label class="l" for="f-insprov">Insurer</label>
+          <input type="text" id="f-insprov">
+        </div>
+        <div class="field">
+          <label class="l" for="f-insamt">Cover amount</label>
+          <input type="text" id="f-insamt" placeholder="e.g. £5,000,000">
+        </div>
+      </div>
+      <div class="field">
+        <label class="l" for="f-insexp">Renewal date</label>
+        <input type="date" id="f-insexp">
+      </div>
+      <div class="field">
+        <label class="l">Upload your insurance certificate</label>
+        <div class="drop" data-slot="insurance">Tap to add a file<small>PDF or photo, up to 5 MB each.</small></div>
+        <ul class="files" id="files-insurance"></ul>
+      </div>
+
+      <div class="section-label">Anything else (optional)</div>
+      <div class="field">
+        <label class="l" for="f-notes">Anything you would like us to know</label>
+        <textarea id="f-notes" placeholder="For example, if you could also do the other role, your usual area, or the days you are free."></textarea>
+      </div>
+      <div class="field">
+        <div class="drop" data-slot="other">Tap to add other documents<small>For example a CV or a certificate that does not fit above.</small></div>
+        <ul class="files" id="files-other"></ul>
+      </div>
+
+      <div class="section-label">Please confirm</div>
+      <div class="check-row">
+        <input type="checkbox" id="c-self">
+        <label for="c-self">I am self-employed or run my own company. I choose which jobs I take, and I am paid per job.</label>
+      </div>
+      <div class="check-row">
+        <input type="checkbox" id="c-conf">
+        <label for="c-conf">I will keep client names, addresses and photos private, use them only for the job, and delete them once the job is complete.</label>
+      </div>
+      <div class="check-row">
+        <input type="checkbox" id="c-true">
+        <label for="c-true">The information and documents I have given are accurate and current.</label>
+      </div>
+
+      <p class="hint" style="margin:14px 0 4px;">We use your details and documents only to check your application and to work with you, and we keep them securely. See our <a href="privacy.html" target="_blank" style="color:var(--navy);">privacy policy</a>.</p>
+      <button type="submit" class="btn" id="submit-btn">Send my application</button>
+      <div class="error" id="form-error"></div>
+
+      </div><!-- /main-fields -->
+    </form>
+
+    <div class="progress" id="progress">
+      <h2>Sending your application</h2>
+      <p class="muted" style="font-size:14px;">Please keep this page open while your documents upload.</p>
+      <ul class="pl" id="progress-list"></ul>
+    </div>
+
+    <div class="success" id="success">
+      <div class="check">✓</div>
+      <h2>Application received</h2>
+      <p class="muted" style="margin-top:8px;font-size:15px;" id="success-msg">Thank you. We have everything we need to start checking your details.</p>
+      <ol>
+        <li>We check your documents. This usually takes a few working days.</li>
+        <li>We email you at the address you gave, either to confirm or to ask for anything missing.</li>
+        <li>Once approved, you will get your personal login code and a secure way to share your payment details.</li>
+      </ol>
+      <p class="muted" style="margin-top:20px;font-size:13px;">You cannot take jobs until you have been approved.</p>
+    </div>
+  </div>
+
+  <footer>Questions? <a href="mailto:info@roofscanuk.co.uk" style="color:var(--navy);">info@roofscanuk.co.uk</a></footer>
+</div>
+
+<script>
+const API_BASE = 'https://roofscan-api.tiny-voice-ac40.workers.dev';
+const MAX_BYTES = 5 * 1024 * 1024;
+const MAX_PER_SLOT = 4;
+const OK_TYPES = ['application/pdf','image/jpeg','image/png','image/webp','image/heic','image/heif'];
+let role = '';
+const files = { caa: [], insurance: [], other: [] };
+const $ = (id) => document.getElementById(id);
+
+// ----- role choice -----
+document.querySelectorAll('.role').forEach(function(b){
+  b.addEventListener('click', function(){
+    role = b.getAttribute('data-role');
+    document.querySelectorAll('.role').forEach(function(x){ x.classList.toggle('on', x === b); });
+    $('main-fields').classList.remove('hidden');
+    const flyer = role === 'Scanner' || role === 'Both';
+    const writer = role === 'Report Writer' || role === 'Both';
+    $('flyer-sec').classList.toggle('hidden', !flyer);
+    $('writer-sec').classList.toggle('hidden', !writer);
+    const note = $('ins-note');
+    if (flyer) {
+      note.classList.remove('hidden');
+      note.textContent = 'Flyers: your drone insurance must cover commercial work and inspection work near buildings. Please check this with your insurer if you are not sure.';
+      $('ins-label').textContent = 'Your insurance (required)';
+    } else {
+      note.classList.remove('hidden');
+      note.textContent = 'Professional indemnity cover is ideal but optional. If you have it, add it here. If not, leave this section blank and tell us in the notes below, and we will talk it through.';
+      $('ins-label').textContent = 'Your insurance (optional)';
+    }
+    window.scrollTo({ top: $('main-fields').getBoundingClientRect().top + window.scrollY - 40, behavior: 'smooth' });
+  });
+});
+
+// ----- file pickers -----
+const picker = document.createElement('input');
+picker.type = 'file'; picker.multiple = true; picker.style.display = 'none';
+picker.accept = '.pdf,.jpg,.jpeg,.png,.webp,.heic,.heif,application/pdf,image/*';
+document.body.appendChild(picker);
+let pickSlot = '';
+document.querySelectorAll('.drop').forEach(function(d){
+  d.addEventListener('click', function(){ pickSlot = d.getAttribute('data-slot'); picker.value = ''; picker.click(); });
+});
+function guessType(f){
+  if (f.type) return f.type.toLowerCase();
+  const n = f.name.toLowerCase();
+  if (n.endsWith('.pdf')) return 'application/pdf';
+  if (n.endsWith('.heic')) return 'image/heic';
+  if (n.endsWith('.heif')) return 'image/heif';
+  return '';
+}
+picker.addEventListener('change', function(){
+  const err = $('form-error'); err.style.display = 'none';
+  Array.prototype.forEach.call(picker.files, function(f){
+    if (files[pickSlot].length >= MAX_PER_SLOT) { showErr('You can add up to ' + MAX_PER_SLOT + ' files in each box.'); return; }
+    const t = guessType(f);
+    if (OK_TYPES.indexOf(t) === -1) { showErr('"' + f.name + '" is not a PDF or photo. Please use PDF, JPG, PNG, WEBP or HEIC.'); return; }
+    if (f.size > 40 * 1024 * 1024) { showErr('"' + f.name + '" is very large. Please choose a smaller file.'); return; }
+    files[pickSlot].push({ file: f, type: t });
+  });
+  renderFiles(pickSlot);
+});
+function renderFiles(slot){
+  const ul = $('files-' + slot); ul.innerHTML = '';
+  files[slot].forEach(function(item, i){
+    const li = document.createElement('li');
+    const nm = document.createElement('span'); nm.textContent = item.file.name;
+    const sz = document.createElement('span'); sz.className = 'sz'; sz.textContent = (item.file.size / 1048576).toFixed(1) + ' MB';
+    const rm = document.createElement('button'); rm.type = 'button'; rm.textContent = 'Remove';
+    rm.addEventListener('click', function(){ files[slot].splice(i, 1); renderFiles(slot); });
+    li.appendChild(nm); li.appendChild(sz); li.appendChild(rm); ul.appendChild(li);
+  });
+}
+function showErr(m){ const e = $('form-error'); e.textContent = m; e.style.display = 'block'; }
+
+// ----- turn a file into base64, shrinking big photos so they fit under 5 MB -----
+function readBase64(blob){
+  return new Promise(function(resolve, reject){
+    const r = new FileReader();
+    r.onload = function(){ resolve(String(r.result).split(',')[1] || ''); };
+    r.onerror = function(){ reject(new Error('read failed')); };
+    r.readAsDataURL(blob);
+  });
+}
+function shrinkImage(file){
+  return new Promise(function(resolve){
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = function(){
+      const maxSide = 2400;
+      const s = Math.min(1, maxSide / Math.max(img.width, img.height));
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      c.toBlob(function(b){ URL.revokeObjectURL(url); resolve(b); }, 'image/jpeg', 0.85);
+    };
+    img.onerror = function(){ URL.revokeObjectURL(url); resolve(null); };
+    img.src = url;
+  });
+}
+async function prepare(item){
+  let blob = item.file, type = item.type, name = item.file.name;
+  if (blob.size > MAX_BYTES && type.indexOf('image/') === 0) {
+    const small = await shrinkImage(item.file);
+    if (small && small.size <= MAX_BYTES) { blob = small; type = 'image/jpeg'; name = name.replace(/\.[^.]+$/, '') + '.jpg'; }
+  }
+  if (blob.size > MAX_BYTES) throw new Error('too big');
+  return { name: name, type: type, data: await readBase64(blob) };
+}
+
+async function post(path, body){
+  const res = await fetch(API_BASE + path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  let data = {}; try { data = await res.json(); } catch (e) {}
+  if (!res.ok) throw new Error(data.error || 'Something went wrong. Please try again.');
+  return data;
+}
+
+// ----- submit -----
+$('apply-form').addEventListener('submit', async function(e){
+  e.preventDefault();
+  $('form-error').style.display = 'none';
+  if (!role) { showErr('Please choose what you are applying for.'); return; }
+  const v = function(id){ return $(id).value.trim(); };
+  const flyer = role === 'Scanner' || role === 'Both';
+  const writer = role === 'Report Writer' || role === 'Both';
+  if (!v('f-name') || !v('f-email') || !v('f-phone') || !v('f-payee') || !v('f-emerg')) { showErr('Please fill in the "About you" section.'); return; }
+  if (flyer) {
+    if (!v('f-drone') || !v('f-serial') || !v('f-wind')) { showErr('Please fill in your drone details.'); return; }
+    if (!v('f-opid') || !v('f-opexp') || !v('f-flid') || !v('f-flexp')) { showErr('Please fill in your Operator ID and Flyer ID, with expiry dates.'); return; }
+    if (!files.caa.length) { showErr('Please upload your CAA certificates.'); return; }
+    if (!v('f-insprov') || !v('f-insamt') || !v('f-insexp')) { showErr('Please fill in your insurance details.'); return; }
+    if (!files.insurance.length) { showErr('Please upload your insurance certificate.'); return; }
+  }
+  if (writer && !v('f-exp')) { showErr('Please tell us a little about your experience.'); return; }
+  if (!$('c-self').checked || !$('c-conf').checked || !$('c-true').checked) { showErr('Please tick all three confirmations at the bottom.'); return; }
+
+  const btn = $('submit-btn'); btn.disabled = true; btn.textContent = 'Sending…';
+  const payload = {
+    role: role, name: v('f-name'), email: v('f-email'), phone: v('f-phone'), payeeName: v('f-payee'), emergencyContact: v('f-emerg'),
+    insuranceProvider: v('f-insprov'), insuranceAmount: v('f-insamt'), insuranceExpiry: $('f-insexp').value,
+    selfEmployed: $('c-self').checked, confidentiality: $('c-conf').checked, notes: v('f-notes')
+  };
+  if (flyer) Object.assign(payload, { droneModel: v('f-drone'), droneSerial: v('f-serial'), droneWind: v('f-wind'),
+    operatorId: v('f-opid'), operatorExpiry: $('f-opexp').value, flyerId: v('f-flid'), flyerExpiry: $('f-flexp').value, otherQualifications: v('f-other') });
+  if (writer) Object.assign(payload, { experience: v('f-exp'), privateComputer: $('f-pc').checked });
+
+  let app;
+  try { app = await post('/contractor-apply', payload); }
+  catch (err) { showErr(err.message); btn.disabled = false; btn.textContent = 'Send my application'; return; }
+
+  // application saved: now upload the documents one by one
+  $('apply-form').style.display = 'none';
+  $('progress').style.display = 'block';
+  const list = $('progress-list');
+  const jobs = [];
+  [['caa','CAA certificate'],['insurance','Insurance certificate'],['other','Other document']].forEach(function(s){
+    files[s[0]].forEach(function(item){ jobs.push({ slot: s[0], label: s[1], item: item }); });
+  });
+  let uploaded = 0; const failed = [];
+  const rows = jobs.map(function(j){
+    const li = document.createElement('li');
+    const a = document.createElement('span'); a.textContent = j.label + ': ' + j.item.file.name;
+    const b = document.createElement('span'); b.className = 'st-wait'; b.textContent = 'Waiting';
+    li.appendChild(a); li.appendChild(b); list.appendChild(li);
+    return b;
+  });
+  for (let i = 0; i < jobs.length; i++) {
+    rows[i].textContent = 'Uploading…';
+    try {
+      const p = await prepare(jobs[i].item);
+      await post('/contractor-upload', { id: app.id, token: app.token, slot: jobs[i].slot, filename: p.name, contentType: p.type, data: p.data });
+      rows[i].className = 'st-ok'; rows[i].textContent = 'Done'; uploaded++;
+    } catch (err) {
+      rows[i].className = 'st-bad'; rows[i].textContent = 'Failed'; failed.push(jobs[i].item.file.name);
+    }
+  }
+  try { await post('/contractor-done', { id: app.id, token: app.token, uploaded: uploaded, failed: failed }); } catch (e) {}
+
+  $('progress').style.display = 'none';
+  $('success').style.display = 'block';
+  if (failed.length) {
+    $('success-msg').textContent = 'Your application is in, but ' + failed.length + ' file' + (failed.length > 1 ? 's' : '') + ' did not upload (' + failed.join(', ') + '). Please e-mail ' + (failed.length > 1 ? 'them' : 'it') + ' to info@roofscanuk.co.uk and say it is for your application.';
+  }
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+</script>
+</body>
+</html>
