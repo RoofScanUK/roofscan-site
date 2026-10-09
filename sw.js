@@ -1,5 +1,5 @@
 // ═══ RoofScan UK Service Worker — Offline + Push ═══
-const CACHE_NAME = 'roofscan-v3';
+const CACHE_NAME = 'roofscan-v6'; // bumped so old caches (including any saved API responses) are deleted
 const APP_SHELL = [
   'hub.html',
   'ops.html',
@@ -35,9 +35,14 @@ self.addEventListener('activate', function(e) {
   self.clients.claim();
 });
 
-// Fetch — network first for Airtable API calls, cache first for app shell
+// Fetch — only same-site pages and files are cached. Calls to the API Worker (roofscan-api...workers.dev)
+// carry a login token and return one person's private data, so the service worker never touches them:
+// caching them let the next person to log in on the same browser be shown the previous person's data.
 self.addEventListener('fetch', function(e) {
   var url = e.request.url;
+  if (e.request.method !== 'GET' || new URL(url).origin !== self.location.origin) {
+    if (url.indexOf('api.airtable.com') === -1) return; // let the browser handle it normally
+  }
 
   // Airtable API — network first, fall back to cached JSON response if offline
   if (url.indexOf('api.airtable.com') !== -1) {
@@ -61,17 +66,20 @@ self.addEventListener('fetch', function(e) {
     return;
   }
 
-  // App shell — cache first, network fallback
+  // Site pages and files — network first (so updates always show), saved copy only when offline
   if (e.request.method === 'GET') {
     e.respondWith(
-      caches.match(e.request).then(function(cached) {
-        return cached || fetch(e.request).then(function(res) {
+      fetch(e.request).then(function(res) {
+        if (res && res.ok) {
           var resClone = res.clone();
           caches.open(CACHE_NAME).then(function(cache) {
             cache.put(e.request, resClone);
           });
-          return res;
-        }).catch(function() {
+        }
+        return res;
+      }).catch(function() {
+        return caches.match(e.request).then(function(cached) {
+          if (cached) return cached;
           // Offline and not cached — return a basic offline message for HTML requests
           if (e.request.headers.get('accept') && e.request.headers.get('accept').indexOf('text/html') !== -1) {
             return new Response(
