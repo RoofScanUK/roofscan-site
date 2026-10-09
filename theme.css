@@ -1,0 +1,89 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap');
+/* ═══ RoofScan UK shared theme ═══
+   Loaded AFTER each page's own <style>, so it overrides colours, fonts, corners and shadows
+   without touching any layout, markup or logic. Matches the owner dashboard:
+   navy + muted gold on warm paper, serif headings, hairline borders, small corners, no gradients. */
+
+:root{
+  --n:#1C2B4A; --navy:#1C2B4A; --s:#1C2B4A; --slate:#1C2B4A;
+  --g:#B8945F; --gold:#B8945F;
+  --bg:#FBFAF7; --cd:#FFFFFF; --card:#FFFFFF;
+  --br:#DEDACE; --border:#DEDACE;
+  --mu:#6B6F76; --muted:#6B6F76;
+  --gr:#2F6B4F; --green:#2F6B4F; --gbg:#EAF2EC;
+  --am:#9A6A1C; --amber:#9A6A1C; --abg:#F7EFDD;
+  --rd:#9B2C2C; --red:#9B2C2C; --rbg:#F6E6E4;
+  --blue:#1C2B4A; --bbg:#ECEEF3;
+}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif !important;background:var(--bg);color:#20262F;-webkit-font-smoothing:antialiased;}
+
+/* Headings and big titles use the serif, like the main site */
+h1,h2,.hdr-title,.hero-title,.title,.acct-name,.today-title,.welcome,.login-title{font-family:'Fraunces',Georgia,serif !important;font-weight:500 !important;letter-spacing:-.01em;}
+
+/* Headers: flat navy, no gradient */
+.hdr,.hero,.bar,.today-card.has-job,.action-card,.acct-banner{background:var(--n) !important;}
+.logo,.hero-eyebrow,.brand{color:var(--g) !important;letter-spacing:.16em !important;font-weight:600 !important;}
+
+/* Corners and shadows: small and flat everywhere */
+[class*="card"],.panel,.stat,.step,.faq-item,.search-inp,.choose-btn,.slide,.callout,.box{border-radius:6px !important;box-shadow:none !important;}
+button,.btn,[class*="-btn"],input,select,textarea{border-radius:4px !important;}
+.stat{border-top:1px solid var(--br) !important;}
+.hdr .logo img,.hero-logo{border-radius:6px !important;}
+
+/* Buttons: understated */
+.login-btn,.primary-btn,.btn,.copy-btn,.today-btn,.back-btn,.choose-btn{font-weight:500 !important;letter-spacing:.01em;}
+.login-btn,.primary-btn,.btn:not(.ghost):not(.warn){background:var(--n);color:#fff !important;border:1px solid var(--n);}
+.login-btn.gold,.copy-btn{background:var(--n) !important;color:#fff !important;}
+.btn.ghost{background:#fff;color:var(--n);border:1px solid var(--br);}
+.btn.warn{background:var(--rd) !important;color:#fff !important;}
+.btn:hover:not(:disabled){box-shadow:none !important;transform:none !important;background:#243759;}
+
+/* Status pills and tags: small, quiet labels */
+[class*="pill"],[class*="tag"]:not(.tags),.tag,.badge,.staff-badge{border-radius:3px !important;font-weight:600 !important;letter-spacing:.03em;}
+.status-pill.Booked,.t-scan{background:#ECEEF3 !important;color:#1C2B4A !important;}
+.t-rep{background:#F1ECE2 !important;color:#6B4A12 !important;}
+.status-pill.Complete{background:var(--abg) !important;color:var(--am) !important;}
+.status-pill.Paid,.status-pill.Report.Sent{background:var(--gbg) !important;color:var(--gr) !important;}
+.cat-pill{border-radius:3px !important;}
+.cat-pill.active{color:#fff !important;}
+
+/* Inputs */
+input,select,textarea{border-color:var(--br) !important;background:#fff;}
+input:focus,select:focus,textarea:focus{border-color:var(--g) !important;outline:none;}
+
+/* Section labels */
+.sl,.sec-label,.section-title,.faq-group-title,.card-title,.link-label{font-weight:600 !important;letter-spacing:.12em !important;color:var(--mu) !important;}
+.sl em{background:none !important;color:var(--mu) !important;border:1px solid var(--br);border-radius:3px !important;padding:1px 8px !important;}
+
+/* Job cards on the board: thin rule instead of thick coloured bars */
+.pool{border-left:3px solid var(--g) !important;}
+.mine{border-left:3px solid var(--gr) !important;}
+.pay{color:var(--n) !important;font-weight:600 !important;}
+
+/* Calendar events */
+.cal .ev.scan{background:#ECEEF3 !important;color:#1C2B4A !important;}
+.cal .ev.rep{background:#F1ECE2 !important;color:#6B4A12 !important;}
+.cal .d.today{border-color:var(--g) !important;box-shadow:none !important;background:#FBF6EC !important;}
+
+/* Banners */
+.banner{border-radius:4px !important;}
+.b-red{background:var(--rbg) !important;color:#7A2323 !important;border-color:#E3C4C0 !important;}
+.b-amber{background:var(--abg) !important;color:#5E3A06 !important;border-color:#E6D3A8 !important;}
+.b-green{background:var(--gbg) !important;color:#22503A !important;border-color:#BFD6C7 !important;}
+
+/* Quiet emoji icons (they read as childish): fade them */
+.trust-icon,.tick{filter:grayscale(1);opacity:.75;}
+
+/* Jobs board details */
+.stats{grid-template-columns:repeat(auto-fit,minmax(170px,1fr)) !important;}
+.slide{border-radius:4px !important;}
+.slide-h{border-radius:3px !important;}
+
+/* Info pages: no emoji icons, neutral sample placeholders */
+.trust-icon{display:none !important;}
+.trust-card{padding:18px 14px !important;}
+.sample-img{border-radius:6px !important;}
+.sample-img-placeholder{background:#F4F1EA !important;color:var(--mu) !important;border-bottom:1px solid var(--br);font-weight:500 !important;}
+
+/* App-style desktop container (staff.html): flat, not a floating phone */
+@media (min-width:640px){body{border-radius:8px !important;box-shadow:none !important;}}

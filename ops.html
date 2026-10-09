@@ -111,6 +111,7 @@ main{padding:14px;}
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
 <script src="app-shell.js" defer></script>
+<link rel="stylesheet" href="theme.css">
 </head>
 <body>
 <div class="hdr">
@@ -194,7 +195,7 @@ function showTab(id,btn){
   if(id==='jobs') initJobs();
 }
 
-// ─── CHECKLIST ──────────────────────────────────────
+// ─── CHECKLIST ────────────────────────────────────────────────────
 function tick(el){
   el.classList.toggle('done');
   var id=el.dataset.id;
@@ -222,7 +223,7 @@ document.querySelectorAll('[data-id]').forEach(function(el){
 });
 updateProg();
 
-// ─── LIVE JOBS ──────────────────────────────────────
+// ─── LIVE JOBS ────────────────────────────────────────────────────
 var _allJobs=[],_filter='';
 
 function jobsConnect(){

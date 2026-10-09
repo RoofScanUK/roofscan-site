@@ -109,6 +109,7 @@ main{padding:14px;}
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
 <script src="app-shell.js" defer></script>
+<link rel="stylesheet" href="theme.css">
 </head>
 <body>
 <div class="hdr">
@@ -217,7 +218,7 @@ function showAction(today,alerts,active){
   }
 }
 
-// ─── PUSH OPT-IN ─────────────────────────────────────────
+// ─── PUSH OPT-IN ──────────────────────────────────────────────────
 function checkPushPrompt(){
   if(!RSPush.isSupported()) return;
   var state = RSPush.getPermissionState();

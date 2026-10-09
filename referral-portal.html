@@ -65,6 +65,7 @@ main{padding:14px;}
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
+<link rel="stylesheet" href="theme.css">
 </head>
 <body>
 <div class="hdr">
@@ -138,7 +139,7 @@ function statusCaption(s){
   var m = {
     'Booked': 'Inspection scheduled — nothing to do yet.',
     'Complete': 'Inspection done, report being prepared.',
-    'Report Sent': 'Report delivered to your client — your agency's referral fee is being processed.',
+    'Report Sent': 'Report delivered to your client — your agency\'s referral fee is being processed.',
     'Paid': 'Referral fee paid to your agency.'
   };
   return m[s] || 'Inspection scheduled — nothing to do yet.';
