@@ -5,30 +5,60 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex">
 <title>RoofScan UK — Owner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-:root{--n:#1C2B4A;--g:#C9A84C;--bg:#F8F6F0;--br:#E8E4D8;--mu:#6B7A8D;--rd:#B3261E;--gr:#1E8E4E;}
+:root{--n:#12203B;--n2:#1C2B4A;--g:#C9A84C;--bg:#EEF0F4;--cd:#FFF;--br:#E1E5EC;--mu:#5B6B80;--gr:#1E8E4E;--am:#C2710C;--rd:#B3261E;--gbg:#E3F6EA;--abg:#FEF0D8;--rbg:#FDE6E3;}
 *{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'Plus Jakarta Sans',-apple-system,sans-serif;background:var(--bg);color:var(--n);max-width:760px;margin:0 auto;padding:0 14px 60px;}
-h1{font-size:20px;font-weight:800;padding:16px 0 4px;}
-.sl{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--mu);margin:20px 0 8px;}
-.card{background:#fff;border:1px solid var(--br);border-radius:12px;padding:14px;margin-bottom:10px;}
-.row{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap;}
-.sub{font-size:12px;color:var(--mu);}
-.btn{border:none;border-radius:9px;padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;background:var(--n);color:var(--g);}
-.btn.ghost{background:none;color:var(--n);border:1px solid var(--br);}
+body{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--n);min-height:100vh;}
+h1{font-size:20px;font-weight:800;}
+.bar{background:linear-gradient(135deg,var(--n),var(--n2));color:#fff;padding:0 28px;}
+.bar-in{max-width:1240px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;padding:20px 0;gap:16px;flex-wrap:wrap;}
+.brand{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--g);}
+.bar h1{color:#fff;font-size:26px;margin-top:2px;}
+.bar .sub{color:#B8C2D6;}
+.wrap{max-width:1240px;margin:0 auto;padding:24px 28px 70px;}
+.sub{font-size:12.5px;color:var(--mu);line-height:1.5;}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;}
+.stat{background:var(--cd);border:1px solid var(--br);border-radius:14px;padding:16px 18px;border-top:4px solid var(--g);box-shadow:0 1px 3px rgba(18,32,59,.06);}
+.stat b{display:block;font-size:32px;font-weight:800;line-height:1.1;color:var(--n);}
+.stat span{font-size:12px;color:var(--mu);font-weight:600;}
+.cols{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:24px;align-items:start;}
+.sl{font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--n);margin:0 0 12px;display:flex;justify-content:space-between;align-items:center;}
+.sl em{font-style:normal;background:var(--n);color:var(--g);border-radius:99px;padding:2px 10px;font-size:11px;}
+.block{margin-bottom:26px;}
+.card{background:var(--cd);border:1px solid var(--br);border-radius:14px;padding:16px 18px;margin-bottom:12px;box-shadow:0 1px 3px rgba(18,32,59,.06);}
+.panel{background:var(--cd);border:1px solid var(--br);border-top:4px solid var(--g);border-radius:16px;padding:20px;margin-bottom:26px;box-shadow:0 2px 8px rgba(18,32,59,.07);}
+.row{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;}
+.btn{border:none;border-radius:10px;padding:9px 15px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;background:var(--n);color:var(--g);transition:transform .08s,box-shadow .15s;}
+.btn:hover{box-shadow:0 4px 12px rgba(18,32,59,.25);transform:translateY(-1px);}
+.btn.ghost{background:#fff;color:var(--n);border:1px solid var(--br);}
+.bar .btn.ghost{background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.28);}
 .btn.red{background:var(--rd);color:#fff;}
-.inp{width:100%;border:1px solid var(--br);border-radius:9px;padding:12px;font-size:16px;font-family:inherit;margin-bottom:10px;}
-.tag{display:inline-block;font-size:11px;font-weight:700;border-radius:99px;padding:2px 9px;margin:2px 4px 0 0;}
-.t-red{background:#FDECEA;color:#8A1C14;}.t-grn{background:#E8F8EF;color:#14663A;}.t-amb{background:#FEF3E2;color:#7A4A07;}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
-.stat{background:#fff;border:1px solid var(--br);border-radius:10px;padding:10px;text-align:center;}
-.stat b{font-size:20px;display:block;}
-#err{display:none;background:#FDECEA;color:#8A1C14;border-radius:10px;padding:10px;font-size:13px;margin-top:10px;}
+.btn.green{background:var(--gr);color:#fff;}
+.inp{width:100%;border:1px solid var(--br);border-radius:9px;padding:12px 14px;font-size:16px;font-family:inherit;margin-bottom:10px;background:#fff;color:var(--n);}
+.pill{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.04em;border-radius:99px;padding:3px 10px;margin:6px 6px 0 0;}
+.t-red{background:var(--rbg);color:#8A1C14;}.t-grn{background:var(--gbg);color:#0F5F34;}.t-amb{background:var(--abg);color:#7A4A07;}
+.ctr{display:flex;gap:14px;align-items:flex-start;}
+.av{flex:none;width:44px;height:44px;border-radius:50%;background:var(--n);color:var(--g);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;}
+.ctr .nm{font-size:16px;font-weight:800;}
+.ctr .rl{font-size:12px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.06em;margin-left:6px;}
+.det{font-size:13px;color:var(--mu);margin-top:8px;}
+.dates{display:flex;gap:16px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid var(--br);}
+.dates label{font-size:12px;font-weight:700;color:var(--mu);display:flex;flex-direction:column;gap:4px;}
+.dates input{font-family:inherit;font-size:14px;color:var(--n);border:1px solid var(--br);border-radius:8px;padding:7px 10px;background:#fff;}
+.alert{background:var(--abg);border:1px solid #F0D3A0;border-left:4px solid var(--am);border-radius:12px;padding:12px 14px;margin-bottom:10px;color:#5E3A06;}
+.alert b{color:var(--n);}
+.empty{font-size:13px;color:var(--mu);padding:4px 0;}
+.big{font-size:34px;font-weight:800;line-height:1;}
+.capin{width:84px;border:1px solid var(--br);border-radius:9px;padding:9px 10px;font-size:15px;font-family:inherit;color:var(--n);}
+#err{display:none;background:var(--rbg);color:#8A1C14;border-radius:10px;padding:10px;font-size:13px;margin-top:10px;}
+@media(max-width:900px){.cols{grid-template-columns:1fr;}.stats{grid-template-columns:repeat(2,1fr);}.wrap,.bar{padding-left:14px;padding-right:14px;}}
 </style>
 </head>
 <body>
-<div id="login" style="display:none;padding-top:60px;">
+<div id="login" style="display:none;padding:60px 18px;max-width:420px;margin:0 auto;">
   <h1>RoofScan owner</h1>
   <div id="s1"><p class="sub" style="margin:6px 0 16px;">Owner email address. We'll send a 6-digit code.</p>
     <input class="inp" id="email" type="email" placeholder="owner email"><button class="btn" style="width:100%;padding:13px;" onclick="sendCode()">Email me a code</button></div>
@@ -36,15 +66,27 @@ h1{font-size:20px;font-weight:800;padding:16px 0 4px;}
     <input class="inp" id="otp" inputmode="numeric" maxlength="6" placeholder="6-digit code"><button class="btn" style="width:100%;padding:13px;" onclick="verifyCode()">Log in</button></div>
   <div id="err"></div>
 </div>
+
 <div id="app" style="display:none;">
-  <div class="row"><h1>RoofScan owner</h1><div style="padding-top:14px;"><button class="btn ghost" onclick="load()">Refresh</button> <button class="btn ghost" onclick="logout()">Log out</button></div></div>
-  <div class="stats" id="stats"></div>
-  <div class="sl">Weekly booking capacity</div><div class="card" id="cap"><span class="sub">Loading...</span></div>
-  <div class="sl">Needs you</div><div id="needs"></div>
-  <div class="sl">Contractors</div><div id="ctrs"></div>
-  <div class="sl">Claimed right now</div><div id="claimed"></div>
-  <div class="sl">Stand-downs (unsafe to fly, no penalty)</div><div id="stood"></div>
-  <div class="sl">Missed jobs</div><div id="missed"></div>
+  <div class="bar"><div class="bar-in">
+    <div><div class="brand">RoofScan UK</div><h1>Owner dashboard</h1><div class="sub">Contractors, jobs and capacity at a glance</div></div>
+    <div style="display:flex;gap:10px;"><button class="btn ghost" onclick="load()">Refresh</button><button class="btn ghost" onclick="logout()">Log out</button></div>
+  </div></div>
+  <div class="wrap">
+    <div class="stats" id="stats"></div>
+    <div class="cols">
+      <div>
+        <div class="block"><div class="sl">Needs you</div><div id="needs"></div></div>
+        <div class="block"><div class="sl">Contractors <em id="ctrs-n">0</em></div><div id="ctrs"></div></div>
+      </div>
+      <div>
+        <div class="sl">Weekly booking capacity</div><div class="panel" id="cap"><span class="sub">Loading...</span></div>
+        <div class="block"><div class="sl">Claimed right now</div><div id="claimed"></div></div>
+        <div class="block"><div class="sl">Stand-downs (unsafe to fly, no penalty)</div><div id="stood"></div></div>
+        <div class="block"><div class="sl">Missed jobs</div><div id="missed"></div></div>
+      </div>
+    </div>
+  </div>
 </div>
 <script>
 const API='https://roofscan-api.tiny-voice-ac40.workers.dev', TK='rs_owner_token';
@@ -56,22 +98,29 @@ function showLogin(msg){location.href='login.html?next=owner.html';return;$('app
 async function sendCode(){email=$('email').value.trim().toLowerCase();await api('/owner/request-code','POST',{email});$('s1').style.display='none';$('s2').style.display='block';$('err').style.display='none';}
 async function verifyCode(){const r=await api('/owner/verify','POST',{email,code:$('otp').value.trim()});if(!r.ok){showLogin(r.data.error||'That code is not right.');return;}localStorage.setItem(TK,r.data.token);load();}
 function logout(){localStorage.removeItem(TK);showLogin();}
-function tag(t,c){return `<span class="tag t-${c}">${esc(t)}</span>`;}
+function pill(t,c){return `<span class="pill t-${c}">${esc(t)}</span>`;}
+function initials(n){return String(n||'?').trim().split(/\s+/).slice(0,2).map(w=>w[0]||'').join('').toUpperCase()||'?';}
 async function load(){
   if(!localStorage.getItem(TK)){showLogin();return;}
   const r=await api('/owner/overview');if(!r.ok){if(r.status!==401)showLogin('Could not load. Try again.');return;}
   data=r.data;$('login').style.display='none';$('app').style.display='block';
   loadCap();
   const c=data.counts;
-  $('stats').innerHTML=[['Scans open',c.scansOpen],['Reports open',c.reportsOpen],['Scans claimed',c.scansClaimed],['Reports claimed',c.reportsClaimed]].map(x=>`<div class="stat"><b>${x[1]}</b><span class="sub">${x[0]}</span></div>`).join('');
-  $('needs').innerHTML=data.needsYou.length?data.needsYou.map(n=>`<div class="card"><b>${esc(n.name)}</b><div>${n.needs.map(x=>tag(x,'amb')).join('')}</div></div>`).join(''):'<div class="card sub">Nothing needs you right now.</div>';
-  $('ctrs').innerHTML=data.contractors.map(ct=>`<div class="card"><div class="row"><div><b>${esc(ct.name)}</b> <span class="sub">${esc(ct.role)}</span>
-    <div>${ct.active?tag('Active','grn'):tag('Switched off','red')}${ct.role!=='Report Writer'?(ct.approved?tag('Drone approved','grn'):tag('Drone not approved','amb')):''}</div>
-    ${ct.role!=='Report Writer'?`<div class="sub">${esc(ct.droneModel)||'No drone'} · rated ${ct.ratedWind||'?'} m/s · insurance ${esc(ct.insuranceExpiry)||'?'} · Operator ID ${esc(ct.operatorIdExpiry)||'?'}</div>`:''}</div>
-    <div>${ct.role!=='Report Writer'?`<button class="btn" onclick="upd('${ct.id}',{approved:${!ct.approved}})">${ct.approved?'Revoke drone approval':'Approve drone'}</button> `:''}<button class="btn ${ct.active?'red':''}" onclick="upd('${ct.id}',{active:${!ct.active}})">${ct.active?'Switch off':'Switch on'}</button></div></div>
-    ${ct.role!=='Report Writer'?`<div class="sub" style="margin-top:8px;">Insurance expiry <input type="date" value="${esc(ct.insuranceExpiry)}" onchange="upd('${ct.id}',{insuranceExpiry:this.value})"> Operator ID expiry <input type="date" value="${esc(ct.operatorIdExpiry)}" onchange="upd('${ct.id}',{operatorIdExpiry:this.value})"></div>`:''}</div>`).join('')||'<div class="card sub">No contractors yet.</div>';
-  const jl=(arr,f)=>arr.length?arr.map(f).join(''):'<div class="card sub">None.</div>';
-  $('claimed').innerHTML=jl(data.claimed,j=>`<div class="card"><b>${esc(j.client)}</b> <span class="sub">${esc(j.kind)} · ${esc(j.by)} · ${esc(j.date)}</span><div class="sub">${esc(j.address)}</div></div>`);
+  $('stats').innerHTML=[['Scans open',c.scansOpen],['Reports open',c.reportsOpen],['Scans claimed',c.scansClaimed],['Reports claimed',c.reportsClaimed]].map(x=>`<div class="stat"><b>${x[1]}</b><span>${x[0]}</span></div>`).join('');
+  $('needs').innerHTML=data.needsYou.length?data.needsYou.map(n=>`<div class="alert"><b>${esc(n.name)}</b><div>${n.needs.map(x=>pill(x,'amb')).join('')}</div></div>`).join(''):'<div class="card empty">Nothing needs you right now.</div>';
+  $('ctrs-n').textContent=data.contractors.length;
+  $('ctrs').innerHTML=data.contractors.map(ct=>{
+    const flyer=ct.role!=='Report Writer';
+    return `<div class="card"><div class="row"><div class="ctr"><div class="av">${esc(initials(ct.name))}</div><div>
+      <div><span class="nm">${esc(ct.name)}</span><span class="rl">${esc(ct.role)}</span></div>
+      <div>${ct.active?pill('Active','grn'):pill('Switched off','red')}${flyer?(ct.approved?pill('Drone approved','grn'):pill('Drone not approved','amb')):''}</div>
+      ${flyer?`<div class="det">${esc(ct.droneModel)||'No drone on file'} &middot; rated ${ct.ratedWind||'?'} m/s</div>`:''}
+      </div></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">${flyer?`<button class="btn ${ct.approved?'ghost':'green'}" onclick="upd('${ct.id}',{approved:${!ct.approved}})">${ct.approved?'Revoke drone approval':'Approve drone'}</button>`:''}<button class="btn ${ct.active?'red':'green'}" onclick="upd('${ct.id}',{active:${!ct.active}})">${ct.active?'Switch off':'Switch on'}</button></div></div>
+      ${flyer?`<div class="dates"><label>Insurance expiry<input type="date" value="${esc(ct.insuranceExpiry)}" onchange="upd('${ct.id}',{insuranceExpiry:this.value})"></label><label>Operator ID expiry<input type="date" value="${esc(ct.operatorIdExpiry)}" onchange="upd('${ct.id}',{operatorIdExpiry:this.value})"></label></div>`:''}</div>`;
+  }).join('')||'<div class="card empty">No contractors yet.</div>';
+  const jl=(arr,f)=>arr.length?arr.map(f).join(''):'<div class="card empty">None.</div>';
+  $('claimed').innerHTML=jl(data.claimed,j=>`<div class="card"><b>${esc(j.client)}</b> <span class="sub">${esc(j.kind)} &middot; ${esc(j.by)} &middot; ${esc(j.date)}</span><div class="sub">${esc(j.address)}</div></div>`);
   $('stood').innerHTML=jl(data.standDowns,j=>`<div class="card"><b>${esc(j.client)}</b> <span class="sub">${esc(j.date)}</span><div class="sub" style="white-space:pre-line;">${esc(j.reason)}</div></div>`);
   $('missed').innerHTML=jl(data.misses,j=>`<div class="card"><b>${esc(j.client)}</b> <span class="sub">${esc(j.date)}</span><div class="sub">${j.scanBy?'Scan missed by '+esc(j.scanBy)+' ':''}${j.reportBy?'Report missed by '+esc(j.reportBy):''}</div></div>`);
 }
@@ -79,10 +128,10 @@ async function loadCap(){
   const r=await api('/owner/capacity');
   if(!r.ok){$('cap').innerHTML='<span class="sub">Could not load capacity.</span>';return;}
   const c=r.data;
-  $('cap').innerHTML=`<div class="row"><div><b>${c.effective} bookings a week</b>
-    <div class="sub">${c.override!==null?'Fixed by you':'Automatic'}: ${c.flyers} approved flyer${c.flyers===1?'':'s'} x ${c.perFlyer} a week = ${c.auto}</div>
-    <div class="sub">When a week is full, its days disappear from the booking calendar. Add or approve a flyer and it goes up by itself.</div></div>
-    <div><input id="capIn" type="number" min="0" max="200" value="${c.override!==null?c.override:''}" placeholder="${c.auto}" style="width:70px;padding:7px;border:1px solid var(--br);border-radius:9px;font-family:inherit;"> <button class="btn" onclick="saveCap()">Set fixed</button> <button class="btn ghost" onclick="clearCap()">Use automatic</button></div></div>`;
+  $('cap').innerHTML=`<div class="big">${c.effective}</div><div style="font-weight:700;margin-top:4px;">bookings a week</div>
+    <div class="sub" style="margin-top:6px;">${c.override!==null?'Fixed by you':'Automatic'}: ${c.flyers} approved flyer${c.flyers===1?'':'s'} &times; ${c.perFlyer} a week = ${c.auto}.</div>
+    <div class="sub" style="margin-top:4px;">When a week is full its days disappear from the booking calendar. Approve a flyer and the number rises by itself.</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:14px;"><input class="capin" id="capIn" type="number" min="0" max="200" value="${c.override!==null?c.override:''}" placeholder="${c.auto}"><button class="btn" onclick="saveCap()">Set fixed</button><button class="btn ghost" onclick="clearCap()">Use automatic</button></div>`;
 }
 async function saveCap(){const v=$('capIn').value.trim();if(v===''||!/^\d+$/.test(v)){alert('Enter a whole number, for example 10.');return;}const r=await api('/owner/capacity','POST',{override:Number(v)});if(!r.ok){alert(r.data.error||'Could not save.');return;}loadCap();}
 async function clearCap(){const r=await api('/owner/capacity','POST',{override:null});if(!r.ok){alert(r.data.error||'Could not save.');return;}loadCap();}
