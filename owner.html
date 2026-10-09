@@ -7,83 +7,89 @@
 <title>RoofScan UK — Owner</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-:root{--n:#12203B;--n2:#1C2B4A;--g:#C9A84C;--bg:#EEF0F4;--cd:#FFF;--br:#E1E5EC;--mu:#5B6B80;--gr:#1E8E4E;--am:#C2710C;--rd:#B3261E;--gbg:#E3F6EA;--abg:#FEF0D8;--rbg:#FDE6E3;}
+:root{--navy:#1C2B4A;--gold:#B8945F;--ink:#20262F;--paper:#FBFAF7;--line:#DEDACE;--muted:#6B6F76;--white:#FFFFFF;--ok:#2F6B4F;--warn:#9A6A1C;--bad:#9B2C2C;}
 *{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--n);min-height:100vh;}
-h1{font-size:20px;font-weight:800;}
-.bar{background:linear-gradient(135deg,var(--n),var(--n2));color:#fff;padding:0 28px;}
-.bar-in{max-width:1240px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;padding:20px 0;gap:16px;flex-wrap:wrap;}
-.brand{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--g);}
-.bar h1{color:#fff;font-size:26px;margin-top:2px;}
-.bar .sub{color:#B8C2D6;}
-.wrap{max-width:1240px;margin:0 auto;padding:24px 28px 70px;}
-.sub{font-size:12.5px;color:var(--mu);line-height:1.5;}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;}
-.stat{background:var(--cd);border:1px solid var(--br);border-radius:14px;padding:16px 18px;border-top:4px solid var(--g);box-shadow:0 1px 3px rgba(18,32,59,.06);}
-.stat b{display:block;font-size:32px;font-weight:800;line-height:1.1;color:var(--n);}
-.stat span{font-size:12px;color:var(--mu);font-weight:600;}
-.cols{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:24px;align-items:start;}
-.sl{font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--n);margin:0 0 12px;display:flex;justify-content:space-between;align-items:center;}
-.sl em{font-style:normal;background:var(--n);color:var(--g);border-radius:99px;padding:2px 10px;font-size:11px;}
-.block{margin-bottom:26px;}
-.card{background:var(--cd);border:1px solid var(--br);border-radius:14px;padding:16px 18px;margin-bottom:12px;box-shadow:0 1px 3px rgba(18,32,59,.06);}
-.panel{background:var(--cd);border:1px solid var(--br);border-top:4px solid var(--g);border-radius:16px;padding:20px;margin-bottom:26px;box-shadow:0 2px 8px rgba(18,32,59,.07);}
-.row{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;}
-.btn{border:none;border-radius:10px;padding:9px 15px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;background:var(--n);color:var(--g);transition:transform .08s,box-shadow .15s;}
-.btn:hover{box-shadow:0 4px 12px rgba(18,32,59,.25);transform:translateY(-1px);}
-.btn.ghost{background:#fff;color:var(--n);border:1px solid var(--br);}
-.bar .btn.ghost{background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.28);}
-.btn.red{background:var(--rd);color:#fff;}
-.btn.green{background:var(--gr);color:#fff;}
-.inp{width:100%;border:1px solid var(--br);border-radius:9px;padding:12px 14px;font-size:16px;font-family:inherit;margin-bottom:10px;background:#fff;color:var(--n);}
-.pill{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.04em;border-radius:99px;padding:3px 10px;margin:6px 6px 0 0;}
-.t-red{background:var(--rbg);color:#8A1C14;}.t-grn{background:var(--gbg);color:#0F5F34;}.t-amb{background:var(--abg);color:#7A4A07;}
-.ctr{display:flex;gap:14px;align-items:flex-start;}
-.av{flex:none;width:44px;height:44px;border-radius:50%;background:var(--n);color:var(--g);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;}
-.ctr .nm{font-size:16px;font-weight:800;}
-.ctr .rl{font-size:12px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.06em;margin-left:6px;}
-.det{font-size:13px;color:var(--mu);margin-top:8px;}
-.dates{display:flex;gap:16px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid var(--br);}
-.dates label{font-size:12px;font-weight:700;color:var(--mu);display:flex;flex-direction:column;gap:4px;}
-.dates input{font-family:inherit;font-size:14px;color:var(--n);border:1px solid var(--br);border-radius:8px;padding:7px 10px;background:#fff;}
-.alert{background:var(--abg);border:1px solid #F0D3A0;border-left:4px solid var(--am);border-radius:12px;padding:12px 14px;margin-bottom:10px;color:#5E3A06;}
-.alert b{color:var(--n);}
-.empty{font-size:13px;color:var(--mu);padding:4px 0;}
-.big{font-size:34px;font-weight:800;line-height:1;}
-.capin{width:84px;border:1px solid var(--br);border-radius:9px;padding:9px 10px;font-size:15px;font-family:inherit;color:var(--n);}
-#err{display:none;background:var(--rbg);color:#8A1C14;border-radius:10px;padding:10px;font-size:13px;margin-top:10px;}
-@media(max-width:900px){.cols{grid-template-columns:1fr;}.stats{grid-template-columns:repeat(2,1fr);}.wrap,.bar{padding-left:14px;padding-right:14px;}}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--paper);color:var(--ink);font-size:14px;line-height:1.5;min-height:100vh;}
+h1,h2,.serif{font-family:'Fraunces',Georgia,serif;font-weight:500;letter-spacing:-.01em;color:var(--navy);}
+.top{background:var(--navy);color:var(--white);}
+.top-in{max-width:1180px;margin:0 auto;padding:22px 32px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;}
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);}
+.top h1{color:var(--white);font-size:24px;margin-top:4px;}
+.top-actions{display:flex;gap:8px;}
+.wrap{max-width:1180px;margin:0 auto;padding:28px 32px 80px;}
+.muted{color:var(--muted);}
+.small{font-size:12.5px;}
+.lbl{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0 0 10px;display:flex;justify-content:space-between;align-items:baseline;}
+.btn{border:1px solid var(--navy);background:var(--navy);color:var(--white);border-radius:4px;padding:8px 14px;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;}
+.btn:hover{background:#243759;}
+.btn.sec{background:var(--white);color:var(--navy);border-color:var(--line);}
+.btn.sec:hover{border-color:var(--navy);}
+.top .btn.sec{background:transparent;color:var(--white);border-color:rgba(255,255,255,.35);}
+.top .btn.sec:hover{border-color:var(--white);}
+.btn.text{background:none;border:none;color:var(--navy);padding:6px 4px;text-decoration:underline;text-underline-offset:3px;}
+.btn.text.danger{color:var(--bad);}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);background:var(--white);border:1px solid var(--line);border-radius:6px;margin-bottom:32px;}
+.metric{padding:18px 22px;border-right:1px solid var(--line);}
+.metric:last-child{border-right:none;}
+.metric .n{font-family:'Fraunces',Georgia,serif;font-size:30px;font-weight:500;color:var(--navy);line-height:1.1;}
+.metric .t{font-size:12px;color:var(--muted);margin-top:2px;}
+.cols{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:40px;align-items:start;}
+section{margin-bottom:32px;}
+.box{background:var(--white);border:1px solid var(--line);border-radius:6px;}
+.pad{padding:18px 20px;}
+table{width:100%;border-collapse:collapse;}
+th{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-align:left;padding:12px 16px;border-bottom:1px solid var(--line);background:#F7F5EF;}
+td{padding:14px 16px;border-bottom:1px solid var(--line);vertical-align:top;}
+tr:last-child td{border-bottom:none;}
+.name{font-weight:600;color:var(--navy);}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:middle;}
+.d-ok{background:var(--ok);}.d-warn{background:var(--warn);}.d-bad{background:var(--bad);}
+.st{display:block;font-size:12.5px;white-space:nowrap;}
+.t-ok{color:var(--ok);}.t-warn{color:var(--warn);}.t-bad{color:var(--bad);}
+.dt{font-family:inherit;font-size:12.5px;color:var(--ink);border:1px solid var(--line);border-radius:4px;padding:4px 6px;background:var(--white);}
+.acts{text-align:right;white-space:nowrap;}
+.attn{border-left:3px solid var(--warn);background:var(--white);border-top:1px solid var(--line);border-right:1px solid var(--line);border-bottom:1px solid var(--line);border-radius:0 6px 6px 0;padding:12px 16px;margin-bottom:8px;}
+.attn b{color:var(--navy);}
+.attn ul{margin:4px 0 0 18px;color:#6B4A12;font-size:13px;}
+.item{padding:12px 16px;border-bottom:1px solid var(--line);}
+.item:last-child{border-bottom:none;}
+.empty{padding:14px 16px;color:var(--muted);font-size:13px;}
+.capnum{font-family:'Fraunces',Georgia,serif;font-size:40px;font-weight:500;color:var(--navy);line-height:1;}
+.capin{width:80px;border:1px solid var(--line);border-radius:4px;padding:7px 9px;font-size:14px;font-family:inherit;}
+.inp{width:100%;border:1px solid var(--line);border-radius:4px;padding:11px 13px;font-size:15px;font-family:inherit;margin-bottom:10px;background:var(--paper);}
+#err{display:none;color:var(--bad);font-size:13px;margin-top:10px;}
+@media(max-width:960px){.cols{grid-template-columns:1fr;gap:8px;}.metrics{grid-template-columns:repeat(2,1fr);}.metric:nth-child(2){border-right:none;}.metric:nth-child(-n+2){border-bottom:1px solid var(--line);}.wrap,.top-in{padding-left:16px;padding-right:16px;}.hide-m{display:none;}}
 </style>
 </head>
 <body>
 <div id="login" style="display:none;padding:60px 18px;max-width:420px;margin:0 auto;">
   <h1>RoofScan owner</h1>
-  <div id="s1"><p class="sub" style="margin:6px 0 16px;">Owner email address. We'll send a 6-digit code.</p>
-    <input class="inp" id="email" type="email" placeholder="owner email"><button class="btn" style="width:100%;padding:13px;" onclick="sendCode()">Email me a code</button></div>
-  <div id="s2" style="display:none;"><p class="sub" style="margin:6px 0 16px;">Enter the code we just emailed you.</p>
-    <input class="inp" id="otp" inputmode="numeric" maxlength="6" placeholder="6-digit code"><button class="btn" style="width:100%;padding:13px;" onclick="verifyCode()">Log in</button></div>
+  <div id="s1"><p class="muted" style="margin:6px 0 16px;">Owner email address. We'll send a 6-digit code.</p>
+    <input class="inp" id="email" type="email" placeholder="owner email"><button class="btn" style="width:100%;padding:12px;" onclick="sendCode()">Email me a code</button></div>
+  <div id="s2" style="display:none;"><p class="muted" style="margin:6px 0 16px;">Enter the code we just emailed you.</p>
+    <input class="inp" id="otp" inputmode="numeric" maxlength="6" placeholder="6-digit code"><button class="btn" style="width:100%;padding:12px;" onclick="verifyCode()">Log in</button></div>
   <div id="err"></div>
 </div>
 
 <div id="app" style="display:none;">
-  <div class="bar"><div class="bar-in">
-    <div><div class="brand">RoofScan UK</div><h1>Owner dashboard</h1><div class="sub">Contractors, jobs and capacity at a glance</div></div>
-    <div style="display:flex;gap:10px;"><button class="btn ghost" onclick="load()">Refresh</button><button class="btn ghost" onclick="logout()">Log out</button></div>
+  <div class="top"><div class="top-in">
+    <div><div class="eyebrow">RoofScan UK</div><h1>Owner dashboard</h1></div>
+    <div class="top-actions"><button class="btn sec" onclick="load()">Refresh</button><button class="btn sec" onclick="logout()">Log out</button></div>
   </div></div>
   <div class="wrap">
-    <div class="stats" id="stats"></div>
+    <div class="metrics" id="stats"></div>
     <div class="cols">
       <div>
-        <div class="block"><div class="sl">Needs you</div><div id="needs"></div></div>
-        <div class="block"><div class="sl">Contractors <em id="ctrs-n">0</em></div><div id="ctrs"></div></div>
+        <section><div class="lbl">Needs your attention</div><div id="needs"></div></section>
+        <section><div class="lbl"><span>Contractors</span><span id="ctrs-n"></span></div><div class="box" id="ctrs"></div></section>
       </div>
       <div>
-        <div class="sl">Weekly booking capacity</div><div class="panel" id="cap"><span class="sub">Loading...</span></div>
-        <div class="block"><div class="sl">Claimed right now</div><div id="claimed"></div></div>
-        <div class="block"><div class="sl">Stand-downs (unsafe to fly, no penalty)</div><div id="stood"></div></div>
-        <div class="block"><div class="sl">Missed jobs</div><div id="missed"></div></div>
+        <section><div class="lbl">Weekly booking capacity</div><div class="box pad" id="cap"><span class="muted small">Loading...</span></div></section>
+        <section><div class="lbl">Claimed right now</div><div class="box" id="claimed"></div></section>
+        <section><div class="lbl">Stand-downs (unsafe to fly, no penalty)</div><div class="box" id="stood"></div></section>
+        <section><div class="lbl">Missed jobs</div><div class="box" id="missed"></div></section>
       </div>
     </div>
   </div>
@@ -98,40 +104,45 @@ function showLogin(msg){location.href='login.html?next=owner.html';return;$('app
 async function sendCode(){email=$('email').value.trim().toLowerCase();await api('/owner/request-code','POST',{email});$('s1').style.display='none';$('s2').style.display='block';$('err').style.display='none';}
 async function verifyCode(){const r=await api('/owner/verify','POST',{email,code:$('otp').value.trim()});if(!r.ok){showLogin(r.data.error||'That code is not right.');return;}localStorage.setItem(TK,r.data.token);load();}
 function logout(){localStorage.removeItem(TK);showLogin();}
-function pill(t,c){return `<span class="pill t-${c}">${esc(t)}</span>`;}
-function initials(n){return String(n||'?').trim().split(/\s+/).slice(0,2).map(w=>w[0]||'').join('').toUpperCase()||'?';}
+function st(text,cls){return `<span class="st t-${cls}"><span class="dot d-${cls}"></span>${esc(text)}</span>`;}
+function dateState(d){
+  if(!d) return st('Not on file','warn');
+  const today=new Date().toISOString().slice(0,10), in30=new Date(Date.now()+30*864e5).toISOString().slice(0,10);
+  if(d<today) return st('Expired','bad');
+  if(d<=in30) return st('Expires soon','warn');
+  return st('In date','ok');
+}
 async function load(){
   if(!localStorage.getItem(TK)){showLogin();return;}
   const r=await api('/owner/overview');if(!r.ok){if(r.status!==401)showLogin('Could not load. Try again.');return;}
   data=r.data;$('login').style.display='none';$('app').style.display='block';
   loadCap();
   const c=data.counts;
-  $('stats').innerHTML=[['Scans open',c.scansOpen],['Reports open',c.reportsOpen],['Scans claimed',c.scansClaimed],['Reports claimed',c.reportsClaimed]].map(x=>`<div class="stat"><b>${x[1]}</b><span>${x[0]}</span></div>`).join('');
-  $('needs').innerHTML=data.needsYou.length?data.needsYou.map(n=>`<div class="alert"><b>${esc(n.name)}</b><div>${n.needs.map(x=>pill(x,'amb')).join('')}</div></div>`).join(''):'<div class="card empty">Nothing needs you right now.</div>';
-  $('ctrs-n').textContent=data.contractors.length;
-  $('ctrs').innerHTML=data.contractors.map(ct=>{
+  $('stats').innerHTML=[['Scans open',c.scansOpen],['Reports open',c.reportsOpen],['Scans claimed',c.scansClaimed],['Reports claimed',c.reportsClaimed]].map(x=>`<div class="metric"><div class="n">${x[1]}</div><div class="t">${x[0]}</div></div>`).join('');
+  $('needs').innerHTML=data.needsYou.length?data.needsYou.map(n=>`<div class="attn"><b>${esc(n.name)}</b><ul>${n.needs.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`).join(''):'<div class="box empty">Nothing needs your attention.</div>';
+  $('ctrs-n').textContent=data.contractors.length+(data.contractors.length===1?' person':' people');
+  const rows=data.contractors.map(ct=>{
     const flyer=ct.role!=='Report Writer';
-    return `<div class="card"><div class="row"><div class="ctr"><div class="av">${esc(initials(ct.name))}</div><div>
-      <div><span class="nm">${esc(ct.name)}</span><span class="rl">${esc(ct.role)}</span></div>
-      <div>${ct.active?pill('Active','grn'):pill('Switched off','red')}${flyer?(ct.approved?pill('Drone approved','grn'):pill('Drone not approved','amb')):''}</div>
-      ${flyer?`<div class="det">${esc(ct.droneModel)||'No drone on file'} &middot; rated ${ct.ratedWind||'?'} m/s</div>`:''}
-      </div></div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">${flyer?`<button class="btn ${ct.approved?'ghost':'green'}" onclick="upd('${ct.id}',{approved:${!ct.approved}})">${ct.approved?'Revoke drone approval':'Approve drone'}</button>`:''}<button class="btn ${ct.active?'red':'green'}" onclick="upd('${ct.id}',{active:${!ct.active}})">${ct.active?'Switch off':'Switch on'}</button></div></div>
-      ${flyer?`<div class="dates"><label>Insurance expiry<input type="date" value="${esc(ct.insuranceExpiry)}" onchange="upd('${ct.id}',{insuranceExpiry:this.value})"></label><label>Operator ID expiry<input type="date" value="${esc(ct.operatorIdExpiry)}" onchange="upd('${ct.id}',{operatorIdExpiry:this.value})"></label></div>`:''}</div>`;
-  }).join('')||'<div class="card empty">No contractors yet.</div>';
-  const jl=(arr,f)=>arr.length?arr.map(f).join(''):'<div class="card empty">None.</div>';
-  $('claimed').innerHTML=jl(data.claimed,j=>`<div class="card"><b>${esc(j.client)}</b> <span class="sub">${esc(j.kind)} &middot; ${esc(j.by)} &middot; ${esc(j.date)}</span><div class="sub">${esc(j.address)}</div></div>`);
-  $('stood').innerHTML=jl(data.standDowns,j=>`<div class="card"><b>${esc(j.client)}</b> <span class="sub">${esc(j.date)}</span><div class="sub" style="white-space:pre-line;">${esc(j.reason)}</div></div>`);
-  $('missed').innerHTML=jl(data.misses,j=>`<div class="card"><b>${esc(j.client)}</b> <span class="sub">${esc(j.date)}</span><div class="sub">${j.scanBy?'Scan missed by '+esc(j.scanBy)+' ':''}${j.reportBy?'Report missed by '+esc(j.reportBy):''}</div></div>`);
+    return `<tr><td><div class="name">${esc(ct.name)}</div><div class="muted small">${esc(ct.role)}${flyer&&ct.droneModel?' &middot; '+esc(ct.droneModel)+', '+(ct.ratedWind||'?')+' m/s':''}</div></td>
+      <td>${ct.active?st('Active','ok'):st('Switched off','bad')}${flyer?(ct.approved?st('Drone approved','ok'):st('Drone not approved','warn')):''}</td>
+      <td class="hide-m">${flyer?`${dateState(ct.insuranceExpiry)}<input class="dt" type="date" value="${esc(ct.insuranceExpiry)}" onchange="upd('${ct.id}',{insuranceExpiry:this.value})" title="Insurance expiry">`:'<span class="muted small">Not needed</span>'}</td>
+      <td class="hide-m">${flyer?`${dateState(ct.operatorIdExpiry)}<input class="dt" type="date" value="${esc(ct.operatorIdExpiry)}" onchange="upd('${ct.id}',{operatorIdExpiry:this.value})" title="Operator ID expiry">`:'<span class="muted small">Not needed</span>'}</td>
+      <td class="acts">${flyer?`<button class="btn sec" onclick="upd('${ct.id}',{approved:${!ct.approved}})">${ct.approved?'Revoke drone':'Approve drone'}</button> `:''}<button class="btn text ${ct.active?'danger':''}" onclick="upd('${ct.id}',{active:${!ct.active}})">${ct.active?'Switch off':'Switch on'}</button></td></tr>`;
+  }).join('');
+  $('ctrs').innerHTML=rows?`<table><thead><tr><th>Contractor</th><th>Status</th><th class="hide-m">Insurance</th><th class="hide-m">Operator ID</th><th></th></tr></thead><tbody>${rows}</tbody></table>`:'<div class="empty">No contractors yet.</div>';
+  const jl=(arr,f)=>arr.length?arr.map(f).join(''):'<div class="empty">None.</div>';
+  $('claimed').innerHTML=jl(data.claimed,j=>`<div class="item"><div class="name">${esc(j.client)}</div><div class="muted small">${esc(j.kind)} &middot; ${esc(j.by)} &middot; ${esc(j.date)}</div><div class="muted small">${esc(j.address)}</div></div>`);
+  $('stood').innerHTML=jl(data.standDowns,j=>`<div class="item"><div class="name">${esc(j.client)}</div><div class="muted small">${esc(j.date)}</div><div class="muted small" style="white-space:pre-line;">${esc(j.reason)}</div></div>`);
+  $('missed').innerHTML=jl(data.misses,j=>`<div class="item"><div class="name">${esc(j.client)}</div><div class="muted small">${esc(j.date)}</div><div class="muted small">${j.scanBy?'Scan missed by '+esc(j.scanBy)+' ':''}${j.reportBy?'Report missed by '+esc(j.reportBy):''}</div></div>`);
 }
 async function loadCap(){
   const r=await api('/owner/capacity');
-  if(!r.ok){$('cap').innerHTML='<span class="sub">Could not load capacity.</span>';return;}
+  if(!r.ok){$('cap').innerHTML='<span class="muted small">Could not load capacity.</span>';return;}
   const c=r.data;
-  $('cap').innerHTML=`<div class="big">${c.effective}</div><div style="font-weight:700;margin-top:4px;">bookings a week</div>
-    <div class="sub" style="margin-top:6px;">${c.override!==null?'Fixed by you':'Automatic'}: ${c.flyers} approved flyer${c.flyers===1?'':'s'} &times; ${c.perFlyer} a week = ${c.auto}.</div>
-    <div class="sub" style="margin-top:4px;">When a week is full its days disappear from the booking calendar. Approve a flyer and the number rises by itself.</div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:14px;"><input class="capin" id="capIn" type="number" min="0" max="200" value="${c.override!==null?c.override:''}" placeholder="${c.auto}"><button class="btn" onclick="saveCap()">Set fixed</button><button class="btn ghost" onclick="clearCap()">Use automatic</button></div>`;
+  $('cap').innerHTML=`<div class="capnum">${c.effective}</div><div style="font-weight:600;margin-top:4px;color:var(--navy);">bookings a week</div>
+    <div class="muted small" style="margin-top:8px;">${c.override!==null?'Fixed by you':'Automatic'}: ${c.flyers} approved flyer${c.flyers===1?'':'s'} &times; ${c.perFlyer} a week = ${c.auto}.</div>
+    <div class="muted small" style="margin-top:4px;">When a week is full, its days disappear from the booking calendar. Approving a flyer raises the number by itself.</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:16px;padding-top:14px;border-top:1px solid var(--line);"><input class="capin" id="capIn" type="number" min="0" max="200" value="${c.override!==null?c.override:''}" placeholder="${c.auto}"><button class="btn" onclick="saveCap()">Set fixed</button><button class="btn sec" onclick="clearCap()">Use automatic</button></div>`;
 }
 async function saveCap(){const v=$('capIn').value.trim();if(v===''||!/^\d+$/.test(v)){alert('Enter a whole number, for example 10.');return;}const r=await api('/owner/capacity','POST',{override:Number(v)});if(!r.ok){alert(r.data.error||'Could not save.');return;}loadCap();}
 async function clearCap(){const r=await api('/owner/capacity','POST',{override:null});if(!r.ok){alert(r.data.error||'Could not save.');return;}loadCap();}
