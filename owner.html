@@ -39,6 +39,7 @@ h1{font-size:20px;font-weight:800;padding:16px 0 4px;}
 <div id="app" style="display:none;">
   <div class="row"><h1>RoofScan owner</h1><div style="padding-top:14px;"><button class="btn ghost" onclick="load()">Refresh</button> <button class="btn ghost" onclick="logout()">Log out</button></div></div>
   <div class="stats" id="stats"></div>
+  <div class="sl">Weekly booking capacity</div><div class="card" id="cap"><span class="sub">Loading...</span></div>
   <div class="sl">Needs you</div><div id="needs"></div>
   <div class="sl">Contractors</div><div id="ctrs"></div>
   <div class="sl">Claimed right now</div><div id="claimed"></div>
@@ -60,6 +61,7 @@ async function load(){
   if(!localStorage.getItem(TK)){showLogin();return;}
   const r=await api('/owner/overview');if(!r.ok){if(r.status!==401)showLogin('Could not load. Try again.');return;}
   data=r.data;$('login').style.display='none';$('app').style.display='block';
+  loadCap();
   const c=data.counts;
   $('stats').innerHTML=[['Scans open',c.scansOpen],['Reports open',c.reportsOpen],['Scans claimed',c.scansClaimed],['Reports claimed',c.reportsClaimed]].map(x=>`<div class="stat"><b>${x[1]}</b><span class="sub">${x[0]}</span></div>`).join('');
   $('needs').innerHTML=data.needsYou.length?data.needsYou.map(n=>`<div class="card"><b>${esc(n.name)}</b><div>${n.needs.map(x=>tag(x,'amb')).join('')}</div></div>`).join(''):'<div class="card sub">Nothing needs you right now.</div>';
@@ -73,6 +75,17 @@ async function load(){
   $('stood').innerHTML=jl(data.standDowns,j=>`<div class="card"><b>${esc(j.client)}</b> <span class="sub">${esc(j.date)}</span><div class="sub" style="white-space:pre-line;">${esc(j.reason)}</div></div>`);
   $('missed').innerHTML=jl(data.misses,j=>`<div class="card"><b>${esc(j.client)}</b> <span class="sub">${esc(j.date)}</span><div class="sub">${j.scanBy?'Scan missed by '+esc(j.scanBy)+' ':''}${j.reportBy?'Report missed by '+esc(j.reportBy):''}</div></div>`);
 }
+async function loadCap(){
+  const r=await api('/owner/capacity');
+  if(!r.ok){$('cap').innerHTML='<span class="sub">Could not load capacity.</span>';return;}
+  const c=r.data;
+  $('cap').innerHTML=`<div class="row"><div><b>${c.effective} bookings a week</b>
+    <div class="sub">${c.override!==null?'Fixed by you':'Automatic'}: ${c.flyers} approved flyer${c.flyers===1?'':'s'} x ${c.perFlyer} a week = ${c.auto}</div>
+    <div class="sub">When a week is full, its days disappear from the booking calendar. Add or approve a flyer and it goes up by itself.</div></div>
+    <div><input id="capIn" type="number" min="0" max="200" value="${c.override!==null?c.override:''}" placeholder="${c.auto}" style="width:70px;padding:7px;border:1px solid var(--br);border-radius:9px;font-family:inherit;"> <button class="btn" onclick="saveCap()">Set fixed</button> <button class="btn ghost" onclick="clearCap()">Use automatic</button></div></div>`;
+}
+async function saveCap(){const v=$('capIn').value.trim();if(v===''||!/^\d+$/.test(v)){alert('Enter a whole number, for example 10.');return;}const r=await api('/owner/capacity','POST',{override:Number(v)});if(!r.ok){alert(r.data.error||'Could not save.');return;}loadCap();}
+async function clearCap(){const r=await api('/owner/capacity','POST',{override:null});if(!r.ok){alert(r.data.error||'Could not save.');return;}loadCap();}
 async function upd(id,change){const r=await api('/owner/contractor','POST',Object.assign({id},change));if(!r.ok){alert(r.data.error||'Could not save.');return;}load();}
 $('email').addEventListener('keydown',e=>{if(e.key==='Enter')sendCode();});
 $('otp').addEventListener('keydown',e=>{if(e.key==='Enter')verifyCode();});
