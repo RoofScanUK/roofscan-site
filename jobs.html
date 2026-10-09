@@ -282,9 +282,14 @@ function render(){
   $('reports').innerHTML = pool(board.reports, 'report');
   $('scans-n').textContent = vis(board.scans).length; $('reports-n').textContent = vis(board.reports).length; $('mine-n').textContent = board.mine.length;
   const nextJob = mineSorted.find(j => j.date && new Date(j.date) >= new Date(new Date().toDateString()));
-  const tiles = [[board.mine.length,'My jobs'],[canScan?vis(board.scans).length:'-','Scans available'],[canRep?vis(board.reports).length:'-','Reports available'],[nextJob?fmtDate(nextJob.date):'None','Next job']];
+  // Writers only see report tiles; the calendar and "next job" are about days on site, so they are flyers-only.
+  const tiles = [[board.mine.length,'My jobs']];
+  if (canScan) tiles.push([vis(board.scans).length,'Scans available']);
+  if (canRep) tiles.push([vis(board.reports).length,'Reports available']);
+  if (canScan) tiles.push([nextJob?fmtDate(nextJob.date):'None','Next job']);
   $('stats').innerHTML = tiles.map(t => `<div class="stat"><b style="${String(t[0]).length>5?'font-size:20px;padding:6px 0;':''}">${esc(t[0])}</b><span>${t[1]}</span></div>`).join('');
   $('calendar').innerHTML = calendarHtml(mineSorted);
+  $('calendar').parentElement.style.display = canScan ? '' : 'none';
   if (flashId) { const el = document.getElementById('job-'+flashId); if (el) { el.classList.add('flash'); el.scrollIntoView({behavior:'smooth',block:'center'}); } flashId = null; }
 }
 let calMonth = new Date(); calMonth.setDate(1); let flashId = null;
