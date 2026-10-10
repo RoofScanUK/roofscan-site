@@ -196,7 +196,7 @@ const queue = () => get(LS.queue, []);
 function enqueue(item){ const q = queue(); q.push(Object.assign({qid: Date.now()+'-'+Math.random().toString(36).slice(2,6)}, item)); put(LS.queue, q); }
 async function sendAction(a){
   const path = { claim:'/contractor/claim', complete:'/contractor/complete', standdown:'/contractor/standdown' }[a.type];
-  return api(path, 'POST', { jobId:a.jobId, kind:a.kind, reason:a.reason });
+  return api(path, 'POST', { jobId:a.jobId, kind:a.kind, reason:a.reason, link:a.link });
 }
 async function act(a){
   // apply to the cached board right away so the screen responds even with no signal
@@ -355,22 +355,41 @@ function scanPanel(j){
   const w = st.weatherMsg ? `<div class="banner ${st.weather==='ok'?'b-green':(st.weather==='red'?'b-red':'b-amber')}" style="margin:8px 0;">${esc(st.weatherMsg)}</div>` : '';
   const a = st.airspaceMsg ? `<div class="banner ${st.airspace==='ok'?'b-green':(st.airspace==='red'?'b-red':'b-amber')}" style="margin:8px 0;">${esc(st.airspaceMsg)}</div>` : '';
   const fresh = st.checkedAt && (Date.now() - st.checkedAt) < 6*3600*1000;
-  const ready = fresh && st.weather==='ok' && st.airspace==='ok' && st.batteries && st.docs && st.site && board.me.scansAllowed;
+  const ready = fresh && st.weather==='ok' && st.airspace==='ok' && st.batteries && st.docs && st.site && board.me.scansAllowed && okLink(st.link);
   const blocked = st.weather==='red' || st.airspace==='red';
-  return `<div style="margin-top:12px;border-top:1px solid var(--br);padding-top:10px;"><div class="jt" style="font-size:13px;">Scan checklist</div>
+  return `<div style="margin-top:12px;border-top:1px solid var(--br);padding-top:10px;"><div class="jt" style="font-size:13px;">Scan checklist <a href="photo-guide.html" target="_blank" rel="noopener" style="font-weight:400;font-size:12px;margin-left:8px;color:var(--muted);">What to photograph</a></div>
   <div class="acts" style="margin-top:6px;"><button class="btn ghost" onclick="runChecks('${j.id}')">${st.weather?'Re-check':'Check'} weather and airspace</button></div>
   ${w}${a}${locked('weather')}${locked('airspace')}${manual}
+  <div style="margin:10px 0 4px;font-size:12px;color:var(--muted);">After the flight, upload all photos to a shared folder (Google Drive, Dropbox or OneDrive), set it to "anyone with the link can view", and paste the link here.</div>
+  <input class="inp" id="plink-${j.id}" type="url" inputmode="url" autocomplete="off" placeholder="https://drive.google.com/..." value="${esc(st.link||'')}" style="letter-spacing:0;width:100%;" oninput="setLink('${j.id}',this.value)">
   <div class="acts">
-    <button class="btn" ${ready?'':'disabled'} onclick="completeScan('${j.id}')">Mark scan done</button>
+    <button class="btn" id="scanbtn-${j.id}" ${ready?'':'disabled'} onclick="completeScan('${j.id}')">Mark scan done</button>
     ${blocked?`<button class="btn warn" onclick="standDown('${j.id}')">Unsafe to fly. Stand down</button>`:`<button class="btn ghost" onclick="standDown('${j.id}')">Stand down (unsafe)</button>`}
   </div></div>`;
 }
 function setManual(id, k, v){ const c = get(LS.checks, {}); c[id] = c[id] || {}; c[id][k] = v; put(LS.checks, c); render(); }
-function reportPanel(j){
-  return `<div style="margin-top:12px;border-top:1px solid var(--br);padding-top:10px;"><label class="chk"><input type="checkbox" id="rep-${j.id}" onchange="document.getElementById('repbtn-${j.id}').disabled=!this.checked"> <span>The report is uploaded and ready for RoofScan to approve</span></label>
-  <div class="acts"><button class="btn" id="repbtn-${j.id}" disabled onclick="act({type:'complete',jobId:'${j.id}',kind:'report'})">Mark report done</button></div></div>`;
+// A link must be a full https:// address (no spaces). The server checks it again.
+function okLink(v){ v = String(v||'').trim(); if (v.length < 12 || /\s/.test(v)) return false; try { const u = new URL(v); return u.protocol === 'https:' && u.hostname.indexOf('.') > 0; } catch(e){ return false; } }
+function setLink(id, v, key){
+  key = key || 'link'; // scans use "link", reports use "rlink" so a flyer who also writes reports never mixes them up
+  const c = get(LS.checks, {}); c[id] = c[id] || {}; c[id][key] = v.trim(); put(LS.checks, c);
+  // enable/disable the buttons in place so the text box keeps focus while typing
+  const sb = document.getElementById('scanbtn-'+id);
+  if (sb) { const st = c[id]; const fresh = st.checkedAt && (Date.now() - st.checkedAt) < 6*3600*1000;
+    sb.disabled = !(fresh && st.weather==='ok' && st.airspace==='ok' && st.batteries && st.docs && st.site && board.me.scansAllowed && okLink(st.link)); }
+  const rb = document.getElementById('repbtn-'+id); if (rb && key === 'rlink') rb.disabled = !okLink(v);
 }
-function completeScan(id){ act({type:'complete', jobId:id, kind:'scan'}); }
+function reportPanel(j){
+  const st = get(LS.checks, {})[j.id] || {};
+  const photos = j.photosLink ? `<a class="btn ghost" href="${esc(j.photosLink)}" target="_blank" rel="noopener" style="display:inline-block;text-decoration:none;">Open scan photos</a>` : `<div class="banner b-amber">No photo link was saved for this scan. Contact RoofScan before you start.</div>`;
+  return `<div style="margin-top:12px;border-top:1px solid var(--br);padding-top:10px;"><div class="jt" style="font-size:13px;">Report</div>
+  <div class="acts" style="margin-top:6px;">${photos}</div>
+  <div style="margin:10px 0 4px;font-size:12px;color:var(--muted);">Build the report in the report generator, save it to a shared folder, and paste the link to the finished report here. RoofScan approves it before the client sees it.</div>
+  <input class="inp" id="rlink-${j.id}" type="url" inputmode="url" autocomplete="off" placeholder="https://drive.google.com/..." value="${esc(st.rlink||'')}" style="letter-spacing:0;width:100%;" oninput="setLink('${j.id}',this.value,'rlink')">
+  <div class="acts"><button class="btn" id="repbtn-${j.id}" ${okLink(st.rlink)?'':'disabled'} onclick="completeReport('${j.id}')">Mark report done</button></div></div>`;
+}
+function completeScan(id){ const st = get(LS.checks, {})[id] || {}; act({type:'complete', jobId:id, kind:'scan', link:st.link}); }
+function completeReport(id){ const st = get(LS.checks, {})[id] || {}; act({type:'complete', jobId:id, kind:'report', link:st.rlink}); }
 function standDown(id){
   const st = get(LS.checks, {})[id] || {};
   const reason = st.weatherMsg && st.weather === 'red' ? st.weatherMsg : (st.airspaceMsg && st.airspace === 'red' ? st.airspaceMsg : (prompt('What makes it unsafe? (this goes to RoofScan, no penalty)') || 'Unsafe to fly'));
