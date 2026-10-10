@@ -87,6 +87,7 @@ tr:last-child td{border-bottom:none;}
       </div>
       <div>
         <section><div class="lbl">Weekly booking capacity</div><div class="box pad" id="cap"><span class="muted small">Loading...</span></div></section>
+        <section><div class="lbl"><span>Reports waiting for approval</span><span id="rev-n"></span></div><div class="box" id="reviews"><div class="empty">Loading...</div></div></section>
         <section><div class="lbl">Claimed right now</div><div class="box" id="claimed"></div></section>
         <section><div class="lbl">Stand-downs (unsafe to fly, no penalty)</div><div class="box" id="stood"></div></section>
         <section><div class="lbl">Missed jobs</div><div class="box" id="missed"></div></section>
@@ -116,7 +117,7 @@ async function load(){
   if(!localStorage.getItem(TK)){showLogin();return;}
   const r=await api('/owner/overview');if(!r.ok){if(r.status!==401)showLogin('Could not load. Try again.');return;}
   data=r.data;$('login').style.display='none';$('app').style.display='block';
-  loadCap();
+  loadCap();loadReviews();
   const c=data.counts;
   $('stats').innerHTML=[['Scans open',c.scansOpen],['Reports open',c.reportsOpen],['Scans claimed',c.scansClaimed],['Reports claimed',c.reportsClaimed]].map(x=>`<div class="metric"><div class="n">${x[1]}</div><div class="t">${x[0]}</div></div>`).join('');
   $('needs').innerHTML=data.needsYou.length?data.needsYou.map(n=>`<div class="attn"><b>${esc(n.name)}</b><ul>${n.needs.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`).join(''):'<div class="box empty">Nothing needs your attention.</div>';
@@ -134,6 +135,32 @@ async function load(){
   $('claimed').innerHTML=jl(data.claimed,j=>`<div class="item"><div class="name">${esc(j.client)}</div><div class="muted small">${esc(j.kind)} &middot; ${esc(j.by)} &middot; ${esc(j.date)}</div><div class="muted small">${esc(j.address)}</div></div>`);
   $('stood').innerHTML=jl(data.standDowns,j=>`<div class="item"><div class="name">${esc(j.client)}</div><div class="muted small">${esc(j.date)}</div><div class="muted small" style="white-space:pre-line;">${esc(j.reason)}</div></div>`);
   $('missed').innerHTML=jl(data.misses,j=>`<div class="item"><div class="name">${esc(j.client)}</div><div class="muted small">${esc(j.date)}</div><div class="muted small">${j.scanBy?'Scan missed by '+esc(j.scanBy)+' ':''}${j.reportBy?'Report missed by '+esc(j.reportBy):''}</div></div>`);
+}
+let reviewList=[];
+const safeUrl=u=>/^https:\/\//.test(u||'')?esc(u):'';
+async function loadReviews(){
+  const r=await api('/owner/reports');
+  if(!r.ok){$('reviews').innerHTML='<div class="empty">Could not load reports.</div>';return;}
+  reviewList=r.data.reports||[];
+  $('rev-n').textContent=reviewList.length?reviewList.length+' to check':'';
+  $('reviews').innerHTML=reviewList.length?reviewList.map((j,i)=>`<div class="item"><div class="name">${esc(j.client||j.address)}</div>
+    <div class="muted small">${esc(j.address)} &middot; ${esc(j.date)}</div>
+    <div class="muted small">Written by ${esc(j.writer||'unknown')}</div>
+    ${j.earlierFeedback?`<div class="muted small" style="white-space:pre-line;margin-top:4px;">Earlier note sent: ${esc(j.earlierFeedback)}</div>`:''}
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
+      ${safeUrl(j.reportLink)?`<a class="btn sec" href="${safeUrl(j.reportLink)}" target="_blank" rel="noopener" style="text-decoration:none;">Open report</a>`:''}
+      ${safeUrl(j.photosLink)?`<a class="btn sec" href="${safeUrl(j.photosLink)}" target="_blank" rel="noopener" style="text-decoration:none;">Open photos</a>`:''}
+      <button class="btn" onclick="reviewReport(${i},'approve')">Approve</button>
+      <button class="btn sec" onclick="reviewReport(${i},'changes')">Request changes</button></div></div>`).join(''):'<div class="empty">Nothing waiting. Submitted reports appear here.</div>';
+}
+async function reviewReport(i,action){
+  const j=reviewList[i];if(!j)return;
+  let note='';
+  if(action==='approve'){if(!confirm('Approve this report? It stays with you to send to the client.'))return;}
+  else{note=prompt('What needs changing? This goes to the report writer.')||'';if(note.trim().length<3)return;}
+  const r=await api('/owner/report-review','POST',{id:j.id,action,note});
+  if(!r.ok){alert(r.data.error||'Could not save.');}
+  loadReviews();
 }
 async function loadCap(){
   const r=await api('/owner/capacity');

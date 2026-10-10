@@ -259,6 +259,9 @@ function windLine(){
 }
 function render(){
   if (!board || sliding) return;
+  // The board refreshes itself every 2 minutes. Redrawing while someone is pasting a link would knock the cursor out of the box, so wait.
+  const ae = document.activeElement;
+  if (ae && /^(plink|rlink)-/.test(ae.id || '')) return;
   $('login').style.display='none'; $('app').style.display='block';
   const m = board.me;
   $('who').textContent = m.name; $('who-sub').textContent = m.role;
@@ -360,7 +363,7 @@ function scanPanel(j){
   return `<div style="margin-top:12px;border-top:1px solid var(--br);padding-top:10px;"><div class="jt" style="font-size:13px;">Scan checklist <a href="photo-guide.html" target="_blank" rel="noopener" style="font-weight:400;font-size:12px;margin-left:8px;color:var(--muted);">What to photograph</a></div>
   <div class="acts" style="margin-top:6px;"><button class="btn ghost" onclick="runChecks('${j.id}')">${st.weather?'Re-check':'Check'} weather and airspace</button></div>
   ${w}${a}${locked('weather')}${locked('airspace')}${manual}
-  <div style="margin:10px 0 4px;font-size:12px;color:var(--muted);">After the flight, upload all photos to a shared folder (Google Drive, Dropbox or OneDrive), set it to "anyone with the link can view", and paste the link here.</div>
+  <div style="margin:10px 0 4px;font-size:12px;color:var(--muted);">After the flight, upload all photos to a shared folder (Google Drive, Dropbox or OneDrive), set it to "anyone with the link can view", and paste the link here. Check it opens in a private window first, because the report writer cannot get to it if it is locked.</div>
   <input class="inp" id="plink-${j.id}" type="url" inputmode="url" autocomplete="off" placeholder="https://drive.google.com/..." value="${esc(st.link||'')}" style="letter-spacing:0;width:100%;" oninput="setLink('${j.id}',this.value)">
   <div class="acts">
     <button class="btn" id="scanbtn-${j.id}" ${ready?'':'disabled'} onclick="completeScan('${j.id}')">Mark scan done</button>
@@ -381,8 +384,9 @@ function setLink(id, v, key){
 }
 function reportPanel(j){
   const st = get(LS.checks, {})[j.id] || {};
-  const photos = j.photosLink ? `<a class="btn ghost" href="${esc(j.photosLink)}" target="_blank" rel="noopener" style="display:inline-block;text-decoration:none;">Open scan photos</a>` : `<div class="banner b-amber">No photo link was saved for this scan. Contact RoofScan before you start.</div>`;
-  return `<div style="margin-top:12px;border-top:1px solid var(--br);padding-top:10px;"><div class="jt" style="font-size:13px;">Report</div>
+  const photos = okLink(j.photosLink) ? `<a class="btn ghost" href="${esc(j.photosLink)}" target="_blank" rel="noopener" style="display:inline-block;text-decoration:none;">Open scan photos</a>` : `<div class="banner b-amber">No photo link was saved for this scan. Contact RoofScan before you start.</div>`;
+  const fb = j.reportFeedback ? `<div class="banner b-amber" style="margin:8px 0;white-space:pre-line;"><strong>RoofScan asked for changes:</strong> ${esc(j.reportFeedback)}</div>` : '';
+  return `<div style="margin-top:12px;border-top:1px solid var(--br);padding-top:10px;"><div class="jt" style="font-size:13px;">Report</div>${fb}
   <div class="acts" style="margin-top:6px;">${photos}</div>
   <div style="margin:10px 0 4px;font-size:12px;color:var(--muted);">Build the report in the report generator, save it to a shared folder, and paste the link to the finished report here. RoofScan approves it before the client sees it.</div>
   <input class="inp" id="rlink-${j.id}" type="url" inputmode="url" autocomplete="off" placeholder="https://drive.google.com/..." value="${esc(st.rlink||'')}" style="letter-spacing:0;width:100%;" oninput="setLink('${j.id}',this.value,'rlink')">
