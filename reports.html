@@ -432,7 +432,12 @@ var CT_JOB = (new URLSearchParams(location.search)).get('job') || '';
 var CT_TOKEN = ''; try{ CT_TOKEN = localStorage.getItem('rs_ct_token') || ''; }catch(e){}
 // The job card's button adds as=writer, which forces writer mode even on a device that also holds an owner login
 // (for example when the owner is testing both roles in one browser).
+// Remembered for this tab and job, so a refresh or a copied link without &as=writer keeps writer mode.
 var CT_FORCED = (new URLSearchParams(location.search)).get('as') === 'writer';
+try{
+  if(CT_FORCED && CT_JOB) sessionStorage.setItem('rs_as_writer', CT_JOB);
+  else if(CT_JOB && sessionStorage.getItem('rs_as_writer') === CT_JOB) CT_FORCED = true;
+}catch(e){}
 var CT_MODE = !!(CT_JOB && CT_TOKEN && (CT_FORCED || !(typeof AT !== 'undefined' && AT.hasToken())));
 function getStaffKey(){ try{ if(CT_MODE) return CT_TOKEN; return localStorage.getItem('rs_owner_token') || localStorage.getItem('rs_staff_key') || ''; }catch(e){ return ''; } }
 async function callClaude(model, maxTokens, messages){
@@ -1035,7 +1040,7 @@ async function generateReport(){
   if(unresolvedAiFlags>0){
     gateLines.push('','⚠️ '+unresolvedAiFlags+' observation(s) still marked "AI-placed — check before sending". These will go into the report as-is if you continue.');
   }
-  gateLines.push('','Click OK to build and download the Word document.');
+  gateLines.push('', CT_MODE ? 'Click OK to build the report and send it to RoofScan. Nothing is downloaded to your computer.' : 'Click OK to build and download the Word document.');
   if(!window.confirm(gateLines.join('\n'))) return;
 
   btn.disabled=true;msg.className="status-msg";msg.textContent="Building your Word document...";
@@ -1048,14 +1053,14 @@ async function generateReport(){
     // council flagged as a silent-failure risk not worth the convenience. Address + job ref in the
     // filename itself is enough to find things without depending on browser-specific behaviour.
     var filename="RoofScan_"+d.address.replace(/[^a-zA-Z0-9]/g,"_").substring(0,30)+"_"+d.reportRef+".docx";
-    saveAs(blob,filename);
     if(CT_MODE){
-      // Report writers don't write to Airtable: the finished report goes to RoofScan for checking.
+      // Report writers don't download anything or write to Airtable: the finished report goes straight to RoofScan for checking.
       msg.className="status-msg";msg.textContent="Report built. Sending it to RoofScan...";
-      var sentOk=await ctSubmit(blob,d);
+      var sentOk=await ctSubmit(blob,d,filename);
       if(sentOk) clearSavedReport();
       return;
     }
+    saveAs(blob,filename);
     msg.className="status-msg success";msg.textContent="Report downloaded successfully.";
     // A finished, downloaded report shouldn't keep prompting "resume this draft?" on next visit.
     clearSavedReport();
@@ -2476,6 +2481,7 @@ function ctBanner(html, kind){
 function ctEsc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
 async function ctInit(){
   if(!CT_MODE) return;
+  var gb = document.getElementById('genBtn'); if(gb) gb.textContent = 'Finish and send report to RoofScan';
   ctBanner('Loading your job...');
   var jr, j;
   try{ jr = await ctApi('/contractor/job?jobId=' + encodeURIComponent(CT_JOB)); j = await jr.json(); }
@@ -2544,7 +2550,7 @@ async function ctLoadPhotos(client, fb){
   }
   ctBanner('<strong>' + ctEsc(client || 'Your job') + '</strong>: details filled in and ' + loaded + ' photos loaded into Bulk photo import' + (missed ? ' (' + missed + ' could not be downloaded, reload the page to try again)' : '') + '. Check the placements, add your findings, then press the button at the bottom. The finished report goes to RoofScan automatically.' + fb, missed ? 'error' : 'ok');
 }
-async function ctSubmit(blob, d){
+async function ctSubmit(blob, d, filename){
   var msg = document.getElementById('statusMsg');
   try{
     var r = await ctApi('/contractor/report-submit?jobId=' + encodeURIComponent(CT_JOB) + '&ref=' + encodeURIComponent(d.reportRef || '') + '&score=' + encodeURIComponent(_currentRoofScore || 0),
@@ -2556,7 +2562,7 @@ async function ctSubmit(blob, d){
     return true;
   }catch(e){
     msg.className = 'status-msg error';
-    msg.textContent = 'The report was built and downloaded, but it could not be sent to RoofScan (' + e.message + '). Press the button again to retry, or use "Submit a link instead" on your job card.';
+    msg.textContent = 'The report was built but could not be sent to RoofScan (' + e.message + '). Press the button again to retry. Your work is saved on this page.';
     return false;
   }
 }
