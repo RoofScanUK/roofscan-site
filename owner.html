@@ -56,6 +56,17 @@ tr:last-child td{border-bottom:none;}
 .item{padding:12px 16px;border-bottom:1px solid var(--line);}
 .item:last-child{border-bottom:none;}
 .empty{padding:14px 16px;color:var(--muted);font-size:13px;}
+.ch{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:8px;}
+.ch .name{font-size:15px;}
+.chip{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.04em;padding:2px 8px;border-radius:10px;background:#EEF1F6;color:var(--navy);white-space:nowrap;}
+.chip.warn{background:#F7EFDD;color:#7A5410;}.chip.bad{background:#F6E6E4;color:var(--bad);}.chip.ok{background:#EAF2EC;color:var(--ok);}
+.kv{display:grid;grid-template-columns:92px 1fr;gap:3px 12px;font-size:12.5px;margin:0 0 10px;}
+.kv dt{color:var(--muted);margin:0;}.kv dd{margin:0;color:var(--ink);word-break:break-word;}
+.note{background:#F7EFDD;border-left:3px solid var(--warn);padding:7px 10px;font-size:12.5px;white-space:pre-line;margin:0 0 10px;border-radius:0 4px 4px 0;}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap;padding-top:10px;border-top:1px solid var(--line);}
+.btnrow .grow{flex:1;}
+.logl{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;font-size:12.5px;margin-top:4px;}
+.logl .when{color:var(--muted);white-space:nowrap;}
 .capnum{font-family:'Fraunces',Georgia,serif;font-size:40px;font-weight:500;color:var(--navy);line-height:1;}
 .capin{width:80px;border:1px solid var(--line);border-radius:4px;padding:7px 9px;font-size:14px;font-family:inherit;}
 .inp{width:100%;border:1px solid var(--line);border-radius:4px;padding:11px 13px;font-size:15px;font-family:inherit;margin-bottom:10px;background:var(--paper);}
@@ -132,9 +143,21 @@ async function load(){
   }).join('');
   $('ctrs').innerHTML=rows?`<table><thead><tr><th>Contractor</th><th>Status</th><th class="hide-m">Insurance</th><th class="hide-m">Operator ID</th><th></th></tr></thead><tbody>${rows}</tbody></table>`:'<div class="empty">No contractors yet.</div>';
   const jl=(arr,f)=>arr.length?arr.map(f).join(''):'<div class="empty">None.</div>';
-  $('claimed').innerHTML=jl(data.claimed,j=>`<div class="item"><div class="name">${esc(j.client)}</div><div class="muted small">${esc(j.kind)} &middot; ${esc(j.by)} &middot; ${esc(j.date)}</div><div class="muted small">${esc(j.address)}</div></div>`);
-  $('stood').innerHTML=jl(data.standDowns,j=>`<div class="item"><div class="name">${esc(j.client)}</div><div class="muted small">${esc(j.date)}</div><div class="muted small" style="white-space:pre-line;">${esc(j.reason)}</div></div>`);
-  $('missed').innerHTML=jl(data.misses,j=>`<div class="item"><div class="name">${esc(j.client)}</div><div class="muted small">${esc(j.date)}</div><div class="muted small">${j.scanBy?'Scan missed by '+esc(j.scanBy)+' ':''}${j.reportBy?'Report missed by '+esc(j.reportBy):''}</div></div>`);
+  const kv=rows=>'<dl class="kv">'+rows.filter(x=>x[1]).map(x=>`<dt>${x[0]}</dt><dd>${x[1]}</dd>`).join('')+'</dl>';
+  const jobName=j=>esc(j.client||j.address||'Job with no client name');
+  $('claimed').innerHTML=jl(data.claimed,j=>`<div class="item"><div class="ch"><span class="name">${jobName(j)}</span><span class="chip">${esc(j.kind)}</span></div>${kv([['Claimed by',esc(j.by)],['Date',esc(j.date)],['Property',esc(j.address)]])}</div>`);
+  // The log lines look like "2026-10-10T07:41:53.177Z Name: reason". Show them as time / reason rows instead of raw text.
+  const fmtLog=t=>{
+    const lines=String(t||'').split('\n').map(s=>s.trim()).filter(Boolean);
+    return '<div class="logl">'+lines.map(l=>{
+      const m=l.match(/^(\d{4}-\d\d-\d\dT[\d:.]+Z)\s+(.*)$/);
+      let when='',rest=l;
+      if(m){const d=new Date(m[1]);when=d.toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});rest=m[2];}
+      return `<span class="when">${esc(when)}</span><span>${esc(rest)}</span>`;
+    }).join('')+'</div>';
+  };
+  $('stood').innerHTML=jl(data.standDowns,j=>`<div class="item"><div class="ch"><span class="name">${jobName(j)}</span><span class="chip warn">Stood down</span></div>${kv([['Job date',esc(j.date)],['Property',esc(j.address)]])}${fmtLog(j.reason)}</div>`);
+  $('missed').innerHTML=jl(data.misses,j=>`<div class="item"><div class="ch"><span class="name">${jobName(j)}</span><span class="chip bad">Missed</span></div>${kv([['Job date',esc(j.date)],['Scan missed by',esc(j.scanBy)],['Report missed by',esc(j.reportBy)]])}</div>`);
 }
 let reviewList=[];
 const safeUrl=u=>/^https:\/\//.test(u||'')?esc(u):'';
@@ -143,15 +166,22 @@ async function loadReviews(){
   if(!r.ok){$('reviews').innerHTML='<div class="empty">Could not load reports.</div>';return;}
   reviewList=r.data.reports||[];
   $('rev-n').textContent=reviewList.length?reviewList.length+' to check':'';
-  $('reviews').innerHTML=reviewList.length?reviewList.map((j,i)=>`<div class="item"><div class="name">${esc(j.client||j.address)}</div>
-    <div class="muted small">${esc(j.address)} &middot; ${esc(j.date)}</div>
-    <div class="muted small">Written by ${esc(j.writer||'unknown')}</div>
-    ${j.earlierFeedback?`<div class="muted small" style="white-space:pre-line;margin-top:4px;">Earlier note sent: ${esc(j.earlierFeedback)}</div>`:''}
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
+  $('reviews').innerHTML=reviewList.length?reviewList.map((j,i)=>`<div class="item">
+    <div class="ch"><span class="name">${esc(j.client||j.address||'Job with no client name')}</span><span class="chip ${j.earlierFeedback?'warn':''}">${j.earlierFeedback?'Resubmitted':'First submission'}</span></div>
+    <dl class="kv">
+      <dt>Property</dt><dd>${esc(j.address||'Not on file')}</dd>
+      <dt>Job date</dt><dd>${esc(j.date||'Not on file')}</dd>
+      <dt>Written by</dt><dd>${esc(j.writer||'Unknown')}</dd>
+      ${j.ref?`<dt>Reference</dt><dd>${esc(j.ref)}</dd>`:''}
+      ${j.score>0?`<dt>RoofScore</dt><dd>${esc(j.score)}</dd>`:''}
+    </dl>
+    ${j.earlierFeedback?`<div class="note"><b>Your earlier note:</b> ${esc(j.earlierFeedback)}</div>`:''}
+    <div class="btnrow">
       ${safeUrl(j.reportLink)?`<a class="btn sec" href="${safeUrl(j.reportLink)}" target="_blank" rel="noopener" style="text-decoration:none;">Open report</a>`:''}
       ${safeUrl(j.photosLink)?`<a class="btn sec" href="${safeUrl(j.photosLink)}" target="_blank" rel="noopener" style="text-decoration:none;">Open photos</a>`:''}
-      <button class="btn" onclick="reviewReport(${i},'approve')">Approve</button>
-      <button class="btn sec" onclick="reviewReport(${i},'changes')">Request changes</button></div></div>`).join(''):'<div class="empty">Nothing waiting. Submitted reports appear here.</div>';
+      <span class="grow"></span>
+      <button class="btn sec" onclick="reviewReport(${i},'changes')">Request changes</button>
+      <button class="btn" onclick="reviewReport(${i},'approve')">Approve</button></div></div>`).join(''):'<div class="empty">Nothing waiting. Submitted reports appear here.</div>';
 }
 async function reviewReport(i,action){
   const j=reviewList[i];if(!j)return;
