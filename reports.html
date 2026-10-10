@@ -430,8 +430,11 @@ var WORKER_BASE = 'https://roofscan-api.tiny-voice-ac40.workers.dev';
 // Airtable token is never involved. If an Airtable token is present (owner/staff device) the normal flow is used.
 var CT_JOB = (new URLSearchParams(location.search)).get('job') || '';
 var CT_TOKEN = ''; try{ CT_TOKEN = localStorage.getItem('rs_ct_token') || ''; }catch(e){}
-var CT_MODE = !!(CT_JOB && CT_TOKEN && !(typeof AT !== 'undefined' && AT.hasToken()));
-function getStaffKey(){ try{ return localStorage.getItem('rs_owner_token') || localStorage.getItem('rs_staff_key') || (CT_MODE ? CT_TOKEN : ''); }catch(e){ return ''; } }
+// The job card's button adds as=writer, which forces writer mode even on a device that also holds an owner login
+// (for example when the owner is testing both roles in one browser).
+var CT_FORCED = (new URLSearchParams(location.search)).get('as') === 'writer';
+var CT_MODE = !!(CT_JOB && CT_TOKEN && (CT_FORCED || !(typeof AT !== 'undefined' && AT.hasToken())));
+function getStaffKey(){ try{ if(CT_MODE) return CT_TOKEN; return localStorage.getItem('rs_owner_token') || localStorage.getItem('rs_staff_key') || ''; }catch(e){ return ''; } }
 async function callClaude(model, maxTokens, messages){
   var res = await fetch(WORKER_BASE + '/ai-proxy', {
     method: 'POST',
@@ -2173,6 +2176,7 @@ calculateRoofScore();
 var _loadedJobRecord = null;
 
 async function initJobPicker() {
+  if(CT_MODE) return; // writers get their one job through ctInit(), not the Airtable picker
   if(typeof AT === 'undefined' || !AT.hasToken()) return;
   var section = document.getElementById('job-picker-section');
   var loading = document.getElementById('job-picker-loading');
