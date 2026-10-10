@@ -106,6 +106,29 @@ tr:last-child td{border-bottom:none;}
     </div>
   </div>
 </div>
+<div id="rv" style="display:none;position:fixed;inset:0;z-index:50;background:rgba(15,25,45,.6);align-items:stretch;justify-content:center;padding:18px;">
+  <div style="background:var(--paper);border-radius:8px;display:flex;flex:1;max-width:1500px;overflow:hidden;" class="rvbox">
+    <div style="flex:1;min-width:0;display:flex;flex-direction:column;background:#E9E6DD;">
+      <iframe id="rv-frame" title="Report" style="flex:1;border:0;width:100%;background:#fff;" referrerpolicy="no-referrer"></iframe>
+      <div class="muted small" style="padding:8px 14px;">If the report does not show, use Download on the right.</div>
+    </div>
+    <div style="width:340px;max-width:40%;padding:20px;overflow:auto;border-left:1px solid var(--line);background:var(--white);display:flex;flex-direction:column;" class="rvside">
+      <div class="ch"><span class="name" id="rv-title" style="font-size:17px;"></span><button class="btn text" onclick="closeReview()">Close</button></div>
+      <dl class="kv" id="rv-meta"></dl>
+      <div id="rv-earlier"></div>
+      <div class="lbl" style="margin-top:6px;">Changes needed</div>
+      <textarea id="rv-note" class="inp" style="min-height:170px;resize:vertical;" placeholder="Write what the report writer should change. This goes to them with the report."></textarea>
+      <div id="rv-err" class="small" style="color:var(--bad);min-height:18px;"></div>
+      <div style="display:flex;gap:8px;margin-top:6px;">
+        <button class="btn sec" style="flex:1;" onclick="reviewReport(openIdx,'changes')">Request changes</button>
+        <button class="btn" style="flex:1;" onclick="reviewReport(openIdx,'approve')">Approve</button></div>
+      <div style="margin-top:14px;display:flex;gap:14px;">
+        <a id="rv-dl" class="btn text" href="#" style="text-decoration:underline;">Download</a>
+        <a id="rv-photos" class="btn text" href="#" target="_blank" rel="noopener" style="display:none;">Open photos</a></div>
+    </div>
+  </div>
+</div>
+<style>@media(max-width:800px){.rvbox{flex-direction:column;}.rvside{width:auto!important;max-width:none!important;border-left:none!important;border-top:1px solid var(--line);}}</style>
 <script>
 const API='https://roofscan-api.tiny-voice-ac40.workers.dev', TK='rs_owner_token';
 const $=id=>document.getElementById(id);
@@ -177,20 +200,43 @@ async function loadReviews(){
     </dl>
     ${j.earlierFeedback?`<div class="note"><b>Your earlier note:</b> ${esc(j.earlierFeedback)}</div>`:''}
     <div class="btnrow">
-      ${safeUrl(j.reportLink)?`<a class="btn sec" href="${safeUrl(j.reportLink)}" target="_blank" rel="noopener" style="text-decoration:none;">Open report</a>`:''}
+      ${safeUrl(j.reportLink)?`<button class="btn sec" onclick="openReview(${i})">Review report</button>`:''}
       ${safeUrl(j.photosLink)?`<a class="btn sec" href="${safeUrl(j.photosLink)}" target="_blank" rel="noopener" style="text-decoration:none;">Open photos</a>`:''}
       <span class="grow"></span>
       <button class="btn sec" onclick="reviewReport(${i},'changes')">Request changes</button>
       <button class="btn" onclick="reviewReport(${i},'approve')">Approve</button></div></div>`).join(''):'<div class="empty">Nothing waiting. Submitted reports appear here.</div>';
 }
+let openIdx=-1;
+function openReview(i){
+  const j=reviewList[i];if(!j)return;
+  openIdx=i;
+  const isDocx=/\.docx(\?|$)/i.test(j.reportLink||'');
+  const src=isDocx?'https://docs.google.com/viewer?embedded=true&url='+encodeURIComponent(j.reportLink):j.reportLink;
+  $('rv-title').textContent=j.client||j.address||'Job with no client name';
+  $('rv-meta').innerHTML=[['Property',j.address],['Job date',j.date],['Written by',j.writer],['Reference',j.ref],j.score>0?['RoofScore',j.score]:null].filter(x=>x&&x[1]).map(x=>`<dt>${x[0]}</dt><dd>${esc(x[1])}</dd>`).join('');
+  $('rv-earlier').innerHTML=j.earlierFeedback?`<div class="note"><b>Your earlier note:</b> ${esc(j.earlierFeedback)}</div>`:'';
+  $('rv-note').value='';$('rv-err').textContent='';
+  $('rv-frame').src=safeUrl(src)?src:'about:blank';
+  $('rv-dl').href=safeUrl(j.reportLink)||'#';
+  $('rv-photos').style.display=safeUrl(j.photosLink)?'inline-block':'none';
+  $('rv-photos').href=safeUrl(j.photosLink)||'#';
+  $('rv').style.display='flex';document.body.style.overflow='hidden';
+}
+function closeReview(){$('rv').style.display='none';$('rv-frame').src='about:blank';document.body.style.overflow='';openIdx=-1;}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&openIdx>=0)closeReview();});
 async function reviewReport(i,action){
   const j=reviewList[i];if(!j)return;
   let note='';
   if(action==='approve'){if(!confirm('Approve this report? Reports built in the generator are published to the job (Report Link, RoofScore and reference) so the client portal and your report email can use them.'))return;}
-  else{note=prompt('What needs changing? This goes to the report writer.')||'';if(note.trim().length<3)return;}
+  else{
+    // From the review window the note comes from the text box; from the card, ask for it.
+    note=(openIdx===i?$('rv-note').value:(prompt('What needs changing? This goes to the report writer.')||'')).trim();
+    if(note.length<3){if(openIdx===i)$('rv-err').textContent='Write what needs changing first (at least a few words).';return;}
+  }
   const r=await api('/owner/report-review','POST',{id:j.id,action,note});
-  if(!r.ok){alert(r.data.error||'Could not save.');}
+  if(!r.ok){if(openIdx===i)$('rv-err').textContent=r.data.error||'Could not save.';else alert(r.data.error||'Could not save.');return;}
   else if(action==='approve'&&r.data.published===false){alert('Approved. This report was submitted as an outside link, so it was not published to the job. Add it to the job yourself if needed.');}
+  if(openIdx===i)closeReview();
   loadReviews();
 }
 async function loadCap(){
