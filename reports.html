@@ -565,6 +565,7 @@ function collectDraftFields(){
 // Debounced (800ms) so rapid typing doesn't hammer localStorage. Updates the existing
 // autosave-status text/colour classes (already styled in CSS, previously just static text).
 function autoSaveReport(){
+  if(typeof ctSaveSoon === 'function') ctSaveSoon();
   var statusEl = document.getElementById('autosave-status');
   if(statusEl){ statusEl.textContent = 'Saving...'; statusEl.className = 'autosave-status saving'; }
   clearTimeout(_autosaveTimer);
@@ -717,7 +718,7 @@ function handlePhoto(key,input){
   compressImage(file, function(b64){
     var mime="image/jpeg";
     if(!state[key])state[key]={};
-    state[key].photoB64=b64;state[key].photoMime=mime;
+    state[key].photoB64=b64;state[key].photoMime=mime;delete state[key].photoName;
     _applyPhotoUI(key);
     autoSaveReport && autoSaveReport();
   });
@@ -759,7 +760,8 @@ function _applyPhotoUI(key){
 
 function removePhoto(key,e){
   e.stopPropagation();
-  if(state[key]){delete state[key].photoB64;delete state[key].photoMime;}
+  if(state[key]){delete state[key].photoB64;delete state[key].photoMime;delete state[key].photoName;}
+  if(typeof ctSaveSoon==='function') ctSaveSoon();
   var area=document.getElementById("photo_"+key);
   area.classList.remove("has-photo");
   var img=area.querySelector("img.preview");if(img)img.remove();
@@ -1860,12 +1862,28 @@ function renderZoneChip(key){
   if(zone){ chip.textContent = zone; chip.style.display = 'inline-block'; }
   else { chip.style.display = 'none'; }
 }
-function bpAttachPhotoToBlock(block, proc, note, zone){
+// photoName is only passed for photos that came from RoofScan's storage, so a saved draft can put the same photo back.
+// restoring = true when rebuilding a saved draft: keep the writer's own text and don't flag it as AI-placed.
+function bpAttachPhotoToBlock(block, proc, note, zone, photoName, restoring){
   var key = block.id.replace('obsblock_','');
   state[key] = state[key] || {status:null};
   state[key].photoB64 = proc.base64;
   state[key].photoMime = 'image/jpeg';
+  if(photoName) state[key].photoName = photoName; else delete state[key].photoName;
   if(zone) state[key].zone = zone;
+  if(restoring){
+    renderZoneChip(key);
+    var rarea = document.getElementById('photo_'+key);
+    if(rarea){
+      rarea.classList.add('has-photo');
+      var rhint = rarea.querySelector('.upload-hint'); if(rhint) rhint.style.display = 'none';
+      var rimg = rarea.querySelector('img.preview');
+      if(!rimg){ rimg = document.createElement('img'); rimg.className = 'preview'; rarea.insertBefore(rimg, rarea.firstChild); }
+      rimg.src = 'data:image/jpeg;base64,'+proc.base64;
+    }
+    return;
+  }
+  if(typeof ctSaveSoon==='function') ctSaveSoon();
   renderZoneChip(key);
   var area = document.getElementById('photo_'+key);
   if(area){
@@ -1926,8 +1944,9 @@ function bpPlacePhoto(file, proc, cat, note, zone){
   bpRefHashes[cat.ref] = already;
   var key = block.id.replace('obsblock_','');
   var hasPhoto = state[key] && state[key].photoB64;
+  var srcName = (file && file._ct) ? file.name : '';
   if(!hasPhoto){
-    bpAttachPhotoToBlock(block, proc, note, zone);
+    bpAttachPhotoToBlock(block, proc, note, zone, srcName);
   } else {
     // default slot for this exact element already has a photo — this is a
     // second genuine shot (e.g. a second chimney), so give it its own row.
@@ -1936,7 +1955,7 @@ function bpPlacePhoto(file, proc, cat, note, zone){
     if(!body){ bpAddExtra(file, proc, cat.ref+' (section not found)', note, zone); return; }
     addObservation(secId, body);
     var blocks = body.querySelectorAll('.obs-block');
-    bpAttachPhotoToBlock(blocks[blocks.length-1], proc, note, zone);
+    bpAttachPhotoToBlock(blocks[blocks.length-1], proc, note, zone, srcName);
   }
 }
 function bpAddExtra(file, proc, label, note, zone){
@@ -1975,12 +1994,15 @@ function bpAssignExtra(id, secId){
   if(!body) return;
   addObservation(secId, body);
   var blocks = body.querySelectorAll('.obs-block');
-  bpAttachPhotoToBlock(blocks[blocks.length-1], el._proc, el._note, el._zone);
+  bpAttachPhotoToBlock(blocks[blocks.length-1], el._proc, el._note, el._zone, (el._file && el._file._ct) ? el._file.name : '');
   el.remove();
+  if(typeof ctSaveSoon==='function') ctSaveSoon();
 }
 function bpRemoveExtra(id){
   var el = document.getElementById(id);
+  if(el && el._file && el._file._ct && typeof ctDiscarded !== 'undefined') ctDiscarded.push(el._file.name);
   if(el) el.remove();
+  if(typeof ctSaveSoon==='function') ctSaveSoon();
 }
 bpRefreshKeyUI();
 bpInitDropZone();
@@ -2518,23 +2540,29 @@ async function ctInit(){
     if(row){ if(addons.length){ row.style.display = 'flex'; row.innerHTML = '<span style="font-size:11px;font-weight:700;color:#1A5276;margin-right:4px;">Add-ons:</span>' + addons.map(function(a){ return '<span class="addon-badge">' + a + '</span>'; }).join(''); } else row.style.display = 'none'; }
   }
   var fb = j.feedback ? '<div style="margin-top:8px;padding:8px 10px;background:#F7EFDD;border:1px solid #E6D3A8;white-space:pre-line;"><strong>RoofScan asked for changes:</strong> ' + ctEsc(j.feedback) + '</div>' : '';
+  var draft = await ctFetchDraft(), placed = null;
+  if(draft){
+    placed = ctRestoreDraft(draft);
+    dismissResume(); // the saved copy on RoofScan replaces any older local draft prompt
+  }
   if(!j.photoCount){
+    ctDraftReady = true;
     ctBanner('<strong>' + ctEsc(j.client || 'Your job') + '</strong>: details filled in. No photos were uploaded for this scan' + (j.photosLink ? ' (the flyer shared a link instead: <a href="' + ctEsc(j.photosLink) + '" target="_blank" rel="noopener">open it</a>, download the photos, then drag them into Bulk photo import below)' : '. Contact RoofScan before you start') + '.' + fb, j.photosLink ? '' : 'error');
     return;
   }
-  ctBanner('<strong>' + ctEsc(j.client || 'Your job') + '</strong>: details filled in. Loading ' + j.photoCount + ' photos...' + fb);
-  await ctLoadPhotos(j.client, fb);
+  ctBanner('<strong>' + ctEsc(j.client || 'Your job') + '</strong>: ' + (draft ? 'your saved report is back. Loading ' : 'details filled in. Loading ') + j.photoCount + ' photos...' + fb);
+  await ctLoadPhotos(j.client, fb, placed);
 }
 async function ctFetchPhoto(name){
   for(var attempt = 0; attempt < 2; attempt++){
     try{
       var r = await ctApi('/contractor/photo?jobId=' + encodeURIComponent(CT_JOB) + '&name=' + encodeURIComponent(name));
-      if(r.ok){ var b = await r.blob(); return new File([b], name, { type: b.type || 'image/jpeg', lastModified: Date.now() }); }
+      if(r.ok){ var b = await r.blob(); var f = new File([b], name, { type: b.type || 'image/jpeg', lastModified: Date.now() }); f._ct = true; return f; }
     }catch(e){}
   }
   return null;
 }
-async function ctLoadPhotos(client, fb){
+async function ctLoadPhotos(client, fb, placed){
   var lr = await ctApi('/contractor/photos?jobId=' + encodeURIComponent(CT_JOB)), ld = await lr.json();
   var names = (ld.photos || []).map(function(p){ return p.name; }).sort(function(a,b){ return a < b ? -1 : (a > b ? 1 : 0); });
   var BATCH = 20, loaded = 0, missed = 0;
@@ -2545,13 +2573,120 @@ async function ctLoadPhotos(client, fb){
     next = (i + BATCH < names.length) ? chunk(i + BATCH) : Promise.resolve([]);   // download the next batch while this one is being sorted
     var good = files.filter(function(f){ return !!f; });
     missed += files.length - good.length;
-    if(good.length){ loaded += good.length; await bpHandleFiles(good); }
+    if(good.length){
+      loaded += good.length;
+      if(placed) await ctPlaceSavedPhotos(good, placed);   // saved report: put each photo back where the writer left it
+      else await bpHandleFiles(good);                      // first time: let the AI sort them
+    }
     ctBanner('<strong>' + ctEsc(client || 'Your job') + '</strong>: details filled in. Loading photos: ' + loaded + ' of ' + names.length + '...' + fb);
   }
-  ctBanner('<strong>' + ctEsc(client || 'Your job') + '</strong>: details filled in and ' + loaded + ' photos loaded into Bulk photo import' + (missed ? ' (' + missed + ' could not be downloaded, reload the page to try again)' : '') + '. Check the placements, add your findings, then press the button at the bottom. The finished report goes to RoofScan automatically.' + fb, missed ? 'error' : 'ok');
+  // Only start saving once everything is back in place. If some photos failed to download, saving now could drop their
+  // placements from the stored draft, so saving stays off until the page is reloaded and they all arrive.
+  if(!missed) ctDraftReady = true;
+  var head = placed ? 'your saved report is back with ' + loaded + ' photos. Change what RoofScan asked for, then send it again.' : 'details filled in and ' + loaded + ' photos loaded into Bulk photo import. Check the placements, add your findings, then press the button at the bottom.';
+  ctBanner('<strong>' + ctEsc(client || 'Your job') + '</strong>: ' + head + (missed ? ' (' + missed + ' photos could not be downloaded. Reload the page to try again. Saving is paused until then.)' : ' Your work saves automatically.') + ' The finished report goes to RoofScan automatically.' + fb, missed ? 'error' : 'ok');
+}
+// ── Saved draft kept on RoofScan's storage ─────────────────────────────────────
+// Lets the writer close the tab, switch computer, or get the report sent back for changes and pick up exactly
+// where they were: text, statuses, priorities, zones and which photo sits where. Photos themselves are not copied;
+// they are re-fetched from the job's photo storage by name.
+var ctDiscarded = [], ctDraftReady = false, ctSaveTimer = null, ctSaving = false;
+function ctCollectDraft(){
+  var d = collectDraftFields();
+  d.blocks = [];
+  document.querySelectorAll('.obs-block').forEach(function(b){
+    var key = b.id.replace('obsblock_','');
+    var s = state[key] || {};
+    var pri = document.getElementById('pri_'+key), tx = document.getElementById('obstext_'+key);
+    d.blocks.push({ sec: b.getAttribute('data-sec'), status: s.status || '', priority: pri ? pri.value : '', text: tx ? tx.value : '', zone: s.zone || '', photo: s.photoName || '' });
+  });
+  d.discarded = ctDiscarded.slice();
+  return d;
+}
+function ctSetSaveNote(text, bad){
+  var el = document.getElementById('autosave-status');
+  if(el){ el.textContent = text; el.className = 'autosave-status' + (bad ? '' : ' saved'); }
+}
+async function ctSaveDraft(keepalive){
+  if(!CT_MODE || !ctDraftReady) return false;
+  try{
+    var r = await ctApi('/contractor/draft?jobId=' + encodeURIComponent(CT_JOB), { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(ctCollectDraft()), keepalive: !!keepalive });
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    ctSetSaveNote('Saved to RoofScan');
+    return true;
+  }catch(e){
+    ctSetSaveNote('Could not save to RoofScan. Check your connection.', true);
+    return false;
+  }
+}
+function ctSaveSoon(){
+  if(!CT_MODE || !ctDraftReady) return;
+  clearTimeout(ctSaveTimer);
+  ctSaveTimer = setTimeout(function(){ ctSaveDraft(); }, 4000);
+}
+if(CT_MODE){
+  document.addEventListener('change', function(){ ctSaveSoon(); });
+  document.addEventListener('visibilitychange', function(){ if(document.visibilityState === 'hidden' && ctDraftReady){ clearTimeout(ctSaveTimer); ctSaveDraft(true); } });
+}
+async function ctFetchDraft(){
+  try{
+    var r = await ctApi('/contractor/draft?jobId=' + encodeURIComponent(CT_JOB));
+    if(!r.ok) return null;
+    var j = await r.json();
+    return (j && j.draft && j.draft.blocks) ? j.draft : null;
+  }catch(e){ return null; }
+}
+// Puts text, statuses and zones back. Returns { photoName: {key, zone} } so photos can be re-attached to the same boxes.
+function ctRestoreDraft(draft){
+  ['address','postcode','client','inspDate','reportRef','roofType','covering','roofAge','inspector','summary','keyRisks','maintenance'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(el && draft[id]) el.value = draft[id];
+  });
+  if(draft.conditionIdx !== undefined) setCondition(draft.conditionIdx);
+  ctDiscarded = (draft.discarded || []).slice();
+  var bySec = {}, placed = {};
+  draft.blocks.forEach(function(b){ (bySec[b.sec] = bySec[b.sec] || []).push(b); });
+  Object.keys(bySec).forEach(function(secId){
+    var body = document.getElementById('secbody_' + secId); if(!body) return;
+    var list = bySec[secId], sel = "[data-sec='" + secId + "']", existing = body.querySelectorAll(sel);
+    while(existing.length < list.length){ addObservation(secId, body); existing = body.querySelectorAll(sel); }
+    list.forEach(function(b, i){
+      var block = existing[i], key = block.id.replace('obsblock_','');
+      state[key] = state[key] || {};
+      if(b.status){
+        state[key].status = b.status;
+        var badge = document.getElementById('badge_' + key);
+        if(badge){ badge.className = 'status-badge ' + badgeClass(b.status); badge.textContent = b.status; }
+        var ssel = block.querySelector('.obs-selects select'); if(ssel) ssel.value = b.status;
+      }
+      var pri = document.getElementById('pri_' + key); if(pri && b.priority) pri.value = b.priority;
+      var tx = document.getElementById('obstext_' + key); if(tx && b.text) tx.value = b.text;
+      if(b.zone){ state[key].zone = b.zone; renderZoneChip(key); }
+      if(b.photo) placed[b.photo] = { key: key, zone: b.zone || '' };
+    });
+  });
+  updateDashboard(); calculateRoofScore();
+  return placed;
+}
+async function ctPlaceSavedPhotos(files, placed){
+  await Promise.all(files.map(async function(file){
+    try{
+      var spot = placed[file.name];
+      if(!spot && ctDiscarded.indexOf(file.name) >= 0) return;
+      var proc = await bpProcessImage(file);
+      if(spot){
+        var block = document.getElementById('obsblock_' + spot.key);
+        if(block){ bpAttachPhotoToBlock(block, proc, '', spot.zone, file.name, true); return; }
+      }
+      bpAddExtra(file, proc, 'Not placed yet', '', (spot && spot.zone) || '');
+    }catch(e){
+      bpAddExtra(file, null, 'Could not read this photo, attach manually', '', '');
+    }
+  }));
 }
 async function ctSubmit(blob, d, filename){
   var msg = document.getElementById('statusMsg');
+  try{ clearTimeout(ctSaveTimer); await ctSaveDraft(); }catch(e){}
   try{
     var r = await ctApi('/contractor/report-submit?jobId=' + encodeURIComponent(CT_JOB) + '&ref=' + encodeURIComponent(d.reportRef || '') + '&score=' + encodeURIComponent(_currentRoofScore || 0),
       { method:'POST', headers:{ 'Content-Type':'application/octet-stream' }, body: blob });
