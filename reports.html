@@ -64,7 +64,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .bp-drop{border:2px dashed #DEDACE;border-radius:10px;background:#F8FAFC;display:flex;align-items:center;justify-content:center;min-height:110px;cursor:pointer;text-align:center;padding:14px;}
 .bp-drop:hover,.bp-drop.dragover{border-color:#2E75B6;background:#EBF4FF;}
 .bp-extra-thumb{width:70px;}
-.bp-extra-thumb img{width:70px;height:70px;object-fit:cover;border-radius:6px;border:1px solid #DEDACE;display:block;}
+/* Report writers never see staff-only controls: the passphrase box, Airtable record ID, brand picker and Clear saved. */
+html.ct #bp-key-entry,html.ct #bp-key-saved,html.ct #bp-key-explain,html.ct #atrec-field,html.ct #whiteLabelRow,html.ct #addAgencyForm,html.ct .autosave-btn{display:none!important;}
+html.ct #ct-suggest{display:block!important;}
+#ct-steps{display:none;margin:0 0 12px;padding:12px 14px;border:1px solid #DEDACE;background:#fff;font-size:13px;line-height:1.6;color:#33415C;}
+#ct-steps ol{margin:4px 0 0 18px;padding:0;}
+.bp-extra-thumb img{width:70px;height:70px;object-fit:cover;border-radius:6px;border:1px solid #DEDACE;display:block;cursor:zoom-in;}
 .bp-extra-thumb .bp-tag{font-size:8px;color:#6B7A8D;text-align:center;margin-top:2px;max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .bp-extra-thumb select{width:70px;font-size:9px;margin-top:2px;border:1px solid #DEDACE;border-radius:4px;}
 .bp-extra-thumb button{width:70px;font-size:9px;color:#9B2C2C;background:none;border:none;cursor:pointer;margin-top:2px;}
@@ -216,6 +221,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 </div>
 <div class="container">
   <div id="ct-banner" style="display:none;margin:0 0 12px;padding:12px 14px;border:1px solid #DEDACE;background:#fff;font-size:14px;line-height:1.5;"></div>
+  <div id="ct-steps"><strong>How to finish this report</strong><ol>
+    <li>Check each photo is in the right section. Click any photo to enlarge it, then use "Attach to" to move it to the exact observation.</li>
+    <li>For each observation, choose a status and write what you can see in plain words. Use the + Add observation button for anything extra.</li>
+    <li>Press Generate summaries, then Review &amp; Polish Descriptions, and read the result.</li>
+    <li>Press "Finish and send report to RoofScan". Your work saves as you go, so you can close the page and come back.</li></ol></div>
 
   <!-- JOB PICKER — load from Airtable -->
   <div class="job-picker-card" id="job-picker-section" style="display:none;">
@@ -290,7 +300,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
         <div class="field"><label>Inspector</label><input type="text" id="inspector" placeholder="Your name"></div>
       </div>
       <div class="field-row cols-1">
-        <div class="field"><label>Airtable Job Record ID <span style="font-weight:400;opacity:0.6;">(optional — auto-saves RoofScore)</span></label><input type="text" id="atRecordId" placeholder="recXXXXXXXXXXXXXXXX" style="font-family:monospace;font-size:13px;"></div>
+        <div class="field" id="atrec-field"><label>Airtable Job Record ID <span style="font-weight:400;opacity:0.6;">(optional — auto-saves RoofScore)</span></label><input type="text" id="atRecordId" placeholder="recXXXXXXXXXXXXXXXX" style="font-family:monospace;font-size:13px;"></div>
       </div>
     </div>
   </div>
@@ -347,7 +357,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
         <button onclick="bpSaveKey()" style="background:#1C2B4A;color:#C9A84C;border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;">Save</button>
       </div>
       <div id="bp-key-saved" style="display:none;font-size:12px;color:#27AE60;font-weight:600;margin-bottom:10px;">Access key saved on this device ✓ <a onclick="bpChangeKey()" style="color:#2E75B6;cursor:pointer;text-decoration:underline;font-weight:400;margin-left:6px;">change</a></div>
-      <div style="font-size:11px;color:#6B7A8D;margin-bottom:10px;line-height:1.5;">This is a passphrase you make up yourself, not an Anthropic key — same one as the Photo Sorter tab on the staff hub, shared on this device. All AI calls (photo sorting, note drafting, summaries, RoofScore) now go through the RoofScan Worker, which holds the real AI key server-side; this passphrase just proves the request came from you. Drop all of today's photos in below and each one is classified and attached to the matching observation automatically, with a draft note already written for you to edit. Duplicates and anything unclear are set aside underneath instead of cluttering the report.</div>
+      <div id="bp-key-explain" style="font-size:11px;color:#6B7A8D;margin-bottom:10px;line-height:1.5;">This is a passphrase you make up yourself, not an Anthropic key — same one as the Photo Sorter tab on the staff hub, shared on this device. All AI calls (photo sorting, note drafting, summaries, RoofScore) now go through the RoofScan Worker, which holds the real AI key server-side; this passphrase just proves the request came from you. Drop all of today's photos in below and each one is classified and attached to the matching observation automatically, with a draft note already written for you to edit. Duplicates and anything unclear are set aside underneath instead of cluttering the report.</div>
       <div class="bp-drop" id="bp-drop-zone" onclick="document.getElementById('bp-file-input').click()">
         <input type="file" id="bp-file-input" accept="image/*" multiple style="display:none;">
         <div style="pointer-events:none;">
@@ -374,6 +384,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
   <div id="sectionsContainer"></div>
   <button class="gen-btn" id="reviewBtn" onclick="openReview()">Review &amp; Polish Descriptions</button>
   <div class="status-msg" id="statusMsg"></div>
+  <div class="card" id="ct-suggest" style="display:none;margin-top:18px;">
+    <div class="card-header">Suggest an improvement</div>
+    <div class="card-body">
+      <div style="font-size:13px;color:#6B7A8D;margin-bottom:8px;line-height:1.5;">Anything slow, confusing or missing in this generator? Tell RoofScan here. It goes straight to the owner and does not affect your report.</div>
+      <textarea id="ct-suggest-text" maxlength="1500" style="width:100%;min-height:80px;border:1px solid #D0DBE8;border-radius:8px;padding:10px;font-size:14px;font-family:inherit;box-sizing:border-box;" placeholder="For example: the photos took too long to sort, or I wanted a button for..."></textarea>
+      <div style="display:flex;gap:10px;align-items:center;margin-top:8px;"><button type="button" onclick="ctSendSuggestion()" style="background:#1C2B4A;color:#fff;border:none;border-radius:8px;padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">Send suggestion</button><span id="ct-suggest-msg" style="font-size:13px;color:#6B7A8D;"></span></div>
+    </div>
+  </div>
 
   <!-- REVIEW MODAL -->
   <div id="reviewModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:999;overflow-y:auto;padding:2rem 1rem;">
@@ -389,7 +407,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
       <div style="padding:1rem 1.5rem;border-top:1px solid #E0E8F0;display:flex;align-items:center;gap:12px;background:#F8F6F0;">
         
 <!-- CLIENT PREVIEW + WHITE LABEL -->
-<div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;align-items:center;">
+<div id="whiteLabelRow" style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;align-items:center;">
   <label style="font-size:12px;color:#6B7A8D;white-space:nowrap;">Brand:</label>
   <select id="whiteLabelAgency" onchange="onAgencySelectChange()" style="border:1px solid #E8E4D8;border-radius:6px;padding:6px 10px;font-size:12px;min-width:140px;font-family:inherit;">
     <option value="">RoofScan UK (default)</option>
@@ -439,6 +457,7 @@ try{
   else if(CT_JOB && sessionStorage.getItem('rs_as_writer') === CT_JOB) CT_FORCED = true;
 }catch(e){}
 var CT_MODE = !!(CT_JOB && CT_TOKEN && (CT_FORCED || !(typeof AT !== 'undefined' && AT.hasToken())));
+if(CT_MODE) document.documentElement.classList.add('ct');
 function getStaffKey(){ try{ if(CT_MODE) return CT_TOKEN; return localStorage.getItem('rs_owner_token') || localStorage.getItem('rs_staff_key') || ''; }catch(e){ return ''; } }
 async function callClaude(model, maxTokens, messages){
   var res = await fetch(WORKER_BASE + '/ai-proxy', {
@@ -519,9 +538,12 @@ function badgeClass(s){if(!s)return"badge-none";if(s==="Repair required")return"
 function updateDashboard(){var r=0,a=0,g=0;Object.values(state).forEach(function(s){if(!s||!s.status)return;if(s.status==="Repair required")r++;else if(s.status==="Monitor")a++;else if(s.status==="Satisfactory")g++;});document.getElementById("countRed").textContent=r;document.getElementById("countAmber").textContent=a;document.getElementById("countGreen").textContent=g;}
 function setCondition(idx){conditionIdx=idx;document.querySelectorAll(".cond-btn").forEach(function(b,i){b.classList.toggle("active",i===idx);});autoSaveReport();}
 function kk(s,i){return s+"_"+i;}
-function handleStatus(secId,idx,val){var key=kk(secId,idx);if(!state[key])state[key]={};state[key].status=val;var b=document.getElementById("badge_"+key);if(b){b.className="status-badge "+badgeClass(val);b.textContent=val||"Not set";}updateDashboard();autoSaveReport();}
+function handleStatus(secId,idx,val){var key=kk(secId,idx);if(!state[key])state[key]={};state[key].status=val;
+  // Writers: fill the priority in for the two obvious cases so there is one less thing to choose. "Repair required" is left for them to judge.
+  if(CT_MODE){var _p=document.getElementById("pri_"+key);if(_p&&!_p.value){if(val==="Monitor")_p.value="Record & monitor";else if(val==="Satisfactory")_p.value="N/A";}}var b=document.getElementById("badge_"+key);if(b){b.className="status-badge "+badgeClass(val);b.textContent=val||"Not set";}updateDashboard();autoSaveReport();}
+function openObsBlock(key){var b=document.getElementById("obsbody_"+key);if(b&&b.style.display!=="block")toggleObs(key);}
 function toggleObs(key){var b=document.getElementById("obsbody_"+key);var c=document.getElementById("chev_"+key);if(!b)return;var open=b.style.display==="block";b.style.display=open?"none":"block";if(c)c.classList.toggle("open",!open);}
-function removeObs(key){delete state[key];var el=document.getElementById("obsblock_"+key);if(el)el.remove();updateDashboard();autoSaveReport();}
+function removeObs(key){delete state[key];var el=document.getElementById("obsblock_"+key);if(el)el.remove();updateDashboard();autoSaveReport();if(typeof bpRefreshExtraOptions==='function')bpRefreshExtraOptions();}
 
 // ═══ AUTOSAVE / RESUME-DRAFT ════════════════════════════════════════
 // The autosave bar and resume-card HTML/CSS already existed with no JS behind them at all
@@ -819,6 +841,7 @@ function addObservation(secId,body){
   var ref=nums[secId]+"."+(idx+1);
   var el=makeObsEl(secId,idx,ref,"Additional observation",true);
   body.insertBefore(el,body.querySelector(".add-obs-btn"));
+  if(typeof bpRefreshExtraOptions==='function') bpRefreshExtraOptions();
 }
 
 function renderSections(){
@@ -1871,6 +1894,7 @@ function bpAttachPhotoToBlock(block, proc, note, zone, photoName, restoring){
   state[key].photoMime = 'image/jpeg';
   if(photoName) state[key].photoName = photoName; else delete state[key].photoName;
   if(zone) state[key].zone = zone;
+  if(typeof CT_MODE!=='undefined' && CT_MODE) openObsBlock(key);
   if(restoring){
     renderZoneChip(key);
     var rarea = document.getElementById('photo_'+key);
@@ -1964,14 +1988,13 @@ function bpAddExtra(file, proc, label, note, zone){
   if(wrap) wrap.style.display = 'block';
   var id = 'bpx'+(bpExtraId++);
   var url = proc ? proc.thumbUrl : URL.createObjectURL(file);
-  var secOpts = SECTIONS.map(function(s){ return '<option value="'+s.id+'">'+s.title.replace(/^2\.\d - /,'')+'</option>'; }).join('');
   var div = document.createElement('div');
   div.className = 'bp-extra-thumb';
   div.id = id;
   var tagText = zone ? (zone+' — '+label) : label;
-  div.innerHTML = '<img src="'+url+'">'
+  div.innerHTML = '<img src="'+url+'" title="Click to enlarge">'
     + '<div class="bp-tag">'+tagText+'</div>'
-    + '<select onchange="bpAssignExtra(\''+id+'\',this.value)"><option value="">Attach to…</option>'+secOpts+'</select>'
+    + '<select class="bp-dest" onchange="bpAssignExtra(\''+id+'\',this.value)"><option value="">Attach to…</option>'+bpDestOptions()+'</select>'
     + '<button onclick="bpRemoveExtra(\''+id+'\')">Discard</button>';
   grid.appendChild(div);
   div._proc = proc;
@@ -1979,25 +2002,103 @@ function bpAddExtra(file, proc, label, note, zone){
   div._note = note || '';
   div._zone = zone || '';
 }
-function bpAssignExtra(id, secId){
-  if(!secId) return;
+// Every place a photo can go: each existing observation (by number and name), plus "new observation" in each section.
+function bpDestOptions(){
+  var esc2 = function(s){ return String(s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); };
+  return SECTIONS.map(function(sec){
+    var body = document.getElementById('secbody_'+sec.id);
+    var opts = '<option value="new:'+sec.id+'">+ New observation in this section</option>';
+    if(body) body.querySelectorAll('.obs-block').forEach(function(b){
+      var key = b.id.replace('obsblock_','');
+      var ref = (b.querySelector('.obs-ref')||{}).textContent || '';
+      var title = (b.querySelector('.obs-title-text')||{}).textContent || '';
+      var has = state[key] && state[key].photoB64;
+      opts += '<option value="blk:'+key+'">'+esc2(ref+'  '+title)+(has?'  (has a photo, adds another)':'')+'</option>';
+    });
+    return '<optgroup label="'+esc2(sec.title.replace(/^2\.\d - /,''))+'">'+opts+'</optgroup>';
+  }).join('');
+}
+function bpRefreshExtraOptions(){
+  var html = '<option value="">Attach to…</option>' + bpDestOptions();
+  document.querySelectorAll('select.bp-dest').forEach(function(s){ s.innerHTML = html; });
+}
+function bpAssignExtra(id, dest){
+  if(!dest) return;
   var el = document.getElementById(id);
   if(!el) return;
   if(!el._proc){
     // Older failure path with no processed copy: process the original file now.
     if(!el._file){ alert('This photo could not be read. Please discard it and add it again.'); return; }
-    bpProcessImage(el._file).then(function(p){ el._proc = p; bpAssignExtra(id, secId); })
+    bpProcessImage(el._file).then(function(p){ el._proc = p; bpAssignExtra(id, dest); })
       .catch(function(){ alert('This photo could not be read. Please discard it and add it again.'); });
     return;
   }
-  var body = document.getElementById('secbody_'+secId);
-  if(!body) return;
-  addObservation(secId, body);
-  var blocks = body.querySelectorAll('.obs-block');
-  bpAttachPhotoToBlock(blocks[blocks.length-1], el._proc, el._note, el._zone, (el._file && el._file._ct) ? el._file.name : '');
+  var kind = 'new', ref = dest;
+  if(dest.indexOf(':') > 0){ kind = dest.split(':')[0]; ref = dest.slice(dest.indexOf(':')+1); }
+  var block = null, secId = ref;
+  if(kind === 'blk'){
+    var target = document.getElementById('obsblock_'+ref);
+    if(!target) return;
+    secId = target.getAttribute('data-sec');
+    if(!(state[ref] && state[ref].photoB64)) block = target;   // empty slot: use it. Otherwise fall through and add another in the same section.
+  }
+  if(!block){
+    var body = document.getElementById('secbody_'+secId);
+    if(!body) return;
+    addObservation(secId, body);
+    var blocks = body.querySelectorAll('.obs-block');
+    block = blocks[blocks.length-1];
+  }
+  bpAttachPhotoToBlock(block, el._proc, el._note, el._zone, (el._file && el._file._ct) ? el._file.name : '');
   el.remove();
+  bpCloseLightbox();
+  bpRefreshExtraOptions();
   if(typeof ctSaveSoon==='function') ctSaveSoon();
 }
+// Click a photo to see it large, and sort it from there.
+var _lbUrl = null;
+function bpCloseLightbox(){
+  var lb = document.getElementById('bp-lightbox'); if(lb) lb.remove();
+  if(_lbUrl){ try{ URL.revokeObjectURL(_lbUrl); }catch(e){} _lbUrl = null; }
+}
+function bpOpenPhoto(thumb){
+  bpCloseLightbox();
+  var img = thumb.querySelector('img'); if(!img) return;
+  var src = img.src, isExtra = !!(thumb.id && thumb.id.indexOf('bpx') === 0);
+  if(thumb._file){ _lbUrl = URL.createObjectURL(thumb._file); src = _lbUrl; }
+  else if(thumb._proc){ src = 'data:image/jpeg;base64,'+thumb._proc.base64; }
+  var tag = (thumb.querySelector('.bp-tag')||{}).textContent || '';
+  var lb = document.createElement('div');
+  lb.id = 'bp-lightbox';
+  lb.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(10,18,32,.88);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;gap:12px;';
+  lb.onclick = function(e){ if(e.target === lb) bpCloseLightbox(); };
+  var im = document.createElement('img');
+  im.src = src; im.style.cssText = 'max-width:96vw;max-height:76vh;object-fit:contain;border-radius:6px;background:#000;';
+  lb.appendChild(im);
+  var bar = document.createElement('div');
+  bar.style.cssText = 'display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:center;color:#fff;font-size:13px;';
+  if(isExtra){
+    var sel = document.createElement('select');
+    sel.style.cssText = 'font-size:14px;padding:8px 10px;border-radius:6px;max-width:80vw;';
+    sel.innerHTML = '<option value="">Attach to…</option>' + bpDestOptions();
+    sel.onchange = function(){ bpAssignExtra(thumb.id, sel.value); };
+    var dis = document.createElement('button');
+    dis.textContent = 'Discard photo'; dis.style.cssText = 'font-size:14px;padding:8px 14px;border-radius:6px;border:1px solid #E3C4C0;background:#F6E6E4;color:#9B2C2C;cursor:pointer;';
+    dis.onclick = function(){ bpRemoveExtra(thumb.id); bpCloseLightbox(); };
+    var label = document.createElement('span'); label.textContent = tag; label.style.opacity = '.8';
+    bar.appendChild(label); bar.appendChild(sel); bar.appendChild(dis);
+  }
+  var close = document.createElement('button');
+  close.textContent = 'Close'; close.style.cssText = 'font-size:14px;padding:8px 14px;border-radius:6px;border:1px solid #fff;background:transparent;color:#fff;cursor:pointer;';
+  close.onclick = bpCloseLightbox;
+  bar.appendChild(close); lb.appendChild(bar);
+  document.body.appendChild(lb);
+}
+document.addEventListener('click', function(e){
+  var im = e.target && e.target.closest ? e.target.closest('.bp-extra-thumb > img') : null;
+  if(im) bpOpenPhoto(im.parentNode);
+});
+document.addEventListener('keydown', function(e){ if(e.key === 'Escape') bpCloseLightbox(); });
 function bpRemoveExtra(id){
   var el = document.getElementById(id);
   if(el && el._file && el._file._ct && typeof ctDiscarded !== 'undefined') ctDiscarded.push(el._file.name);
@@ -2504,6 +2605,8 @@ function ctEsc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, functio
 async function ctInit(){
   if(!CT_MODE) return;
   var gb = document.getElementById('genBtn'); if(gb) gb.textContent = 'Finish and send report to RoofScan';
+  var stp = document.getElementById('ct-steps'); if(stp) stp.style.display = 'block';
+  ctLayoutForWriter();
   ctBanner('Loading your job...');
   var jr, j;
   try{ jr = await ctApi('/contractor/job?jobId=' + encodeURIComponent(CT_JOB)); j = await jr.json(); }
@@ -2663,6 +2766,7 @@ function ctRestoreDraft(draft){
       var tx = document.getElementById('obstext_' + key); if(tx && b.text) tx.value = b.text;
       if(b.zone){ state[key].zone = b.zone; renderZoneChip(key); }
       if(b.photo) placed[b.photo] = { key: key, zone: b.zone || '' };
+      if(b.status || b.text || b.photo) openObsBlock(key);
     });
   });
   updateDashboard(); calculateRoofScore();
@@ -2683,6 +2787,48 @@ async function ctPlaceSavedPhotos(files, placed){
       bpAddExtra(file, null, 'Could not read this photo, attach manually', '', '');
     }
   }));
+}
+// Puts the page in the order the writer actually works: photos and observations first, then the summary and score, then finish.
+// Hides client contact and price rows a writer never needs, and adds a running count with a shortcut to the finish button.
+var ctProgTimer = null;
+function ctLayoutForWriter(){
+  try{
+    var rev = document.getElementById('reviewBtn'), cnt = document.getElementById('countRed');
+    var exec = cnt && cnt.closest ? cnt.closest('.card') : null;
+    if(exec && rev && rev.parentNode) rev.parentNode.insertBefore(exec, rev);
+    ['ci-email','ci-phone','ci-total'].forEach(function(id){ var el = document.getElementById(id); var it = el && el.closest ? el.closest('.ci-item') : null; if(it) it.style.display = 'none'; });
+    var bar = document.getElementById('autosave-bar');
+    if(bar && !document.getElementById('ct-progress')){
+      var p = document.createElement('div');
+      p.id = 'ct-progress'; p.style.cssText = 'flex:1;display:flex;gap:12px;align-items:center;justify-content:center;color:#E8EDF5;font-size:12px;flex-wrap:wrap;';
+      p.innerHTML = '<span id="ct-prog-text"></span><button type="button" id="ct-prog-go" style="background:#C9A84C;color:#1C2B4A;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">Go to finish</button>';
+      bar.insertBefore(p, bar.children[1] || null);
+      document.getElementById('ct-prog-go').onclick = function(){ if(rev) rev.scrollIntoView({behavior:'smooth', block:'center'}); };
+      clearInterval(ctProgTimer); ctProgTimer = setInterval(ctUpdateProgress, 1500); ctUpdateProgress();
+    }
+  }catch(e){ console.warn('writer layout', e); }
+}
+function ctUpdateProgress(){
+  var t = document.getElementById('ct-prog-text'); if(!t) return;
+  var placed = 0, written = 0;
+  document.querySelectorAll('.obs-block').forEach(function(b){
+    var key = b.id.replace('obsblock_',''), s = state[key] || {}, tx = document.getElementById('obstext_'+key);
+    if(s.photoB64) placed++;
+    if(s.status || (tx && tx.value.trim())) written++;
+  });
+  var waiting = document.querySelectorAll('#bp-extras-grid .bp-extra-thumb').length;
+  t.textContent = placed + ' photos placed' + (waiting ? ', ' + waiting + ' waiting to be sorted' : '') + ' · ' + written + ' observations filled in';
+}
+async function ctSendSuggestion(){
+  var ta = document.getElementById('ct-suggest-text'), m = document.getElementById('ct-suggest-msg');
+  var text = ta ? ta.value.trim() : '';
+  if(text.length < 5){ m.style.color = '#9B2C2C'; m.textContent = 'Write a few words first.'; return; }
+  m.style.color = '#6B7A8D'; m.textContent = 'Sending...';
+  try{
+    var r = await ctApi('/contractor/suggestion', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ text: text, page: 'report generator' }) });
+    if(!r.ok){ var j = await r.json().catch(function(){ return {}; }); throw new Error(j.error || ('HTTP ' + r.status)); }
+    ta.value = ''; m.style.color = '#27AE60'; m.textContent = 'Thank you. Sent to RoofScan.';
+  }catch(e){ m.style.color = '#9B2C2C'; m.textContent = 'Could not send (' + e.message + '). Try again.'; }
 }
 async function ctSubmit(blob, d, filename){
   var msg = document.getElementById('statusMsg');

@@ -99,6 +99,7 @@ tr:last-child td{border-bottom:none;}
       <div>
         <section><div class="lbl">Weekly booking capacity</div><div class="box pad" id="cap"><span class="muted small">Loading...</span></div></section>
         <section><div class="lbl"><span>Reports waiting for approval</span><span id="rev-n"></span></div><div class="box" id="reviews"><div class="empty">Loading...</div></div></section>
+        <section><div class="lbl"><span>Suggestions from contractors</span><span id="sug-n"></span></div><div class="box" id="suggest"><div class="empty">Loading...</div></div></section>
         <section><div class="lbl">Claimed right now</div><div class="box" id="claimed"></div></section>
         <section><div class="lbl">Stand-downs (unsafe to fly, no penalty)</div><div class="box" id="stood"></div></section>
         <section><div class="lbl">Missed jobs</div><div class="box" id="missed"></div></section>
@@ -151,7 +152,7 @@ async function load(){
   if(!localStorage.getItem(TK)){showLogin();return;}
   const r=await api('/owner/overview');if(!r.ok){if(r.status!==401)showLogin('Could not load. Try again.');return;}
   data=r.data;$('login').style.display='none';$('app').style.display='block';
-  loadCap();loadReviews();
+  loadCap();loadReviews();loadSuggestions();
   const c=data.counts;
   $('stats').innerHTML=[['Scans open',c.scansOpen],['Reports open',c.reportsOpen],['Scans claimed',c.scansClaimed],['Reports claimed',c.reportsClaimed]].map(x=>`<div class="metric"><div class="n">${x[1]}</div><div class="t">${x[0]}</div></div>`).join('');
   $('needs').innerHTML=data.needsYou.length?data.needsYou.map(n=>`<div class="attn"><b>${esc(n.name)}</b><ul>${n.needs.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`).join(''):'<div class="box empty">Nothing needs your attention.</div>';
@@ -239,6 +240,15 @@ async function reviewReport(i,action){
   if(openIdx===i)closeReview();
   loadReviews();
 }
+async function loadSuggestions(){
+  const r=await api('/owner/suggestions');
+  if(!r.ok){$('suggest').innerHTML='<div class="empty">Could not load suggestions.</div>';return;}
+  const list=r.data.suggestions||[];
+  $('sug-n').textContent=list.length?list.length:'';
+  $('suggest').innerHTML=list.length?list.map((s,i)=>`<div class="item"><div class="ch"><span class="name">${esc(s.from||'Unknown')}</span><span class="chip">${esc(s.role||'')}</span></div><div class="muted small" style="margin-bottom:6px;">${esc(new Date(s.at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}))} &middot; ${esc(s.page||'')}</div><div style="white-space:pre-line;font-size:13.5px;">${esc(s.text)}</div><div class="btnrow" style="margin-top:10px;"><span class="grow"></span><button class="btn sec" onclick="sugDone(${i})">Done</button></div></div>`).join(''):'<div class="empty">No suggestions yet.</div>';
+  window._sug=list;
+}
+async function sugDone(i){const s=(window._sug||[])[i];if(!s)return;await api('/owner/suggestion-done','POST',{key:s.key});loadSuggestions();}
 async function loadCap(){
   const r=await api('/owner/capacity');
   if(!r.ok){$('cap').innerHTML='<span class="muted small">Could not load capacity.</span>';return;}
