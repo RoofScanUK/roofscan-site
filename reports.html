@@ -1759,13 +1759,17 @@ async function bpClassify(base64){
 }
 async function bpProcessFile(file){
   var zone = bpZoneMap.get(file) || '';
+  var proc = null;
   try{
-    var proc = await bpProcessImage(file);
+    proc = await bpProcessImage(file);
     var result = await bpClassify(proc.base64);
     bpPlacePhoto(file, proc, BP_CATS[result.catIdx], result.note, zone);
     bpCaptureRoofSpecCandidate(result.catIdx, proc.base64);
   }catch(e){
-    bpAddExtra(file, null, 'Failed to sort — add manually', '', zone);
+    // Keep the processed image (if we got that far) so "Attach to…" still works, and say why sorting failed.
+    window.bpLastSortError = (e && e.message) ? e.message : String(e);
+    console.warn('Photo sort failed:', window.bpLastSortError);
+    bpAddExtra(file, proc, 'Failed to sort (' + window.bpLastSortError.slice(0,40) + ') — attach manually', '', zone);
   }
   bpDone++;
   bpUpdateProgress();
@@ -1947,13 +1951,21 @@ function bpAddExtra(file, proc, label, note, zone){
     + '<button onclick="bpRemoveExtra(\''+id+'\')">Discard</button>';
   grid.appendChild(div);
   div._proc = proc;
+  div._file = file;
   div._note = note || '';
   div._zone = zone || '';
 }
 function bpAssignExtra(id, secId){
   if(!secId) return;
   var el = document.getElementById(id);
-  if(!el || !el._proc) return;
+  if(!el) return;
+  if(!el._proc){
+    // Older failure path with no processed copy: process the original file now.
+    if(!el._file){ alert('This photo could not be read. Please discard it and add it again.'); return; }
+    bpProcessImage(el._file).then(function(p){ el._proc = p; bpAssignExtra(id, secId); })
+      .catch(function(){ alert('This photo could not be read. Please discard it and add it again.'); });
+    return;
+  }
   var body = document.getElementById('secbody_'+secId);
   if(!body) return;
   addObservation(secId, body);
