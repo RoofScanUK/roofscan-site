@@ -130,6 +130,11 @@ const AT = (function() {
   // Full-screen owner login, shown automatically on any page that loads this file without a session.
   function ownerLogin() {
     if (hasToken()) return;
+    // A report writer opens the generator from their own job card (reports.html?job=...) while logged in as a contractor.
+    // That page uses their contractor login, so don't bounce them to the owner login.
+    try {
+      if (/reports\.html$/.test(location.pathname) && new URLSearchParams(location.search).get('job') && localStorage.getItem('rs_ct_token')) return;
+    } catch (e) {}
     // One front door: send the owner to the shared login page and bring them back here afterwards.
     var here = (location.pathname.split('/').pop() || 'staff.html');
     location.href = 'login.html?next=' + encodeURIComponent(here);

@@ -215,7 +215,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
   <div class="header-text"><h1>RoofScan UK</h1><p>Drone Roof Inspection Report Generator</p></div>
 </div>
 <div class="container">
-  
+  <div id="ct-banner" style="display:none;margin:0 0 12px;padding:12px 14px;border:1px solid #DEDACE;background:#fff;font-size:14px;line-height:1.5;"></div>
+
   <!-- JOB PICKER — load from Airtable -->
   <div class="job-picker-card" id="job-picker-section" style="display:none;">
     <div class="job-picker-label">🔗 Load job from Airtable</div>
@@ -424,7 +425,13 @@ document.getElementById("headerLogo").src = "data:image/png;base64,iVBORw0KGgoAA
 // key server-side. getStaffKey() is a throwaway passphrase Takhy makes up himself — it never
 // touches Anthropic, it just proves the request came from an authorised device.
 var WORKER_BASE = 'https://roofscan-api.tiny-voice-ac40.workers.dev';
-function getStaffKey(){ try{ return localStorage.getItem('rs_owner_token') || localStorage.getItem('rs_staff_key') || ''; }catch(e){ return ''; } }
+// Report writers open this page from their job card (reports.html?job=<id>) while logged in as a contractor.
+// In that mode the job, the flyer's photos and the submit step all go through their own login, and the owner's
+// Airtable token is never involved. If an Airtable token is present (owner/staff device) the normal flow is used.
+var CT_JOB = (new URLSearchParams(location.search)).get('job') || '';
+var CT_TOKEN = ''; try{ CT_TOKEN = localStorage.getItem('rs_ct_token') || ''; }catch(e){}
+var CT_MODE = !!(CT_JOB && CT_TOKEN && !(typeof AT !== 'undefined' && AT.hasToken()));
+function getStaffKey(){ try{ return localStorage.getItem('rs_owner_token') || localStorage.getItem('rs_staff_key') || (CT_MODE ? CT_TOKEN : ''); }catch(e){ return ''; } }
 async function callClaude(model, maxTokens, messages){
   var res = await fetch(WORKER_BASE + '/ai-proxy', {
     method: 'POST',
@@ -517,7 +524,7 @@ function removeObs(key){delete state[key];var el=document.getElementById("obsblo
 // report is actually generated. Photos are deliberately excluded from the draft — base64 image
 // data would blow past localStorage's ~5MB quota after a handful of photos — so a resumed
 // report keeps all text/status but photos need re-adding, which the resume detail text notes.
-var RS_DRAFT_KEY = 'rs_report_draft';
+var RS_DRAFT_KEY = CT_MODE ? 'rs_report_draft_' + CT_JOB : 'rs_report_draft'; // one draft per job for writers, so jobs never mix
 var _autosaveTimer = null;
 var _pendingDraft = null;
 
@@ -1039,6 +1046,13 @@ async function generateReport(){
     // filename itself is enough to find things without depending on browser-specific behaviour.
     var filename="RoofScan_"+d.address.replace(/[^a-zA-Z0-9]/g,"_").substring(0,30)+"_"+d.reportRef+".docx";
     saveAs(blob,filename);
+    if(CT_MODE){
+      // Report writers don't write to Airtable: the finished report goes to RoofScan for checking.
+      msg.className="status-msg";msg.textContent="Report built. Sending it to RoofScan...";
+      var sentOk=await ctSubmit(blob,d);
+      if(sentOk) clearSavedReport();
+      return;
+    }
     msg.className="status-msg success";msg.textContent="Report downloaded successfully.";
     // A finished, downloaded report shouldn't keep prompting "resume this draft?" on next visit.
     clearSavedReport();
@@ -1659,7 +1673,7 @@ function bpHandleFiles(fileList){
   bpBuildZoneStrip(files);
   bpTotal += files.length;
   bpUpdateProgress();
-  bpRunPool(files, 4, bpProcessFile).then(bpMaybeDetectRoofSpecs);
+  return bpRunPool(files, 4, bpProcessFile).then(bpMaybeDetectRoofSpecs);
 }
 function bpRunPool(items, limit, worker){
   var idx = 0, active = 0;
@@ -2428,9 +2442,113 @@ async function loadBenchmark(){
   }
 })();
 
+// ═══ REPORT WRITER MODE ═══════════════════════════════════════════
+// Opened from the writer's job card. Fills in the job, pulls the flyer's photos straight into the bulk import,
+// and sends the finished report to RoofScan for checking instead of writing anywhere itself.
+function ctApi(path, opts){
+  opts = opts || {};
+  opts.headers = Object.assign({ 'Authorization': 'Bearer ' + CT_TOKEN }, opts.headers || {});
+  return fetch(WORKER_BASE + path, opts);
+}
+function ctBanner(html, kind){
+  var b = document.getElementById('ct-banner'); if(!b) return;
+  b.style.display = 'block';
+  b.style.borderColor = kind === 'error' ? '#E3C4C0' : (kind === 'ok' ? '#BFD6C7' : '#DEDACE');
+  b.style.background = kind === 'error' ? '#F6E6E4' : (kind === 'ok' ? '#EAF2EC' : '#fff');
+  b.innerHTML = html;
+}
+function ctEsc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+async function ctInit(){
+  if(!CT_MODE) return;
+  ctBanner('Loading your job...');
+  var jr, j;
+  try{ jr = await ctApi('/contractor/job?jobId=' + encodeURIComponent(CT_JOB)); j = await jr.json(); }
+  catch(e){ ctBanner('Could not reach RoofScan. Check your connection and reload.', 'error'); return; }
+  if(jr.status === 401){ location.href = 'login.html?next=jobs.html'; return; }
+  if(!jr.ok){ ctBanner(ctEsc(j.error || 'Could not load this job.') + ' <a href="jobs.html">Back to your jobs</a>', 'error'); return; }
+
+  var addr = j.address || '', pm = addr.match(/\b([A-Z]{1,2}[0-9][0-9A-Z]?\s*[0-9][A-Z]{2})\b/i);
+  var postcode = pm ? pm[1].toUpperCase() : '', addrClean = pm ? addr.replace(pm[0], '').replace(/,\s*$/, '').trim() : addr;
+  var ref = j.jobRef || '';
+  if(!ref){
+    var initials = (j.client || '').split(' ').map(function(w){ return w[0] || ''; }).join('').toUpperCase().slice(0,2);
+    var ds = j.date ? j.date.replace(/-/g,'').slice(2) : new Date().toISOString().slice(2,10).replace(/-/g,'');
+    ref = 'RSU-' + ds + (initials || 'XX');
+  }
+  var set = function(id, v){ var el = document.getElementById(id); if(el && v){ el.value = v; return true; } return false; };
+  set('address', addrClean || addr); set('postcode', postcode); set('client', j.client); set('inspDate', j.date); set('reportRef', ref);
+  if(set('roofType', 'Pitched')){
+    var rt = document.getElementById('roofType');
+    if(rt){ rt.dataset.roofTypeIsAssumed = 'true'; rt.addEventListener('input', function(){ this.dataset.roofTypeIsAssumed = 'false'; }, {once:true}); }
+  }
+  set('inspector', 'Takhy Ndiaye Marrero');
+  var card = document.getElementById('client-info-card');
+  if(card){
+    card.style.display = 'block';
+    var put = function(id, v){ var el = document.getElementById(id); if(el) el.textContent = v || '—'; };
+    put('ci-client', j.client); put('ci-proptype', j.propertyType); put('ci-ref', ref);
+    var addons = [];
+    if(j.chimneys > 0) addons.push(j.chimneys + ' chimney' + (j.chimneys > 1 ? 's' : ''));
+    if(j.extensions > 0) addons.push(j.extensions + ' extension' + (j.extensions > 1 ? 's' : ''));
+    if(j.dormers > 0) addons.push(j.dormers + ' dormer' + (j.dormers > 1 ? 's' : ''));
+    if(j.outbuildings > 0) addons.push(j.outbuildings + ' outbuilding' + (j.outbuildings > 1 ? 's' : ''));
+    var row = document.getElementById('ci-addons-row');
+    if(row){ if(addons.length){ row.style.display = 'flex'; row.innerHTML = '<span style="font-size:11px;font-weight:700;color:#1A5276;margin-right:4px;">Add-ons:</span>' + addons.map(function(a){ return '<span class="addon-badge">' + a + '</span>'; }).join(''); } else row.style.display = 'none'; }
+  }
+  var fb = j.feedback ? '<div style="margin-top:8px;padding:8px 10px;background:#F7EFDD;border:1px solid #E6D3A8;white-space:pre-line;"><strong>RoofScan asked for changes:</strong> ' + ctEsc(j.feedback) + '</div>' : '';
+  if(!j.photoCount){
+    ctBanner('<strong>' + ctEsc(j.client || 'Your job') + '</strong>: details filled in. No photos were uploaded for this scan' + (j.photosLink ? ' (the flyer shared a link instead: <a href="' + ctEsc(j.photosLink) + '" target="_blank" rel="noopener">open it</a>, download the photos, then drag them into Bulk photo import below)' : '. Contact RoofScan before you start') + '.' + fb, j.photosLink ? '' : 'error');
+    return;
+  }
+  ctBanner('<strong>' + ctEsc(j.client || 'Your job') + '</strong>: details filled in. Loading ' + j.photoCount + ' photos...' + fb);
+  await ctLoadPhotos(j.client, fb);
+}
+async function ctFetchPhoto(name){
+  for(var attempt = 0; attempt < 2; attempt++){
+    try{
+      var r = await ctApi('/contractor/photo?jobId=' + encodeURIComponent(CT_JOB) + '&name=' + encodeURIComponent(name));
+      if(r.ok){ var b = await r.blob(); return new File([b], name, { type: b.type || 'image/jpeg', lastModified: Date.now() }); }
+    }catch(e){}
+  }
+  return null;
+}
+async function ctLoadPhotos(client, fb){
+  var lr = await ctApi('/contractor/photos?jobId=' + encodeURIComponent(CT_JOB)), ld = await lr.json();
+  var names = (ld.photos || []).map(function(p){ return p.name; }).sort(function(a,b){ return a < b ? -1 : (a > b ? 1 : 0); });
+  var BATCH = 20, loaded = 0, missed = 0;
+  var chunk = function(i){ return Promise.all(names.slice(i, i + BATCH).map(ctFetchPhoto)); };
+  var next = chunk(0);
+  for(var i = 0; i < names.length; i += BATCH){
+    var files = await next;
+    next = (i + BATCH < names.length) ? chunk(i + BATCH) : Promise.resolve([]);   // download the next batch while this one is being sorted
+    var good = files.filter(function(f){ return !!f; });
+    missed += files.length - good.length;
+    if(good.length){ loaded += good.length; await bpHandleFiles(good); }
+    ctBanner('<strong>' + ctEsc(client || 'Your job') + '</strong>: details filled in. Loading photos: ' + loaded + ' of ' + names.length + '...' + fb);
+  }
+  ctBanner('<strong>' + ctEsc(client || 'Your job') + '</strong>: details filled in and ' + loaded + ' photos loaded into Bulk photo import' + (missed ? ' (' + missed + ' could not be downloaded, reload the page to try again)' : '') + '. Check the placements, add your findings, then press the button at the bottom. The finished report goes to RoofScan automatically.' + fb, missed ? 'error' : 'ok');
+}
+async function ctSubmit(blob, d){
+  var msg = document.getElementById('statusMsg');
+  try{
+    var r = await ctApi('/contractor/report-submit?jobId=' + encodeURIComponent(CT_JOB) + '&ref=' + encodeURIComponent(d.reportRef || '') + '&score=' + encodeURIComponent(_currentRoofScore || 0),
+      { method:'POST', headers:{ 'Content-Type':'application/octet-stream' }, body: blob });
+    var j = await r.json().catch(function(){ return {}; });
+    if(!r.ok) throw new Error(j.error || ('HTTP ' + r.status));
+    msg.className = 'status-msg success';
+    msg.innerHTML = 'Report sent to RoofScan for checking. <a href="jobs.html">Back to your jobs</a>';
+    return true;
+  }catch(e){
+    msg.className = 'status-msg error';
+    msg.textContent = 'The report was built and downloaded, but it could not be sent to RoofScan (' + e.message + '). Press the button again to retry, or use "Submit a link instead" on your job card.';
+    return false;
+  }
+}
+
 // Initialise
 document.addEventListener('DOMContentLoaded', function() {
   initJobPicker();
+  ctInit();
 });
 
 </script>

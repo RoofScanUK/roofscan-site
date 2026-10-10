@@ -46,6 +46,8 @@ h1{font-size:20px;font-weight:800;}
 .jm{font-size:12px;color:var(--mu);margin-top:2px;}
 .pay{font-weight:800;color:var(--gr);font-size:17px;white-space:nowrap;}
 .acts{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;}
+.dz{border:1.5px dashed var(--br);border-radius:6px;padding:14px;text-align:center;background:#fff;margin:10px 0;}
+.dz.over{border-color:var(--g);background:#FBF6EC;}
 .chk{display:flex;gap:10px;align-items:flex-start;font-size:13px;padding:8px 0;border-top:1px solid var(--br);}
 .chk input{margin-top:3px;}
 .chk.locked{color:var(--mu);}
@@ -357,14 +359,12 @@ function scanPanel(j){
   const locked = k => `<div class="chk locked"><input type="checkbox" disabled ${st[k]==='ok'?'checked':''}> <span>${CK[k]} <em>(checked for you)</em></span></div>`;
   const w = st.weatherMsg ? `<div class="banner ${st.weather==='ok'?'b-green':(st.weather==='red'?'b-red':'b-amber')}" style="margin:8px 0;">${esc(st.weatherMsg)}</div>` : '';
   const a = st.airspaceMsg ? `<div class="banner ${st.airspace==='ok'?'b-green':(st.airspace==='red'?'b-red':'b-amber')}" style="margin:8px 0;">${esc(st.airspaceMsg)}</div>` : '';
-  const fresh = st.checkedAt && (Date.now() - st.checkedAt) < 6*3600*1000;
-  const ready = fresh && st.weather==='ok' && st.airspace==='ok' && st.batteries && st.docs && st.site && board.me.scansAllowed && okLink(st.link);
+  const ready = canMarkScan(j.id);
   const blocked = st.weather==='red' || st.airspace==='red';
   return `<div style="margin-top:12px;border-top:1px solid var(--br);padding-top:10px;"><div class="jt" style="font-size:13px;">Scan checklist <a href="photo-guide.html" target="_blank" rel="noopener" style="font-weight:400;font-size:12px;margin-left:8px;color:var(--muted);">What to photograph</a></div>
   <div class="acts" style="margin-top:6px;"><button class="btn ghost" onclick="runChecks('${j.id}')">${st.weather?'Re-check':'Check'} weather and airspace</button></div>
   ${w}${a}${locked('weather')}${locked('airspace')}${manual}
-  <div style="margin:10px 0 4px;font-size:12px;color:var(--muted);">After the flight, upload all photos to a shared folder (Google Drive, Dropbox or OneDrive), set it to "anyone with the link can view", and paste the link here. Check it opens in a private window first, because the report writer cannot get to it if it is locked.</div>
-  <input class="inp" id="plink-${j.id}" type="url" inputmode="url" autocomplete="off" placeholder="https://drive.google.com/..." value="${esc(st.link||'')}" style="letter-spacing:0;width:100%;" oninput="setLink('${j.id}',this.value)">
+  ${photoBox(j, st)}
   <div class="acts">
     <button class="btn" id="scanbtn-${j.id}" ${ready?'':'disabled'} onclick="completeScan('${j.id}')">Mark scan done</button>
     ${blocked?`<button class="btn warn" onclick="standDown('${j.id}')">Unsafe to fly. Stand down</button>`:`<button class="btn ghost" onclick="standDown('${j.id}')">Stand down (unsafe)</button>`}
@@ -373,24 +373,127 @@ function scanPanel(j){
 function setManual(id, k, v){ const c = get(LS.checks, {}); c[id] = c[id] || {}; c[id][k] = v; put(LS.checks, c); render(); }
 // A link must be a full https:// address (no spaces). The server checks it again.
 function okLink(v){ v = String(v||'').trim(); if (v.length < 12 || /\s/.test(v)) return false; try { const u = new URL(v); return u.protocol === 'https:' && u.hostname.indexOf('.') > 0; } catch(e){ return false; } }
+const MIN_PHOTOS = 10;
+function canMarkScan(id){
+  const st = get(LS.checks, {})[id] || {}, p = PH[id];
+  const fresh = st.checkedAt && (Date.now() - st.checkedAt) < 6*3600*1000;
+  const haveMedia = (p && p.count >= MIN_PHOTOS && !p.busy) || okLink(st.link);
+  return !!(fresh && st.weather==='ok' && st.airspace==='ok' && st.batteries && st.docs && st.site && board.me.scansAllowed && haveMedia);
+}
 function setLink(id, v, key){
   key = key || 'link'; // scans use "link", reports use "rlink" so a flyer who also writes reports never mixes them up
   const c = get(LS.checks, {}); c[id] = c[id] || {}; c[id][key] = v.trim(); put(LS.checks, c);
   // enable/disable the buttons in place so the text box keeps focus while typing
-  const sb = document.getElementById('scanbtn-'+id);
-  if (sb) { const st = c[id]; const fresh = st.checkedAt && (Date.now() - st.checkedAt) < 6*3600*1000;
-    sb.disabled = !(fresh && st.weather==='ok' && st.airspace==='ok' && st.batteries && st.docs && st.site && board.me.scansAllowed && okLink(st.link)); }
+  const sb = document.getElementById('scanbtn-'+id); if (sb && key === 'link') sb.disabled = !canMarkScan(id);
   const rb = document.getElementById('repbtn-'+id); if (rb && key === 'rlink') rb.disabled = !okLink(v);
 }
+
+// ── Scan photos: drag and drop (or choose) and they upload straight to RoofScan ──
+// PH[jobId] = { count (uploaded so far, null = not asked yet), total/done (this batch), queue, failed:[File], busy, fatal }
+const PH = {};
+const ph = id => PH[id] || (PH[id] = { count:null, total:0, done:0, queue:[], failed:[], busy:false, loading:false, fatal:'' });
+async function loadPhotoCount(id){
+  const p = ph(id); if (p.loading) return; p.loading = true;
+  try { const r = await api('/contractor/photos?jobId=' + encodeURIComponent(id)); p.count = r.ok ? (r.data.count||0) : 0; }
+  catch(e){ p.count = p.count == null ? 0 : p.count; }
+  p.loading = false; render();
+}
+function photoStatusText(p){ if (p.busy) return 'Uploading ' + p.done + ' of ' + p.total + '...'; const n = p.count||0; return n ? n + ' photo' + (n===1?'':'s') + ' uploaded' : 'No photos uploaded yet'; }
+function updatePhotoUi(id){
+  const p = ph(id), s = $('pstat-'+id), b = $('pbar-'+id), sb = $('scanbtn-'+id);
+  if (s) s.textContent = photoStatusText(p);
+  if (b) b.style.width = p.total ? Math.round(p.done*100/p.total) + '%' : '0%';
+  if (sb) sb.disabled = !canMarkScan(id);
+}
+function photoBox(j, st){
+  const p = ph(j.id); if (p.count === null) loadPhotoCount(j.id);
+  const fails = p.failed.length ? `<div class="banner b-red" style="margin:8px 0 0;">${p.failed.length} photo${p.failed.length===1?'':'s'} did not upload. <button class="btn ghost" style="margin-left:6px;" onclick="retryPhotos('${j.id}')">Retry</button></div>` : '';
+  const fatal = p.fatal ? `<div class="banner b-red" style="margin:8px 0 0;">${esc(p.fatal)}</div>` : '';
+  return `<div class="dz" data-id="${j.id}">
+    <div style="font-weight:600;color:var(--n);">Drag your photos here</div>
+    <div class="muted" style="font-size:12px;margin:2px 0 8px;">or <label style="text-decoration:underline;cursor:pointer;">choose photos<input type="file" multiple accept="image/jpeg,image/png,image/webp" style="display:none;" onchange="pickPhotos('${j.id}',this.files);this.value=''"></label>. JPG, PNG or WebP. They are shrunk to report size as they upload. At least ${MIN_PHOTOS} are needed.</div>
+    <div id="pstat-${j.id}" style="font-size:13px;">${photoStatusText(p)}</div>
+    <div style="height:6px;background:#EEE9DD;margin-top:6px;"><div id="pbar-${j.id}" style="height:6px;background:var(--g);width:${p.total?Math.round(p.done*100/p.total):0}%;"></div></div>
+    ${fails}${fatal}
+  </div>
+  <details style="margin:6px 0;"><summary style="font-size:12px;color:var(--muted);cursor:pointer;">Already have the photos in a shared folder? Paste a link instead</summary>
+    <div style="margin:6px 0 4px;font-size:12px;color:var(--muted);">Set it to "anyone with the link can view" and check it opens in a private window first, because the report writer cannot get to it if it is locked.</div>
+    <input class="inp" id="plink-${j.id}" type="url" inputmode="url" autocomplete="off" placeholder="https://drive.google.com/..." value="${esc(st.link||'')}" style="letter-spacing:0;width:100%;" oninput="setLink('${j.id}',this.value)">
+  </details>`;
+}
+// Shrinks big drone photos to about 2400px on the long edge before upload. Falls back to the original if the browser can't read it.
+function shrinkPhoto(file){
+  return new Promise(res => {
+    const u = URL.createObjectURL(file), img = new Image();
+    img.onload = () => {
+      const w = img.naturalWidth, h = img.naturalHeight, s = Math.min(1, 2400/Math.max(w,h));
+      if (s === 1 && file.size < 1500000) { URL.revokeObjectURL(u); return res({ blob:file, name:file.name }); }
+      const c = document.createElement('canvas'); c.width = Math.round(w*s); c.height = Math.round(h*s);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(u);
+      c.toBlob(b => res(b ? { blob:b, name:file.name.replace(/\.[^.]+$/, '') + '.jpg' } : { blob:file, name:file.name }), 'image/jpeg', 0.85);
+    };
+    img.onerror = () => { URL.revokeObjectURL(u); res({ blob:file, name:file.name }); };
+    img.src = u;
+  });
+}
+async function uploadOne(id, name, blob){
+  const res = await fetch(API + '/contractor/photo-upload?jobId=' + encodeURIComponent(id) + '&name=' + encodeURIComponent(name),
+    { method:'POST', headers:{ Authorization:'Bearer ' + localStorage.getItem(LS.tok), 'Content-Type':'application/octet-stream' }, body: blob });
+  let d = {}; try { d = await res.json(); } catch(e){}
+  if (!res.ok) { const e = new Error(d.error || ('HTTP ' + res.status)); e.status = res.status; throw e; }
+  return d;
+}
+function pickPhotos(id, fileList){
+  const p = ph(id), all = Array.prototype.slice.call(fileList||[]);
+  const files = all.filter(f => /^image\/(jpeg|png|webp)$/.test(f.type) || /\.(jpe?g|png|webp)$/i.test(f.name));
+  if (all.length > files.length) notice((all.length - files.length) + ' file(s) skipped. Only JPG, PNG and WebP photos can be uploaded.', 'amber');
+  if (!files.length) return;
+  if (!navigator.onLine) { notice('You need signal to upload photos. Try again when you are back online.', 'amber'); return; }
+  files.sort((a,b) => a.name < b.name ? -1 : (a.name > b.name ? 1 : 0));
+  p.fatal = ''; p.queue = p.queue.concat(files); p.total += files.length;
+  if (!p.busy) runUploads(id); else updatePhotoUi(id);
+}
+function retryPhotos(id){ const p = ph(id); const again = p.failed; p.failed = []; p.fatal = ''; if (again.length) { p.queue = p.queue.concat(again); p.total += again.length; if (!p.busy) runUploads(id); } render(); }
+async function runUploads(id){
+  const p = ph(id); p.busy = true; updatePhotoUi(id);
+  const worker = async () => {
+    while (p.queue.length && !p.fatal) {
+      const file = p.queue.shift();
+      try {
+        const s = await shrinkPhoto(file);
+        let r; try { r = await uploadOne(id, s.name, s.blob); } catch(e){ if (e.status) throw e; r = await uploadOne(id, s.name, s.blob); } // one quiet retry on a dropped connection
+        p.count = r.count;
+      } catch(e) {
+        if (e.status === 401) { p.fatal = 'Your session has ended. Log in again, then retry.'; p.failed.push(file); }
+        else if (e.status === 403 || e.status === 409 || e.status === 500) { p.fatal = e.message; p.failed.push(file); }
+        else p.failed.push(file);
+      }
+      p.done++; updatePhotoUi(id);
+    }
+  };
+  await Promise.all([worker(), worker(), worker()]);
+  if (p.fatal) p.failed = p.failed.concat(p.queue.splice(0));
+  p.busy = false; p.total = 0; p.done = 0; updatePhotoUi(id); render();
+}
+document.addEventListener('dragover', e => { const z = e.target.closest && e.target.closest('.dz'); if (z) { e.preventDefault(); z.classList.add('over'); } });
+document.addEventListener('dragleave', e => { const z = e.target.closest && e.target.closest('.dz'); if (z) z.classList.remove('over'); });
+document.addEventListener('drop', e => { const z = e.target.closest && e.target.closest('.dz'); if (!z) return; e.preventDefault(); z.classList.remove('over'); pickPhotos(z.dataset.id, e.dataTransfer.files); });
+
 function reportPanel(j){
-  const st = get(LS.checks, {})[j.id] || {};
-  const photos = okLink(j.photosLink) ? `<a class="btn ghost" href="${esc(j.photosLink)}" target="_blank" rel="noopener" style="display:inline-block;text-decoration:none;">Open scan photos</a>` : `<div class="banner b-amber">No photo link was saved for this scan. Contact RoofScan before you start.</div>`;
+  const st = get(LS.checks, {})[j.id] || {}, p = ph(j.id);
+  if (p.count === null) loadPhotoCount(j.id);
+  const n = p.count || 0;
   const fb = j.reportFeedback ? `<div class="banner b-amber" style="margin:8px 0;white-space:pre-line;"><strong>RoofScan asked for changes:</strong> ${esc(j.reportFeedback)}</div>` : '';
-  return `<div style="margin-top:12px;border-top:1px solid var(--br);padding-top:10px;"><div class="jt" style="font-size:13px;">Report</div>${fb}
-  <div class="acts" style="margin-top:6px;">${photos}</div>
-  <div style="margin:10px 0 4px;font-size:12px;color:var(--muted);">Build the report in the report generator, save it to a shared folder, and paste the link to the finished report here. RoofScan approves it before the client sees it.</div>
-  <input class="inp" id="rlink-${j.id}" type="url" inputmode="url" autocomplete="off" placeholder="https://drive.google.com/..." value="${esc(st.rlink||'')}" style="letter-spacing:0;width:100%;" oninput="setLink('${j.id}',this.value,'rlink')">
-  <div class="acts"><button class="btn" id="repbtn-${j.id}" ${okLink(st.rlink)?'':'disabled'} onclick="completeReport('${j.id}')">Mark report done</button></div></div>`;
+  const link = okLink(j.photosLink) ? `<a class="btn ghost" href="${esc(j.photosLink)}" target="_blank" rel="noopener" style="display:inline-block;text-decoration:none;">Open the flyer's photo link</a>` : '';
+  const photoLine = n ? `<div style="font-size:13px;margin:6px 0;">${n} photo${n===1?'':'s'} from the flyer will load into the generator automatically.</div>`
+    : (link ? `<div style="font-size:13px;margin:6px 0;">The flyer shared the photos by link instead. Download them from the link, then drag them into the generator.</div>`
+    : `<div class="banner b-amber">No photos were saved for this scan. Contact RoofScan before you start.</div>`);
+  return `<div style="margin-top:12px;border-top:1px solid var(--br);padding-top:10px;"><div class="jt" style="font-size:13px;">Report</div>${fb}${photoLine}
+  <div class="acts" style="margin-top:6px;"><a class="btn" href="reports.html?job=${encodeURIComponent(j.id)}" style="display:inline-block;text-decoration:none;">Open report generator</a>${n ? '' : link}</div>
+  <div style="margin:8px 0 0;font-size:12px;color:var(--muted);">Finish the report in the generator and press Generate. It goes to RoofScan for checking automatically, and nothing reaches the client until RoofScan approves it.</div>
+  <details style="margin-top:10px;"><summary style="font-size:12px;color:var(--muted);cursor:pointer;">Finished the report somewhere else? Submit a link instead</summary>
+    <input class="inp" id="rlink-${j.id}" type="url" inputmode="url" autocomplete="off" placeholder="https://drive.google.com/..." value="${esc(st.rlink||'')}" style="letter-spacing:0;width:100%;margin-top:6px;" oninput="setLink('${j.id}',this.value,'rlink')">
+    <div class="acts"><button class="btn ghost" id="repbtn-${j.id}" ${okLink(st.rlink)?'':'disabled'} onclick="completeReport('${j.id}')">Submit report link</button></div></details></div>`;
 }
 function completeScan(id){ const st = get(LS.checks, {})[id] || {}; act({type:'complete', jobId:id, kind:'scan', link:st.link}); }
 function completeReport(id){ const st = get(LS.checks, {})[id] || {}; act({type:'complete', jobId:id, kind:'report', link:st.rlink}); }

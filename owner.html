@@ -156,10 +156,11 @@ async function loadReviews(){
 async function reviewReport(i,action){
   const j=reviewList[i];if(!j)return;
   let note='';
-  if(action==='approve'){if(!confirm('Approve this report? It stays with you to send to the client.'))return;}
+  if(action==='approve'){if(!confirm('Approve this report? Reports built in the generator are published to the job (Report Link, RoofScore and reference) so the client portal and your report email can use them.'))return;}
   else{note=prompt('What needs changing? This goes to the report writer.')||'';if(note.trim().length<3)return;}
   const r=await api('/owner/report-review','POST',{id:j.id,action,note});
   if(!r.ok){alert(r.data.error||'Could not save.');}
+  else if(action==='approve'&&r.data.published===false){alert('Approved. This report was submitted as an outside link, so it was not published to the job. Add it to the job yourself if needed.');}
   loadReviews();
 }
 async function loadCap(){
