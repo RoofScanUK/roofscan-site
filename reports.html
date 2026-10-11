@@ -473,6 +473,37 @@ function rsParseJSON(text){
   if(a < 0 || b <= a) throw new Error('The AI reply was incomplete. Press the button again.');
   return JSON.parse(t.slice(a, b+1));
 }
+// Turns any AI failure into a plain-English message. Writers see what to do next, never raw error text.
+// When the problem is on RoofScan's side (no credit, retired model), the owner is told automatically once per page.
+var _rsAiAlerted = false;
+async function rsAiFail(res){
+  var body = await res.text().catch(function(){ return ''; });
+  var kind = /credit balance/i.test(body) ? 'credit'
+    : (res.status === 404 || /not_found_error|model:/i.test(body)) ? 'model'
+    : (res.status === 429 || res.status === 529 || /overloaded|rate.limit/i.test(body)) ? 'busy'
+    : (res.status === 401 || res.status === 403) ? 'login' : 'other';
+  var msg;
+  if(CT_MODE){
+    msg = { credit:'AI help is not available right now. RoofScan has been told. Carry on and write this part yourself.',
+            model:'AI help is not available right now. RoofScan has been told. Carry on and write this part yourself.',
+            busy:'The AI is busy. Wait a minute and try again.',
+            login:'Your login has expired. Go back to My jobs (your work is saved) and log in again.',
+            other:'AI help did not work this time. Try again, or write this part yourself.' }[kind];
+    if((kind === 'credit' || kind === 'model' || kind === 'other') && !_rsAiAlerted){
+      _rsAiAlerted = true;
+      try{ ctApi('/contractor/suggestion', { method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ page:'automatic alert', text:'Automatic alert: AI help failed in the report generator ('+kind+', HTTP '+res.status+'). '+(kind==='credit'?'Anthropic credit has run out: top up in Plans & Billing.':kind==='model'?'The AI model name needs updating in the Worker.':'Details: '+body.slice(0,200)) }) }); }catch(e){}
+    }
+  } else {
+    msg = { credit:'Anthropic credit has run out. Top up at console.anthropic.com (Plans & Billing).',
+            model:'The AI model name is out of date. Update the model names in the Worker.',
+            busy:'The AI is busy. Wait a minute and try again.',
+            login:'Passphrase rejected by the Worker (HTTP '+res.status+'). Go to Bulk photo import below, click "change", and re-enter the exact passphrase set as STAFF_API_KEY on the Worker.',
+            other:'AI error (HTTP '+res.status+')'+(body?': '+body.slice(0,150):'') }[kind];
+  }
+  var err = new Error(msg); err.kind = kind; err.friendly = true;
+  return err;
+}
 async function callClaude(model, maxTokens, messages){
   var res = await fetch(WORKER_BASE + '/ai-proxy', {
     method: 'POST',
@@ -484,13 +515,7 @@ async function callClaude(model, maxTokens, messages){
   // "Cannot read properties of undefined" — the exact silent-failure pattern that cost hours
   // debugging the passphrase mismatch last time. A 401/403 here almost always means the
   // passphrase saved on this device doesn't match STAFF_API_KEY on the Worker.
-  if(!res.ok){
-    var bodyText = await res.text().catch(function(){ return ''; });
-    if(res.status === 401 || res.status === 403){
-      throw new Error('Passphrase rejected by the Worker (HTTP '+res.status+'). Go to Bulk photo import below, click "change", and re-enter the exact passphrase set as STAFF_API_KEY on the Worker.');
-    }
-    throw new Error('AI proxy error (HTTP '+res.status+')'+(bodyText?': '+bodyText.slice(0,150):''));
-  }
+  if(!res.ok) throw await rsAiFail(res);
   return res;
 }
 
@@ -922,7 +947,7 @@ async function generateSummaries(){
     document.getElementById("maintenance").value=asBullets(parsed.maintenance);
     rsGrowAll();
     document.getElementById("aiStatus").textContent="Done - review and edit as needed.";
-  }catch(err){document.getElementById("aiStatus").textContent=(err&&err.message?err.message:"Error")+" — please fill in manually.";console.error(err);}
+  }catch(err){document.getElementById("aiStatus").textContent=(err&&err.friendly)?err.message:((err&&err.message?err.message:"Error")+". Please fill these in yourself.");console.error(err);}
   finally{btn.disabled=false;}
 }
 
@@ -1475,7 +1500,8 @@ async function polishSingleObs(key, originalText, statusBadgeId, textareaId) {
     if(ta) ta.value = polished;
     if(status) { status.className = "polish-status done"; status.textContent = "✓ Polished"; }
   } catch(err) {
-    if(status) { status.className = "polish-status skipped"; status.textContent = "Error — edit manually"; }
+    if(status) { status.className = "polish-status skipped"; status.textContent = (err && err.friendly && err.kind === 'busy') ? "AI busy, edit manually" : "Not polished, edit manually"; }
+    if(err && err.friendly && !window._rsPolishWarned){ window._rsPolishWarned = true; var sm = document.getElementById('statusMsg'); if(sm){ sm.className = 'status-msg error'; sm.textContent = err.message; } }
     console.error("Polish error:", err);
   }
 }
@@ -1800,7 +1826,7 @@ async function bpClassify(base64){
       ]}]
     })
   });
-  if(!res.ok) throw new Error('API '+res.status);
+  if(!res.ok) throw await rsAiFail(res);
   var data = await res.json();
   var text = (data.content && data.content[0] && data.content[0].text) || '';
   var parts = text.split('||');
@@ -1823,7 +1849,8 @@ async function bpProcessFile(file){
     // Keep the processed image (if we got that far) so "Attach to…" still works, and say why sorting failed.
     window.bpLastSortError = (e && e.message) ? e.message : String(e);
     console.warn('Photo sort failed:', window.bpLastSortError);
-    bpAddExtra(file, proc, 'Failed to sort (' + window.bpLastSortError.slice(0,40) + ') — attach manually', '', zone);
+    bpAddExtra(file, proc, (e && e.friendly) ? 'Not sorted, attach it yourself' : 'Failed to sort (' + window.bpLastSortError.slice(0,40) + '), attach manually', '', zone);
+    if(e && e.friendly && !window._rsSortWarned){ window._rsSortWarned = true; if(CT_MODE) ctBanner(ctEsc(e.message) + ' Photos that could not be sorted are under Set aside: click one to see it, then use Attach to.', 'error'); }
   }
   bpDone++;
   bpUpdateProgress();
@@ -2315,7 +2342,7 @@ async function refineScoreWithAI(){
     setTimeout(function(){ icon.textContent = '✦'; }, 3000);
 
   } catch(e) {
-    note.textContent = 'AI refinement failed: ' + e.message + '. Using rule-based score.';
+    note.textContent = (e && e.friendly ? e.message + ' ' : 'AI refinement did not work. ') + 'The score shown is the standard calculation.';
     icon.textContent = '⚠️';
     setTimeout(function(){ icon.textContent = '✦'; }, 3000);
     console.error('AI score error:', e);
@@ -2712,6 +2739,7 @@ async function ctLoadPhotos(client, fb, placed){
   // placements from the stored draft, so saving stays off until the page is reloaded and they all arrive.
   if(!missed) ctDraftReady = true;
   var head = placed ? 'your saved report is back with ' + loaded + ' photos. Change what RoofScan asked for, then send it again.' : 'details filled in and ' + loaded + ' photos loaded into Bulk photo import. Check the placements, add your findings, then press the button at the bottom.';
+  if(window._rsSortWarned) head += ' AI sorting was not available, so the photos are under Set aside: click one to see it, then use Attach to.';
   ctBanner('<strong>' + ctEsc(client || 'Your job') + '</strong>: ' + head + (missed ? ' (' + missed + ' photos could not be downloaded. Reload the page to try again. Saving is paused until then.)' : ' Your work saves automatically.') + ' The finished report goes to RoofScan automatically.' + fb, missed ? 'error' : 'ok');
 }
 // ── Saved draft kept on RoofScan's storage ─────────────────────────────────────
