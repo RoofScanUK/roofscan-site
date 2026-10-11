@@ -897,7 +897,7 @@ async function generateSummaries(){
     +"- Insurance-safe language throughout: 'observed', 'noted during inspection', 'consistent with visible aerial imagery' — never 'caused by', 'resulted from', or any coverage/compliance claim, since clients sometimes forward these reports to insurers or letting agents.\n\n"
     +"Property: "+address+", Roof: "+roofType+" "+covering+" ~"+roofAge+", Condition: "+conds[conditionIdx]+"\nObservations:\n"+obsText+"\nWrite in formal British English. Return ONLY valid JSON:\n{\"summary\":\"2-3 sentences\",\"keyRisks\":\"1-2 sentences\",\"maintenance\":\"2-3 sentences\"}";
   try{
-    var res=await callClaude("claude-sonnet-4-20250514",600,[{role:"user",content:prompt}]);
+    var res=await callClaude("claude-sonnet-5-5",600,[{role:"user",content:prompt}]);
     var data=await res.json();
     var text=data.content.map(function(i){return i.text||"";}).join("").trim();
     var parsed=JSON.parse(text.replace(/```json|```/g,"").trim());
@@ -1053,6 +1053,7 @@ async function generateReport(){
   // upstream (photo classification, RoofScore refine, summaries, polish) can be wrong, and a
   // flag buried in the UI is easy to miss on job #47 when tired — this makes it impossible to
   // send without seeing it once, right before the click that actually ships the report.
+  if(CT_MODE && !(document.getElementById('inspector').value||'').trim()){ alert('No flyer is recorded for this job, so the report cannot name an inspector. Please tell RoofScan.'); return; }
   var obs=collectObsFinal();
   var withPhoto=obs.filter(function(o){ return !!o.photoB64; }).length;
   var unresolvedAiFlags=document.querySelectorAll('[id^="aiflag_"]').length;
@@ -1436,7 +1437,7 @@ async function polishSingleObs(key, originalText, statusBadgeId, textareaId) {
     
     var prompt = "You are editing a UK drone roof inspection report. Rewrite the following observation note in formal British English suitable for a professional property inspection report. Keep it factual and specific. Do not add information that wasn't there. Do not use bullet points. Write 1-3 clear sentences maximum. Return ONLY the rewritten text, nothing else.\n\nElement: " + ref + " " + title + "\nStatus: " + obsStatus + "\nOriginal note: " + originalText;
     
-    var res = await callClaude("claude-sonnet-4-20250514", 200, [{ role: "user", content: prompt }]);
+    var res = await callClaude("claude-sonnet-5-5", 200, [{ role: "user", content: prompt }]);
 
     var data = await res.json();
     // The Worker proxy passes through whatever the API (or its own auth check) returns — on a
@@ -1768,7 +1769,7 @@ async function bpClassify(base64){
       'Authorization': 'Bearer ' + bpGetApiKey()
     },
     body: JSON.stringify({
-      model:'claude-haiku-4-5-20251001',
+      model:'claude-haiku-5-5',
       max_tokens:80,
       messages:[{role:'user', content:[
         {type:'image', source:{type:'base64', media_type:'image/jpeg', data:base64}},
@@ -1835,7 +1836,7 @@ async function bpMaybeDetectRoofSpecs(){
       method:'POST',
       headers:{'content-type':'application/json','Authorization':'Bearer '+bpGetApiKey()},
       body: JSON.stringify({
-        model:'claude-haiku-4-5-20251001',
+        model:'claude-haiku-5-5',
         max_tokens:60,
         messages:[{role:'user', content:[
           {type:'image', source:{type:'base64', media_type:'image/jpeg', data:bpRoofSpecPhoto}},
@@ -2257,7 +2258,7 @@ async function refineScoreWithAI(){
     + '"justification":"One clear sentence explaining the key factors driving this score."}';
 
   try {
-    var res = await callClaude('claude-sonnet-4-20250514', 300, [{role:'user', content:prompt}]);
+    var res = await callClaude('claude-sonnet-5-5', 300, [{role:'user', content:prompt}]);
     var data = await res.json();
     var text = data.content && data.content[0] && data.content[0].text || '';
     // Strip markdown fences if present
@@ -2628,7 +2629,9 @@ async function ctInit(){
     var rt = document.getElementById('roofType');
     if(rt){ rt.dataset.roofTypeIsAssumed = 'true'; rt.addEventListener('input', function(){ this.dataset.roofTypeIsAssumed = 'false'; }, {once:true}); }
   }
-  set('inspector', 'Takhy Ndiaye Marrero');
+  // The inspector is the flyer who did the scan. Writers can't change it. If no flyer is recorded it stays blank for RoofScan to fix.
+  var insp = document.getElementById('inspector');
+  if(insp){ insp.value = j.flyer || ''; insp.readOnly = true; insp.style.background = '#F3F1EA'; insp.title = 'This is the flyer who carried out the inspection.'; if(!j.flyer) insp.placeholder = 'No flyer recorded. Tell RoofScan.'; }
   var card = document.getElementById('client-info-card');
   if(card){
     card.style.display = 'block';
@@ -2741,7 +2744,7 @@ async function ctFetchDraft(){
 }
 // Puts text, statuses and zones back. Returns { photoName: {key, zone} } so photos can be re-attached to the same boxes.
 function ctRestoreDraft(draft){
-  ['address','postcode','client','inspDate','reportRef','roofType','covering','roofAge','inspector','summary','keyRisks','maintenance'].forEach(function(id){
+  ['address','postcode','client','inspDate','reportRef','roofType','covering','roofAge','summary','keyRisks','maintenance'].forEach(function(id){
     var el = document.getElementById(id);
     if(el && draft[id]) el.value = draft[id];
   });
