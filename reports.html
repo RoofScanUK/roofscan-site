@@ -107,12 +107,13 @@ html.ct #ct-suggest{display:block!important;}
 
 .rs-card{background:#1C2B4A;border-radius:10px;padding:14px 16px;margin-bottom:1rem;display:flex;align-items:center;gap:16px;}
 .rs-number{font-size:52px;font-weight:800;line-height:1;flex-shrink:0;transition:color 0.3s;}
-.rs-right{flex:1;}
+.rs-right{flex:1;min-width:0;}
 .rs-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:rgba(255,255,255,0.45);margin-bottom:3px;}
 .rs-desc{font-size:13px;color:rgba(255,255,255,0.6);margin-bottom:8px;min-height:18px;}
 .rs-bar-wrap{background:rgba(255,255,255,0.1);border-radius:4px;height:5px;overflow:hidden;}
 .rs-bar{height:100%;border-radius:4px;transition:width 0.4s,background 0.3s;}
 .rs-breakdown{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px;}
+@media(max-width:560px){.rs-card{flex-wrap:wrap;}.rs-breakdown{grid-template-columns:repeat(2,minmax(0,1fr));}}
 .rs-cell{background:rgba(255,255,255,0.07);border-radius:7px;padding:7px 8px;text-align:center;}
 .rs-cell-label{font-size:9px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;}
 .rs-cell-score{font-size:16px;font-weight:800;transition:color 0.3s;}

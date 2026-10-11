@@ -50,6 +50,17 @@ tr:last-child td{border-bottom:none;}
 .t-ok{color:var(--ok);}.t-warn{color:var(--warn);}.t-bad{color:var(--bad);}
 .dt{font-family:inherit;font-size:12.5px;color:var(--ink);border:1px solid var(--line);border-radius:4px;padding:4px 6px;background:var(--white);}
 .acts{text-align:right;white-space:nowrap;}
+.ctr{padding:14px 16px;border-bottom:1px solid var(--line);}
+.ctr-line{display:flex;flex-wrap:wrap;gap:10px 22px;align-items:flex-end;}
+.ctr-line+.ctr-line{margin-top:10px;}
+.ctr-line:first-child{align-items:flex-start;}
+.ctr:last-child{border-bottom:none;}
+.ctr-main{flex:1 1 170px;min-width:0;}
+.ctr-status{flex:0 0 auto;margin-left:auto;text-align:left;}
+.ctr-doc{flex:0 0 140px;}
+.ctr-doc .dt{margin-top:3px;max-width:140px;}
+.ctr-lbl{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:3px;}
+.ctr-acts{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;align-items:center;}
 .attn{border-left:3px solid var(--warn);background:var(--white);border-top:1px solid var(--line);border-right:1px solid var(--line);border-bottom:1px solid var(--line);border-radius:0 6px 6px 0;padding:12px 16px;margin-bottom:8px;}
 .attn b{color:var(--navy);}
 .attn ul{margin:4px 0 0 18px;color:#6B4A12;font-size:13px;}
@@ -159,15 +170,18 @@ async function load(){
   $('stats').innerHTML=[['Scans open',c.scansOpen],['Reports open',c.reportsOpen],['Scans claimed',c.scansClaimed],['Reports claimed',c.reportsClaimed]].map(x=>`<div class="metric"><div class="n">${x[1]}</div><div class="t">${x[0]}</div></div>`).join('');
   $('needs').innerHTML=data.needsYou.length?data.needsYou.map(n=>`<div class="attn"><b>${esc(n.name)}</b><ul>${n.needs.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`).join(''):'<div class="box empty">Nothing needs your attention.</div>';
   $('ctrs-n').textContent=data.contractors.length+(data.contractors.length===1?' person':' people');
+  // Contractors as wrapping rows (not a fixed table) so nothing spills out of the box at any screen width.
   const rows=data.contractors.map(ct=>{
     const flyer=ct.role!=='Report Writer';
-    return `<tr><td><div class="name">${esc(ct.name)}</div><div class="muted small">${esc(ct.role)}${flyer&&ct.droneModel?' &middot; '+esc(ct.droneModel)+', '+(ct.ratedWind||'?')+' m/s':''}</div></td>
-      <td>${ct.active?st('Active','ok'):st('Switched off','bad')}${flyer?(ct.approved?st('Drone approved','ok'):st('Drone not approved','warn')):''}</td>
-      <td class="hide-m">${flyer?`${dateState(ct.insuranceExpiry)}<input class="dt" type="date" value="${esc(ct.insuranceExpiry)}" onchange="upd('${ct.id}',{insuranceExpiry:this.value})" title="Insurance expiry">`:'<span class="muted small">Not needed</span>'}</td>
-      <td class="hide-m">${flyer?`${dateState(ct.operatorIdExpiry)}<input class="dt" type="date" value="${esc(ct.operatorIdExpiry)}" onchange="upd('${ct.id}',{operatorIdExpiry:this.value})" title="Operator ID expiry">`:'<span class="muted small">Not needed</span>'}</td>
-      <td class="acts">${flyer?`<button class="btn sec" onclick="upd('${ct.id}',{approved:${!ct.approved}})">${ct.approved?'Revoke drone':'Approve drone'}</button> `:''}<button class="btn text ${ct.active?'danger':''}" onclick="upd('${ct.id}',{active:${!ct.active}})">${ct.active?'Switch off':'Switch on'}</button></td></tr>`;
+    const doc=(label,val,key)=>`<div class="ctr-doc"><div class="ctr-lbl">${label}</div>${flyer?`${dateState(val)}<input class="dt" type="date" value="${esc(val)}" onchange="upd('${ct.id}',{${key}:this.value})" title="${label} expiry">`:'<span class="muted small">Not needed</span>'}</div>`;
+    return `<div class="ctr">
+      <div class="ctr-line"><div class="ctr-main"><div class="name">${esc(ct.name)}</div><div class="muted small">${esc(ct.role)}${flyer&&ct.droneModel?' &middot; '+esc(ct.droneModel)+', '+(ct.ratedWind||'?')+' m/s':''}</div></div>
+        <div class="ctr-status">${ct.active?st('Active','ok'):st('Switched off','bad')}${flyer?(ct.approved?st('Drone approved','ok'):st('Drone not approved','warn')):''}</div></div>
+      <div class="ctr-line">${flyer?doc('Insurance',ct.insuranceExpiry,'insuranceExpiry')+doc('Operator ID',ct.operatorIdExpiry,'operatorIdExpiry'):'<span class="muted small" style="align-self:center;">No drone documents needed</span>'}
+        <div class="ctr-acts">${flyer?`<button class="btn sec" onclick="upd('${ct.id}',{approved:${!ct.approved}})">${ct.approved?'Revoke drone':'Approve drone'}</button>`:''}<button class="btn text ${ct.active?'danger':''}" onclick="upd('${ct.id}',{active:${!ct.active}})">${ct.active?'Switch off':'Switch on'}</button></div></div>
+    </div>`;
   }).join('');
-  $('ctrs').innerHTML=rows?`<table><thead><tr><th>Contractor</th><th>Status</th><th class="hide-m">Insurance</th><th class="hide-m">Operator ID</th><th></th></tr></thead><tbody>${rows}</tbody></table>`:'<div class="empty">No contractors yet.</div>';
+  $('ctrs').innerHTML=rows||'<div class="empty">No contractors yet.</div>';
   const jl=(arr,f)=>arr.length?arr.map(f).join(''):'<div class="empty">None.</div>';
   const kv=rows=>'<dl class="kv">'+rows.filter(x=>x[1]).map(x=>`<dt>${x[0]}</dt><dd>${x[1]}</dd>`).join('')+'</dl>';
   const jobName=j=>esc(j.client||j.address||'Job with no client name');
