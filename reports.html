@@ -218,6 +218,7 @@ html.ct #ct-suggest{display:block!important;}
 <div class="header">
   <img id="headerLogo" src="" alt="RoofScan UK">
   <div class="header-text"><h1>RoofScan UK</h1><p>Drone Roof Inspection Report Generator</p></div>
+  <a id="homeLink" href="owner.html" style="margin-left:auto;color:#fff;text-decoration:none;border:1px solid rgba(255,255,255,.4);border-radius:6px;padding:8px 14px;font-size:13px;font-weight:600;white-space:nowrap;">&larr; Dashboard</a>
 </div>
 <div class="container">
   <div id="ct-banner" style="display:none;margin:0 0 12px;padding:12px 14px;border:1px solid #DEDACE;background:#fff;font-size:14px;line-height:1.5;"></div>
@@ -458,7 +459,13 @@ try{
 }catch(e){}
 var CT_MODE = !!(CT_JOB && CT_TOKEN && (CT_FORCED || !(typeof AT !== 'undefined' && AT.hasToken())));
 if(CT_MODE) document.documentElement.classList.add('ct');
+// Home button: writers go back to their jobs page (their work is saved as they leave), owner/staff to the dashboard.
+(function(){ var hl = document.getElementById('homeLink'); if(hl && CT_MODE){ hl.href = 'jobs.html'; hl.innerHTML = '&larr; My jobs'; } })();
 function getStaffKey(){ try{ if(CT_MODE) return CT_TOKEN; return localStorage.getItem('rs_owner_token') || localStorage.getItem('rs_staff_key') || ''; }catch(e){ return ''; } }
+// Text boxes grow to fit what is in them, so nothing has to be read through a small scrolling window.
+function rsGrow(el){ if(!el || el.tagName !== 'TEXTAREA') return; el.style.height = 'auto'; el.style.height = (el.scrollHeight + 4) + 'px'; }
+function rsGrowAll(){ document.querySelectorAll('#summary,#keyRisks,#maintenance,textarea[id^="obstext_"]').forEach(rsGrow); }
+document.addEventListener('input', function(e){ if(e.target && e.target.tagName === 'TEXTAREA') rsGrow(e.target); });
 // Reads a JSON answer from the AI even if it adds a code fence or a sentence around it.
 function rsParseJSON(text){
   var t = String(text||'').replace(/```json|```/g,'').trim();
@@ -913,6 +920,7 @@ async function generateSummaries(){
     var asBullets=function(v){ if(Array.isArray(v)) return v.map(function(x){return "• "+String(x).replace(/^[\s•\-*]+/,"").trim();}).filter(function(x){return x.length>2;}).join("\n"); return v||""; };
     document.getElementById("keyRisks").value=asBullets(parsed.keyRisks);
     document.getElementById("maintenance").value=asBullets(parsed.maintenance);
+    rsGrowAll();
     document.getElementById("aiStatus").textContent="Done - review and edit as needed.";
   }catch(err){document.getElementById("aiStatus").textContent=(err&&err.message?err.message:"Error")+" — please fill in manually.";console.error(err);}
   finally{btn.disabled=false;}
@@ -2787,6 +2795,7 @@ function ctRestoreDraft(draft){
     });
   });
   updateDashboard(); calculateRoofScore();
+  setTimeout(rsGrowAll, 0);
   return placed;
 }
 async function ctPlaceSavedPhotos(files, placed){
@@ -2847,6 +2856,20 @@ async function ctSendSuggestion(){
     ta.value = ''; m.style.color = '#27AE60'; m.textContent = 'Thank you. Sent to RoofScan.';
   }catch(e){ m.style.color = '#9B2C2C'; m.textContent = 'Could not send (' + e.message + '). Try again.'; }
 }
+// Full-screen confirmation after a successful send, so the writer is in no doubt it worked and knows what happens next.
+function ctShowSent(d){
+  var o = document.createElement('div');
+  o.id = 'ct-sent';
+  o.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(28,43,74,.94);display:flex;align-items:center;justify-content:center;padding:20px;';
+  o.innerHTML = '<div style="background:#fff;max-width:520px;width:100%;border-radius:10px;padding:30px 28px;text-align:center;font-family:inherit;">'
+    + '<div style="width:56px;height:56px;border-radius:50%;background:#EAF2EC;color:#27AE60;font-size:30px;line-height:56px;margin:0 auto 14px;">&#10003;</div>'
+    + '<div style="font-size:22px;font-weight:700;color:#1C2B4A;margin-bottom:8px;">Report sent to RoofScan</div>'
+    + '<div style="font-size:14px;color:#33415C;line-height:1.6;margin-bottom:6px;">' + ctEsc((d && d.address) ? d.address : 'Your report') + (d && d.reportRef ? ' &middot; ' + ctEsc(d.reportRef) : '') + '</div>'
+    + '<div style="font-size:14px;color:#6B7A8D;line-height:1.6;margin-bottom:22px;">RoofScan will check it before it goes to the client. If anything needs changing, the job comes back to your jobs page with a note, and your work will be just as you left it.</div>'
+    + '<a href="jobs.html" style="display:inline-block;background:#1C2B4A;color:#fff;text-decoration:none;border-radius:8px;padding:12px 22px;font-size:15px;font-weight:600;">Back to your jobs</a>'
+    + '</div>';
+  document.body.appendChild(o);
+}
 async function ctSubmit(blob, d, filename){
   var msg = document.getElementById('statusMsg');
   try{ clearTimeout(ctSaveTimer); await ctSaveDraft(); }catch(e){}
@@ -2857,6 +2880,9 @@ async function ctSubmit(blob, d, filename){
     if(!r.ok) throw new Error(j.error || ('HTTP ' + r.status));
     msg.className = 'status-msg success';
     msg.innerHTML = 'Report sent to RoofScan for checking. <a href="jobs.html">Back to your jobs</a>';
+    ctDraftReady = false; clearTimeout(ctSaveTimer);   // the job is no longer claimed, so stop trying to save
+    try{ closeReview(); }catch(e){}
+    ctShowSent(d);
     return true;
   }catch(e){
     msg.className = 'status-msg error';
