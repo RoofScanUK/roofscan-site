@@ -95,6 +95,8 @@ tr:last-child td{border-bottom:none;}
       <div>
         <section><div class="lbl">Needs your attention</div><div id="needs"></div></section>
         <section><div class="lbl"><span>Contractors</span><span id="ctrs-n"></span></div><div class="box" id="ctrs"></div></section>
+        <section><div class="lbl"><span>Booking hours (Cal.com)</span><span id="cal-name" class="small"></span></div><div class="box pad" id="cal"><span class="muted small">Loading...</span></div></section>
+        <section><div class="lbl">Who earns what</div><div class="box pad" id="earn"></div></section>
       </div>
       <div>
         <section><div class="lbl">Weekly booking capacity</div><div class="box pad" id="cap"><span class="muted small">Loading...</span></div></section>
@@ -152,7 +154,7 @@ async function load(){
   if(!localStorage.getItem(TK)){showLogin();return;}
   const r=await api('/owner/overview');if(!r.ok){if(r.status!==401)showLogin('Could not load. Try again.');return;}
   data=r.data;$('login').style.display='none';$('app').style.display='block';
-  loadCap();loadReviews();loadSuggestions();
+  loadCap();loadReviews();loadSuggestions();loadCal();renderEarn();
   const c=data.counts;
   $('stats').innerHTML=[['Scans open',c.scansOpen],['Reports open',c.reportsOpen],['Scans claimed',c.scansClaimed],['Reports claimed',c.reportsClaimed]].map(x=>`<div class="metric"><div class="n">${x[1]}</div><div class="t">${x[0]}</div></div>`).join('');
   $('needs').innerHTML=data.needsYou.length?data.needsYou.map(n=>`<div class="attn"><b>${esc(n.name)}</b><ul>${n.needs.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`).join(''):'<div class="box empty">Nothing needs your attention.</div>';
@@ -249,6 +251,97 @@ async function loadSuggestions(){
   window._sug=list;
 }
 async function sugDone(i){const s=(window._sug||[])[i];if(!s)return;await api('/owner/suggestion-done','POST',{key:s.key});loadSuggestions();}
+// ── Booking hours on Cal.com ───────────────────────────────────────────────
+const CAL_DAYS=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+let calSched=null, calOverrides=[];
+async function loadCal(){
+  const r=await api('/owner/cal-schedule');
+  if(!r.ok){$('cal').innerHTML='<span class="muted small">'+esc(r.data.error||'Could not load booking hours.')+'</span>';return;}
+  const list=r.data.schedules||[];
+  if(!list.length){$('cal').innerHTML='<span class="muted small">No schedules found on Cal.com.</span>';return;}
+  calSched=list.find(s=>s.isDefault)||list[0];
+  calOverrides=(calSched.overrides||[]).slice().sort((a,b)=>a.date<b.date?-1:1);
+  $('cal-name').textContent=calSched.name+(list.length>1?' (default schedule)':'');
+  const byDay={};let multi=false;
+  (calSched.availability||[]).forEach(a=>a.days.forEach(d=>{ if(byDay[d]) multi=true; else byDay[d]={s:a.startTime,e:a.endTime}; }));
+  const rows=CAL_DAYS.map(d=>{const v=byDay[d];return `<tr><td style="padding:6px 8px 6px 0;width:110px;"><label><input type="checkbox" id="cd-on-${d}" ${v?'checked':''}> ${d}</label></td>
+    <td style="padding:6px 0;"><input class="dt" type="time" id="cd-s-${d}" value="${v?v.s:'09:00'}"> to <input class="dt" type="time" id="cd-e-${d}" value="${v?v.e:'17:00'}"></td></tr>`;}).join('');
+  $('cal').innerHTML=`<div class="muted small" style="margin-bottom:8px;">The hours clients can book, in ${esc(calSched.timeZone||'your time zone')}. Untick a day to close it every week.</div>
+    ${multi?'<div class="note">Some days have more than one time block on Cal.com. Only the first block per day is shown, and saving will keep just that one.</div>':''}
+    <table style="width:auto;">${rows}</table>
+    <div class="lbl" style="margin:14px 0 6px;">One-off changes (days off or different hours)</div>
+    <div id="cal-ov"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px;">
+      <input class="dt" type="date" id="ov-date"> <label class="small"><input type="checkbox" id="ov-closed" checked onchange="$('ov-times').style.display=this.checked?'none':'inline'"> Closed all day</label>
+      <span id="ov-times" style="display:none;"><input class="dt" type="time" id="ov-s" value="09:00"> to <input class="dt" type="time" id="ov-e" value="13:00"></span>
+      <button class="btn sec" onclick="addOverride()">Add</button></div>
+    <div class="btnrow" style="margin-top:14px;"><span id="cal-msg" class="small muted"></span><span class="grow"></span><button class="btn" onclick="saveCal()">Save booking hours</button></div>`;
+  renderOverrides();
+}
+function renderOverrides(){
+  const today=new Date().toISOString().slice(0,10);
+  const shown=calOverrides.filter(o=>o.date>=today);
+  $('cal-ov').innerHTML=shown.length?shown.map(o=>{const i=calOverrides.indexOf(o);const closed=o.startTime===o.endTime;
+    return `<div style="display:flex;gap:10px;align-items:center;padding:4px 0;font-size:13px;"><span style="width:130px;">${esc(new Date(o.date+'T12:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}))}</span><span class="chip ${closed?'bad':''}">${closed?'Closed':esc(o.startTime+' to '+o.endTime)}</span><button class="btn text danger" onclick="calOverrides.splice(${i},1);renderOverrides()">Remove</button></div>`;}).join(''):'<div class="muted small">None coming up.</div>';
+}
+function addOverride(){
+  const d=$('ov-date').value;if(!d){$('cal-msg').textContent='Pick a date first.';return;}
+  const closed=$('ov-closed').checked, s=closed?'00:00':$('ov-s').value, e=closed?'00:00':$('ov-e').value;
+  if(!closed&&!(s<e)){$('cal-msg').textContent='The end time must be after the start time.';return;}
+  calOverrides=calOverrides.filter(o=>o.date!==d);calOverrides.push({date:d,startTime:s,endTime:e});
+  calOverrides.sort((a,b)=>a.date<b.date?-1:1);renderOverrides();$('cal-msg').textContent='Added. Press Save to send it to Cal.com.';
+}
+async function saveCal(){
+  if(!calSched)return;
+  const groups={};
+  for(const d of CAL_DAYS){ if(!$('cd-on-'+d).checked) continue; const s=$('cd-s-'+d).value,e=$('cd-e-'+d).value;
+    if(!(s<e)){$('cal-msg').textContent=d+': the end time must be after the start time.';return;}
+    (groups[s+'-'+e]=groups[s+'-'+e]||{days:[],startTime:s,endTime:e}).days.push(d); }
+  $('cal-msg').textContent='Saving...';
+  const r=await api('/owner/cal-schedule','POST',{id:calSched.id,availability:Object.values(groups),overrides:calOverrides});
+  $('cal-msg').textContent=r.ok?'Saved to Cal.com.':(r.data.error||'Could not save.');
+  if(r.ok) setTimeout(loadCal,800);
+}
+// ── Who earns what on a job ────────────────────────────────────────────────
+// Mirrors the Worker: flyer 15%, writer 8% of the job price, agency £50 flat on referred jobs. Bonuses are paid separately.
+const EARN={flyer:0.15,writer:0.08,agency:50,deposit:50,stripePct:0.015,stripeFixed:0.20};
+function earnCalc(price,referred){
+  const flyer=price*EARN.flyer, writer=price*EARN.writer, agency=referred?EARN.agency:0;
+  const pays=price>EARN.deposit?2:1; // deposit and balance are two card payments
+  const stripe=price*EARN.stripePct+EARN.stripeFixed*pays;
+  const you=price-flyer-writer-agency-stripe;
+  return {flyer,writer,agency,stripe,you,pct:price?you/price*100:0};
+}
+// The slider is stretched so small prices get fine control and big jobs (up to £10,000) are still reachable.
+// Typing in the price box takes any amount.
+function sliderToPrice(v){ const p=100*Math.pow(100,Number(v)/1000); return p<1000?Math.round(p/5)*5:Math.round(p/50)*50; }
+function priceToSlider(p){ p=Math.max(100,Math.min(10000,Number(p)||100)); return Math.round(1000*Math.log(p/100)/Math.log(100)); }
+const gbp=n=>'£'+(Math.round(n*100)/100).toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2});
+function renderEarn(){
+  if(!$('earn').innerHTML){ setTimeout(function(){ $('earn-r').value=priceToSlider($('earn-p').value); },0);
+    $('earn').innerHTML=`<div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:10px;">
+      <label class="small">Job price £ <input class="capin" type="number" min="50" step="5" id="earn-p" value="175" oninput="$('earn-r').value=priceToSlider(this.value);renderEarn()"></label>
+      <label class="small"><input type="checkbox" id="earn-ref" checked onchange="renderEarn()"> Referred by an agency</label></div>
+      <input type="range" id="earn-r" min="0" max="1000" step="1" value="0" oninput="$('earn-p').value=sliderToPrice(this.value);renderEarn()" style="width:100%;accent-color:#1C2B4A;margin:2px 0 4px;">
+      <div class="muted small" style="position:relative;height:16px;margin-bottom:10px;"><span style="position:absolute;left:0;">£100</span><span style="position:absolute;left:34.9%;transform:translateX(-50%);">£500</span><span style="position:absolute;left:50%;transform:translateX(-50%);">£1,000</span><span style="position:absolute;left:69.9%;transform:translateX(-50%);">£2,500</span><span style="position:absolute;right:0;">£10,000</span></div>
+      <div id="earn-bar" style="display:flex;height:34px;border-radius:6px;overflow:hidden;margin-bottom:6px;font-size:11px;font-weight:600;color:#fff;"></div>
+      <div id="earn-key" class="small" style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:12px;"></div>
+      <div id="earn-one"></div><div class="lbl" style="margin:16px 0 6px;">At different prices</div><div id="earn-tab"></div>
+      <div class="muted small" style="margin-top:8px;">Card fees are an estimate (UK cards, about 1.5% + 20p per payment, deposit and balance). Contractor bonuses and AI costs (pennies per report) are not included.</div>`;
+  }
+  const p=Math.max(0,Number($('earn-p').value)||0), ref=$('earn-ref').checked, e=earnCalc(p,ref);
+  const parts=[['You',e.you,'#1C2B4A'],['Flyer',e.flyer,'#2E75B6'],['Writer',e.writer,'#27AE60'],['Agency',e.agency,'#C9A84C'],['Card fees',e.stripe,'#9AA5B4']].filter(x=>x[1]>0.005);
+  $('earn-bar').innerHTML=p?parts.map(x=>{const w=x[1]/p*100;return `<div title="${x[0]}: ${gbp(x[1])}" style="width:${w}%;background:${x[2]};display:flex;align-items:center;justify-content:center;white-space:nowrap;overflow:hidden;transition:width .15s;">${w>9?x[0]+' '+Math.round(w)+'%':''}</div>`;}).join(''):'';
+  $('earn-key').innerHTML=parts.map(x=>`<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${x[2]};margin-right:5px;vertical-align:-1px;"></span>${x[0]} <b>${gbp(x[1])}</b></span>`).join('');
+  const row=(k,v,b)=>`<dt>${k}</dt><dd${b?' style="font-weight:700;color:var(--navy);"':''}>${v}</dd>`;
+  $('earn-one').innerHTML='<dl class="kv" style="grid-template-columns:150px 1fr;">'
+    +row('Client pays',gbp(p)+(p>EARN.deposit?' ('+gbp(EARN.deposit)+' deposit + '+gbp(p-EARN.deposit)+' balance)':''))
+    +row('Flyer (15%)',gbp(e.flyer))+row('Writer (8%)',gbp(e.writer))+row('Agency referral',ref?gbp(e.agency):'None')
+    +row('Card fees (est.)',gbp(e.stripe))+row('You keep',gbp(e.you)+' ('+e.pct.toFixed(0)+'%)',true)+'</dl>';
+  const prices=[150,175,250,500,1000,2500,5000];
+  $('earn-tab').innerHTML='<table><thead><tr><th>Price</th><th>Flyer</th><th>Writer</th><th>Agency</th><th>Fees</th><th>You keep</th></tr></thead><tbody>'
+    +prices.map(x=>{const r=earnCalc(x,ref);return `<tr><td>${gbp(x)}</td><td>${gbp(r.flyer)}</td><td>${gbp(r.writer)}</td><td>${ref?gbp(r.agency):'–'}</td><td>${gbp(r.stripe)}</td><td><b>${gbp(r.you)}</b> <span class="muted small">${r.pct.toFixed(0)}%</span></td></tr>`;}).join('')+'</tbody></table>';
+}
 async function loadCap(){
   const r=await api('/owner/capacity');
   if(!r.ok){$('cap').innerHTML='<span class="muted small">Could not load capacity.</span>';return;}
