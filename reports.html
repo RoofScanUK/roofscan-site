@@ -341,8 +341,8 @@ html.ct #ct-suggest{display:block!important;}
         <button class="cond-btn" onclick="setCondition(4)">Excellent</button>
       </div>
       <div class="field" style="margin-bottom:10px;"><label>Summary of findings</label><textarea id="summary" placeholder="Fill in observations below then click Generate summaries..."></textarea></div>
-      <div class="field" style="margin-bottom:10px;"><label>Key risks</label><textarea id="keyRisks" placeholder="Auto-generated from your red-rated observations..."></textarea></div>
-      <div class="field" style="margin-bottom:12px;"><label>Maintenance overview</label><textarea id="maintenance" placeholder="Auto-generated from priorities across all observations..."></textarea></div>
+      <div class="field" style="margin-bottom:10px;"><label>Key risks</label><textarea id="keyRisks" placeholder="Auto-generated as bullet points. One point per line."></textarea></div>
+      <div class="field" style="margin-bottom:12px;"><label>Maintenance overview</label><textarea id="maintenance" placeholder="Auto-generated as bullet points. One point per line."></textarea></div>
       <div class="ai-row">
         <button class="ai-btn" id="aiBtn" onclick="generateSummaries()">Generate summaries</button>
         <span class="ai-status" id="aiStatus"></span>
@@ -902,7 +902,7 @@ async function generateSummaries(){
     +"- Match tone to severity — don't dramatise a Monitor-level finding or undersell a Repair required one. A homeowner reading this should come away with an accurate sense of urgency, not more or less alarm than the findings justify.\n"
     +"- No pricing, no scope-of-work, no promises about fixing anything. Maintenance guidance is about care and monitoring, not instructions for a contractor.\n"
     +"- Insurance-safe language throughout: 'observed', 'noted during inspection', 'consistent with visible aerial imagery' — never 'caused by', 'resulted from', or any coverage/compliance claim, since clients sometimes forward these reports to insurers or letting agents.\n\n"
-    +"Property: "+address+", Roof: "+roofType+" "+covering+" ~"+roofAge+", Condition: "+conds[conditionIdx]+"\nObservations:\n"+obsText+"\nWrite in formal British English. Return ONLY valid JSON:\n{\"summary\":\"2-3 sentences\",\"keyRisks\":\"1-2 sentences\",\"maintenance\":\"2-3 sentences\"}";
+    +"Property: "+address+", Roof: "+roofType+" "+covering+" ~"+roofAge+", Condition: "+conds[conditionIdx]+"\nObservations:\n"+obsText+"\nWrite in formal British English. Return ONLY valid JSON:\n{\"summary\":\"2-3 sentences\",\"keyRisks\":[\"2 to 4 short bullet points, one risk each, no full stops needed\"],\"maintenance\":[\"3 to 5 short bullet points, one action or check each\"]}\nkeyRisks and maintenance must be JSON arrays of short strings, each under 25 words, with no bullet symbols inside the strings.";
   try{
     var res=await callClaude("claude-sonnet-5-5",1200,[{role:"user",content:prompt}]);
     var data=await res.json();
@@ -910,8 +910,9 @@ async function generateSummaries(){
     if(data.stop_reason==="max_tokens") throw new Error("The AI reply was cut short. Press Generate summaries again.");
     var parsed=rsParseJSON(text);
     document.getElementById("summary").value=parsed.summary||"";
-    document.getElementById("keyRisks").value=parsed.keyRisks||"";
-    document.getElementById("maintenance").value=parsed.maintenance||"";
+    var asBullets=function(v){ if(Array.isArray(v)) return v.map(function(x){return "• "+String(x).replace(/^[\s•\-*]+/,"").trim();}).filter(function(x){return x.length>2;}).join("\n"); return v||""; };
+    document.getElementById("keyRisks").value=asBullets(parsed.keyRisks);
+    document.getElementById("maintenance").value=asBullets(parsed.maintenance);
     document.getElementById("aiStatus").textContent="Done - review and edit as needed.";
   }catch(err){document.getElementById("aiStatus").textContent=(err&&err.message?err.message:"Error")+" — please fill in manually.";console.error(err);}
   finally{btn.disabled=false;}
@@ -1190,6 +1191,12 @@ function buildDoc(d,obs){
   function tl(){return new D.Paragraph({spacing:{before:80,after:80},border:{bottom:{style:D.BorderStyle.SINGLE,size:2,color:LIGHT_GREY,space:1}},children:[]});}
   function h1(t){return new D.Paragraph({heading:D.HeadingLevel.HEADING_1,spacing:{before:360,after:120},children:[new D.TextRun({text:t,bold:true,font:"Arial",size:28,color:BLUE})]});}
   function h2(t){return new D.Paragraph({heading:D.HeadingLevel.HEADING_2,spacing:{before:240,after:80},children:[new D.TextRun({text:t,bold:true,font:"Arial",size:22,color:BLUE_MID})]});}
+  // Key risks and maintenance: every line becomes a bullet in the Word report.
+  function bulletList(t){
+    var lines = String(t||'').split(/\n+/).map(function(l){ return l.replace(/^[\s•\-*]+/,'').trim(); }).filter(Boolean);
+    if(!lines.length || /^\[.*not provided\]$/.test(lines[0])) return [bod(t)];
+    return lines.map(function(l){ return new D.Paragraph({indent:{left:360,hanging:240},spacing:{before:30,after:70},children:[new D.TextRun({text:"•  "+l,font:"Arial",size:19,color:DARK})]}); });
+  }
   function bod(t,opts){opts=opts||{};return new D.Paragraph({spacing:{before:60,after:100},children:[new D.TextRun(Object.assign({text:t,font:"Arial",size:19,color:DARK},opts))]});}
   function lv(l,v){return new D.Paragraph({spacing:{before:60,after:60},children:[new D.TextRun({text:l+":  ",font:"Arial",size:19,bold:true,color:BLUE_MID}),new D.TextRun({text:v,font:"Arial",size:19,color:DARK})]});}
 
@@ -1291,8 +1298,8 @@ function buildDoc(d,obs){
   ].concat(
     zoneOverviewTable(obs) ? [h2("Findings by Zone"),sp(60,100),zoneOverviewTable(obs),sp(160,80)] : []
   ).concat([
-    h2("Key Risks"),bod(d.keyRisks),sp(80,80),
-    h2("Maintenance Overview"),bod(d.maintenance),pb()
+    h2("Key Risks"),...bulletList(d.keyRisks),sp(80,80),
+    h2("Maintenance Overview"),...bulletList(d.maintenance),pb()
   ].concat(
     strans("1.0","Report Details","Scope, limitations & rating system"),
     [h1("1.0  About This Report"),bl(),sp(100,80),
