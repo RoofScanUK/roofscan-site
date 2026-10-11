@@ -459,6 +459,13 @@ try{
 var CT_MODE = !!(CT_JOB && CT_TOKEN && (CT_FORCED || !(typeof AT !== 'undefined' && AT.hasToken())));
 if(CT_MODE) document.documentElement.classList.add('ct');
 function getStaffKey(){ try{ if(CT_MODE) return CT_TOKEN; return localStorage.getItem('rs_owner_token') || localStorage.getItem('rs_staff_key') || ''; }catch(e){ return ''; } }
+// Reads a JSON answer from the AI even if it adds a code fence or a sentence around it.
+function rsParseJSON(text){
+  var t = String(text||'').replace(/```json|```/g,'').trim();
+  var a = t.indexOf('{'), b = t.lastIndexOf('}');
+  if(a < 0 || b <= a) throw new Error('The AI reply was incomplete. Press the button again.');
+  return JSON.parse(t.slice(a, b+1));
+}
 async function callClaude(model, maxTokens, messages){
   var res = await fetch(WORKER_BASE + '/ai-proxy', {
     method: 'POST',
@@ -897,10 +904,11 @@ async function generateSummaries(){
     +"- Insurance-safe language throughout: 'observed', 'noted during inspection', 'consistent with visible aerial imagery' — never 'caused by', 'resulted from', or any coverage/compliance claim, since clients sometimes forward these reports to insurers or letting agents.\n\n"
     +"Property: "+address+", Roof: "+roofType+" "+covering+" ~"+roofAge+", Condition: "+conds[conditionIdx]+"\nObservations:\n"+obsText+"\nWrite in formal British English. Return ONLY valid JSON:\n{\"summary\":\"2-3 sentences\",\"keyRisks\":\"1-2 sentences\",\"maintenance\":\"2-3 sentences\"}";
   try{
-    var res=await callClaude("claude-sonnet-5-5",600,[{role:"user",content:prompt}]);
+    var res=await callClaude("claude-sonnet-5-5",1200,[{role:"user",content:prompt}]);
     var data=await res.json();
     var text=data.content.map(function(i){return i.text||"";}).join("").trim();
-    var parsed=JSON.parse(text.replace(/```json|```/g,"").trim());
+    if(data.stop_reason==="max_tokens") throw new Error("The AI reply was cut short. Press Generate summaries again.");
+    var parsed=rsParseJSON(text);
     document.getElementById("summary").value=parsed.summary||"";
     document.getElementById("keyRisks").value=parsed.keyRisks||"";
     document.getElementById("maintenance").value=parsed.maintenance||"";
@@ -1437,7 +1445,7 @@ async function polishSingleObs(key, originalText, statusBadgeId, textareaId) {
     
     var prompt = "You are editing a UK drone roof inspection report. Rewrite the following observation note in formal British English suitable for a professional property inspection report. Keep it factual and specific. Do not add information that wasn't there. Do not use bullet points. Write 1-3 clear sentences maximum. Return ONLY the rewritten text, nothing else.\n\nElement: " + ref + " " + title + "\nStatus: " + obsStatus + "\nOriginal note: " + originalText;
     
-    var res = await callClaude("claude-sonnet-5-5", 200, [{ role: "user", content: prompt }]);
+    var res = await callClaude("claude-sonnet-5-5", 500, [{ role: "user", content: prompt }]);
 
     var data = await res.json();
     // The Worker proxy passes through whatever the API (or its own auth check) returns — on a
@@ -2258,12 +2266,11 @@ async function refineScoreWithAI(){
     + '"justification":"One clear sentence explaining the key factors driving this score."}';
 
   try {
-    var res = await callClaude('claude-sonnet-5-5', 300, [{role:'user', content:prompt}]);
+    var res = await callClaude('claude-sonnet-5-5', 600, [{role:'user', content:prompt}]);
     var data = await res.json();
     var text = data.content && data.content[0] && data.content[0].text || '';
     // Strip markdown fences if present
-    text = text.replace(/```json|```/g,'').trim();
-    var result = JSON.parse(text);
+    var result = rsParseJSON(text);
 
     // Apply AI score
     var score = Math.round(Math.max(0, Math.min(100, result.roofscore || 0)));
