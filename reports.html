@@ -375,10 +375,11 @@ html.ct #ct-suggest{display:block!important;}
       <div id="bp-zonestrip-wrap" style="display:none;margin-top:14px;">
         <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#6B7A8D;margin-bottom:4px;">Tag roof zones — set once, it carries forward until you change it</div>
         <div style="font-size:11px;color:#6B7A8D;margin-bottom:8px;line-height:1.4;">Shown in the order you shot them. Each one defaults to whatever the last one was set to, so if you shot front-to-back-to-sides, just change the zone at each transition and leave the rest alone.</div>
+        <div id="bp-zone-auto-note" style="display:none;font-size:11.5px;color:#1B5E3B;background:#EAF5EE;border-radius:6px;padding:6px 10px;margin-bottom:8px;line-height:1.4;"></div>
         <div id="bp-zonestrip-row" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
       </div>
       <div id="bp-extras-wrap" style="display:none;margin-top:14px;">
-        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#6B7A8D;margin-bottom:8px;">Set aside — duplicates, overview shots &amp; anything unsure</div>
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#6B7A8D;margin-bottom:8px;">Set aside — near-duplicates, blurry shots, overview shots &amp; anything unsure</div>
         <div id="bp-extras-grid" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
       </div>
     </div>
@@ -780,7 +781,7 @@ function handlePhoto(key,input){
   compressImage(file, function(b64){
     var mime="image/jpeg";
     if(!state[key])state[key]={};
-    state[key].photoB64=b64;state[key].photoMime=mime;delete state[key].photoName;
+    state[key].photoB64=b64;state[key].photoMime=mime;delete state[key].photoName;delete state[key].photoFile;delete state[key].photoHiB64;
     _applyPhotoUI(key);
     autoSaveReport && autoSaveReport();
   });
@@ -822,7 +823,7 @@ function _applyPhotoUI(key){
 
 function removePhoto(key,e){
   e.stopPropagation();
-  if(state[key]){delete state[key].photoB64;delete state[key].photoMime;delete state[key].photoName;}
+  if(state[key]){delete state[key].photoB64;delete state[key].photoMime;delete state[key].photoName;delete state[key].photoFile;delete state[key].photoHiB64;}
   if(typeof ctSaveSoon==='function') ctSaveSoon();
   var area=document.getElementById("photo_"+key);
   area.classList.remove("has-photo");
@@ -909,7 +910,7 @@ function collectObs(){
     var ref=block.querySelector(".obs-ref")?block.querySelector(".obs-ref").textContent:"";
     var title=block.querySelector(".obs-title-text")?block.querySelector(".obs-title-text").textContent:"";
     var status=state[key]?state[key].status||"":"";
-    var photoB64=state[key]?state[key].photoB64||null:null;
+    var photoB64=state[key]?(state[key].photoHiB64||state[key].photoB64||null):null;
     var photoMime=state[key]?state[key].photoMime||"image/jpeg":"image/jpeg";
     var zone=state[key]?state[key].zone||"":"";
     if(status||(txt&&txt.value)){obs.push({ref:ref,title:title,status:status,priority:pri?pri.value||"":"",observation:txt?txt.value||"":"",photoB64:photoB64,photoMime:photoMime,zone:zone});}
@@ -1088,6 +1089,29 @@ function collectReportData(){
     brandLogo:wl.brandLogo
   };
 }
+// The sorter works on small 768px copies to keep the AI fast and cheap. Before the report is built, every photo that
+// went into an observation is re-drawn from its full-size file at up to 1600px so it stays sharp in print and on zoom.
+function rsHiResFromFile(file){
+  return new Promise(function(res){
+    try{
+      var u = URL.createObjectURL(file), img = new Image();
+      img.onload = function(){
+        var sc = Math.min(1, 1600/Math.max(img.naturalWidth, img.naturalHeight));
+        var c = document.createElement('canvas'); c.width = Math.round(img.naturalWidth*sc); c.height = Math.round(img.naturalHeight*sc);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(u);
+        try{ res(c.toDataURL('image/jpeg', 0.82).split(',')[1]); }catch(e){ res(null); }
+      };
+      img.onerror = function(){ URL.revokeObjectURL(u); res(null); };
+      img.src = u;
+    }catch(e){ res(null); }
+  });
+}
+async function rsUpgradePhotos(){
+  var keys = Object.keys(state).filter(function(k){ return state[k] && state[k].photoFile && state[k].photoB64 && !state[k].photoHiB64 && document.getElementById('obsblock_'+k); });
+  for(var i = 0; i < keys.length; i += 4){
+    await Promise.all(keys.slice(i, i+4).map(async function(k){ var hi = await rsHiResFromFile(state[k].photoFile); if(hi) state[k].photoHiB64 = hi; }));
+  }
+}
 async function generateReport(){
   var btn=document.getElementById("genBtn");var msg=document.getElementById("statusMsg");
 
@@ -1114,6 +1138,10 @@ async function generateReport(){
 
   btn.disabled=true;msg.className="status-msg";msg.textContent="Building your Word document...";
   try{
+    msg.textContent="Preparing full-quality photos...";
+    await rsUpgradePhotos();
+    obs=collectObsFinal();
+    msg.textContent="Building your Word document...";
     var d=collectReportData();
     var doc=buildDoc(d,obs);
     var blob=await docx.Packer.toBlob(doc);
@@ -1649,7 +1677,69 @@ var bpRefHashes = {}; // ref -> [aHash,...] already placed, for duplicate detect
 // which finishes out of order) uses a sticky/cascading default: tap one photo to a new zone and
 // every later untouched photo in the strip follows it, so Tak only taps at the actual transitions
 // instead of tagging all ~20+ photos individually.
-var BP_ZONES = ['Front elevation','Rear elevation','Left side','Right side','Chimney area','Ridge','Flashings / valleys','Guttering','Top-down / overview','Other / not sure'];
+var BP_ZONES = ['Front elevation','Rear elevation','Left side','Right side','North side','East side','South side','West side','Chimney area','Ridge','Flashings / valleys','Guttering','Top-down / overview','Other / not sure'];
+// Reads the data a drone saves inside each photo: GPS position, camera direction (yaw) and tilt (pitch), height and
+// capture time. DJI drones write these in XMP text (drone-dji:...) and the GPS also in EXIF. Returns null if none found.
+// Only reads the first 256 KB of the file, where this data always sits.
+function rsReadDroneMetaFromBuffer(buf){
+  var u8 = new Uint8Array(buf), out = {};
+  var txt = ''; for (var i = 0; i < u8.length; i++) txt += String.fromCharCode(u8[i]);
+  function xmp(names){
+    for (var n = 0; n < names.length; n++){
+      var re = new RegExp('drone-dji:' + names[n] + '\\s*=\\s*"([^"]+)"|<drone-dji:' + names[n] + '>([^<]+)<', 'i');
+      var m = txt.match(re);
+      if (m){ var v = parseFloat(m[1] || m[2]); if (isFinite(v)) return v; }
+    }
+    return null;
+  }
+  var map = { yaw:['GimbalYawDegree'], pitch:['GimbalPitchDegree'], fyaw:['FlightYawDegree'], alt:['RelativeAltitude'],
+              lat:['GpsLatitude','Latitude'], lon:['GpsLongitude','GpsLongtitude','Longitude'] };
+  for (var k in map){ var v = xmp(map[k]); if (v !== null) out[k] = v; }
+  // EXIF (GPS + capture time), used when XMP has no GPS.
+  try {
+    var exifAt = txt.indexOf('Exif\0\0');
+    if (exifAt >= 0){
+      var t0 = exifAt + 6, dv = new DataView(buf);
+      var le = txt.substr(t0, 2) === 'II';
+      var r16 = function(o){ return dv.getUint16(t0 + o, le); }, r32 = function(o){ return dv.getUint32(t0 + o, le); };
+      var readIfd = function(off){ var n = r16(off), tags = {}; for (var e = 0; e < n; e++){ var p = off + 2 + e*12; tags[r16(p)] = { type:r16(p+2), count:r32(p+4), valOff:p+8 }; } return tags; };
+      var rat = function(off, c){ var a = []; for (var q = 0; q < c; q++){ var d = r32(off + q*8 + 4); a.push(d ? r32(off + q*8) / d : 0); } return a; };
+      var asc = function(tag){ if (!tag) return ''; var o = tag.count > 4 ? r32(tag.valOff) : tag.valOff, s = ''; for (var q = 0; q < tag.count - 1; q++) s += String.fromCharCode(dv.getUint8(t0 + o + q)); return s; };
+      var ifd0 = readIfd(r32(4));
+      if (ifd0[0x8769]){ var ex = readIfd(r32(ifd0[0x8769].valOff)); var dt = asc(ex[0x9003]); if (dt) out.t = dt; }
+      if (ifd0[0x8825]){
+        var g = readIfd(r32(ifd0[0x8825].valOff));
+        if (g[2] && g[4] && (out.lat === undefined || out.lon === undefined)){
+          var la = rat(r32(g[2].valOff), 3), lo = rat(r32(g[4].valOff), 3);
+          var lat = la[0] + la[1]/60 + la[2]/3600, lon = lo[0] + lo[1]/60 + lo[2]/3600;
+          if (asc(g[1]) === 'S') lat = -lat; if (asc(g[3]) === 'W') lon = -lon;
+          if (lat || lon){ out.lat = Math.round(lat*1e6)/1e6; out.lon = Math.round(lon*1e6)/1e6; }
+        }
+      }
+    }
+  } catch(e) { /* odd EXIF layouts are skipped, XMP values still count */ }
+  return Object.keys(out).length ? out : null;
+}
+function rsReadDroneMeta(file){
+  return new Promise(function(res){
+    try {
+      var r = new FileReader();
+      r.onload = function(){ try { res(rsReadDroneMetaFromBuffer(r.result)); } catch(e){ res(null); } };
+      r.onerror = function(){ res(null); };
+      r.readAsArrayBuffer(file.slice(0, 262144));
+    } catch(e){ res(null); }
+  });
+}
+// Zone from the drone's own data: a camera pointing nearly straight down is an overview shot; otherwise the camera's
+// compass direction says which side of the building is in view (camera facing south = looking at the north side).
+function rsZoneFromMeta(m){
+  if(!m) return '';
+  if(typeof m.pitch === 'number' && m.pitch <= -60) return 'Top-down / overview';
+  var yaw = (typeof m.yaw === 'number') ? m.yaw : ((typeof m.fyaw === 'number') ? m.fyaw : null);
+  if(yaw === null) return '';
+  var side = ((yaw + 180) % 360 + 360) % 360;
+  return side >= 315 || side < 45 ? 'North side' : side < 135 ? 'East side' : side < 225 ? 'South side' : 'West side';
+}
 var bpZoneMap = new Map(); // File object -> zone string, read by bpProcessFile/bpPlacePhoto
 function bpBuildZoneStrip(files){
   var wrap = document.getElementById('bp-zonestrip-wrap');
@@ -1677,7 +1767,21 @@ function bpBuildZoneStrip(files){
     row.appendChild(thumb);
   });
   bpCascadeZones(startIdx, carryZone);
+  // Photos that carry drone compass/tilt data get their zone set directly (and are left alone by the carry-forward).
+  var auto = 0;
+  files.forEach(function(file, i){
+    var z = rsZoneFromMeta(file._meta);
+    var th = row.children[startIdx + i], sel = th && th.querySelector('select');
+    if(z && sel){ sel.value = z; th.dataset.touched = '1'; th.title = 'Set from the drone\'s compass and camera tilt'; auto++; }
+  });
+  if(auto){
+    bpZoneFiles.forEach(function(file, i){ var sel = row.children[i] && row.children[i].querySelector('select'); if(sel) bpZoneMap.set(file, sel.value); });
+    bpZoneAuto += auto;
+    var note = document.getElementById('bp-zone-auto-note');
+    if(note){ note.style.display = 'block'; note.textContent = bpZoneAuto + ' photo' + (bpZoneAuto===1?'':'s') + ' tagged automatically from the drone\'s compass and camera tilt (North, East, South, West side or Top-down). Change any that look wrong.'; }
+  }
 }
+var bpZoneAuto = 0;
 function bpZoneChanged(startIdx, selectEl){
   var row = document.getElementById('bp-zonestrip-row');
   if(!row) return;
@@ -1737,7 +1841,7 @@ function bpInitDropZone(){
   dz.addEventListener('drop', function(e){ e.preventDefault(); dz.classList.remove('dragover'); bpHandleFiles(e.dataTransfer.files); });
   fi.addEventListener('change', function(e){ bpHandleFiles(e.target.files); fi.value=''; });
 }
-function bpHandleFiles(fileList){
+async function bpHandleFiles(fileList){
   if(!bpGetApiKey()){
     alert('Save your staff access key above first.');
     return;
@@ -1745,6 +1849,9 @@ function bpHandleFiles(fileList){
   var files = [];
   for(var i=0;i<fileList.length;i++){ if(fileList[i].type.indexOf('image/')===0) files.push(fileList[i]); }
   if(!files.length) return;
+  // Drone data: photos from RoofScan storage already carry it (read by the flyer's upload page before shrinking);
+  // photos dropped in from a computer are read here.
+  await Promise.all(files.map(async function(f){ if(f._meta === undefined) f._meta = await rsReadDroneMeta(f); }));
   // Sort into capture order (filename, which for drone photos increments sequentially — falls
   // back to lastModified if names don't sort meaningfully) before anything else touches this
   // batch, since the zone strip's sticky defaults only make sense in true shot order, and the
@@ -1757,7 +1864,89 @@ function bpHandleFiles(fileList){
   bpBuildZoneStrip(files);
   bpTotal += files.length;
   bpUpdateProgress();
-  return bpRunPool(files, 4, bpProcessFile).then(bpMaybeDetectRoofSpecs);
+  // 1) Read every photo locally (no AI yet). 2) Set aside near-duplicates and blurry shots. 3) Only the rest go to the AI.
+  var procs = new Map();
+  await bpRunPool(files, 4, async function(f){ try{ procs.set(f, await bpProcessImage(f)); }catch(e){ procs.set(f, null); } });
+  var toSort = bpPreFilter(files, procs);
+  await bpRunPool(toSort, 4, function(f){ return bpProcessFile(f, procs.get(f)); });
+  bpUpdateFilterNote();
+  return bpMaybeDetectRoofSpecs();
+}
+// Sharpness = how much the brightness changes between neighbouring pixels (variance of a Laplacian filter),
+// measured on the 768px copy. Blurred or shaken shots score far lower than the rest of the same job.
+function rsSharpness(canvas){
+  try{
+    var w = canvas.width, h = canvas.height, g = canvas.getContext('2d').getImageData(0,0,w,h).data;
+    var step = Math.max(1, Math.floor(Math.max(w,h)/384)), n = 0, sum = 0, sum2 = 0;
+    var L = function(x,y){ var i=(y*w+x)*4; return 0.299*g[i]+0.587*g[i+1]+0.114*g[i+2]; };
+    for(var y=step; y<h-step; y+=step){ for(var x=step; x<w-step; x+=step){
+      var v = 4*L(x,y) - L(x-step,y) - L(x+step,y) - L(x,y-step) - L(x,y+step); n++; sum += v; sum2 += v*v; } }
+    if(!n) return 0; var m = sum/n; return Math.round(sum2/n - m*m);
+  }catch(e){ return 0; }
+}
+function rsDHash(canvas){
+  try{
+    var w = canvas.width, h = canvas.height, g = canvas.getContext('2d').getImageData(0,0,w,h).data;
+    var cell = [], cnt = [], i, hs = '';
+    for(i=0;i<72;i++){ cell.push(0); cnt.push(0); }
+    for(var y=0; y<h; y+=2){ var cy = Math.min(7, Math.floor(y*8/h));
+      for(var x=0; x<w; x+=2){ var cx = Math.min(8, Math.floor(x*9/w)), p = (y*w+x)*4; cell[cy*9+cx] += 0.299*g[p]+0.587*g[p+1]+0.114*g[p+2]; cnt[cy*9+cx]++; } }
+    for(i=0;i<72;i++) cell[i] /= (cnt[i] || 1);
+    for(y=0;y<8;y++){ for(x=0;x<8;x++){ hs += cell[y*9+x] > cell[y*9+x+1] ? '1' : '0'; } }
+    return hs;
+  }catch(e){ return ''; }
+}
+var bpKeepers = [], bpSharpAll = [], bpSetAsideDup = 0, bpSetAsideBlur = 0;
+var BP_DUP_BITS = 10, BP_BLUR_RATIO = 0.2;   // tested: bursts of one spot 5-10 bits apart, different views 23+
+// Groups near-identical shots (across every category, in capture order) and keeps the sharpest of each group.
+// Then sets aside any photo far blurrier than the job's typical photo. Nothing is deleted: set-aside photos sit
+// under "Set aside" with a label and can be attached with one click.
+function bpPreFilter(files, procs){
+  var batch = [];
+  files.forEach(function(f){
+    var p = procs.get(f);
+    if(!p){ batch.push({file:f, proc:null}); return; }
+    bpSharpAll.push(p.sharp);
+    var hit = null;
+    for(var i=bpKeepers.length-1; p.hash && i>=0; i--){ if(bpKeepers[i].proc.hash && bpHamming(p.hash, bpKeepers[i].proc.hash) <= BP_DUP_BITS){ hit = bpKeepers[i]; break; } }
+    if(!hit){ var k = {file:f, proc:p, fresh:true}; bpKeepers.push(k); batch.push(k); return; }
+    if(hit.fresh && p.sharp > hit.proc.sharp * 1.15){
+      // This shot is clearly sharper than the one kept so far (and that one has not been sorted yet): swap them.
+      bpSetAside(hit.file, hit.proc, 'Similar to another shot (sharper one kept)'); bpSetAsideDup++;
+      hit.file = f; hit.proc = p;
+    } else { bpSetAside(f, p, 'Similar to another shot (sharper one kept)'); bpSetAsideDup++; }
+  });
+  var sorted = bpSharpAll.slice().sort(function(a,b){ return a-b; });
+  var median = sorted.length ? sorted[Math.floor(sorted.length/2)] : 0;
+  var out = [];
+  batch.forEach(function(k){
+    if(k.proc && sorted.length >= 6 && median > 0 && k.proc.sharp < median * BP_BLUR_RATIO){
+      bpSetAside(k.file, k.proc, 'Looks blurry'); bpSetAsideBlur++;
+      var at = bpKeepers.indexOf(k); if(at >= 0) bpKeepers.splice(at, 1);
+      return;
+    }
+    if(k.fresh) k.fresh = false;
+    out.push(k.file);
+  });
+  return out;
+}
+function bpSetAside(file, proc, label){
+  bpAddExtra(file, proc, label, '', bpZoneMap.get(file) || '');
+  bpDone++; bpUpdateProgress();
+}
+function bpUpdateFilterNote(){
+  if(!bpSetAsideDup && !bpSetAsideBlur) return;
+  var note = document.getElementById('bp-filter-note');
+  if(!note){
+    var wrap = document.getElementById('bp-extras-wrap'); if(!wrap) return;
+    note = document.createElement('div'); note.id = 'bp-filter-note';
+    note.style.cssText = 'font-size:11.5px;color:#6B7A8D;margin:-2px 0 8px;line-height:1.4;';
+    wrap.insertBefore(note, wrap.children[1] || null);
+  }
+  var parts = [];
+  if(bpSetAsideDup) parts.push(bpSetAsideDup + ' near-identical shot' + (bpSetAsideDup===1?'':'s') + ' (the sharpest of each group was kept)');
+  if(bpSetAsideBlur) parts.push(bpSetAsideBlur + ' blurry shot' + (bpSetAsideBlur===1?'':'s'));
+  note.textContent = 'Set aside before sorting: ' + parts.join(' and ') + '. Click one to check it, then use Attach to if you want it.';
 }
 function bpRunPool(items, limit, worker){
   var idx = 0, active = 0;
@@ -1787,19 +1976,16 @@ function bpProcessImage(file){
         c1.getContext('2d').drawImage(img,0,0,cw,ch);
         var base64;
         try{ base64 = c1.toDataURL('image/jpeg',0.7).split(',')[1]; }catch(err){ reject(err); return; }
-        var c2 = document.createElement('canvas'); c2.width=8; c2.height=8;
-        var ctx2 = c2.getContext('2d');
-        ctx2.drawImage(img,0,0,8,8);
-        var d = ctx2.getImageData(0,0,8,8).data;
-        var gray = [];
-        for(var i=0;i<64;i++){ gray.push(0.299*d[i*4]+0.587*d[i*4+1]+0.114*d[i*4+2]); }
-        var avg = gray.reduce(function(a,b){return a+b;},0)/64;
-        var hash = gray.map(function(v){ return v>avg?'1':'0'; }).join('');
+        // Difference hash (9x8 grey, each pixel brighter than its right-hand neighbour?): near-identical shots
+        // such as a burst of the same spot land within a few bits of each other, different views do not.
+        // Averaged over proper blocks of the 768px copy (a straight 9x8 shrink samples too few pixels and is noisy).
+        var hash = rsDHash(c1);
+        var sharp = rsSharpness(c1);
         var c3 = document.createElement('canvas'); c3.width=70; c3.height=70;
         var minSide = Math.min(w,h);
         c3.getContext('2d').drawImage(img,(w-minSide)/2,(h-minSide)/2,minSide,minSide,0,0,70,70);
         var thumbUrl = c3.toDataURL('image/jpeg',0.6);
-        resolve({base64:base64, hash:hash, thumbUrl:thumbUrl});
+        resolve({base64:base64, hash:hash, sharp:sharp, thumbUrl:thumbUrl, file:file});
       };
       img.onerror = function(){ reject(new Error('Could not read image')); };
       img.src = e.target.result;
@@ -1838,11 +2024,11 @@ async function bpClassify(base64){
   if(!note || /^none\.?$/i.test(note)) note = '';
   return {catIdx: idx, note: note};
 }
-async function bpProcessFile(file){
+async function bpProcessFile(file, pre){
   var zone = bpZoneMap.get(file) || '';
-  var proc = null;
+  var proc = pre || null;
   try{
-    proc = await bpProcessImage(file);
+    if(!proc) proc = await bpProcessImage(file);
     var result = await bpClassify(proc.base64);
     bpPlacePhoto(file, proc, BP_CATS[result.catIdx], result.note, zone);
     bpCaptureRoofSpecCandidate(result.catIdx, proc.base64);
@@ -1944,6 +2130,8 @@ function bpAttachPhotoToBlock(block, proc, note, zone, photoName, restoring){
   state[key] = state[key] || {status:null};
   state[key].photoB64 = proc.base64;
   state[key].photoMime = 'image/jpeg';
+  state[key].photoFile = proc.file || null;   // the full-size photo, re-drawn larger when the report is built
+  delete state[key].photoHiB64;
   if(photoName) state[key].photoName = photoName; else delete state[key].photoName;
   if(zone) state[key].zone = zone;
   if(typeof CT_MODE!=='undefined' && CT_MODE) openObsBlock(key);
@@ -2009,7 +2197,7 @@ function bpPlacePhoto(file, proc, cat, note, zone){
   }
   var already = bpRefHashes[cat.ref] || [];
   for(var i=0;i<already.length;i++){
-    if(bpHamming(proc.hash, already[i]) <= 8){
+    if(bpHamming(proc.hash, already[i]) <= BP_DUP_BITS){
       bpAddExtra(file, proc, 'Possible duplicate — '+cat.ref, note, zone);
       return;
     }
@@ -2709,17 +2897,19 @@ async function ctInit(){
   ctBanner('<strong>' + ctEsc(j.client || 'Your job') + '</strong>: ' + (draft ? 'your saved report is back. Loading ' : 'details filled in. Loading ') + j.photoCount + ' photos...' + fb);
   await ctLoadPhotos(j.client, fb, placed);
 }
+var ctMetaByName = {};
 async function ctFetchPhoto(name){
   for(var attempt = 0; attempt < 2; attempt++){
     try{
       var r = await ctApi('/contractor/photo?jobId=' + encodeURIComponent(CT_JOB) + '&name=' + encodeURIComponent(name));
-      if(r.ok){ var b = await r.blob(); var f = new File([b], name, { type: b.type || 'image/jpeg', lastModified: Date.now() }); f._ct = true; return f; }
+      if(r.ok){ var b = await r.blob(); var f = new File([b], name, { type: b.type || 'image/jpeg', lastModified: Date.now() }); f._ct = true; f._meta = ctMetaByName[name] || null; return f; }
     }catch(e){}
   }
   return null;
 }
 async function ctLoadPhotos(client, fb, placed){
   var lr = await ctApi('/contractor/photos?jobId=' + encodeURIComponent(CT_JOB)), ld = await lr.json();
+  (ld.photos || []).forEach(function(p){ ctMetaByName[p.name] = p.meta || null; });
   var names = (ld.photos || []).map(function(p){ return p.name; }).sort(function(a,b){ return a < b ? -1 : (a > b ? 1 : 0); });
   var BATCH = 20, loaded = 0, missed = 0;
   var chunk = function(i){ return Promise.all(names.slice(i, i + BATCH).map(ctFetchPhoto)); };

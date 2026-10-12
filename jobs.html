@@ -421,6 +421,58 @@ function photoBox(j, st){
     <input class="inp" id="plink-${j.id}" type="url" inputmode="url" autocomplete="off" placeholder="https://drive.google.com/..." value="${esc(st.link||'')}" style="letter-spacing:0;width:100%;" oninput="setLink('${j.id}',this.value)">
   </details>`;
 }
+// Reads the data a drone saves inside each photo: GPS position, camera direction (yaw) and tilt (pitch), height and
+// capture time. DJI drones write these in XMP text (drone-dji:...) and the GPS also in EXIF. Returns null if none found.
+// Only reads the first 256 KB of the file, where this data always sits.
+function rsReadDroneMetaFromBuffer(buf){
+  var u8 = new Uint8Array(buf), out = {};
+  var txt = ''; for (var i = 0; i < u8.length; i++) txt += String.fromCharCode(u8[i]);
+  function xmp(names){
+    for (var n = 0; n < names.length; n++){
+      var re = new RegExp('drone-dji:' + names[n] + '\\s*=\\s*"([^"]+)"|<drone-dji:' + names[n] + '>([^<]+)<', 'i');
+      var m = txt.match(re);
+      if (m){ var v = parseFloat(m[1] || m[2]); if (isFinite(v)) return v; }
+    }
+    return null;
+  }
+  var map = { yaw:['GimbalYawDegree'], pitch:['GimbalPitchDegree'], fyaw:['FlightYawDegree'], alt:['RelativeAltitude'],
+              lat:['GpsLatitude','Latitude'], lon:['GpsLongitude','GpsLongtitude','Longitude'] };
+  for (var k in map){ var v = xmp(map[k]); if (v !== null) out[k] = v; }
+  // EXIF (GPS + capture time), used when XMP has no GPS.
+  try {
+    var exifAt = txt.indexOf('Exif\0\0');
+    if (exifAt >= 0){
+      var t0 = exifAt + 6, dv = new DataView(buf);
+      var le = txt.substr(t0, 2) === 'II';
+      var r16 = function(o){ return dv.getUint16(t0 + o, le); }, r32 = function(o){ return dv.getUint32(t0 + o, le); };
+      var readIfd = function(off){ var n = r16(off), tags = {}; for (var e = 0; e < n; e++){ var p = off + 2 + e*12; tags[r16(p)] = { type:r16(p+2), count:r32(p+4), valOff:p+8 }; } return tags; };
+      var rat = function(off, c){ var a = []; for (var q = 0; q < c; q++){ var d = r32(off + q*8 + 4); a.push(d ? r32(off + q*8) / d : 0); } return a; };
+      var asc = function(tag){ if (!tag) return ''; var o = tag.count > 4 ? r32(tag.valOff) : tag.valOff, s = ''; for (var q = 0; q < tag.count - 1; q++) s += String.fromCharCode(dv.getUint8(t0 + o + q)); return s; };
+      var ifd0 = readIfd(r32(4));
+      if (ifd0[0x8769]){ var ex = readIfd(r32(ifd0[0x8769].valOff)); var dt = asc(ex[0x9003]); if (dt) out.t = dt; }
+      if (ifd0[0x8825]){
+        var g = readIfd(r32(ifd0[0x8825].valOff));
+        if (g[2] && g[4] && (out.lat === undefined || out.lon === undefined)){
+          var la = rat(r32(g[2].valOff), 3), lo = rat(r32(g[4].valOff), 3);
+          var lat = la[0] + la[1]/60 + la[2]/3600, lon = lo[0] + lo[1]/60 + lo[2]/3600;
+          if (asc(g[1]) === 'S') lat = -lat; if (asc(g[3]) === 'W') lon = -lon;
+          if (lat || lon){ out.lat = Math.round(lat*1e6)/1e6; out.lon = Math.round(lon*1e6)/1e6; }
+        }
+      }
+    }
+  } catch(e) { /* odd EXIF layouts are skipped, XMP values still count */ }
+  return Object.keys(out).length ? out : null;
+}
+function rsReadDroneMeta(file){
+  return new Promise(function(res){
+    try {
+      var r = new FileReader();
+      r.onload = function(){ try { res(rsReadDroneMetaFromBuffer(r.result)); } catch(e){ res(null); } };
+      r.onerror = function(){ res(null); };
+      r.readAsArrayBuffer(file.slice(0, 262144));
+    } catch(e){ res(null); }
+  });
+}
 // Shrinks big drone photos to about 2400px on the long edge before upload. Falls back to the original if the browser can't read it.
 function shrinkPhoto(file){
   return new Promise(res => {
@@ -436,9 +488,11 @@ function shrinkPhoto(file){
     img.src = u;
   });
 }
-async function uploadOne(id, name, blob){
+async function uploadOne(id, name, blob, meta){
+  const headers = { Authorization:'Bearer ' + localStorage.getItem(LS.tok), 'Content-Type':'application/octet-stream' };
+  if (meta) headers['X-Photo-Meta'] = JSON.stringify(meta);
   const res = await fetch(API + '/contractor/photo-upload?jobId=' + encodeURIComponent(id) + '&name=' + encodeURIComponent(name),
-    { method:'POST', headers:{ Authorization:'Bearer ' + localStorage.getItem(LS.tok), 'Content-Type':'application/octet-stream' }, body: blob });
+    { method:'POST', headers, body: blob });
   let d = {}; try { d = await res.json(); } catch(e){}
   if (!res.ok) { const e = new Error(d.error || ('HTTP ' + res.status)); e.status = res.status; throw e; }
   return d;
@@ -460,8 +514,9 @@ async function runUploads(id){
     while (p.queue.length && !p.fatal) {
       const file = p.queue.shift();
       try {
+        const meta = await rsReadDroneMeta(file);   // read the drone's GPS/camera data before shrinking strips it
         const s = await shrinkPhoto(file);
-        let r; try { r = await uploadOne(id, s.name, s.blob); } catch(e){ if (e.status) throw e; r = await uploadOne(id, s.name, s.blob); } // one quiet retry on a dropped connection
+        let r; try { r = await uploadOne(id, s.name, s.blob, meta); } catch(e){ if (e.status) throw e; r = await uploadOne(id, s.name, s.blob, meta); } // one quiet retry on a dropped connection
         p.count = r.count;
       } catch(e) {
         if (e.status === 401) { p.fatal = 'Your session has ended. Log in again, then retry.'; p.failed.push(file); }
