@@ -1,14 +1,17 @@
-// Password-gates the internal staff tools (staff.html and reports.html) so only
-// people with the username/password can load them. Everything else on the site
-// (the public marketing pages, my-roof.html client portal, trade-portal.html,
-// booking pages, etc.) is untouched and stays fully public.
+// Password-gates the owner's internal staff tool (staff.html) on Vercel so only
+// people with the username/password can load it. Everything else on the site
+// stays public.
 //
-// The username/password are NOT stored here — they live as Environment
-// Variables in the Vercel project (STAFF_SITE_USER / STAFF_SITE_PASS), set in
-// Project Settings > Environment Variables, so they never sit in this repo.
+// reports.html (the report generator) is NOT gated any more: report writers open it
+// from their job card, and it already sends anyone who isn't logged in (owner login
+// or contractor login) to the login page. All data it uses comes through the Worker,
+// which checks those logins itself, so a browser password here only blocked writers.
+//
+// The username/password live as Environment Variables in the Vercel project
+// (STAFF_SITE_USER / STAFF_SITE_PASS), never in this repo.
 
 export const config = {
-  matcher: ['/staff.html', '/reports.html'],
+  matcher: ['/staff.html'],
 };
 
 export default function middleware(request) {
