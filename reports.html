@@ -15,6 +15,7 @@
 <script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
 <script src="https://unpkg.com/file-saver@2.0.5/dist/FileSaver.min.js"></script>
 <script src="airtable-api.js"></script>
+<script src="photo-sort.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#FBFAF7;color:#1A1A2E;min-height:100vh;}
@@ -130,6 +131,8 @@ html.ct #ct-suggest{display:block!important;}
 .auto-status-note{font-size:11px;color:rgba(255,255,255,0.4);margin-top:6px;}
 
 
+.obs-block.rs-drop{outline:3px dashed #1B5E3B;outline-offset:2px;background:#F1F8F3;}
+.bp-extra-thumb[draggable="true"]{cursor:grab;}
 .autosave-bar{position:fixed;bottom:0;left:0;right:0;background:rgba(28,43,74,0.95);backdrop-filter:blur(8px);padding:8px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;z-index:500;font-size:12px;}
 .autosave-status{color:rgba(255,255,255,0.6);}
 .autosave-status.saving{color:var(--amber);}
@@ -824,6 +827,12 @@ function _applyPhotoUI(key){
 function removePhoto(key,e){
   e.stopPropagation();
   if(state[key]){delete state[key].photoB64;delete state[key].photoMime;delete state[key].photoName;delete state[key].photoFile;delete state[key].photoHiB64;}
+  if(state[key] && state[key].more && state[key].more.length){
+    // Promote the next photo of this item to be the main one.
+    var nx = state[key].more.shift(); bpRenderMore(key);
+    var blk = document.getElementById('obsblock_'+key);
+    if(blk && nx.proc){ bpAttachPhotoToBlock(blk, nx.proc, '', state[key].zone || '', nx.name, true); if(typeof ctSaveSoon==='function') ctSaveSoon(); return; }
+  }
   if(typeof ctSaveSoon==='function') ctSaveSoon();
   var area=document.getElementById("photo_"+key);
   area.classList.remove("has-photo");
@@ -913,7 +922,8 @@ function collectObs(){
     var photoB64=state[key]?(state[key].photoHiB64||state[key].photoB64||null):null;
     var photoMime=state[key]?state[key].photoMime||"image/jpeg":"image/jpeg";
     var zone=state[key]?state[key].zone||"":"";
-    if(status||(txt&&txt.value)){obs.push({ref:ref,title:title,status:status,priority:pri?pri.value||"":"",observation:txt?txt.value||"":"",photoB64:photoB64,photoMime:photoMime,zone:zone});}
+    var more=state[key]&&state[key].more?state[key].more.map(function(m){ return m.hi || (m.proc && m.proc.base64); }).filter(Boolean):[];
+    if(status||(txt&&txt.value)){obs.push({ref:ref,title:title,status:status,priority:pri?pri.value||"":"",observation:txt?txt.value||"":"",photoB64:photoB64,photoMime:photoMime,zone:zone,more:more});}
   });
   return obs;
 }
@@ -1099,7 +1109,7 @@ function rsHiResFromFile(file){
         var sc = Math.min(1, 1600/Math.max(img.naturalWidth, img.naturalHeight));
         var c = document.createElement('canvas'); c.width = Math.round(img.naturalWidth*sc); c.height = Math.round(img.naturalHeight*sc);
         c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(u);
-        try{ res(c.toDataURL('image/jpeg', 0.82).split(',')[1]); }catch(e){ res(null); }
+        try{ res({ b64: c.toDataURL('image/jpeg', 0.82).split(',')[1], w: c.width, h: c.height }); }catch(e){ res(null); }
       };
       img.onerror = function(){ URL.revokeObjectURL(u); res(null); };
       img.src = u;
@@ -1107,10 +1117,16 @@ function rsHiResFromFile(file){
   });
 }
 async function rsUpgradePhotos(){
-  var keys = Object.keys(state).filter(function(k){ return state[k] && state[k].photoFile && state[k].photoB64 && !state[k].photoHiB64 && document.getElementById('obsblock_'+k); });
-  for(var i = 0; i < keys.length; i += 4){
-    await Promise.all(keys.slice(i, i+4).map(async function(k){ var hi = await rsHiResFromFile(state[k].photoFile); if(hi) state[k].photoHiB64 = hi; }));
-  }
+  var jobs = [];
+  Object.keys(state).forEach(function(k){
+    var st = state[k]; if(!st || !document.getElementById('obsblock_'+k)) return;
+    if(st.photoFile && st.photoB64 && !st.photoHiB64) jobs.push(async function(){ var hi = await rsHiResFromFile(st.photoFile); if(hi) st.photoHiB64 = hi.b64; });
+    (st.more || []).forEach(function(m){ if(m.proc && m.proc.file && !m.hi) jobs.push(async function(){ var hi = await rsHiResFromFile(m.proc.file); if(hi) m.hi = hi.b64; }); });
+  });
+  var cov = bpCoverPick();
+  if(cov && cov.proc && cov.proc.file && (!bpCoverHi || bpCoverHi.src !== cov.proc)) jobs.push(async function(){ var hi = await rsHiResFromFile(cov.proc.file); bpCoverHi = hi ? { b64: hi.b64, w: hi.w, h: hi.h, src: cov.proc } : null; });
+  if(!cov) bpCoverHi = null;
+  for(var i = 0; i < jobs.length; i += 4){ await Promise.all(jobs.slice(i, i+4).map(function(f){ return f(); })); }
 }
 async function generateReport(){
   var btn=document.getElementById("genBtn");var msg=document.getElementById("statusMsg");
@@ -1143,6 +1159,7 @@ async function generateReport(){
     obs=collectObsFinal();
     msg.textContent="Building your Word document...";
     var d=collectReportData();
+    d.cover=bpCoverHi;
     var doc=buildDoc(d,obs);
     var blob=await docx.Packer.toBlob(doc);
     // Kept flat (no subfolder trick) — the "/" in the filename only created a real subfolder in
@@ -1290,7 +1307,14 @@ function buildDoc(d,obs){
   var gcw=Math.floor(CONTENT_W/4);
   function gc(l,v){return new D.TableCell({borders:AB,shading:{fill:GREY_BG,type:D.ShadingType.CLEAR},width:{size:gcw,type:D.WidthType.DXA},margins:{top:120,bottom:120,left:140,right:140},verticalAlign:D.VerticalAlign.CENTER,children:[new D.Paragraph({alignment:D.AlignmentType.CENTER,spacing:{before:0,after:40},children:[new D.TextRun({text:l,font:"Arial",size:16,bold:true,color:BLUE_MID})]}),new D.Paragraph({alignment:D.AlignmentType.CENTER,children:[new D.TextRun({text:v,font:"Arial",size:19,bold:true,color:DARK})]})]});}
   var glT=new D.Table({width:{size:CONTENT_W,type:D.WidthType.DXA},columnWidths:[gcw,gcw,gcw,gcw],rows:[new D.TableRow({children:[gc("ROOF TYPE",d.roofType),gc("COVERING",d.covering),gc("APPROX. AGE",d.roofAge),gc("DEFECTS FOUND",String(parseInt(d.redCount)+parseInt(d.amberCount)))]})]});
-  var imgPh=new D.Table({width:{size:CONTENT_W,type:D.WidthType.DXA},columnWidths:[CONTENT_W],rows:[new D.TableRow({height:{value:4800,rule:"exact"},children:[new D.TableCell({borders:AB,shading:{fill:GREY_BG,type:D.ShadingType.CLEAR},width:{size:CONTENT_W,type:D.WidthType.DXA},verticalAlign:D.VerticalAlign.CENTER,children:[new D.Paragraph({alignment:D.AlignmentType.CENTER,children:[new D.TextRun({text:"[ INSERT MAIN PROPERTY / ROOF IMAGE HERE ]",font:"Arial",size:20,color:"999999",italics:true})]})]})]})]}); 
+  // Cover photo: the chosen overview shot, fitted inside the cover box. With no overview photo the box is left out
+  // (the old "[ INSERT MAIN PROPERTY / ROOF IMAGE HERE ]" placeholder would otherwise reach the client).
+  var imgPh=null;
+  if(d.cover && d.cover.b64){
+    var cwPx=Math.floor(CONTENT_W/15)-20, chPx=300, ar=(d.cover.w&&d.cover.h)?d.cover.w/d.cover.h:4/3;
+    var iw=cwPx, ih=Math.round(cwPx/ar); if(ih>chPx){ ih=chPx; iw=Math.round(chPx*ar); }
+    imgPh=new D.Table({width:{size:CONTENT_W,type:D.WidthType.DXA},columnWidths:[CONTENT_W],rows:[new D.TableRow({children:[new D.TableCell({borders:AB,shading:{fill:GREY_BG,type:D.ShadingType.CLEAR},width:{size:CONTENT_W,type:D.WidthType.DXA},margins:{top:80,bottom:80,left:80,right:80},verticalAlign:D.VerticalAlign.CENTER,children:[new D.Paragraph({alignment:D.AlignmentType.CENTER,children:[new D.ImageRun({data:b64u(d.cover.b64),transformation:{width:iw,height:ih},type:"jpg"})]})]})]})]});
+  } 
   var cBar=new D.Table({width:{size:CONTENT_W,type:D.WidthType.DXA},columnWidths:[CONTENT_W],rows:[new D.TableRow({children:[new D.TableCell({borders:NBS,shading:{fill:BLUE_LIGHT,type:D.ShadingType.CLEAR},width:{size:CONTENT_W,type:D.WidthType.DXA},margins:{top:180,bottom:180,left:500,right:500},children:[new D.Paragraph({alignment:D.AlignmentType.CENTER,children:[new D.TextRun({text:"www.roofscanuk.co.uk",font:"Arial",size:18,color:BLUE,bold:true}),new D.TextRun({text:"   |   ",font:"Arial",size:18,color:BLUE_MID}),new D.TextRun({text:"07498 364197",font:"Arial",size:18,color:BLUE}),new D.TextRun({text:"   |   ",font:"Arial",size:18,color:BLUE_MID}),new D.TextRun({text:"info@roofscanuk.co.uk",font:"Arial",size:18,color:BLUE})]})]})]})]});
   var cw=Math.floor(CONTENT_W/3)-20;
   function dc(cnt,lbl,fill){return new D.TableCell({borders:AB,shading:{fill:fill,type:D.ShadingType.CLEAR},width:{size:cw,type:D.WidthType.DXA},margins:{top:160,bottom:160,left:200,right:200},verticalAlign:D.VerticalAlign.CENTER,children:[new D.Paragraph({alignment:D.AlignmentType.CENTER,spacing:{before:0,after:60},children:[new D.TextRun({text:String(cnt),font:"Arial",size:52,bold:true,color:WHITE})]}),new D.Paragraph({alignment:D.AlignmentType.CENTER,children:[new D.TextRun({text:lbl,font:"Arial",size:19,bold:true,color:WHITE})]})]});}
@@ -1308,14 +1332,19 @@ function buildDoc(d,obs){
       var pd=b64u(o.photoB64);
       var ptype=o.photoMime&&o.photoMime.indexOf("png")>-1?"png":"jpg";
       lc=[new D.Paragraph({alignment:D.AlignmentType.CENTER,spacing:{before:60,after:60},children:[new D.ImageRun({data:pd,transformation:{width:220,height:165},type:ptype})]})];
+      // Up to two more photos of the same item, smaller, side by side under the main one.
+      if(o.more && o.more.length){
+        var mr=[]; o.more.slice(0,2).forEach(function(mb,mi){ if(mi) mr.push(new D.TextRun({text:"  "})); mr.push(new D.ImageRun({data:b64u(mb),transformation:{width:106,height:80},type:"jpg"})); });
+        lc.push(new D.Paragraph({alignment:D.AlignmentType.CENTER,spacing:{before:0,after:60},children:mr}));
+      }
     }else{
-      lc=[new D.Paragraph({alignment:D.AlignmentType.CENTER,spacing:{before:180,after:120},children:[new D.TextRun({text:"[ INSERT DRONE IMAGE ]",font:"Arial",size:17,color:"AAAAAA",italics:true})]}),new D.Paragraph({alignment:D.AlignmentType.CENTER,children:[new D.TextRun({text:"Replace with cropped drone photo",font:"Arial",size:15,color:"BBBBBB",italics:true})]})];
+      lc=[new D.Paragraph({alignment:D.AlignmentType.CENTER,spacing:{before:180,after:180},children:[new D.TextRun({text:"No photo for this item",font:"Arial",size:16,color:"9AA5B1",italics:true})]})];
     }
     return[new D.Table({width:{size:CONTENT_W,type:D.WidthType.DXA},columnWidths:[lw,rw],rows:[
       new D.TableRow({children:[new D.TableCell({columnSpan:2,borders:{top:OB,left:OB,right:OB,bottom:{style:D.BorderStyle.SINGLE,size:2,color:BLUE_LIGHT}},shading:{fill:BLUE_LIGHT,type:D.ShadingType.CLEAR},width:{size:CONTENT_W,type:D.WidthType.DXA},margins:{top:100,bottom:100,left:200,right:200},children:[new D.Paragraph({children:[new D.TextRun({text:"Ref "+o.ref+"  ",font:"Arial",size:18,bold:true,color:BLUE_MID}),new D.TextRun({text:o.title,font:"Arial",size:20,bold:true,color:DARK})].concat(o.zone?[new D.TextRun({text:"   |   "+o.zone,font:"Arial",size:17,italics:true,color:BLUE_MID})]:[])})]})]}) ,
       new D.TableRow({children:[
         new D.TableCell({borders:{top:NB,bottom:OB,left:OB,right:{style:D.BorderStyle.SINGLE,size:2,color:BLUE_LIGHT}},width:{size:lw,type:D.WidthType.DXA},shading:{fill:GREY_BG,type:D.ShadingType.CLEAR},verticalAlign:D.VerticalAlign.CENTER,margins:{top:80,bottom:80,left:100,right:100},children:lc}),
-        new D.TableCell({borders:{top:NB,bottom:OB,right:OB,left:NB},width:{size:rw,type:D.WidthType.DXA},margins:{top:140,bottom:140,left:200,right:160},children:[bT,sp(100,60),new D.Paragraph({spacing:{before:0,after:40},children:[new D.TextRun({text:"Observation",font:"Arial",size:17,bold:true,color:BLUE_MID})]}),new D.Paragraph({spacing:{before:0,after:120},children:[new D.TextRun({text:o.observation||"[No observation entered]",font:"Arial",size:18,color:DARK})]}),new D.Paragraph({spacing:{before:0,after:40},children:[new D.TextRun({text:"Priority",font:"Arial",size:17,bold:true,color:BLUE_MID})]}),new D.Paragraph({spacing:{before:0,after:0},children:[new D.TextRun({text:o.priority||"[No priority set]",font:"Arial",size:18,bold:true,color:sc})]})]})]})
+        new D.TableCell({borders:{top:NB,bottom:OB,right:OB,left:NB},width:{size:rw,type:D.WidthType.DXA},margins:{top:140,bottom:140,left:200,right:160},children:[bT,sp(100,60),new D.Paragraph({spacing:{before:0,after:40},children:[new D.TextRun({text:"Observation",font:"Arial",size:17,bold:true,color:BLUE_MID})]}),new D.Paragraph({spacing:{before:0,after:120},children:[new D.TextRun({text:o.observation||"No further detail recorded.",font:"Arial",size:18,color:DARK})]}),new D.Paragraph({spacing:{before:0,after:40},children:[new D.TextRun({text:"Priority",font:"Arial",size:17,bold:true,color:BLUE_MID})]}),new D.Paragraph({spacing:{before:0,after:0},children:[new D.TextRun({text:o.priority||"Not specified",font:"Arial",size:18,bold:true,color:sc})]})]})]})
     ]}),sp(160,60)];
   }
 
@@ -1348,7 +1377,7 @@ function buildDoc(d,obs){
   // 2.0 Observations & Recommendations, 3.0 Terms & Disclaimer, 4.0 Schedule of Works (last).
   var preparedByLine = d.whiteLabel ? (d.inspector+" - RoofScan UK, on behalf of "+BRAND) : (d.inspector+" - RoofScan UK");
   var children=[
-    hBar,sp(300,200),infoT,sp(200,160),glT,sp(200,200),imgPh,sp(200,160),cBar,pb(),
+    hBar,sp(300,200),infoT,sp(200,160),glT,sp(200,200),imgPh||sp(0,0),imgPh?sp(200,160):sp(0,0),cBar,pb(),
     new D.Paragraph({spacing:{before:0,after:80},children:[new D.TextRun({text:"Contents",font:"Arial",size:36,bold:true,color:BLUE})]}),
     bl(),sp(100,100),
     new D.TableOfContents("Table of Contents",{hyperlink:true,headingStyleRange:"1-3"}),pb(),
@@ -1678,68 +1707,7 @@ var bpRefHashes = {}; // ref -> [aHash,...] already placed, for duplicate detect
 // every later untouched photo in the strip follows it, so Tak only taps at the actual transitions
 // instead of tagging all ~20+ photos individually.
 var BP_ZONES = ['Front elevation','Rear elevation','Left side','Right side','North side','East side','South side','West side','Chimney area','Ridge','Flashings / valleys','Guttering','Top-down / overview','Other / not sure'];
-// Reads the data a drone saves inside each photo: GPS position, camera direction (yaw) and tilt (pitch), height and
-// capture time. DJI drones write these in XMP text (drone-dji:...) and the GPS also in EXIF. Returns null if none found.
-// Only reads the first 256 KB of the file, where this data always sits.
-function rsReadDroneMetaFromBuffer(buf){
-  var u8 = new Uint8Array(buf), out = {};
-  var txt = ''; for (var i = 0; i < u8.length; i++) txt += String.fromCharCode(u8[i]);
-  function xmp(names){
-    for (var n = 0; n < names.length; n++){
-      var re = new RegExp('drone-dji:' + names[n] + '\\s*=\\s*"([^"]+)"|<drone-dji:' + names[n] + '>([^<]+)<', 'i');
-      var m = txt.match(re);
-      if (m){ var v = parseFloat(m[1] || m[2]); if (isFinite(v)) return v; }
-    }
-    return null;
-  }
-  var map = { yaw:['GimbalYawDegree'], pitch:['GimbalPitchDegree'], fyaw:['FlightYawDegree'], alt:['RelativeAltitude'],
-              lat:['GpsLatitude','Latitude'], lon:['GpsLongitude','GpsLongtitude','Longitude'] };
-  for (var k in map){ var v = xmp(map[k]); if (v !== null) out[k] = v; }
-  // EXIF (GPS + capture time), used when XMP has no GPS.
-  try {
-    var exifAt = txt.indexOf('Exif\0\0');
-    if (exifAt >= 0){
-      var t0 = exifAt + 6, dv = new DataView(buf);
-      var le = txt.substr(t0, 2) === 'II';
-      var r16 = function(o){ return dv.getUint16(t0 + o, le); }, r32 = function(o){ return dv.getUint32(t0 + o, le); };
-      var readIfd = function(off){ var n = r16(off), tags = {}; for (var e = 0; e < n; e++){ var p = off + 2 + e*12; tags[r16(p)] = { type:r16(p+2), count:r32(p+4), valOff:p+8 }; } return tags; };
-      var rat = function(off, c){ var a = []; for (var q = 0; q < c; q++){ var d = r32(off + q*8 + 4); a.push(d ? r32(off + q*8) / d : 0); } return a; };
-      var asc = function(tag){ if (!tag) return ''; var o = tag.count > 4 ? r32(tag.valOff) : tag.valOff, s = ''; for (var q = 0; q < tag.count - 1; q++) s += String.fromCharCode(dv.getUint8(t0 + o + q)); return s; };
-      var ifd0 = readIfd(r32(4));
-      if (ifd0[0x8769]){ var ex = readIfd(r32(ifd0[0x8769].valOff)); var dt = asc(ex[0x9003]); if (dt) out.t = dt; }
-      if (ifd0[0x8825]){
-        var g = readIfd(r32(ifd0[0x8825].valOff));
-        if (g[2] && g[4] && (out.lat === undefined || out.lon === undefined)){
-          var la = rat(r32(g[2].valOff), 3), lo = rat(r32(g[4].valOff), 3);
-          var lat = la[0] + la[1]/60 + la[2]/3600, lon = lo[0] + lo[1]/60 + lo[2]/3600;
-          if (asc(g[1]) === 'S') lat = -lat; if (asc(g[3]) === 'W') lon = -lon;
-          if (lat || lon){ out.lat = Math.round(lat*1e6)/1e6; out.lon = Math.round(lon*1e6)/1e6; }
-        }
-      }
-    }
-  } catch(e) { /* odd EXIF layouts are skipped, XMP values still count */ }
-  return Object.keys(out).length ? out : null;
-}
-function rsReadDroneMeta(file){
-  return new Promise(function(res){
-    try {
-      var r = new FileReader();
-      r.onload = function(){ try { res(rsReadDroneMetaFromBuffer(r.result)); } catch(e){ res(null); } };
-      r.onerror = function(){ res(null); };
-      r.readAsArrayBuffer(file.slice(0, 262144));
-    } catch(e){ res(null); }
-  });
-}
-// Zone from the drone's own data: a camera pointing nearly straight down is an overview shot; otherwise the camera's
-// compass direction says which side of the building is in view (camera facing south = looking at the north side).
-function rsZoneFromMeta(m){
-  if(!m) return '';
-  if(typeof m.pitch === 'number' && m.pitch <= -60) return 'Top-down / overview';
-  var yaw = (typeof m.yaw === 'number') ? m.yaw : ((typeof m.fyaw === 'number') ? m.fyaw : null);
-  if(yaw === null) return '';
-  var side = ((yaw + 180) % 360 + 360) % 360;
-  return side >= 315 || side < 45 ? 'North side' : side < 135 ? 'East side' : side < 225 ? 'South side' : 'West side';
-}
+// Drone data, zones, sharpness, fingerprints and sorting calls live in photo-sort.js (shared with the flyer upload page).
 var bpZoneMap = new Map(); // File object -> zone string, read by bpProcessFile/bpPlacePhoto
 function bpBuildZoneStrip(files){
   var wrap = document.getElementById('bp-zonestrip-wrap');
@@ -1867,75 +1835,95 @@ async function bpHandleFiles(fileList){
   // 1) Read every photo locally (no AI yet). 2) Set aside near-duplicates and blurry shots. 3) Only the rest go to the AI.
   var procs = new Map();
   await bpRunPool(files, 4, async function(f){ try{ procs.set(f, await bpProcessImage(f)); }catch(e){ procs.set(f, null); } });
-  var toSort = bpPreFilter(files, procs);
-  await bpRunPool(toSort, 4, function(f){ return bpProcessFile(f, procs.get(f)); });
+  // Photos already sorted (by the flyer's upload page, or on an earlier visit) go straight to their place.
+  var fresh = [];
+  files.forEach(function(f){ var sv = f._sort, p = procs.get(f); if(sv && p && (sv.set || sv.cat)) bpApplySaved(f, p, sv); else fresh.push(f); });
+  var toSort = bpPreFilter(fresh, procs);
+  if(CT_MODE && CT_JOB) await bpSortViaWorker(toSort, procs);
+  else await bpRunPool(toSort, 4, function(f){ return bpProcessFile(f, procs.get(f)); });
   bpUpdateFilterNote();
   return bpMaybeDetectRoofSpecs();
 }
-// Sharpness = how much the brightness changes between neighbouring pixels (variance of a Laplacian filter),
-// measured on the 768px copy. Blurred or shaken shots score far lower than the rest of the same job.
-function rsSharpness(canvas){
-  try{
-    var w = canvas.width, h = canvas.height, g = canvas.getContext('2d').getImageData(0,0,w,h).data;
-    var step = Math.max(1, Math.floor(Math.max(w,h)/384)), n = 0, sum = 0, sum2 = 0;
-    var L = function(x,y){ var i=(y*w+x)*4; return 0.299*g[i]+0.587*g[i+1]+0.114*g[i+2]; };
-    for(var y=step; y<h-step; y+=step){ for(var x=step; x<w-step; x+=step){
-      var v = 4*L(x,y) - L(x-step,y) - L(x+step,y) - L(x,y-step) - L(x,y+step); n++; sum += v; sum2 += v*v; } }
-    if(!n) return 0; var m = sum/n; return Math.round(sum2/n - m*m);
-  }catch(e){ return 0; }
-}
-function rsDHash(canvas){
-  try{
-    var w = canvas.width, h = canvas.height, g = canvas.getContext('2d').getImageData(0,0,w,h).data;
-    var cell = [], cnt = [], i, hs = '';
-    for(i=0;i<72;i++){ cell.push(0); cnt.push(0); }
-    for(var y=0; y<h; y+=2){ var cy = Math.min(7, Math.floor(y*8/h));
-      for(var x=0; x<w; x+=2){ var cx = Math.min(8, Math.floor(x*9/w)), p = (y*w+x)*4; cell[cy*9+cx] += 0.299*g[p]+0.587*g[p+1]+0.114*g[p+2]; cnt[cy*9+cx]++; } }
-    for(i=0;i<72;i++) cell[i] /= (cnt[i] || 1);
-    for(y=0;y<8;y++){ for(x=0;x<8;x++){ hs += cell[y*9+x] > cell[y*9+x+1] ? '1' : '0'; } }
-    return hs;
-  }catch(e){ return ''; }
-}
-var bpKeepers = [], bpSharpAll = [], bpSetAsideDup = 0, bpSetAsideBlur = 0;
-var BP_DUP_BITS = 10, BP_BLUR_RATIO = 0.2;   // tested: bursts of one spot 5-10 bits apart, different views 23+
+var bpFilterCtx = rsNewFilterCtx(), bpFilterSeq = 0, bpSetAsideDup = 0, bpSetAsideBlur = 0, bpSortInfo = {};
 // Groups near-identical shots (across every category, in capture order) and keeps the sharpest of each group.
 // Then sets aside any photo far blurrier than the job's typical photo. Nothing is deleted: set-aside photos sit
 // under "Set aside" with a label and can be attached with one click.
 function bpPreFilter(files, procs){
-  var batch = [];
-  files.forEach(function(f){
-    var p = procs.get(f);
-    if(!p){ batch.push({file:f, proc:null}); return; }
-    bpSharpAll.push(p.sharp);
-    var hit = null;
-    for(var i=bpKeepers.length-1; p.hash && i>=0; i--){ if(bpKeepers[i].proc.hash && bpHamming(p.hash, bpKeepers[i].proc.hash) <= BP_DUP_BITS){ hit = bpKeepers[i]; break; } }
-    if(!hit){ var k = {file:f, proc:p, fresh:true}; bpKeepers.push(k); batch.push(k); return; }
-    if(hit.fresh && p.sharp > hit.proc.sharp * 1.15){
-      // This shot is clearly sharper than the one kept so far (and that one has not been sorted yet): swap them.
-      bpSetAside(hit.file, hit.proc, 'Similar to another shot (sharper one kept)'); bpSetAsideDup++;
-      hit.file = f; hit.proc = p;
-    } else { bpSetAside(f, p, 'Similar to another shot (sharper one kept)'); bpSetAsideDup++; }
-  });
-  var sorted = bpSharpAll.slice().sort(function(a,b){ return a-b; });
-  var median = sorted.length ? sorted[Math.floor(sorted.length/2)] : 0;
-  var out = [];
-  batch.forEach(function(k){
-    if(k.proc && sorted.length >= 6 && median > 0 && k.proc.sharp < median * BP_BLUR_RATIO){
-      bpSetAside(k.file, k.proc, 'Looks blurry'); bpSetAsideBlur++;
-      var at = bpKeepers.indexOf(k); if(at >= 0) bpKeepers.splice(at, 1);
-      return;
-    }
-    if(k.fresh) k.fresh = false;
-    out.push(k.file);
-  });
-  return out;
+  var byId = {}, list = [];
+  files.forEach(function(f, i){ var id = 'f' + (bpFilterSeq++); byId[id] = f; var p = procs.get(f); list.push({ id: id, hash: p ? p.hash : '', sharp: p ? p.sharp : 0 }); });
+  var r = rsPreFilter(list, bpFilterCtx);
+  r.dup.forEach(function(id){ var f = byId[id]; bpSetAside(f, procs.get(f), 'Similar to another shot (sharper one kept)'); bpSetAsideDup++; bpNoteSetAside(f, procs.get(f), 'dup'); });
+  r.blur.forEach(function(id){ var f = byId[id]; bpSetAside(f, procs.get(f), 'Looks blurry'); bpSetAsideBlur++; bpNoteSetAside(f, procs.get(f), 'blur'); });
+  return r.keep.map(function(id){ return byId[id]; });
 }
 function bpSetAside(file, proc, label){
   bpAddExtra(file, proc, label, '', bpZoneMap.get(file) || '');
   bpDone++; bpUpdateProgress();
 }
+// Saved set-aside decisions travel with the next sorting call so the job remembers them.
+function bpNoteSetAside(file, proc, kind){
+  if(file && file._ct && proc) bpSortInfo[file.name] = { hash: proc.hash, sharp: proc.sharp, set: kind };
+}
+// Puts a photo where a saved (or just returned) sorting result says. Low-confidence results are set aside for a person to place.
+function bpApplySaved(file, proc, sv){
+  var zone = bpZoneMap.get(file) || '';
+  if(sv.set){
+    bpSetAside(file, proc, sv.set === 'blur' ? 'Looks blurry' : 'Similar to another shot (sharper one kept)');
+    if(sv.set === 'blur') bpSetAsideBlur++; else bpSetAsideDup++;
+    return;
+  }
+  bpFilterCtx.keepers.push({ id: 'saved:' + file.name, hash: proc.hash, sharp: proc.sharp, fresh: false });
+  bpFilterCtx.sharpAll.push(proc.sharp);
+  var idx = Math.min(Math.max((sv.cat || 13) - 1, 0), BP_CATS.length - 1);
+  if(sv.conf === 'low' && BP_CATS[idx].ref){ bpAddExtra(file, proc, 'Not sure where this goes (maybe ' + BP_CATS[idx].ref + ')', sv.note || '', zone); bpLowConf++; }
+  else bpPlacePhoto(file, proc, BP_CATS[idx], sv.note || '', zone);
+  bpCaptureRoofSpecCandidate(idx, proc.base64);
+  bpConsiderCover(proc, zone, idx);
+  bpDone++; bpUpdateProgress();
+}
+var bpLowConf = 0;
+// ── Cover photo ── picked automatically: a straight-down shot beats an "overview" shot, and the sharper one wins a tie.
+// The writer can choose another from the enlarged photo view ("Use as cover photo").
+var bpCoverAuto = null, bpCoverManual = null, bpCoverHi = null;
+function bpConsiderCover(proc, zone, catIdx){
+  if(!proc) return;
+  var score = (zone === 'Top-down / overview' ? 2 : 0) + (catIdx === 11 ? 1 : 0);
+  if(!score) return;
+  if(!bpCoverAuto || score > bpCoverAuto.score || (score === bpCoverAuto.score && proc.sharp > bpCoverAuto.proc.sharp)){ bpCoverAuto = { proc: proc, score: score }; bpRenderCover(); }
+}
+function bpCoverPick(){ return bpCoverManual ? { proc: bpCoverManual } : bpCoverAuto; }
+function bpSetCover(proc){ bpCoverManual = proc; bpRenderCover(); if(typeof ctSaveSoon==='function') ctSaveSoon(); }
+function bpRenderCover(){
+  var wrap = document.getElementById('bp-extras-wrap'); if(!wrap) return;
+  var el = document.getElementById('bp-cover');
+  if(!el){ el = document.createElement('div'); el.id = 'bp-cover'; el.style.cssText = 'display:flex;gap:10px;align-items:center;margin:0 0 12px;padding:8px 10px;background:#F4F7FB;border-radius:6px;font-size:12px;color:#44546A;line-height:1.4;'; wrap.parentNode.insertBefore(el, wrap); }
+  var c = bpCoverPick();
+  if(!c){ el.style.display = 'none'; return; }
+  el.style.display = 'flex';
+  el.innerHTML = '<img src="'+(c.proc.thumbUrl || ('data:image/jpeg;base64,'+c.proc.base64))+'" style="width:56px;height:56px;object-fit:cover;border-radius:4px;">'
+    + '<div><b>Cover photo</b> ' + (bpCoverManual ? '(chosen by you)' : '(picked automatically from the overview shots)') + '<br>To change it, click any photo under Set aside and press "Use as cover photo".</div>';
+}
+// Report-writer mode: sort through the Worker in groups of six and save the results with the job.
+async function bpSortViaWorker(files, procs){
+  var items = [];
+  files.forEach(function(f){ var p = procs.get(f); if(p){ items.push({ name: f.name, b64: p.base64 }); if(f._ct) bpSortInfo[f.name] = { hash: p.hash, sharp: p.sharp }; } });
+  var info = bpSortInfo; bpSortInfo = {};
+  var r = await rsSortPhotos(WORKER_BASE, getStaffKey(), CT_JOB, items, info);
+  files.forEach(function(f){
+    var p = procs.get(f), res = r.results[f.name];
+    if(p && res){ bpApplySaved(f, p, res); return; }
+    bpAddExtra(f, p, 'Not sorted, attach it yourself', '', bpZoneMap.get(f) || '');
+    bpDone++; bpUpdateProgress();
+  });
+  if(r.failed && !window._rsSortWarned){
+    window._rsSortWarned = true;
+    try{ ctApi('/contractor/suggestion', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ page:'automatic alert', text:'Automatic alert: photo sorting failed for ' + r.failed + ' photo(s) in the report generator. Details: ' + String(r.error).slice(0,200) + ' (if it mentions credit, top up Anthropic in Plans & Billing).' }) }); }catch(e){}
+    ctBanner(ctEsc('AI sorting was not available for ' + r.failed + ' photo' + (r.failed===1?'':'s') + '. They are under Set aside: click one to see it, then use Attach to.'), 'error');
+  }
+}
 function bpUpdateFilterNote(){
-  if(!bpSetAsideDup && !bpSetAsideBlur) return;
+  if(!bpSetAsideDup && !bpSetAsideBlur && !bpLowConf) return;
   var note = document.getElementById('bp-filter-note');
   if(!note){
     var wrap = document.getElementById('bp-extras-wrap'); if(!wrap) return;
@@ -1946,7 +1934,9 @@ function bpUpdateFilterNote(){
   var parts = [];
   if(bpSetAsideDup) parts.push(bpSetAsideDup + ' near-identical shot' + (bpSetAsideDup===1?'':'s') + ' (the sharpest of each group was kept)');
   if(bpSetAsideBlur) parts.push(bpSetAsideBlur + ' blurry shot' + (bpSetAsideBlur===1?'':'s'));
-  note.textContent = 'Set aside before sorting: ' + parts.join(' and ') + '. Click one to check it, then use Attach to if you want it.';
+  var txt = parts.length ? 'Set aside before sorting: ' + parts.join(' and ') + '. ' : '';
+  if(bpLowConf) txt += bpLowConf + ' photo' + (bpLowConf===1?' was':'s were') + ' too unclear for the AI to place with confidence. ';
+  note.textContent = txt + 'Click one to check it, then use Attach to if you want it.';
 }
 function bpRunPool(items, limit, worker){
   var idx = 0, active = 0;
@@ -1963,37 +1953,7 @@ function bpRunPool(items, limit, worker){
 }
 // Loads an image file once: a 768px jpeg for classification, an 8x8 grayscale
 // average-hash for duplicate detection, and a small square thumbnail for the extras tray.
-function bpProcessImage(file){
-  return new Promise(function(resolve,reject){
-    var reader = new FileReader();
-    reader.onload = function(e){
-      var img = new Image();
-      img.onload = function(){
-        var w=img.width, h=img.height, maxDim=768, cw=w, ch=h;
-        if(cw>=ch && cw>maxDim){ ch=Math.round(ch*maxDim/cw); cw=maxDim; }
-        else if(ch>cw && ch>maxDim){ cw=Math.round(cw*maxDim/ch); ch=maxDim; }
-        var c1 = document.createElement('canvas'); c1.width=cw; c1.height=ch;
-        c1.getContext('2d').drawImage(img,0,0,cw,ch);
-        var base64;
-        try{ base64 = c1.toDataURL('image/jpeg',0.7).split(',')[1]; }catch(err){ reject(err); return; }
-        // Difference hash (9x8 grey, each pixel brighter than its right-hand neighbour?): near-identical shots
-        // such as a burst of the same spot land within a few bits of each other, different views do not.
-        // Averaged over proper blocks of the 768px copy (a straight 9x8 shrink samples too few pixels and is noisy).
-        var hash = rsDHash(c1);
-        var sharp = rsSharpness(c1);
-        var c3 = document.createElement('canvas'); c3.width=70; c3.height=70;
-        var minSide = Math.min(w,h);
-        c3.getContext('2d').drawImage(img,(w-minSide)/2,(h-minSide)/2,minSide,minSide,0,0,70,70);
-        var thumbUrl = c3.toDataURL('image/jpeg',0.6);
-        resolve({base64:base64, hash:hash, sharp:sharp, thumbUrl:thumbUrl, file:file});
-      };
-      img.onerror = function(){ reject(new Error('Could not read image')); };
-      img.src = e.target.result;
-    };
-    reader.onerror = function(){ reject(new Error('Could not read file')); };
-    reader.readAsDataURL(file);
-  });
-}
+function bpProcessImage(file){ return rsSmallCopy(file); }
 function bpHamming(h1,h2){
   var d=0; for(var i=0;i<h1.length;i++){ if(h1[i]!==h2[i]) d++; } return d;
 }
@@ -2032,6 +1992,7 @@ async function bpProcessFile(file, pre){
     var result = await bpClassify(proc.base64);
     bpPlacePhoto(file, proc, BP_CATS[result.catIdx], result.note, zone);
     bpCaptureRoofSpecCandidate(result.catIdx, proc.base64);
+    bpConsiderCover(proc, zone, result.catIdx);
   }catch(e){
     // Keep the processed image (if we got that far) so "Attach to…" still works, and say why sorting failed.
     window.bpLastSortError = (e && e.message) ? e.message : String(e);
@@ -2197,7 +2158,7 @@ function bpPlacePhoto(file, proc, cat, note, zone){
   }
   var already = bpRefHashes[cat.ref] || [];
   for(var i=0;i<already.length;i++){
-    if(bpHamming(proc.hash, already[i]) <= BP_DUP_BITS){
+    if(bpHamming(proc.hash, already[i]) <= RS_DUP_BITS){
       bpAddExtra(file, proc, 'Possible duplicate — '+cat.ref, note, zone);
       return;
     }
@@ -2211,9 +2172,12 @@ function bpPlacePhoto(file, proc, cat, note, zone){
   var srcName = (file && file._ct) ? file.name : '';
   if(!hasPhoto){
     bpAttachPhotoToBlock(block, proc, note, zone, srcName);
+  } else if((state[key].zone || '') === (zone || '') && (state[key].more || []).length < 2){
+    // Same item, same side of the building: keep it with the first photo (up to three photos per item).
+    bpAddMorePhoto(key, proc, srcName);
   } else {
-    // default slot for this exact element already has a photo — this is a
-    // second genuine shot (e.g. a second chimney), so give it its own row.
+    // default slot for this exact element already has a photo on a different side (or is full) —
+    // this is a second genuine item (e.g. a second chimney), so give it its own row.
     var secId = block.getAttribute('data-sec');
     var body = document.getElementById('secbody_'+secId);
     if(!body){ bpAddExtra(file, proc, cat.ref+' (section not found)', note, zone); return; }
@@ -2221,6 +2185,40 @@ function bpPlacePhoto(file, proc, cat, note, zone){
     var blocks = body.querySelectorAll('.obs-block');
     bpAttachPhotoToBlock(blocks[blocks.length-1], proc, note, zone, srcName);
   }
+}
+// Extra photos of the same item (up to two more), shown as small thumbnails under the main photo.
+function bpAddMorePhoto(key, proc, name, restoring){
+  state[key] = state[key] || { status:null };
+  state[key].more = state[key].more || [];
+  if(state[key].more.length >= 2 || !proc) return false;
+  state[key].more.push({ proc: proc, name: name || '' });
+  bpRenderMore(key);
+  if(!restoring && typeof ctSaveSoon==='function') ctSaveSoon();
+  return true;
+}
+function bpRenderMore(key){
+  var area = document.getElementById('photo_'+key); if(!area) return;
+  var box = document.getElementById('more_'+key);
+  if(!box){ box = document.createElement('div'); box.id = 'more_'+key; box.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;'; area.parentNode.insertBefore(box, area.nextSibling); }
+  var list = (state[key] && state[key].more) || [];
+  box.innerHTML = '';
+  list.forEach(function(m, i){
+    var t = document.createElement('div');
+    t.style.cssText = 'position:relative;width:64px;height:48px;border-radius:4px;overflow:hidden;border:1px solid #DEDACE;background:#000;';
+    t.innerHTML = '<img src="'+(m.proc.thumbUrl || ('data:image/jpeg;base64,'+m.proc.base64))+'" style="width:100%;height:100%;object-fit:cover;" title="Extra photo of this item">'
+      + '<button title="Take this photo off (it goes back to Set aside)" style="position:absolute;top:1px;right:1px;width:18px;height:18px;line-height:16px;font-size:12px;padding:0;border:none;border-radius:50%;background:rgba(0,0,0,.65);color:#fff;cursor:pointer;">&times;</button>';
+    t.querySelector('button').onclick = function(ev){ ev.stopPropagation(); bpRemoveMore(key, i); };
+    box.appendChild(t);
+  });
+  box.style.display = list.length ? 'flex' : 'none';
+}
+function bpRemoveMore(key, i){
+  var list = (state[key] && state[key].more) || []; var m = list[i]; if(!m) return;
+  list.splice(i, 1);
+  var f = m.proc.file; if(f && m.name){ f._ct = true; }
+  bpAddExtra(f, m.proc, 'Taken off an item', '', state[key].zone || '');
+  bpRenderMore(key); bpRefreshExtraOptions();
+  if(typeof ctSaveSoon==='function') ctSaveSoon();
 }
 function bpAddExtra(file, proc, label, note, zone){
   var wrap = document.getElementById('bp-extras-wrap');
@@ -2231,6 +2229,8 @@ function bpAddExtra(file, proc, label, note, zone){
   var div = document.createElement('div');
   div.className = 'bp-extra-thumb';
   div.id = id;
+  div.draggable = true;
+  div.title = 'Drag onto an observation to attach it, or click to enlarge';
   var tagText = zone ? (zone+' — '+label) : label;
   div.innerHTML = '<img src="'+url+'" title="Click to enlarge">'
     + '<div class="bp-tag">'+tagText+'</div>'
@@ -2253,7 +2253,8 @@ function bpDestOptions(){
       var ref = (b.querySelector('.obs-ref')||{}).textContent || '';
       var title = (b.querySelector('.obs-title-text')||{}).textContent || '';
       var has = state[key] && state[key].photoB64;
-      opts += '<option value="blk:'+key+'">'+esc2(ref+'  '+title)+(has?'  (has a photo, adds another)':'')+'</option>';
+      var nMore = (state[key] && state[key].more) ? state[key].more.length : 0;
+      opts += '<option value="blk:'+key+'">'+esc2(ref+'  '+title)+(has?(nMore<2?'  (adds another photo to this item)':'  (full, starts a new item)'):'')+'</option>';
     });
     return '<optgroup label="'+esc2(sec.title.replace(/^2\.\d - /,''))+'">'+opts+'</optgroup>';
   }).join('');
@@ -2280,7 +2281,12 @@ function bpAssignExtra(id, dest){
     var target = document.getElementById('obsblock_'+ref);
     if(!target) return;
     secId = target.getAttribute('data-sec');
-    if(!(state[ref] && state[ref].photoB64)) block = target;   // empty slot: use it. Otherwise fall through and add another in the same section.
+    if(!(state[ref] && state[ref].photoB64)) block = target;   // empty slot: use it
+    else if((state[ref].more || []).length < 2){                // has a photo: add this one to the same item (up to three)
+      bpAddMorePhoto(ref, el._proc, (el._file && el._file._ct) ? el._file.name : '');
+      el.remove(); bpCloseLightbox(); bpRefreshExtraOptions(); if(typeof ctSaveSoon==='function') ctSaveSoon();
+      return;
+    }                                                            // full: fall through and add a new item in the same section
   }
   if(!block){
     var body = document.getElementById('secbody_'+secId);
@@ -2326,7 +2332,16 @@ function bpOpenPhoto(thumb){
     dis.textContent = 'Discard photo'; dis.style.cssText = 'font-size:14px;padding:8px 14px;border-radius:6px;border:1px solid #E3C4C0;background:#F6E6E4;color:#9B2C2C;cursor:pointer;';
     dis.onclick = function(){ bpRemoveExtra(thumb.id); bpCloseLightbox(); };
     var label = document.createElement('span'); label.textContent = tag; label.style.opacity = '.8';
-    bar.appendChild(label); bar.appendChild(sel); bar.appendChild(dis);
+    var cov = document.createElement('button');
+    cov.textContent = 'Use as cover photo'; cov.style.cssText = 'font-size:14px;padding:8px 14px;border-radius:6px;border:1px solid #fff;background:transparent;color:#fff;cursor:pointer;';
+    cov.onclick = function(){ var go = function(){ if(thumb._proc){ bpSetCover(thumb._proc); cov.textContent = 'Cover photo set'; } };
+      if(thumb._proc) go(); else if(thumb._file) bpProcessImage(thumb._file).then(function(p){ thumb._proc = p; go(); }); };
+    bar.appendChild(label); bar.appendChild(sel); bar.appendChild(dis); bar.appendChild(cov);
+    var hint = document.createElement('div');
+    hint.textContent = 'Keys: \u2190 \u2192 previous / next photo \u00b7 D discard \u00b7 C cover photo \u00b7 Esc close';
+    hint.style.cssText = 'width:100%;text-align:center;font-size:11.5px;opacity:.65;';
+    lb._thumbId = thumb.id;
+    setTimeout(function(){ bar.appendChild(hint); }, 0);
   }
   var close = document.createElement('button');
   close.textContent = 'Close'; close.style.cssText = 'font-size:14px;padding:8px 14px;border-radius:6px;border:1px solid #fff;background:transparent;color:#fff;cursor:pointer;';
@@ -2338,7 +2353,47 @@ document.addEventListener('click', function(e){
   var im = e.target && e.target.closest ? e.target.closest('.bp-extra-thumb > img') : null;
   if(im) bpOpenPhoto(im.parentNode);
 });
-document.addEventListener('keydown', function(e){ if(e.key === 'Escape') bpCloseLightbox(); });
+// Keyboard in the enlarged photo view: arrows step through the Set aside photos, D discards, C sets the cover, Esc closes.
+document.addEventListener('keydown', function(e){
+  var lb = document.getElementById('bp-lightbox');
+  if(e.key === 'Escape'){ bpCloseLightbox(); return; }
+  if(!lb || !lb._thumbId) return;
+  if(e.target && (e.target.tagName === 'SELECT' || e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+  var grid = document.getElementById('bp-extras-grid'); if(!grid) return;
+  var all = Array.prototype.slice.call(grid.querySelectorAll('.bp-extra-thumb'));
+  var at = all.findIndex(function(t){ return t.id === lb._thumbId; });
+  if(e.key === 'ArrowRight' || e.key === 'ArrowLeft'){
+    e.preventDefault();
+    var nx = all[at + (e.key === 'ArrowRight' ? 1 : -1)]; if(nx) bpOpenPhoto(nx);
+  } else if(e.key === 'd' || e.key === 'D' || e.key === 'Delete'){
+    e.preventDefault();
+    var next = all[at + 1] || all[at - 1];
+    bpRemoveExtra(lb._thumbId); bpCloseLightbox(); if(next) bpOpenPhoto(next);
+  } else if(e.key === 'c' || e.key === 'C'){
+    var t = all[at]; if(t && t._proc){ bpSetCover(t._proc); var b = Array.prototype.find.call(lb.querySelectorAll('button'), function(x){ return /cover/i.test(x.textContent); }); if(b) b.textContent = 'Cover photo set'; }
+  }
+});
+// Drag a Set aside photo onto an observation to attach it (or onto a section heading area to start a new item there).
+document.addEventListener('dragstart', function(e){
+  var t = e.target && e.target.closest ? e.target.closest('.bp-extra-thumb') : null;
+  if(!t || !t.id || t.id.indexOf('bpx') !== 0) return;
+  e.dataTransfer.setData('text/rs-photo', t.id); e.dataTransfer.effectAllowed = 'move';
+});
+function bpDropTarget(e){ return e.target && e.target.closest ? e.target.closest('.obs-block') : null; }
+document.addEventListener('dragover', function(e){
+  if(!e.dataTransfer || Array.prototype.indexOf.call(e.dataTransfer.types || [], 'text/rs-photo') < 0) return;
+  var b = bpDropTarget(e); if(!b) return;
+  e.preventDefault(); document.querySelectorAll('.obs-block.rs-drop').forEach(function(x){ if(x !== b) x.classList.remove('rs-drop'); }); b.classList.add('rs-drop');
+});
+document.addEventListener('dragleave', function(e){ var b = bpDropTarget(e); if(b && !b.contains(e.relatedTarget)) b.classList.remove('rs-drop'); });
+document.addEventListener('drop', function(e){
+  if(!e.dataTransfer) return;
+  var id = e.dataTransfer.getData('text/rs-photo'); if(!id) return;
+  var b = bpDropTarget(e); document.querySelectorAll('.obs-block.rs-drop').forEach(function(x){ x.classList.remove('rs-drop'); });
+  if(!b) return;
+  e.preventDefault();
+  bpAssignExtra(id, 'blk:' + b.id.replace('obsblock_',''));
+});
 function bpRemoveExtra(id){
   var el = document.getElementById(id);
   if(el && el._file && el._file._ct && typeof ctDiscarded !== 'undefined') ctDiscarded.push(el._file.name);
@@ -2897,12 +2952,12 @@ async function ctInit(){
   ctBanner('<strong>' + ctEsc(j.client || 'Your job') + '</strong>: ' + (draft ? 'your saved report is back. Loading ' : 'details filled in. Loading ') + j.photoCount + ' photos...' + fb);
   await ctLoadPhotos(j.client, fb, placed);
 }
-var ctMetaByName = {};
+var ctMetaByName = {}, ctSortByName = {}, ctCoverName = '';
 async function ctFetchPhoto(name){
   for(var attempt = 0; attempt < 2; attempt++){
     try{
       var r = await ctApi('/contractor/photo?jobId=' + encodeURIComponent(CT_JOB) + '&name=' + encodeURIComponent(name));
-      if(r.ok){ var b = await r.blob(); var f = new File([b], name, { type: b.type || 'image/jpeg', lastModified: Date.now() }); f._ct = true; f._meta = ctMetaByName[name] || null; return f; }
+      if(r.ok){ var b = await r.blob(); var f = new File([b], name, { type: b.type || 'image/jpeg', lastModified: Date.now() }); f._ct = true; f._meta = ctMetaByName[name] || null; f._sort = ctSortByName[name] || null; return f; }
     }catch(e){}
   }
   return null;
@@ -2910,6 +2965,7 @@ async function ctFetchPhoto(name){
 async function ctLoadPhotos(client, fb, placed){
   var lr = await ctApi('/contractor/photos?jobId=' + encodeURIComponent(CT_JOB)), ld = await lr.json();
   (ld.photos || []).forEach(function(p){ ctMetaByName[p.name] = p.meta || null; });
+  ctSortByName = ld.sorts || {};
   var names = (ld.photos || []).map(function(p){ return p.name; }).sort(function(a,b){ return a < b ? -1 : (a > b ? 1 : 0); });
   var BATCH = 20, loaded = 0, missed = 0;
   var chunk = function(i){ return Promise.all(names.slice(i, i + BATCH).map(ctFetchPhoto)); };
@@ -2945,9 +3001,11 @@ function ctCollectDraft(){
     var key = b.id.replace('obsblock_','');
     var s = state[key] || {};
     var pri = document.getElementById('pri_'+key), tx = document.getElementById('obstext_'+key);
-    d.blocks.push({ sec: b.getAttribute('data-sec'), status: s.status || '', priority: pri ? pri.value : '', text: tx ? tx.value : '', zone: s.zone || '', photo: s.photoName || '' });
+    d.blocks.push({ sec: b.getAttribute('data-sec'), status: s.status || '', priority: pri ? pri.value : '', text: tx ? tx.value : '', zone: s.zone || '', photo: s.photoName || '',
+      more: (s.more || []).map(function(m){ return m.name; }).filter(Boolean) });
   });
   d.discarded = ctDiscarded.slice();
+  if(bpCoverManual && bpCoverManual.file && bpCoverManual.file._ct) d.cover = bpCoverManual.file.name;
   return d;
 }
 function ctSetSaveNote(text, bad){
@@ -2991,6 +3049,7 @@ function ctRestoreDraft(draft){
   });
   if(draft.conditionIdx !== undefined) setCondition(draft.conditionIdx);
   ctDiscarded = (draft.discarded || []).slice();
+  ctCoverName = draft.cover || '';
   var bySec = {}, placed = {};
   draft.blocks.forEach(function(b){ (bySec[b.sec] = bySec[b.sec] || []).push(b); });
   Object.keys(bySec).forEach(function(secId){
@@ -3010,6 +3069,7 @@ function ctRestoreDraft(draft){
       var tx = document.getElementById('obstext_' + key); if(tx && b.text) tx.value = b.text;
       if(b.zone){ state[key].zone = b.zone; renderZoneChip(key); }
       if(b.photo) placed[b.photo] = { key: key, zone: b.zone || '' };
+      (b.more || []).forEach(function(n){ placed[n] = { key: key, zone: b.zone || '', more: true }; });
       if(b.status || b.text || b.photo) openObsBlock(key);
     });
   });
@@ -3023,7 +3083,9 @@ async function ctPlaceSavedPhotos(files, placed){
       var spot = placed[file.name];
       if(!spot && ctDiscarded.indexOf(file.name) >= 0) return;
       var proc = await bpProcessImage(file);
-      if(spot){
+      if(ctCoverName && file.name === ctCoverName) bpCoverManual = proc;
+      if(spot && spot.more){ if(bpAddMorePhoto(spot.key, proc, file.name, true)) return; }
+      else if(spot){
         var block = document.getElementById('obsblock_' + spot.key);
         if(block){ bpAttachPhotoToBlock(block, proc, '', spot.zone, file.name, true); return; }
       }
