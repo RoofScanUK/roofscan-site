@@ -1380,7 +1380,13 @@ function buildDoc(d,obs){
     hBar,sp(300,200),infoT,sp(200,160),glT,sp(200,200),imgPh||sp(0,0),imgPh?sp(200,160):sp(0,0),cBar,pb(),
     new D.Paragraph({spacing:{before:0,after:80},children:[new D.TextRun({text:"Contents",font:"Arial",size:36,bold:true,color:BLUE})]}),
     bl(),sp(100,100),
-    new D.TableOfContents("Table of Contents",{hyperlink:true,headingStyleRange:"1-3"}),pb(),
+    // A fixed contents list: the client gets a PDF, and a Word "table of contents" field stays blank in a PDF
+    // (only Word fills it in, when the file is opened). Every section below always appears in the report.
+    ...[["Executive Summary",0],["1.0  About This Report",0],["1.1  Scope",1],["1.2  Limitations",1],["1.3  Traffic-Light System",1],
+      ["2.0  Observations & Recommendations",0],["2.1  Chimneys & Leadwork",1],["2.2  Roof Coverings",1],["2.3  Rainwater Goods",1],["2.4  Ancillary Elements",1],
+      ["3.0  Terms, Limitations & Disclaimer",0],["4.0  Schedule of Works",0]].map(function(c){
+        return new D.Paragraph({spacing:{before:c[1]?20:140,after:c[1]?20:40},indent:{left:c[1]?480:0},children:[new D.TextRun({text:c[0],font:"Arial",size:c[1]?19:22,bold:!c[1],color:c[1]?DARK:BLUE})]});
+      }),pb(),
     h1("Executive Summary"),bl(),sp(120,80),
     h2("Condition Dashboard"),sp(60,100),dashT,sp(160,80),
     h2("Overall Roof Condition"),sp(60,80),condT,sp(160,80),

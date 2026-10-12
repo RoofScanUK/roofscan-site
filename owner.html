@@ -244,7 +244,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&openIdx>=0)closeRev
 async function reviewReport(i,action){
   const j=reviewList[i];if(!j)return;
   let note='';
-  if(action==='approve'){if(!confirm('Approve this report? Reports built in the generator are published to the job (Report Link, RoofScore and reference) so the client portal and your report email can use them.'))return;}
+  if(action==='approve'){if(!confirm('Approve this report? Reports built in the generator are turned into a PDF and published to the job (Report Link, RoofScore and reference) so the client portal and your report email can use them. This can take up to half a minute.'))return;}
   else{
     // From the review window the note comes from the text box; from the card, ask for it.
     note=(openIdx===i?$('rv-note').value:(prompt('What needs changing? This goes to the report writer.')||'')).trim();
@@ -253,6 +253,7 @@ async function reviewReport(i,action){
   const r=await api('/owner/report-review','POST',{id:j.id,action,note});
   if(!r.ok){if(openIdx===i)$('rv-err').textContent=r.data.error||'Could not save.';else alert(r.data.error||'Could not save.');return;}
   else if(action==='approve'&&r.data.published===false){alert('Approved. This report was submitted as an outside link, so it was not published to the job. Add it to the job yourself if needed.');}
+  else if(action==='approve'&&r.data.pdf===false){alert('Approved and published, but the PDF could not be made, so the client will get the Word file instead. Check that CLOUDCONVERT_API_KEY is set on the Worker and that CloudConvert has not hit its daily limit.');}
   if(openIdx===i)closeReview();
   loadReviews();
 }

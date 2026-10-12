@@ -444,7 +444,7 @@ async function showPortal(email, jobs) {
           +'<div class="insp-sub">'+(prebooked?'Prebooked — date to be arranged':jStatus)+'</div></div>'
           +'<div class="insp-right">'
           +(jScore?'<span class="insp-score" style="color:'+scoreColor(jScore)+';">'+jScore+'/100</span>':'')
-          +(paid&&jReport?'<a href="'+jReport+'" target="_blank" class="dl-btn">Download</a>':'<span class="dl-btn disabled">'+badge+'</span>')
+          +(paid&&jReport?'<a href="'+jReport+'" target="_blank" class="dl-btn">View report</a>':'<span class="dl-btn disabled">'+badge+'</span>')
           +'</div></div>';
       });
       html += '</div>';
@@ -493,7 +493,7 @@ function renderReportsTab(jobs){
     html += '<div class="report-row">'
       +'<div><div class="report-addr">'+(j.address||'—')+'</div>'
       +'<div class="report-date">'+fmtDate(j.date)+(j.roofScore?' · <span style="color:'+scoreColor(j.roofScore)+';font-weight:700;">'+j.roofScore+'/100</span>':'')+'</div></div>'
-      +(paid && j.reportLink ? '<a href="'+j.reportLink+'" target="_blank" class="dl-btn">Download</a>' : '<span class="dl-btn disabled">'+badge+'</span>')
+      +(paid && j.reportLink ? '<a href="'+j.reportLink+'" target="_blank" class="dl-btn">View report</a>' : '<span class="dl-btn disabled">'+badge+'</span>')
       +'</div>';
   });
   wrap.innerHTML = html;

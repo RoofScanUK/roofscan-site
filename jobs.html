@@ -354,6 +354,37 @@ function mineCard(j){
 
 // ── On-site checklist (weather + airspace items are locked: they tick themselves from the live check) ──
 const CK = { weather:'Weather is within your drone\'s limit', airspace:'Airspace checked and clear', batteries:'Batteries charged and spare packed', docs:'Operator ID, Flyer ID and insurance with you', site:'Site is safe and you have permission to be on it' };
+// ── Shot list to tick while flying, in the same order as the photo guide. Saved on this phone only, works offline. ──
+// "opt" items only apply if the roof has one: tick them when done or when there isn't one.
+const SHOTS = [
+  ['addr','Address shot from the street (whole front, house number)'],
+  ['over','Overview of the whole roof from each side (30 to 40 m up)'],
+  ['front','Front slope: straight-down passes, then one angled shot'],
+  ['rear','Rear slope: straight-down passes, then one angled shot'],
+  ['sides','Side slopes, extensions, porches, bays, outbuildings'],
+  ['ridge','Ridge and hips: tiles, mortar, ends of each run'],
+  ['chim','Chimney: all four sides, flashing, pots, flaunching, pointing', 1],
+  ['valley','Valleys: lining and any debris', 1],
+  ['flash','Flashings where the roof meets walls, dormers or a neighbour'],
+  ['eaves','Verges and eaves: edge tiles, fascias, soffits'],
+  ['gutter','Gutters and downpipes: joints, brackets, blockages'],
+  ['vents','Vents, flues, soil pipes and roof lights', 1],
+  ['aerial','Aerial or satellite dish fixings', 1]
+];
+function shotCount(st){ const s = st.shots || {}; return SHOTS.filter(x => s[x[0]]).length; }
+function shotList(id, st){
+  const s = st.shots || {}, n = shotCount(st);
+  return `<details class="shots" id="shots-${id}" ${n < SHOTS.length ? 'open' : ''} style="margin:10px 0 4px;border:1px solid var(--br);border-radius:8px;padding:8px 12px;background:#fff;">
+    <summary style="cursor:pointer;font-weight:600;font-size:13px;color:var(--n);">Shot list while flying <span id="shotn-${id}" class="muted" style="font-weight:400;">(${n} of ${SHOTS.length} done)</span></summary>
+    <div class="muted" style="font-size:11.5px;margin:4px 0 2px;">Tick each one as you take it. Items marked "if there is one": tick when done or when the roof has none.</div>
+    ${SHOTS.map(x => `<label class="chk" style="padding:10px 0;font-size:14px;"><input type="checkbox" style="width:20px;height:20px;" ${s[x[0]]?'checked':''} onchange="setShot('${id}','${x[0]}',this.checked)"> <span>${esc(x[1])}${x[2]?' <em class="muted">(if there is one)</em>':''}</span></label>`).join('')}
+  </details>`;
+}
+// Updates in place (no full redraw), so the list doesn't jump while someone is ticking with a controller in the other hand.
+function setShot(id, k, v){
+  const c = get(LS.checks, {}); c[id] = c[id] || {}; c[id].shots = c[id].shots || {}; c[id].shots[k] = !!v; put(LS.checks, c);
+  const el = $('shotn-'+id); if (el) el.textContent = '(' + shotCount(c[id]) + ' of ' + SHOTS.length + ' done)';
+}
 function scanPanel(j){
   const st = get(LS.checks, {})[j.id] || {};
   const manual = ['batteries','docs','site'].map(k => `<label class="chk"><input type="checkbox" ${st[k]?'checked':''} onchange="setManual('${j.id}','${k}',this.checked)"> <span>${CK[k]}</span></label>`).join('');
@@ -365,6 +396,7 @@ function scanPanel(j){
   return `<div style="margin-top:12px;border-top:1px solid var(--br);padding-top:10px;"><div class="jt" style="font-size:13px;">Scan checklist <a href="photo-guide.html" target="_blank" rel="noopener" style="font-weight:400;font-size:12px;margin-left:8px;color:var(--muted);">What to photograph</a></div>
   <div class="acts" style="margin-top:6px;"><button class="btn ghost" onclick="runChecks('${j.id}')">${st.weather?'Re-check':'Check'} weather and airspace</button></div>
   ${w}${a}${locked('weather')}${locked('airspace')}${manual}
+  ${shotList(j.id, st)}
   ${photoBox(j, st)}
   <div class="acts">
     <button class="btn" id="scanbtn-${j.id}" ${ready?'':'disabled'} onclick="completeScan('${j.id}')">Mark scan done</button>
@@ -540,7 +572,12 @@ function reportPanel(j){
     <input class="inp" id="rlink-${j.id}" type="url" inputmode="url" autocomplete="off" placeholder="https://drive.google.com/..." value="${esc(st.rlink||'')}" style="letter-spacing:0;width:100%;margin-top:6px;" oninput="setLink('${j.id}',this.value,'rlink')">
     <div class="acts"><button class="btn ghost" id="repbtn-${j.id}" ${okLink(st.rlink)?'':'disabled'} onclick="completeReport('${j.id}')">Submit report link</button></div></details></div>`;
 }
-function completeScan(id){ const st = get(LS.checks, {})[id] || {}; act({type:'complete', jobId:id, kind:'scan', link:st.link}); }
+function completeScan(id){
+  const st = get(LS.checks, {})[id] || {}, s = st.shots || {};
+  const missing = SHOTS.filter(x => !s[x[0]]).map(x => '• ' + x[1]);
+  if (missing.length && !confirm('These shots are not ticked on your shot list:\n\n' + missing.join('\n') + '\n\nThe report can only cover what is in your photos. Mark the scan done anyway?')) return;
+  act({type:'complete', jobId:id, kind:'scan', link:st.link});
+}
 function completeReport(id){ const st = get(LS.checks, {})[id] || {}; act({type:'complete', jobId:id, kind:'report', link:st.rlink}); }
 function standDown(id){
   const st = get(LS.checks, {})[id] || {};
