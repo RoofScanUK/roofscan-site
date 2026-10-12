@@ -1,3 +1,4 @@
+// Deployment check 12 Oct 2026: Vercel reconnected to GitHub.
 // Password-gates the owner's internal staff tool (staff.html) on Vercel so only
 // people with the username/password can load it. Everything else on the site
 // stays public.
