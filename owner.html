@@ -356,7 +356,7 @@ async function loadCap(){
   if(!r.ok){$('cap').innerHTML='<span class="muted small">Could not load capacity.</span>';return;}
   const c=r.data;
   $('cap').innerHTML=`<div class="capnum">${c.effective}</div><div style="font-weight:600;margin-top:4px;color:var(--navy);">bookings a week</div>
-    <div class="muted small" style="margin-top:8px;">${c.override!==null?'Fixed by you':'Automatic'}: ${c.flyers} approved flyer${c.flyers===1?'':'s'} &times; ${c.perFlyer} a week = ${c.auto}.</div>
+    <div class="muted small" style="margin-top:8px;">${c.override!==null?`Fixed by you at ${c.override}. Automatic would be ${c.auto} (${c.flyers} approved flyer${c.flyers===1?'':'s'} &times; ${c.perFlyer} a week).`:`Automatic: ${c.flyers} approved flyer${c.flyers===1?'':'s'} &times; ${c.perFlyer} a week = ${c.auto}.`}</div>
     <div class="muted small" style="margin-top:4px;">When a week is full, its days disappear from the booking calendar. Approving a flyer raises the number by itself.</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:16px;padding-top:14px;border-top:1px solid var(--line);"><input class="capin" id="capIn" type="number" min="0" max="200" value="${c.override!==null?c.override:''}" placeholder="${c.auto}"><button class="btn" onclick="saveCap()">Set fixed</button><button class="btn sec" onclick="clearCap()">Use automatic</button></div>`;
 }
