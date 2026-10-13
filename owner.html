@@ -84,6 +84,8 @@ tr:last-child td{border-bottom:none;}
 #err{display:none;color:var(--bad);font-size:13px;margin-top:10px;}
 @media(max-width:960px){.cols{grid-template-columns:1fr;gap:8px;}.metrics{grid-template-columns:repeat(2,1fr);}.metric:nth-child(2){border-right:none;}.metric:nth-child(-n+2){border-bottom:1px solid var(--line);}.wrap,.top-in{padding-left:16px;padding-right:16px;}.hide-m{display:none;}}
 </style>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body>
 <div id="login" style="display:none;padding:60px 18px;max-width:420px;margin:0 auto;">
@@ -111,6 +113,11 @@ tr:last-child td{border-bottom:none;}
       </div>
       <div>
         <section><div class="lbl">Weekly booking capacity</div><div class="box pad" id="cap"><span class="muted small">Loading...</span></div></section>
+        <section><div class="lbl">Area covered</div><div class="box pad" id="homearea"><span class="muted small">Loading...</span></div></section>
+        <section><div class="lbl">Coverage map</div><div class="box pad">
+          <div id="covmap" style="height:380px;border-radius:6px;overflow:hidden;background:#EEF1F4;"></div>
+          <div class="muted small" id="covkey" style="margin-top:8px;line-height:1.7;"></div>
+        </div></section>
         <section><div class="lbl"><span>Reports waiting for approval</span><span id="rev-n"></span></div><div class="box" id="reviews"><div class="empty">Loading...</div></div></section>
         <section><div class="lbl"><span>Suggestions from contractors</span><span id="sug-n"></span></div><div class="box" id="suggest"><div class="empty">Loading...</div></div></section>
         <section><div class="lbl">Claimed right now</div><div class="box" id="claimed"></div></section>
@@ -165,7 +172,7 @@ async function load(){
   if(!localStorage.getItem(TK)){showLogin();return;}
   const r=await api('/owner/overview');if(!r.ok){if(r.status!==401)showLogin('Could not load. Try again.');return;}
   data=r.data;$('login').style.display='none';$('app').style.display='block';
-  loadCap();loadReviews();loadSuggestions();loadCal();loadOoo();
+  loadCap();loadHome();loadCovMap();loadReviews();loadSuggestions();loadCal();loadOoo();
   const c=data.counts;
   $('stats').innerHTML=[['Scans open',c.scansOpen],['Reports open',c.reportsOpen],['Scans claimed',c.scansClaimed],['Reports claimed',c.reportsClaimed]].map(x=>`<div class="metric"><div class="n">${x[1]}</div><div class="t">${x[0]}</div></div>`).join('');
   $('needs').innerHTML=data.needsYou.length?data.needsYou.map(n=>`<div class="attn"><b>${esc(n.name)}</b><ul>${n.needs.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`).join(''):'<div class="box empty">Nothing needs your attention.</div>';
@@ -178,6 +185,8 @@ async function load(){
       <div class="ctr-line"><div class="ctr-main"><div class="name">${esc(ct.name)}</div><div class="muted small">${esc(ct.role)}${flyer&&ct.droneModel?' &middot; '+esc(ct.droneModel)+', '+(ct.ratedWind||'?')+' m/s':''}</div></div>
         <div class="ctr-status">${ct.active?st('Active','ok'):st('Switched off','bad')}${flyer?(ct.approved?st('Drone approved','ok'):st('Drone not approved','warn')):''}</div></div>
       <div class="ctr-line">${flyer?doc('Insurance',ct.insuranceExpiry,'insuranceExpiry')+doc('Operator ID',ct.operatorIdExpiry,'operatorIdExpiry'):'<span class="muted small" style="align-self:center;">No drone documents needed</span>'}
+        ${flyer?`<div class="ctr-doc"><div class="ctr-lbl">Base postcode</div><input class="dt" id="bpc-${ct.id}" value="${esc(ct.basePostcode)}" placeholder="BN1 1AA" style="width:110px;text-transform:uppercase;" onchange="upd('${ct.id}',{basePostcode:this.value,travelRange:Number($('rng-${ct.id}').value)})" title="Where this flyer travels from"></div>
+        <div class="ctr-doc"><div class="ctr-lbl">Travels up to</div><select class="dt" id="rng-${ct.id}" onchange="${ct.hasBase?`upd('${ct.id}',{travelRange:Number(this.value)})`:''}">${[10,15,20,25,30,35,40].map(m=>`<option value="${m}" ${(ct.travelRange||25)===m?'selected':''}>${m} miles</option>`).join('')}</select></div>`:''}
         <div class="ctr-acts">${flyer?`<button class="btn sec" onclick="upd('${ct.id}',{approved:${!ct.approved}})">${ct.approved?'Revoke drone':'Approve drone'}</button>`:''}<button class="btn text ${ct.active?'danger':''}" onclick="upd('${ct.id}',{active:${!ct.active}})">${ct.active?'Switch off':'Switch on'}</button></div></div>
     </div>`;
   }).join('');
@@ -352,6 +361,37 @@ async function delOoo(i){
   if(!r.ok){alert(r.data.error||'Could not remove.');return;}
   loadOoo();
 }
+// Home area: road miles around Brighton that count as covered on the quote page, on top of every approved flyer's
+// own area. Start local by keeping this small; set it to 0 once flyers cover the ground themselves.
+async function loadHome(){
+  const r=await api('/owner/home-area'); if(!r.ok){$('homearea').innerHTML='<span class="muted small">Could not load.</span>';return;}
+  $('homearea').innerHTML=`<div class="muted small" style="line-height:1.6;">Clients can book if their postcode is inside an approved flyer's travel distance (set on each flyer above) or within this many road miles of Brighton. Outside that, the quote page takes their email instead, and those appear in Quotes as "Outside area" so you can see where to recruit next.</div>
+    <div style="display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap;"><input class="capin" id="homeIn" type="number" min="0" max="${r.data.max}" value="${r.data.range}"> <span class="muted small">miles around Brighton (0 = flyers' areas only)</span><button class="btn" onclick="saveHome()">Save</button></div>`;
+}
+// Coverage map: a circle around each flyer's base (green = can take jobs now, grey = switched off or documents/drone
+// not approved), the Brighton home area (dashed), and orange dots where people outside the area tried to get a quote.
+let covMap=null, covLayer=null;   // the map is given a starting view before circles are added, or Leaflet cannot place them
+async function loadCovMap(){
+  if(typeof L==='undefined'){ $('covkey').textContent='The map could not load. Check your connection and press Refresh.'; return; }
+  const r=await api('/owner/coverage-map'); if(!r.ok){ $('covkey').textContent='Could not load the map data.'; return; }
+  const d=r.data, MI=1609.34, toCircle=m=>m/d.roadFactor*MI;   // road miles -> straight-line metres, same as the quote page check
+  if(!covMap){ covMap=L.map('covmap',{scrollWheelZoom:false}).setView([50.8225,-0.1372],9); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'&copy; OpenStreetMap contributors'}).addTo(covMap); }
+  if(covLayer) covLayer.remove();
+  covLayer=L.featureGroup().addTo(covMap);
+  if(d.home.range>0) L.circle([d.home.lat,d.home.lon],{radius:toCircle(d.home.range),color:'#1B4F8A',weight:2,dashArray:'6 6',fillOpacity:.05}).bindPopup('RoofScan home area: '+d.home.range+' road miles around Brighton').addTo(covLayer);
+  d.flyers.forEach(f=>{
+    const col=f.live?'#1B7F4B':'#8A94A0';
+    L.circle([f.lat,f.lon],{radius:toCircle(f.range),color:col,weight:2,fillOpacity:f.live?.10:.04}).bindPopup(esc(f.name)+': '+f.range+' road miles'+(f.live?'':' (not taking jobs right now)')).addTo(covLayer);
+    L.circleMarker([f.lat,f.lon],{radius:5,color:col,fillColor:col,fillOpacity:1}).bindTooltip(esc(f.name)).addTo(covLayer);
+  });
+  d.demand.forEach(x=>L.circleMarker([x.lat,x.lon],{radius:Math.min(12,4+x.checks),color:'#C86B00',fillColor:'#F29A2E',fillOpacity:.85,weight:1})
+    .bindPopup(esc(x.postcode)+': '+x.checks+' quote attempt'+(x.checks===1?'':'s')+(x.emails?', '+x.emails+' left an email':'')).addTo(covLayer));
+  const b=covLayer.getBounds(); if(b.isValid()) covMap.fitBounds(b,{padding:[20,20],maxZoom:10}); else covMap.setView([50.8225,-0.1372],9);
+  setTimeout(()=>covMap.invalidateSize(),50);
+  const live=d.flyers.filter(f=>f.live).length, wanted=d.demand.reduce((n,x)=>n+x.checks,0);
+  $('covkey').innerHTML=`<span style="color:#1B7F4B;">&#9679;</span> ${live} flyer${live===1?'':'s'} taking jobs &nbsp; <span style="color:#8A94A0;">&#9679;</span> not taking jobs &nbsp; <span style="color:#1B4F8A;">- - -</span> home area &nbsp; <span style="color:#F29A2E;">&#9679;</span> ${wanted} out-of-area quote attempt${wanted===1?'':'s'}. Flyers with no base postcode are not shown.`;
+}
+async function saveHome(){const v=Number($('homeIn').value);const r=await api('/owner/home-area','POST',{range:v});if(!r.ok){alert(r.data.error||'Could not save.');return;}loadHome();loadCovMap();}
 async function loadCap(){
   const r=await api('/owner/capacity');
   if(!r.ok){$('cap').innerHTML='<span class="muted small">Could not load capacity.</span>';return;}

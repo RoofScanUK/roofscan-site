@@ -801,8 +801,12 @@ textarea{resize:vertical;}
             <div class="label">Total</div>
             <div class="amt" id="total-amt">£0</div>
             <div id="total-lines"></div>
-            <div style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(251,250,247,.12);color:rgba(251,250,247,.5);font-size:12px;line-height:1.7;">Drone survey · full written report · photos · condition ratings · Schedule of Works · 5-day delivery · fully insured</div>
+            <div style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(251,250,247,.12);color:rgba(251,250,247,.5);font-size:12px;line-height:1.7;">Drone survey · full written report · photos · condition ratings · Schedule of Works · <span id="delivery-line">5-day delivery</span> · fully insured</div>
           </div>
+          <label style="display:flex;gap:12px;align-items:flex-start;margin-top:14px;padding:14px 16px;border:1px solid var(--line);border-radius:10px;background:var(--paper);cursor:pointer;">
+            <input type="checkbox" id="express-opt" onchange="selectedSlot=null;renderPrice();if(step6Inited)loadSlots();" style="width:20px;height:20px;margin-top:2px;flex:none;">
+            <span style="font-size:14px;line-height:1.5;"><strong>Express, +£99</strong><br><span class="muted" style="font-size:13px;">Book from 48 hours ahead instead of 72, and get your report within 24 hours of the inspection instead of 5 working days. Handy for house sales and insurance deadlines.</span></span>
+          </label>
           <div id="exact-price-offer" style="display:none;margin-top:14px;padding:14px 16px;border:1px solid var(--line);border-radius:10px;background:var(--paper);">
             <div id="exact-price-message" style="font-size:13px;line-height:1.6;margin-bottom:10px;"></div>
             <div id="exact-area-input-wrap" style="display:none;">
@@ -823,7 +827,7 @@ textarea{resize:vertical;}
         <div id="book-step-6" style="display:none;">
           <div id="step6-intro">
           <h2 style="font-size:1.15rem;margin:0 0 6px;">Pick your inspection date</h2>
-          <p class="muted" style="font-size:13px;margin:0 0 22px;line-height:1.6;">Choose an available slot, then pay your £50 deposit to confirm your booking.</p>
+          <p class="muted" style="font-size:13px;margin:0 0 22px;line-height:1.6;">Choose an available slot, then pay your £50 deposit to confirm your booking. Inspections need at least 72 hours' notice so we can plan the flight (48 hours with Express).</p>
           </div>
           <div id="slot-loading" class="muted" style="font-size:13px;">Loading available times…</div>
           <div id="slot-nav" style="display:none;align-items:center;justify-content:space-between;margin-bottom:14px;">
@@ -1009,7 +1013,7 @@ const PITCH_MULT={pitched:1.15,flat:1.0,mixed:1.25};
 // actual roof rather than a guessed house-type label. See the 11 Sep pricing brainstorm in
 // the Vault for how these numbers were derived (£100/hr target, 2-4hr jobs, 25% margin/
 // overhead uplift). Mirrored server-side in roofscan-api-worker.js.
-const AREA_CALLOUT=85, AREA_RATE=2.75, AREA_MIN_PRICE=175;
+const AREA_CALLOUT=90, AREA_RATE=2.75, AREA_MIN_PRICE=180;   // mirrored in the Worker; callout includes the £5 mileage allowance
 // Bounds used to decide whether an automated area result is trustworthy enough to price
 // from directly, or whether it's an outlier (bad geocode, garbage footprint match, etc.)
 // that should fall back to the property type's typical area instead of guessing.
@@ -1021,27 +1025,9 @@ const AD=[
   {id:"outbuildings",label:"Outbuildings / garages",unit:40,max:5,desc:"Separate structures"},
 ];
 const SL=["Location","Property","Features","Details","Your price","Book"];
+const EXPRESS_FEE=99;   // flat express fee, mirrored in the Worker
 
-// Straight-line distance from Brighton clock tower, used to auto-calculate a per-mile travel
-// charge from any UK postcode. Mirrored server-side in roofscan-api-worker.js so the booking
-// total is always independently re-verified against the same formula, not just trusted from
-// whatever the client sends.
-const BRIGHTON_LAT=50.8225, BRIGHTON_LNG=-0.1372;
-const TRAVEL_FREE_MILES=7;      // no charge within this radius (Brighton & Hove area)
-const TRAVEL_RATE_PER_MILE=1;   // £ per mile beyond the free radius, rounded up to the next mile
-const TRAVEL_MIN_CHARGE=5;      // minimum charge once outside the free radius, so it's never a token £1
-const TRAVEL_MAX_MILES=45;      // outside current coverage area beyond this
-function milesBetween(lat1,lng1,lat2,lng2){
-  const R=3958.8, toRad=d=>d*Math.PI/180;
-  const dLat=toRad(lat2-lat1), dLng=toRad(lng2-lng1);
-  const a=Math.sin(dLat/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLng/2)**2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-}
-function travelChargeForMiles(miles){
-  if(miles<=TRAVEL_FREE_MILES) return 0;
-  const extra=Math.ceil(miles-TRAVEL_FREE_MILES);
-  return Math.max(TRAVEL_MIN_CHARGE, extra*TRAVEL_RATE_PER_MILE);
-}
+// Mileage and coverage are worked out by the Worker (/coverage) from the nearest approved flyer.
 
 // Calls the Cloudflare Worker's /roof-area-lookup proxy, which holds the real OS Data Hub key
 // server-side (never exposed to the browser) and internally falls back to a realistic stub if
@@ -1205,17 +1191,28 @@ async function checkPostcode(raw){
       return;
     }
     const {latitude, longitude, postcode, admin_district} = data.result;
-    const miles = milesBetween(BRIGHTON_LAT, BRIGHTON_LNG, latitude, longitude);
-    if(miles > TRAVEL_MAX_MILES){
+    // Coverage and mileage come from the Worker: covered if any approved flyer (or RoofScan's own home area) reaches
+    // this postcode; mileage is 45p a mile round trip from the nearest one, first 10 miles free. The Worker re-checks at booking.
+    let cov = null;
+    try{ const cr = await fetch(LM_API_BASE+'/coverage?postcode='+encodeURIComponent(postcode)); cov = cr.ok ? await cr.json() : null; }catch(e){}
+    if(!cov){
       postcodeInfo = null;
-      info.textContent = "That's a bit outside our current coverage area. Email info@roofscanuk.co.uk and we'll let you know if we can help.";
+      info.textContent = "Couldn't check that postcode right now, please try again in a moment.";
       info.style.display = 'block';
       return;
     }
-    const charge = travelChargeForMiles(miles);
-    postcodeInfo = {postcode, miles, charge, town: admin_district || ''};
+    if(!cov.covered){
+      postcodeInfo = null;
+      info.innerHTML = "We don't cover "+postcode+" yet, but we're growing. Leave your email and we'll tell you as soon as we do."
+        + '<div style="display:flex;gap:8px;margin-top:8px;"><input id="wait-email" type="email" placeholder="you@email.com" style="flex:1;padding:9px 11px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:14px;">'
+        + '<button class="btn" style="flex:none;padding:9px 14px;font-size:13px;" onclick="joinWaitlist(\''+postcode+'\',\''+(admin_district||'').replace(/'/g,'')+'\')">Notify me</button></div>';
+      info.style.display = 'block';
+      return;
+    }
+    const charge = cov.travel || 0;
+    postcodeInfo = {postcode, charge, town: admin_district || ''};
     document.getElementById('postcode-clear').style.display='block';
-    info.textContent = postcode+' · '+miles.toFixed(1)+' miles'+(charge>0?' (+£'+charge+' travel)':' (no travel charge)');
+    info.textContent = postcode+(charge>0?' · +£'+charge+' mileage':' · no mileage charge');
     info.style.display = 'block';
     // Kick off the roof-area lookup immediately using the postcode centroid — by the time the
     // customer reaches the price step (after property, features, and details), this has
@@ -1229,6 +1226,16 @@ async function checkPostcode(raw){
     info.textContent = "Couldn't check that postcode right now, please try again in a moment.";
     info.style.display = 'block';
   }
+}
+async function joinWaitlist(postcode, town){
+  const el = document.getElementById('wait-email'), info = document.getElementById('postcode-info');
+  const email = el ? el.value.trim() : '';
+  try{
+    const r = await fetch(LM_API_BASE+'/area-waitlist', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email, postcode, town }) });
+    const d = await r.json().catch(()=>({}));
+    if(!r.ok){ alert(d.error || 'Please check your email address.'); return; }
+    info.textContent = "Thanks. We'll email you as soon as we cover "+postcode+".";
+  }catch(e){ alert('Please try again in a moment.'); }
 }
 function clearPostcode(){
   postcodeInfo = null;
@@ -1423,13 +1430,16 @@ function renderPrice(){
   const roofPrice = roofPriceForArea(area);
   const travCharge = postcodeInfo ? postcodeInfo.charge : 0;
   const addonTotal = AD.reduce((s,a)=>s+counts[a.id]*a.unit,0);
-  const total = roofPrice + travCharge + addonTotal;
+  const expressOn = !!(document.getElementById('express-opt') && document.getElementById('express-opt').checked);
+  const total = roofPrice + travCharge + addonTotal + (expressOn ? EXPRESS_FEE : 0);
   document.getElementById('total-amt').textContent = fmt(total);
 
   const lines = [];
   lines.push(['Roof inspection ('+Math.round(area)+'m²'+(isEstimate?', estimated':'')+')', roofPrice]);
-  if(travCharge>0) lines.push(['Travel, '+(postcodeInfo?postcodeInfo.postcode+' · '+postcodeInfo.miles.toFixed(1)+'mi':''), travCharge]);
+  if(travCharge>0) lines.push(['Mileage'+(postcodeInfo?', '+postcodeInfo.postcode:''), travCharge]);
   AD.forEach(a=>{ if(counts[a.id]>0) lines.push([a.label+' ×'+counts[a.id], counts[a.id]*a.unit]); });
+  if(expressOn) lines.push(['Express: report within 24 hours of the inspection', EXPRESS_FEE]);
+  const dl = document.getElementById('delivery-line'); if(dl) dl.textContent = expressOn ? '24-hour report' : '5-day delivery';
   document.getElementById('total-lines').innerHTML = lines.map(([l,v])=>
     `<div class="total-row"><span class="l">${l}</span><span class="v">${fmt(v)}</span></div>`).join('');
 
@@ -1536,7 +1546,8 @@ async function loadSlots(){
   document.getElementById('slot-times-wrap').style.display = 'none';
   const {start, end} = windowDates(weekOffset);
   try{
-    const res = await fetch(`${LM_API_BASE}/available-slots?start=${encodeURIComponent(start.toISOString())}&end=${encodeURIComponent(end.toISOString())}`);
+    const exp = document.getElementById('express-opt') && document.getElementById('express-opt').checked;
+    const res = await fetch(`${LM_API_BASE}/available-slots?start=${encodeURIComponent(start.toISOString())}&end=${encodeURIComponent(end.toISOString())}${exp?'&express=1':''}`);
     const data = await res.json();
     renderSlots(data.slots || {}, start, end);
   }catch(e){
@@ -1669,7 +1680,8 @@ async function submitPayment(){
         slotStart: selectedSlot,
         propertyType: prop,
         addons: counts,
-        travelMiles: postcodeInfo ? postcodeInfo.miles : 0,
+        postcode: postcodeInfo ? postcodeInfo.postcode : '',
+        express: !!(document.getElementById('express-opt') && document.getElementById('express-opt').checked),
         roofAreaM2: resolvedRoofArea().area,
         pitchType: pitchType,
         contact,

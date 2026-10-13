@@ -318,8 +318,15 @@ function calendarHtml(jobs){
 function goJob(id){ const el = document.getElementById('job-'+id); if (el) { el.scrollIntoView({behavior:'smooth',block:'center'}); el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); } }
 function poolCard(j, kind){
   const pay = kind === 'scan' ? j.scanPay : j.reportPay;
+  const parts = (kind === 'scan' ? j.scanParts : j.reportParts) || {};
   const locked = kind === 'scan' && !board.me.scansAllowed;
-  return `<div class="card pool"><div class="row"><div><span class="tag ${kind==='scan'?'t-scan':'t-rep'}">${kind}</span><div class="jt">${esc(j.area)} · ${esc(j.propertyType)||'Property'}</div><div class="jm">${esc(fmtDate(j.date))}</div></div><div class="pay">from ${money(pay)}</div></div>
+  // What makes up the pay, so a flyer can see why a job pays what it does (only their own pay is ever sent).
+  const bits = [];
+  if (parts.mileage) bits.push(money(parts.mileage) + ' mileage' + (j.miles != null ? ' (' + j.miles + ' mi)' : ''));
+  if (parts.boost) bits.push('+' + money(parts.boost) + ' boost');
+  if (parts.express) bits.push('+' + money(parts.express) + ' express');
+  const exp = j.express ? `<span class="tag" style="background:#FDEBD3;color:#8A4B00;margin-left:6px;">express${kind==='report'?': report within 24h':''}</span>` : '';
+  return `<div class="card pool"><div class="row"><div><span class="tag ${kind==='scan'?'t-scan':'t-rep'}">${kind}</span>${exp}<div class="jt">${esc(j.area)} · ${esc(j.propertyType)||'Property'}</div><div class="jm">${esc(fmtDate(j.date))}</div>${bits.length?`<div class="jm" style="color:var(--g);">${bits.join(' · ')}</div>`:''}</div><div class="pay">${money(pay)}</div></div>
   <div class="acts"><div class="slide${locked?' dis':''}" data-id="${j.id}" data-kind="${kind}" tabindex="0" role="button" aria-label="Slide right to claim this ${kind}"><div class="slide-t">${locked?'Scans switched off':'Slide to claim '+kind}</div><div class="slide-h">&rarr;</div></div><button class="btn ghost" onclick="passJob('${j.id}')">Not for me</button></div></div>`;
 }
 function passJob(id){ const p = get(LS.pass, {}); p[id] = 1; put(LS.pass, p); render(); }
@@ -345,6 +352,8 @@ function claim(id, kind){ flashId = id; act({type:'claim', jobId:id, kind}); }
 
 function mineCard(j){
   let html = `<div class="card mine" id="job-${j.id}"><span class="tag ${j.scanMine?'t-scan':'t-rep'}">${j.scanMine?'scan':'report'}</span><div class="jt">${esc(j.client)}</div><div class="jm">${esc(j.address)}${j.phone?' · '+esc(j.phone):''}</div><div class="jm">${esc(fmtDate(j.date))}</div>`;
+  const myPay = j.scanMine ? j.scanPay : j.reportPay;
+  if (myPay) html += `<div class="jm" style="color:var(--g);font-weight:600;">Your pay for this job: ${money(myPay)}${j.express?' · EXPRESS'+(j.reportMine?': report due within 24 hours of the flight':''):''}</div>`;
   if (j.scanReminder && j.scanMine) html += `<div class="banner b-amber" style="margin-top:8px;">Not marked done yet. If it auto-releases you miss out on up to ${money(j.scanAtRisk)}.</div>`;
   if (j.reportReminder && j.reportMine) html += `<div class="banner b-amber" style="margin-top:8px;">Report not marked done yet. If it auto-releases you miss out on up to ${money(j.reportAtRisk)}.</div>`;
   if (j.scanMine) html += scanPanel(j);
