@@ -211,6 +211,16 @@ async function load(){
 }
 let reviewList=[];
 const safeUrl=u=>/^https:\/\//.test(u||'')?esc(u):'';
+// Flight evidence: when and where the photos were taken (from the drone) and the flyer's on-site check-in.
+function evidenceHtml(e){
+  if(!e) return '';
+  const ok=!e.warnings||!e.warnings.length;
+  const head=ok?'&#10003; Flight checks out':'&#9888; Check the flight';
+  return `<div class="note" style="border-left:3px solid ${ok?'#1B7F4B':'#C86B00'};background:${ok?'#EEF7F1':'#FDF3E7'};">
+    <b>${head}</b>${e.summary?'<br>'+esc(e.summary)+'.':''}
+    ${(e.warnings||[]).map(w=>`<div style="margin-top:4px;">&bull; ${esc(w)}</div>`).join('')}
+    ${e.note?`<div class="muted small" style="margin-top:4px;">${esc(e.note)}</div>`:''}</div>`;
+}
 async function loadReviews(){
   const r=await api('/owner/reports');
   if(!r.ok){$('reviews').innerHTML='<div class="empty">Could not load reports.</div>';return;}
@@ -226,6 +236,7 @@ async function loadReviews(){
       ${j.score>0?`<dt>RoofScore</dt><dd>${esc(j.score)}</dd>`:''}
     </dl>
     ${j.earlierFeedback?`<div class="note"><b>Your earlier note:</b> ${esc(j.earlierFeedback)}</div>`:''}
+    ${evidenceHtml(j.evidence)}
     <div class="btnrow">
       ${safeUrl(j.reportLink)?`<button class="btn sec" onclick="openReview(${i})">Review report</button>`:''}
       ${safeUrl(j.photosLink)?`<a class="btn sec" href="${safeUrl(j.photosLink)}" target="_blank" rel="noopener" style="text-decoration:none;">Open photos</a>`:''}
@@ -241,7 +252,7 @@ function openReview(i){
   const src=isDocx?'https://docs.google.com/viewer?embedded=true&url='+encodeURIComponent(j.reportLink):j.reportLink;
   $('rv-title').textContent=j.client||j.address||'Job with no client name';
   $('rv-meta').innerHTML=[['Property',j.address],['Job date',j.date],['Written by',j.writer],['Reference',j.ref],j.score>0?['RoofScore',j.score]:null].filter(x=>x&&x[1]).map(x=>`<dt>${x[0]}</dt><dd>${esc(x[1])}</dd>`).join('');
-  $('rv-earlier').innerHTML=j.earlierFeedback?`<div class="note"><b>Your earlier note:</b> ${esc(j.earlierFeedback)}</div>`:'';
+  $('rv-earlier').innerHTML=(j.earlierFeedback?`<div class="note"><b>Your earlier note:</b> ${esc(j.earlierFeedback)}</div>`:'')+evidenceHtml(j.evidence);
   $('rv-note').value='';$('rv-err').textContent='';
   $('rv-frame').src=safeUrl(src)?src:'about:blank';
   $('rv-dl').href=safeUrl(j.reportLink)||'#';
