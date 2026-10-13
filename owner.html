@@ -107,6 +107,7 @@ tr:last-child td{border-bottom:none;}
     <div class="cols">
       <div>
         <section><div class="lbl">Needs your attention</div><div id="needs"></div></section>
+        <section><div class="lbl"><span>Booking changes</span><span id="sched-n" class="small"></span></div><div class="box pad" id="sched"><span class="muted small">Loading...</span></div></section>
         <section><div class="lbl"><span>Storm alerts</span><span id="storm-n" class="small"></span></div><div class="box pad" id="storm"><span class="muted small">Loading...</span></div></section>
         <section><div class="lbl"><span>Contractors</span><span id="ctrs-n"></span></div><div class="box" id="ctrs"></div></section>
         <section><div class="lbl"><span>Booking hours (Cal.com)</span><span id="cal-name" class="small"></span></div><div class="box pad" id="cal"><span class="muted small">Loading...</span></div></section>
@@ -174,7 +175,7 @@ async function load(){
   if(!localStorage.getItem(TK)){showLogin();return;}
   const r=await api('/owner/overview');if(!r.ok){if(r.status!==401)showLogin('Could not load. Try again.');return;}
   data=r.data;$('login').style.display='none';$('app').style.display='block';
-  loadCap();loadHome();loadCovMap();loadStorm();loadSeats();loadReviews();loadSuggestions();loadCal();loadOoo();
+  loadCap();loadHome();loadCovMap();loadStorm();loadSched();loadSeats();loadReviews();loadSuggestions();loadCal();loadOoo();
   const c=data.counts;
   $('stats').innerHTML=[['Scans open',c.scansOpen],['Reports open',c.reportsOpen],['Scans claimed',c.scansClaimed],['Reports claimed',c.reportsClaimed]].map(x=>`<div class="metric"><div class="n">${x[1]}</div><div class="t">${x[0]}</div></div>`).join('');
   $('needs').innerHTML=data.needsYou.length?data.needsYou.map(n=>`<div class="attn"><b>${esc(n.name)}</b><ul>${n.needs.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`).join(''):'<div class="box empty">Nothing needs your attention.</div>';
@@ -404,6 +405,22 @@ async function loadCovMap(){
   const live=d.flyers.filter(f=>f.live).length, wanted=d.demand.reduce((n,x)=>n+x.checks,0);
   $('covkey').innerHTML=`<span style="color:#1B7F4B;">&#9679;</span> ${live} flyer${live===1?'':'s'} taking jobs &nbsp; <span style="color:#8A94A0;">&#9679;</span> not taking jobs &nbsp; <span style="color:#1B4F8A;">- - -</span> home area &nbsp; <span style="color:#F29A2E;">&#9679;</span> ${wanted} out-of-area quote attempt${wanted===1?'':'s'}. Flyers with no base postcode are not shown.`;
 }
+// Booking changes: client reschedules and cancellations from Cal.com, and flyer stand-downs. Tick each one off once handled.
+async function loadSched(){
+  const el=$('sched'); const r=await api('/owner/schedule-changes');
+  if(!r.ok){ el.innerHTML='<span class="muted small">Could not load booking changes.</span>'; return; }
+  const d=r.data, icon={cancel:'Cancelled',move:'Moved',standdown:'Stood down',late:'After the inspection'};
+  $('sched-n').textContent=d.changes.length?d.changes.length+' to check':'';
+  const items=d.changes.map(c=>`<div style="border-left:4px solid ${c.warn?'var(--bad)':'#1B4F8A'};padding:6px 10px;margin:8px 0;background:#FAFBFC;">
+      <div><b>${esc(icon[c.kind]||'Change')}</b> ${esc(c.client||'')}${c.address?' · '+esc(c.address):''}</div>
+      <div class="small">${esc(c.text)}</div>${c.warn?`<div class="small" style="color:var(--bad);margin-top:2px;">${esc(c.warn)}</div>`:''}
+      <div class="small muted">${new Date(c.at).toLocaleString('en-GB',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})} <button class="btn text" onclick="schedDone('${c.id}')">Done</button></div></div>`).join('');
+  el.innerHTML=(d.calConnected?'':`<div class="small" style="margin-bottom:8px;color:var(--bad);">Cal.com is not sending booking changes here yet. <button class="btn" onclick="connectCal()">Connect Cal.com</button></div>`)+
+    (items||'<div class="small muted">Nothing to check.</div>')+
+    (d.clientEmailReady?'':'<div class="small muted" style="margin-top:6px;">The weather reschedule email to clients is not connected yet.</div>');
+}
+async function schedDone(id){ await api('/owner/schedule-done','POST',{id}); loadSched(); }
+async function connectCal(){ const r=await api('/owner/cal-webhook','POST'); if(!r.ok||r.data.ok===false){ alert((r.data&&r.data.error)||'Could not connect Cal.com.'); } else alert('Connected. Client reschedules and cancellations will now update the job automatically.'); loadSched(); }
 // Storm alerts: Met Office wind warnings in regions RoofScan covers, checked every hour. Send the storm email once it has passed.
 async function loadStorm(){
   const el=$('storm'); const r=await api('/owner/storm');

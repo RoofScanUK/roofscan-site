@@ -201,7 +201,7 @@ const queue = () => get(LS.queue, []);
 function enqueue(item){ const q = queue(); q.push(Object.assign({qid: Date.now()+'-'+Math.random().toString(36).slice(2,6)}, item)); put(LS.queue, q); }
 async function sendAction(a){
   const path = { claim:'/contractor/claim', complete:'/contractor/complete', standdown:'/contractor/standdown' }[a.type];
-  return api(path, 'POST', { jobId:a.jobId, kind:a.kind, reason:a.reason, link:a.link });
+  return api(path, 'POST', { jobId:a.jobId, kind:a.kind, reason:a.reason, reasonCode:a.reasonCode, link:a.link });
 }
 async function act(a){
   // apply to the cached board right away so the screen responds even with no signal
@@ -276,7 +276,11 @@ function render(){
   sync.textContent = off ? 'Offline' : (q ? q + ' waiting' : 'Synced');
   $('sync-sub').textContent = last ? 'Last synced ' + new Date(last).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) : '';
   $('drone-line').textContent = windLine();
-  $('lock-box').innerHTML = (m.role !== 'Report Writer' && !m.scansAllowed) ? `<div class="banner b-red"><strong>Scans are switched off.</strong> ${esc(m.scansBlockedReason)}</div>` : '';
+  // Messages about your jobs (client moved or cancelled a booking). Dismissed ones are remembered on this phone.
+  const seen = get('rs_seen_notices', {});
+  const notes = (board.notices || []).filter(n => !seen[n.at]);
+  $('lock-box').innerHTML = ((m.role !== 'Report Writer' && !m.scansAllowed) ? `<div class="banner b-red"><strong>Scans are switched off.</strong> ${esc(m.scansBlockedReason)}</div>` : '') +
+    notes.map(n => `<div class="banner b-amber" style="display:flex;gap:10px;align-items:flex-start;"><span style="flex:1;"><strong>Booking change.</strong> ${esc(n.msg)}</span><button class="btn ghost" style="padding:4px 10px;" onclick="seenNotice('${esc(n.at)}')">OK</button></div>`).join('');
   const pass = get(LS.pass, {});
   // mine
   const mineSorted = board.mine.slice().sort((x,y) => String(x.date||'').localeCompare(String(y.date||'')));
@@ -355,6 +359,7 @@ function claim(id, kind){ flashId = id; act({type:'claim', jobId:id, kind}); }
 function mineCard(j){
   let html = `<div class="card mine" id="job-${j.id}"><span class="tag ${j.scanMine?'t-scan':'t-rep'}">${j.scanMine?'scan':'report'}</span><div class="jt">${esc(j.client)}</div><div class="jm">${esc(j.address)}${j.phone?' · '+esc(j.phone):''}</div><div class="jm">${esc(fmtWhen(j))}</div>`;
   const myPay = j.scanMine ? j.scanPay : j.reportPay;
+  if (j.scheduleNote && /moved|stood down/i.test(j.scheduleNote)) html += `<div class="jm" style="color:var(--am,#B26A00);">Latest change: ${esc(j.scheduleNote.replace(/^\S+ \S+ UTC /,''))}</div>`;
   if (myPay) html += `<div class="jm" style="color:var(--g);font-weight:600;">Your pay for this job: ${money(myPay)}${j.express?' · EXPRESS'+(j.reportMine?': report due within 24 hours of the flight':''):''}</div>`;
   if (j.scanReminder && j.scanMine) html += `<div class="banner b-amber" style="margin-top:8px;">Not marked done yet. If it auto-releases you miss out on up to ${money(j.scanAtRisk)}.</div>`;
   if (j.reportReminder && j.reportMine) html += `<div class="banner b-amber" style="margin-top:8px;">Report not marked done yet. If it auto-releases you miss out on up to ${money(j.reportAtRisk)}.</div>`;
@@ -382,6 +387,7 @@ const SHOTS = [
   ['vents','Vents, flues, soil pipes and roof lights', 1],
   ['aerial','Aerial or satellite dish fixings', 1]
 ];
+function seenNotice(at){ const s = get('rs_seen_notices', {}); s[at] = 1; put('rs_seen_notices', s); render(); }
 function shotCount(st){ const s = st.shots || {}; return SHOTS.filter(x => s[x[0]]).length; }
 function shotList(id, st){
   const s = st.shots || {}, n = shotCount(st);
@@ -618,11 +624,46 @@ function needsCheck(j, st){
   const until = t - Date.now();
   return until < 24*3600e3 && until > -3*3600e3 && !(st.checkedAt && Date.now() - st.checkedAt < 6*3600e3);
 }
+// Stand-down reasons. The client email uses a plain explanation for the one picked (worded in the Worker), never the flyer's own note.
+const SD_REASONS = [
+  ['wind', 'Wind or gusts too strong for my drone'],
+  ['rain', 'Rain, low cloud or poor visibility'],
+  ['airspace', 'Airspace restriction (airport, event, police or air ambulance)'],
+  ['site', 'Site not safe to fly (people, vehicles, trees, wires, no safe take-off spot)'],
+  ['equipment', 'Drone or equipment fault'],
+  ['other', 'Something else (explain below)']
+];
 function standDown(id){
   const st = get(LS.checks, {})[id] || {};
-  if (!confirm('Stand down this scan?\n\nIt goes back on the board for someone else. It is not counted as a miss, but there is no pay for this job, including mileage.')) return;
-  const reason = st.weatherMsg && st.weather === 'red' ? st.weatherMsg : (st.airspaceMsg && st.airspace === 'red' ? st.airspaceMsg : (prompt('What makes it unsafe? (this goes to RoofScan, no penalty)') || 'Unsafe to fly'));
-  act({type:'standdown', jobId:id, kind:'scan', reason});
+  // Pre-pick from the weather and airspace checks where we can.
+  let pre = '';
+  if (st.weather === 'red') { const m = (st.weatherMsg||'').match(/gusts up to ([0-9.]+) m\/s against your ([0-9.]+)/); pre = (m && Number(m[1]) > Number(m[2])) ? 'wind' : 'rain'; }
+  else if (st.airspace === 'red') pre = 'airspace';
+  const old = $('sd-modal'); if (old) old.remove();
+  const d = document.createElement('div'); d.id = 'sd-modal';
+  d.style.cssText = 'position:fixed;inset:0;background:rgba(15,25,45,.55);z-index:999;display:flex;align-items:flex-end;justify-content:center;';
+  d.innerHTML = `<div style="background:#fff;width:100%;max-width:520px;border-radius:14px 14px 0 0;padding:18px 18px 22px;max-height:90vh;overflow:auto;">
+    <div class="jt" style="font-size:16px;margin-bottom:4px;">Why are you standing down?</div>
+    <div class="muted" style="font-size:12.5px;margin-bottom:10px;">If the job is within 24 hours, the client is emailed a plain explanation of the reason you pick and a link to choose a new time. Your note below only goes to RoofScan.</div>
+    ${SD_REASONS.map(r => `<label class="chk" style="padding:10px 0;font-size:14px;"><input type="radio" name="sdr" value="${r[0]}" ${r[0]===pre?'checked':''} style="width:20px;height:20px;"> <span>${esc(r[1])}</span></label>`).join('')}
+    <textarea id="sd-note" rows="2" placeholder="Note for RoofScan (optional, required for Something else)" style="width:100%;margin-top:8px;border:1px solid var(--br);border-radius:8px;padding:8px;font:inherit;font-size:13px;"></textarea>
+    <div class="muted" style="font-size:11.5px;margin:8px 0;">Standing down is not a miss, but there is no pay for this job, including mileage.</div>
+    <div class="acts"><button class="btn warn" id="sd-go">Stand down</button><button class="btn ghost" id="sd-cancel">Keep the job</button></div>
+  </div>`;
+  document.body.appendChild(d);
+  $('sd-cancel').onclick = () => d.remove();
+  d.addEventListener('click', e => { if (e.target === d) d.remove(); });
+  $('sd-go').onclick = () => {
+    const pick = (d.querySelector('input[name=sdr]:checked') || {}).value;
+    const note = $('sd-note').value.trim();
+    if (!pick) { alert('Pick a reason.'); return; }
+    if (pick === 'other' && note.length < 5) { alert('Add a short note saying what the problem is.'); return; }
+    const label = SD_REASONS.find(r => r[0] === pick)[1];
+    const extra = (pick === 'wind' || pick === 'rain') && st.weather === 'red' ? st.weatherMsg : (pick === 'airspace' && st.airspace === 'red' ? st.airspaceMsg : '');
+    const reason = [label, note, extra].filter(Boolean).join('. ');
+    d.remove();
+    act({type:'standdown', jobId:id, kind:'scan', reasonCode:pick, reason});
+  };
 }
 
 // ── Weather + airspace (same rules as the staff app; wind judged against YOUR drone) ──
