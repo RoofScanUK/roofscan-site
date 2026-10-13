@@ -106,6 +106,7 @@ tr:last-child td{border-bottom:none;}
     <div class="metrics" id="stats"></div>
     <div class="cols">
       <div>
+        <section><div class="lbl"><span>System health</span><span id="health-n" class="small"></span></div><div class="box pad" id="health"><span class="muted small">Checking...</span></div></section>
         <section><div class="lbl">Needs your attention</div><div id="needs"></div></section>
         <section><div class="lbl"><span>Booking changes</span><span id="sched-n" class="small"></span></div><div class="box pad" id="sched"><span class="muted small">Loading...</span></div></section>
         <section><div class="lbl"><span>Storm alerts</span><span id="storm-n" class="small"></span></div><div class="box pad" id="storm"><span class="muted small">Loading...</span></div></section>
@@ -175,7 +176,7 @@ async function load(){
   if(!localStorage.getItem(TK)){showLogin();return;}
   const r=await api('/owner/overview');if(!r.ok){if(r.status!==401)showLogin('Could not load. Try again.');return;}
   data=r.data;$('login').style.display='none';$('app').style.display='block';
-  loadCap();loadHome();loadCovMap();loadStorm();loadSched();loadSeats();loadReviews();loadSuggestions();loadCal();loadOoo();
+  loadCap();loadHome();loadCovMap();loadStorm();loadSched();loadHealth();loadSeats();loadReviews();loadSuggestions();loadCal();loadOoo();
   const c=data.counts;
   $('stats').innerHTML=[['Scans open',c.scansOpen],['Reports open',c.reportsOpen],['Scans claimed',c.scansClaimed],['Reports claimed',c.reportsClaimed]].map(x=>`<div class="metric"><div class="n">${x[1]}</div><div class="t">${x[0]}</div></div>`).join('');
   $('needs').innerHTML=data.needsYou.length?data.needsYou.map(n=>`<div class="attn"><b>${esc(n.name)}</b><ul>${n.needs.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`).join(''):'<div class="box empty">Nothing needs your attention.</div>';
@@ -404,6 +405,19 @@ async function loadCovMap(){
   setTimeout(()=>covMap.invalidateSize(),50);
   const live=d.flyers.filter(f=>f.live).length, wanted=d.demand.reduce((n,x)=>n+x.checks,0);
   $('covkey').innerHTML=`<span style="color:#1B7F4B;">&#9679;</span> ${live} flyer${live===1?'':'s'} taking jobs &nbsp; <span style="color:#8A94A0;">&#9679;</span> not taking jobs &nbsp; <span style="color:#1B4F8A;">- - -</span> home area &nbsp; <span style="color:#F29A2E;">&#9679;</span> ${wanted} out-of-area quote attempt${wanted===1?'':'s'}. Flyers with no base postcode are not shown.`;
+}
+// System health: green, amber or red for each part the business depends on. Red ones also email info@ once a day.
+async function loadHealth(){
+  const el=$('health'); const r=await api('/owner/health');
+  if(!r.ok){ el.innerHTML='<span class="small" style="color:var(--bad);">Could not run the health check. The Worker may be down.</span>'; $('health-n').textContent='Problem'; return; }
+  const d=r.data, col={green:'#1B7F4B',amber:'#C86B00',red:'var(--bad)'};
+  const bad=d.checks.filter(c=>c.level!=='green');
+  $('health-n').innerHTML=`<span style="color:${col[d.overall]};">${d.overall==='green'?'All good':bad.length+' to look at'}</span>`;
+  const row=c=>`<div style="display:flex;gap:8px;align-items:flex-start;margin:5px 0;"><span style="color:${col[c.level]};font-size:14px;line-height:1.2;">&#9679;</span><div class="small"><b>${esc(c.name)}</b> ${esc(c.detail)}</div></div>`;
+  el.innerHTML=bad.map(row).join('')+
+    (bad.length?`<details style="margin-top:4px;"><summary class="small muted" style="cursor:pointer;">Everything else is fine (${d.checks.length-bad.length})</summary>${d.checks.filter(c=>c.level==='green').map(row).join('')}</details>`:d.checks.map(row).join(''))+
+    (d.errors&&d.errors.length?`<details style="margin-top:4px;"><summary class="small muted" style="cursor:pointer;">Recent Worker errors</summary>${d.errors.map(e=>`<div class="small muted">${new Date(e.at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})} ${esc(e.path)}: ${esc(e.msg)}</div>`).join('')}</details>`:'')+
+    `<div class="small muted" style="margin-top:6px;">Checked ${new Date(d.at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}. <button class="btn text" onclick="loadHealth()">Check again</button></div>`;
 }
 // Booking changes: client reschedules and cancellations from Cal.com, and flyer stand-downs. Tick each one off once handled.
 async function loadSched(){
