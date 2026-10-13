@@ -7,7 +7,7 @@
 <meta name="description" content="Professional drone roof inspections across Sussex. A full written report with condition ratings and a Schedule of Works, within 5 working days. No scaffolding.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
@@ -327,6 +327,263 @@ textarea{resize:vertical;}
 
 .page{display:none;}
 .page.active{display:block;}
+
+/* ===================== HOMEPAGE (2026 redesign) ===================== */
+:root{ --sun:#F2B640; --sun-2:#FFCF6B; --deep:#111C33; --g:#2FB36B; --a:#F2A93B; --r:#E5533D; }
+.x-wrap{max-width:1180px;margin:0 auto;padding:0 24px;}
+.x-eye{display:inline-block;color:#A9771F;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.16em;margin-bottom:14px;}
+.x-h2{font-size:clamp(2rem,4.2vw,3.2rem);line-height:1.08;letter-spacing:-.02em;font-weight:600;margin:0 0 18px;}
+.x-p{color:#5C6270;font-size:17px;line-height:1.75;margin:0 0 26px;max-width:52ch;}
+.x-sec{padding:120px 0;}
+.x-head{max-width:720px;margin-bottom:56px;}
+.x-link{color:var(--navy);font-weight:600;border-bottom:2px solid var(--sun);}
+
+/* Buttons: pill with a circled arrow that slides on hover */
+.x-btn{display:inline-flex;align-items:center;gap:14px;background:var(--sun);color:var(--deep);border:none;border-radius:999px;padding:8px 8px 8px 26px;font-size:15.5px;font-weight:700;letter-spacing:.01em;cursor:pointer;box-shadow:0 10px 30px -10px rgba(242,182,64,.7);transition:transform .25s cubic-bezier(.2,.8,.2,1),box-shadow .25s,background .25s;}
+.x-btn:hover{transform:translateY(-2px);box-shadow:0 18px 40px -12px rgba(242,182,64,.85);background:var(--sun-2);}
+.x-btn-i{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;background:var(--deep);color:var(--sun);font-size:18px;transition:transform .3s cubic-bezier(.2,.8,.2,1);}
+.x-btn:hover .x-btn-i{transform:translateX(4px) rotate(-45deg);}
+.x-btn-dark{background:var(--navy);color:#fff;box-shadow:0 10px 30px -12px rgba(28,43,74,.6);}
+.x-btn-dark:hover{background:#26395F;}
+.x-btn-dark .x-btn-i{background:var(--sun);color:var(--deep);}
+.x-ghost{color:rgba(255,255,255,.85);font-size:15px;font-weight:600;padding:10px 4px;border-bottom:2px solid rgba(242,182,64,.6);transition:color .2s,border-color .2s;}
+.x-ghost:hover{color:#fff;border-color:var(--sun);}
+
+/* HERO */
+.x-hero{position:relative;overflow:hidden;background:var(--deep);color:#fff;padding:96px 0 120px;min-height:calc(100vh - 76px);display:flex;align-items:center;}
+.x-hero-bg{position:absolute;inset:0;background:
+  radial-gradient(60% 70% at 85% 30%,rgba(242,182,64,.20),transparent 60%),
+  radial-gradient(50% 60% at 10% 90%,rgba(60,110,200,.25),transparent 60%),
+  linear-gradient(180deg,#14213D 0%,#0D162A 100%);}
+.x-hero-bg::after{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);background-size:56px 56px;mask-image:radial-gradient(70% 70% at 50% 40%,#000,transparent);}
+.x-hero-grid{position:relative;display:grid;grid-template-columns:1.05fr .95fr;gap:64px;align-items:center;width:100%;}
+.x-pill{display:inline-flex;align-items:center;gap:10px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);backdrop-filter:blur(8px);border-radius:999px;padding:8px 16px;font-size:12.5px;font-weight:600;letter-spacing:.06em;color:rgba(255,255,255,.85);margin-bottom:26px;}
+.x-dot{width:8px;height:8px;border-radius:50%;background:var(--g);box-shadow:0 0 0 0 rgba(47,179,107,.7);animation:xPulse 2s infinite;}
+@keyframes xPulse{70%{box-shadow:0 0 0 10px rgba(47,179,107,0)}100%{box-shadow:0 0 0 0 rgba(47,179,107,0)}}
+.x-h1{font-family:'Fraunces',Georgia,serif;color:#fff;font-weight:600;font-size:clamp(2.6rem,6vw,4.9rem);line-height:1.02;letter-spacing:-.03em;margin:0 0 24px;}
+.x-h1 em{font-style:italic;color:var(--sun);font-weight:500;}
+.x-h1 .w{display:inline-block;overflow:hidden;vertical-align:bottom;padding-bottom:.08em;margin-bottom:-.08em;}
+.x-h1 .w>span{display:inline-block;transform:translateY(105%);transition:transform .9s cubic-bezier(.2,.8,.2,1);transition-delay:calc(var(--i) * 55ms + .1s);}
+.x-h1.in .w>span{transform:none;}
+.x-lead{color:rgba(255,255,255,.72);font-size:clamp(16px,1.5vw,18.5px);line-height:1.7;max-width:48ch;margin:0 0 34px;}
+.x-ctas{display:flex;align-items:center;gap:26px;flex-wrap:wrap;margin-bottom:34px;}
+.x-ticks{list-style:none;display:flex;flex-wrap:wrap;gap:10px 22px;padding:0;margin:0;}
+.x-ticks li{position:relative;padding-left:24px;color:rgba(255,255,255,.7);font-size:14px;}
+.x-ticks li::before{content:"";position:absolute;left:0;top:3px;width:15px;height:15px;border-radius:50%;background:rgba(47,179,107,.18) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 8.5l2.5 2.5L12 5.5' fill='none' stroke='%232FB36B' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/11px no-repeat;}
+
+.x-hero-art{position:relative;}
+.x-photo{position:relative;border-radius:28px;overflow:hidden;aspect-ratio:4/3.4;box-shadow:0 40px 80px -30px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.08);transform:perspective(1200px) rotateY(-6deg) rotateX(3deg);transition:transform .6s cubic-bezier(.2,.8,.2,1);will-change:transform;}
+.x-hero-art:hover .x-photo{transform:perspective(1200px) rotateY(0) rotateX(0);}
+.x-photo img{width:100%;height:100%;object-fit:cover;display:block;transform:scale(1.08);}
+.x-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(242,182,64,.18) 1px,transparent 1px),linear-gradient(90deg,rgba(242,182,64,.18) 1px,transparent 1px);background-size:40px 40px;opacity:.45;mix-blend-mode:screen;}
+.x-scan{position:absolute;left:0;right:0;top:-30%;height:30%;background:linear-gradient(180deg,transparent,rgba(242,182,64,.08) 60%,rgba(242,182,64,.55) 98%,#FFD98A 100%);animation:xScan 3.6s cubic-bezier(.45,0,.55,1) infinite;}
+@keyframes xScan{0%{top:-30%}100%{top:100%}}
+.x-pin{position:absolute;left:var(--x);top:var(--y);opacity:0;transform:translateY(8px) scale(.9);animation:xPin .6s cubic-bezier(.2,.8,.2,1.3) forwards;animation-delay:var(--d);}
+@keyframes xPin{to{opacity:1;transform:none}}
+.x-pin b{position:absolute;left:-7px;top:-7px;width:14px;height:14px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 0 currentColor;animation:xRing 2.2s infinite;animation-delay:var(--d);}
+@keyframes xRing{0%{box-shadow:0 0 0 0 currentColor}80%,100%{box-shadow:0 0 0 14px transparent}}
+.x-pin span{position:absolute;left:14px;top:-16px;white-space:nowrap;background:rgba(13,22,42,.82);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.14);color:#fff;font-size:12.5px;font-weight:600;padding:7px 11px;border-radius:10px;}
+.x-pin i{font-style:normal;margin-left:8px;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;}
+.x-pin-g{color:var(--g)} .x-pin-g b{background:var(--g)} .x-pin-g i{background:rgba(47,179,107,.2);color:#7BE0A6}
+.x-pin-a{color:var(--a)} .x-pin-a b{background:var(--a)} .x-pin-a i{background:rgba(242,169,59,.2);color:#FFC874}
+.x-pin-r{color:var(--r)} .x-pin-r b{background:var(--r)} .x-pin-r i{background:rgba(229,83,61,.22);color:#FF9A88}
+.x-score{position:absolute;right:-18px;bottom:-26px;background:#fff;color:var(--deep);border-radius:20px;padding:16px 18px;width:180px;box-shadow:0 30px 60px -20px rgba(0,0,0,.6);}
+.x-score-l{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#7A7F8A;}
+.x-score-v{font-family:'Fraunces',serif;font-size:38px;font-weight:600;line-height:1.05;}
+.x-score-v small{font-size:15px;color:#7A7F8A;font-weight:500;}
+.x-bar{height:7px;border-radius:9px;background:#EDEFF3;overflow:hidden;margin:8px 0 6px;}
+.x-bar span{display:block;height:100%;width:0;border-radius:9px;background:linear-gradient(90deg,var(--a),var(--g));transition:width 1.6s cubic-bezier(.2,.8,.2,1) .9s;}
+.x-hero-art.in .x-bar span{width:var(--w);}
+.x-score-s{font-size:11px;color:#9AA0AB;}
+.x-drone{position:absolute;width:150px;left:-46px;top:-58px;filter:drop-shadow(0 18px 18px rgba(0,0,0,.45));animation:xHover 4s ease-in-out infinite;}
+@keyframes xHover{0%,100%{translate:0 0}50%{translate:6px -12px}}
+.x-prop ellipse{fill:rgba(255,255,255,.35);transform-origin:center;transform-box:fill-box;animation:xSpin .12s linear infinite;}
+@keyframes xSpin{50%{transform:scaleX(.35)}}
+.x-scrollcue{position:absolute;left:50%;bottom:26px;width:24px;height:38px;border:2px solid rgba(255,255,255,.35);border-radius:14px;transform:translateX(-50%);}
+.x-scrollcue span{position:absolute;left:50%;top:7px;width:4px;height:8px;margin-left:-2px;border-radius:2px;background:var(--sun);animation:xCue 1.6s infinite;}
+@keyframes xCue{0%{opacity:0;transform:translateY(0)}40%{opacity:1}100%{opacity:0;transform:translateY(12px)}}
+
+/* MARQUEE */
+.x-marquee{background:var(--sun);color:var(--deep);overflow:hidden;padding:18px 0;border-top:1px solid rgba(0,0,0,.06);}
+.x-track{display:flex;width:max-content;animation:xMarq 38s linear infinite;}
+.x-track span{font-family:'Fraunces',serif;font-weight:600;font-size:22px;padding:0 26px;white-space:nowrap;display:inline-flex;align-items:center;gap:52px;}
+.x-track span::after{content:"✦";font-size:14px;opacity:.55;margin-left:26px;}
+@keyframes xMarq{to{transform:translateX(-50%)}}
+
+/* STATEMENT */
+.x-statement{padding:140px 0 110px;background:#fff;}
+.x-lit{font-family:'Fraunces',serif;font-size:clamp(1.9rem,4.4vw,3.6rem);line-height:1.18;letter-spacing:-.02em;color:var(--navy);max-width:22ch;margin:0;font-weight:500;}
+.x-lit strong{font-weight:600;}
+.x-lit .lw{color:#C9CDD6;transition:color .35s ease;}
+.x-lit .lw.on{color:var(--navy);}
+.x-lit strong .lw.on{color:#A9771F;}
+
+/* STATS */
+.x-stats{background:#fff;padding:0 0 120px;}
+.x-stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;}
+.x-stat{background:#F6F3EA;border-radius:24px;padding:30px 26px;transition:transform .35s cubic-bezier(.2,.8,.2,1),background .35s;}
+.x-stat:hover{transform:translateY(-6px);background:var(--deep);}
+.x-stat:hover .x-stat-v{color:var(--sun);} .x-stat:hover .x-stat-l{color:rgba(255,255,255,.7);}
+.x-stat-v{font-family:'Fraunces',serif;font-size:clamp(2.6rem,4.6vw,3.8rem);font-weight:600;color:var(--navy);line-height:1;transition:color .35s;}
+.x-stat-v small{font-size:.38em;font-weight:500;margin-left:6px;color:#A9771F;}
+.x-stat-l{color:#5C6270;font-size:14.5px;line-height:1.5;margin-top:12px;transition:color .35s;}
+
+/* STEPS */
+.x-steps{position:relative;display:grid;grid-template-columns:repeat(3,1fr);gap:28px;}
+.x-steps-line{position:absolute;left:5%;right:5%;top:36px;height:2px;background:#E7E2D4;}
+.x-steps-line span{display:block;height:100%;width:var(--p,0%);background:linear-gradient(90deg,var(--sun),#A9771F);transition:width .2s linear;}
+.x-step{position:relative;background:#fff;border:1px solid #ECE7DA;border-radius:24px;padding:28px 26px 30px;transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s,border-color .35s;}
+.x-step:hover{transform:translateY(-8px);box-shadow:0 30px 60px -30px rgba(28,43,74,.35);border-color:transparent;}
+.x-step-n{width:72px;height:72px;margin:-64px 0 18px;border-radius:50%;background:var(--deep);color:var(--sun);display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-size:24px;font-weight:600;border:6px solid var(--paper);}
+.x-step h3{font-size:22px;font-weight:600;margin:0 0 10px;}
+.x-step p{color:#5C6270;font-size:15px;line-height:1.7;margin:0;}
+#how-it-works{padding-top:150px;}
+
+/* REPORT */
+.x-report{background:var(--deep);color:#fff;overflow:hidden;}
+.x-report .x-h2{color:#fff;}
+.x-report .x-p{color:rgba(255,255,255,.7);}
+.x-report .x-eye{color:var(--sun);}
+.x-report-grid{display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center;}
+.x-checks{list-style:none;padding:0;margin:0 0 34px;display:grid;gap:14px;}
+.x-checks li{position:relative;padding-left:36px;font-size:16px;color:rgba(255,255,255,.88);}
+.x-checks li::before{content:"✓";position:absolute;left:0;top:-2px;width:24px;height:24px;border-radius:50%;background:var(--sun);color:var(--deep);font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;}
+.x-doc-stack{position:relative;height:500px;}
+.x-doc{position:absolute;inset:0 30px 0 30px;border-radius:18px;background:#fff;box-shadow:0 40px 80px -30px rgba(0,0,0,.7);transition:transform .8s cubic-bezier(.2,.8,.2,1);}
+.x-doc-back{background:#2A3B60;transform:rotate(-9deg) translate(-30px,10px);}
+.x-doc-mid{background:#C9D3E6;transform:rotate(-4deg) translate(-12px,4px);}
+.x-doc-stack:hover .x-doc-back{transform:rotate(-14deg) translate(-60px,18px);}
+.x-doc-stack:hover .x-doc-mid{transform:rotate(-7deg) translate(-26px,8px);}
+.x-doc-stack:hover .x-doc-front{transform:rotate(2deg) translate(14px,-6px);}
+.x-doc-front{padding:22px;color:var(--deep);display:flex;flex-direction:column;gap:16px;}
+.x-doc-top{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid var(--deep);padding-bottom:12px;}
+.x-doc-logo{font-family:'Fraunces',serif;font-weight:600;font-size:18px;}
+.x-doc-tag{font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#7A7F8A;}
+.x-doc-photo{height:170px;border-radius:12px;background-size:cover;background-position:center;}
+.x-rows{display:grid;gap:12px;}
+.x-row{display:grid;grid-template-columns:1fr auto;gap:4px 10px;font-size:13.5px;font-weight:600;}
+.x-row b{font-size:11px;padding:2px 10px;border-radius:999px;}
+.x-row b.g{background:#E3F6EB;color:#1E8A4F} .x-row b.a{background:#FDF0DA;color:#B06F00} .x-row b.r{background:#FDE3DE;color:#C2341F}
+.x-row i{grid-column:1/-1;height:6px;background:#EEF0F4;border-radius:9px;overflow:hidden;}
+.x-row em{display:block;height:100%;width:0;border-radius:9px;transition:width 1.4s cubic-bezier(.2,.8,.2,1);}
+.x-row em.g{background:var(--g)} .x-row em.a{background:var(--a)} .x-row em.r{background:var(--r)}
+.x-doc-stack.in .x-row em{width:var(--w);}
+.x-doc-stack.in .x-row:nth-child(2) em{transition-delay:.15s} .x-doc-stack.in .x-row:nth-child(3) em{transition-delay:.3s} .x-doc-stack.in .x-row:nth-child(4) em{transition-delay:.45s}
+
+/* USE CASES */
+.x-uses{background:var(--paper);}
+.x-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+.x-card{position:relative;text-align:left;background:#fff;border:1px solid #ECE7DA;border-radius:24px;padding:30px 28px 28px;display:flex;flex-direction:column;gap:10px;overflow:hidden;cursor:pointer;font:inherit;color:inherit;transition:transform .4s cubic-bezier(.2,.8,.2,1),box-shadow .4s,border-color .4s;}
+.x-card::before{content:"";position:absolute;inset:0;background:linear-gradient(160deg,var(--deep),#22355C);opacity:0;transition:opacity .4s;}
+.x-card>*{position:relative;}
+.x-card:hover{transform:translateY(-8px);box-shadow:0 30px 60px -30px rgba(28,43,74,.45);border-color:transparent;}
+.x-card:hover::before{opacity:1;}
+.x-card-i{width:52px;height:52px;border-radius:16px;background:#FCEFD2;color:#A9771F;display:flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:8px;transition:background .4s,color .4s,transform .4s;}
+.x-card h3{font-size:22px;font-weight:600;margin:0;transition:color .4s;}
+.x-card p{color:#5C6270;font-size:15px;line-height:1.65;margin:0;flex:1;transition:color .4s;}
+.x-card-go{font-size:14px;font-weight:700;color:var(--navy);margin-top:8px;transition:color .4s,transform .4s;}
+.x-card:hover .x-card-i{background:var(--sun);color:var(--deep);transform:rotate(-8deg) scale(1.06);}
+.x-card:hover h3{color:#fff} .x-card:hover p{color:rgba(255,255,255,.72)} .x-card:hover .x-card-go{color:var(--sun);transform:translateX(4px);}
+
+/* TRUST */
+.x-trust{background:#fff;}
+.x-trust-grid{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center;}
+.x-creds{display:grid;gap:14px;}
+.x-cred{display:flex;align-items:center;gap:14px;background:#F6F3EA;border-radius:18px;padding:18px 20px;font-weight:600;color:var(--navy);font-size:15.5px;transition:transform .3s;}
+.x-cred:hover{transform:translateX(-6px);}
+.x-cred em{margin-left:auto;font-style:normal;font-size:12.5px;font-weight:700;color:#1E8A4F;background:#E3F6EB;padding:4px 12px;border-radius:999px;}
+.x-tick{width:32px;height:32px;border-radius:50%;background:var(--deep);color:var(--sun);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+
+/* CTA */
+.x-cta-wrap{background:#fff;padding:20px 0 120px;}
+.x-cta{position:relative;overflow:hidden;background:var(--deep);border-radius:36px;padding:90px 40px;text-align:center;color:#fff;}
+.x-cta-glow{position:absolute;width:700px;height:700px;left:50%;top:50%;margin:-350px 0 0 -350px;background:conic-gradient(from 0deg,rgba(242,182,64,.0),rgba(242,182,64,.35),rgba(60,110,200,.3),rgba(242,182,64,0));filter:blur(70px);animation:xRot 12s linear infinite;}
+@keyframes xRot{to{transform:rotate(360deg)}}
+.x-cta>*:not(.x-cta-glow){position:relative;}
+.x-cta h2{color:#fff;font-size:clamp(2.1rem,5vw,3.8rem);line-height:1.05;letter-spacing:-.02em;font-weight:600;margin:0 auto 18px;max-width:16ch;}
+.x-cta p{color:rgba(255,255,255,.72);font-size:17px;margin:0 auto 34px;max-width:46ch;}
+
+/* Reveal-on-scroll for homepage pieces */
+[data-x]{opacity:0;transition:opacity .9s cubic-bezier(.2,.8,.2,1),transform .9s cubic-bezier(.2,.8,.2,1);transition-delay:var(--d,0s);}
+[data-x="up"]{transform:translateY(34px);}
+[data-x="left"]{transform:translateX(-46px);}
+[data-x="right"]{transform:translateX(46px);}
+[data-x="zoom"]{transform:scale(.92);}
+[data-x].in{opacity:1;transform:none;}
+
+/* Mobile */
+@media (max-width:900px){
+  .x-hero{padding:56px 0 100px;min-height:0;}
+  .x-hero-grid,.x-report-grid,.x-trust-grid{grid-template-columns:1fr;gap:56px;}
+  .x-hero-art{margin:30px 14px 0;}
+  .x-photo{transform:none;}
+  .x-drone{width:110px;left:-10px;top:-50px;}
+  .x-score{right:-6px;width:160px;}
+  .x-stats-grid{grid-template-columns:1fr 1fr;}
+  .x-cards{grid-template-columns:1fr 1fr;}
+  .x-steps{grid-template-columns:1fr;gap:72px;}
+  .x-steps-line{display:none;}
+  .x-sec{padding:90px 0;}
+  .x-doc-stack{height:440px;}
+  .x-scrollcue{display:none;}
+}
+@media (max-width:560px){
+  .x-cards,.x-stats-grid{grid-template-columns:1fr;}
+  .x-pin span{font-size:11px;padding:5px 8px;}
+  .x-cta{padding:64px 22px;border-radius:26px;}
+  .x-track span{font-size:18px;}
+}
+@media (prefers-reduced-motion:reduce){
+  [data-x]{opacity:1;transform:none;transition:none;}
+  .x-h1 .w>span{transform:none;transition:none;}
+  .x-scan,.x-track,.x-drone,.x-cta-glow,.x-prop ellipse,.x-dot{animation:none;}
+  .x-pin{animation:none;opacity:1;transform:none;}
+  .x-lit .lw{color:var(--navy);}
+}
+
+.x-navbtn{background:var(--sun) !important;border-color:var(--sun) !important;color:var(--deep) !important;border-radius:999px !important;padding:10px 20px !important;font-weight:700 !important;transition:transform .25s,box-shadow .25s !important;}
+.x-navbtn:hover{opacity:1 !important;transform:translateY(-1px);box-shadow:0 10px 24px -10px rgba(242,182,64,.9);}
+nav.topnav{background:rgba(251,250,247,.82) !important;backdrop-filter:saturate(1.4) blur(14px);-webkit-backdrop-filter:saturate(1.4) blur(14px);}
+@media (max-width:900px){ #how-it-works{padding-top:120px;} .x-statement{padding:100px 0 80px;} }
+
+/* --- refinements --- */
+.x-h1{font-size:clamp(2.6rem,5.2vw,4.3rem);}
+.x-cap{position:absolute;left:14px;bottom:14px;font-size:11.5px;font-weight:600;color:#fff;background:rgba(13,22,42,.6);backdrop-filter:blur(6px);padding:5px 10px;border-radius:999px;letter-spacing:.02em;}
+.x-lit{max-width:30ch;font-size:clamp(1.9rem,4.2vw,3.7rem);}
+.x-steps{margin-top:84px;}
+.x-doc-sum{margin-top:auto;display:flex;justify-content:space-between;align-items:center;background:#F6F3EA;border-radius:12px;padding:12px 14px;}
+.x-doc-sum span{display:block;font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#7A7F8A;}
+.x-doc-sum b{font-size:14px;}
+.x-doc-score{font-family:'Fraunces',serif;font-size:30px;font-weight:600;color:var(--deep);}
+.x-doc-score small{font-size:13px;color:#7A7F8A;}
+.x-card-i svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+/* FAQ */
+.x-faq{background:var(--paper);}
+.x-faq-grid{display:grid;grid-template-columns:.85fr 1.15fr;gap:64px;align-items:start;}
+.x-acc{display:grid;gap:12px;}
+.x-acc details{background:#fff;border:1px solid #ECE7DA;border-radius:18px;padding:0 22px;transition:box-shadow .3s,border-color .3s;}
+.x-acc details[open]{box-shadow:0 20px 40px -26px rgba(28,43,74,.35);border-color:transparent;}
+.x-acc summary{list-style:none;cursor:pointer;padding:20px 34px 20px 0;font-weight:700;color:var(--navy);font-size:16.5px;position:relative;}
+.x-acc summary::-webkit-details-marker{display:none;}
+.x-acc summary::after{content:"+";position:absolute;right:0;top:50%;width:28px;height:28px;margin-top:-14px;border-radius:50%;background:#FCEFD2;color:#A9771F;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:600;transition:transform .3s,background .3s;}
+.x-acc details[open] summary::after{transform:rotate(45deg);background:var(--sun);color:var(--deep);}
+.x-acc details>div{color:#5C6270;font-size:15.5px;line-height:1.7;padding:0 0 20px;animation:xAcc .35s ease;}
+@keyframes xAcc{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+/* Scroll progress + mobile sticky bar */
+.x-progress{position:fixed;left:0;right:0;top:0;height:3px;z-index:300;pointer-events:none;}
+.x-progress span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--sun),#FFD98A);}
+.x-sticky{display:none;}
+@media (max-width:720px){
+  .x-sticky{display:flex;position:fixed;left:10px;right:10px;bottom:10px;z-index:250;align-items:center;justify-content:space-between;gap:10px;background:rgba(17,28,51,.94);backdrop-filter:blur(10px);color:#fff;border-radius:20px;padding:10px 10px 10px 18px;box-shadow:0 20px 40px -12px rgba(0,0,0,.5);transform:translateY(140%);transition:transform .45s cubic-bezier(.2,.8,.2,1);}
+  .x-sticky.show{transform:none;}
+  .x-sticky b{display:block;font-size:14px;}
+  .x-sticky span{font-size:12px;color:rgba(255,255,255,.65);}
+  .x-sticky .x-btn{padding:6px 6px 6px 16px;font-size:14px;white-space:nowrap;}
+  .x-sticky .x-btn-i{width:34px;height:34px;}
+  .x-cta-wrap{padding-bottom:110px;}
+}
+@media (max-width:900px){ .x-faq-grid{grid-template-columns:1fr;gap:28px;} .x-steps{margin-top:70px;} }
+@media (prefers-reduced-motion:reduce){ .x-sticky{transition:none;} }
 </style>
 </head>
 <body>
@@ -346,7 +603,7 @@ textarea{resize:vertical;}
       <span class="nav-link" onclick="go('about')">About</span>
       <span class="nav-link" onclick="go('contact')">Contact</span>
       <span class="nav-link nav-link-login" style="color:var(--muted);" onclick="openLoginModal()">Client Login</span>
-      <button class="btn small" style="background:var(--gold);border-color:var(--gold);color:var(--navy);" onclick="go('book')">Get instant quote</button>
+      <button class="btn small x-navbtn" onclick="go('book')">Get instant quote</button>
       <button class="hamburger" id="hamburger-btn" onclick="toggleMobileMenu()" aria-label="Menu" aria-expanded="false">
         <span></span><span></span><span></span>
       </button>
@@ -421,112 +678,199 @@ textarea{resize:vertical;}
 <!-- ============ HOME ============ -->
 <div id="page-home" class="page active">
   <!-- Storm banner: shown only while a storm offer is running (switched on from the owner dashboard). -->
-  <a id="storm-banner" href="storm.html" style="display:none;background:#1C2B4A;color:#fff;text-align:center;padding:12px 16px;font-size:14px;font-weight:600;text-decoration:none;">Storm in your area? We can check your whole roof by drone, no ladders. <span style="color:#C9A84C;text-decoration:underline;">See how</span></a>
-  <section class="hero">
-    <div class="wrap hero-grid">
-      <div>
-        <div class="eyebrow">CAA Licensed · Fully Insured · Sussex</div>
-        <h1>Your roof, inspected from above</h1>
-        <p>Professional drone roof inspections across Sussex. Answer a few quick questions and get an instant, no-obligation price, no call needed. Full written report with condition ratings, delivered within 5 working days.</p>
-        <div class="hero-ctas">
-          <button class="btn" style="background:var(--gold);border-color:var(--gold);color:var(--navy);" onclick="go('book')">Get your instant quote →</button>
-          <a class="textlink" href="#" onclick="event.preventDefault();document.getElementById('how-it-works').scrollIntoView({behavior:'smooth'});">See how it works</a>
+  <a id="storm-banner" href="storm.html" style="display:none;background:#1C2B4A;color:#fff;text-align:center;padding:12px 16px;font-size:14px;font-weight:600;text-decoration:none;">Storm in your area? We can check your whole roof by drone, no ladders. <span style="color:#F2B640;text-decoration:underline;">See how</span></a>
+
+  <!-- HERO: the roof photo is "scanned" and findings pop up, so visitors see what they get in two seconds. -->
+  <section class="x-hero">
+    <div class="x-hero-bg" aria-hidden="true"></div>
+    <div class="x-wrap x-hero-grid">
+      <div class="x-hero-copy">
+        <div class="x-pill" data-x="up"><span class="x-dot"></span>CAA licensed · Fully insured · Sussex</div>
+        <h1 class="x-h1" data-split>See every inch of your roof. <em>Without a ladder.</em></h1>
+        <p class="x-lead" data-x="up" style="--d:.5s">Drone roof inspections with a written report you can hand to a roofer, a solicitor or your insurer. Get your price online in about a minute.</p>
+        <div class="x-ctas" data-x="up" style="--d:.65s">
+          <button class="x-btn" onclick="go('book')">Get your instant price <span class="x-btn-i">&rarr;</span></button>
+          <a class="x-ghost" href="#how-it-works" onclick="event.preventDefault();document.getElementById('how-it-works').scrollIntoView({behavior:'smooth'});">See how it works</a>
         </div>
-        <div class="fact-strip">
-          <div class="fact"><div class="v">Instant</div><div class="l">Get instant quote</div></div>
-          <div class="fact"><div class="v">5 days</div><div class="l">Report delivery</div></div>
-          <div class="fact"><div class="v">100%</div><div class="l">Sussex coverage</div></div>
-        </div>
+        <ul class="x-ticks" data-x="up" style="--d:.8s">
+          <li>Prices from £180</li><li>Report in 5 working days</li><li>No scaffolding or ladders</li><li>Nobody needs to be home</li>
+        </ul>
       </div>
-      <div class="hero-art">
-        <img src="icons/roof-aerial-top.jpg" alt="Real drone aerial photo of a UK roof taken by RoofScan UK" style="width:100%;height:100%;object-fit:cover;border-radius:12px;border:1px solid rgba(251,250,247,.15);">
+      <div class="x-hero-art" data-x="zoom" style="--d:.2s">
+        <div class="x-photo" data-parallax="-0.06">
+          <img src="icons/roof-aerial-top.jpg" alt="Drone photo looking straight down on a UK roof, taken by RoofScan UK" loading="eager" fetchpriority="high">
+          <div class="x-cap">Real photo from a RoofScan inspection</div>
+          <div class="x-grid" aria-hidden="true"></div>
+          <div class="x-scan" aria-hidden="true"></div>
+          <div class="x-pin x-pin-g" style="--x:30%;--y:30%;--d:1.4s"><b></b><span>Ridge tiles <i>Good</i></span></div>
+          <div class="x-pin x-pin-a" style="--x:58%;--y:52%;--d:2.0s"><b></b><span>Chimney flashing <i>Monitor</i></span></div>
+          <div class="x-pin x-pin-r" style="--x:26%;--y:78%;--d:2.6s"><b></b><span>Gutter joint <i>Repair</i></span></div>
+        </div>
+        <div class="x-score" data-parallax="0.05" aria-hidden="true">
+          <div class="x-score-l">RoofScore</div>
+          <div class="x-score-v"><span data-count="82">0</span><small>/100</small></div>
+          <div class="x-bar"><span style="--w:82%"></span></div>
+          <div class="x-score-s">Sample result</div>
+        </div>
+        <svg class="x-drone" data-parallax="-0.14" viewBox="0 0 220 120" aria-hidden="true">
+          <g fill="none" stroke="#FBFAF7" stroke-width="5" stroke-linecap="round"><path d="M110 60 L40 28"/><path d="M110 60 L180 28"/><path d="M110 60 L48 92"/><path d="M110 60 L172 92"/></g>
+          <g class="x-prop"><ellipse cx="40" cy="26" rx="30" ry="5"/><ellipse cx="180" cy="26" rx="30" ry="5"/><ellipse cx="48" cy="92" rx="30" ry="5"/><ellipse cx="172" cy="92" rx="30" ry="5"/></g>
+          <rect x="88" y="44" width="44" height="32" rx="12" fill="#FBFAF7"/><circle cx="110" cy="80" r="9" fill="#1C2B4A" stroke="#FBFAF7" stroke-width="3"/><circle cx="110" cy="80" r="3.5" fill="#F2B640"/>
+        </svg>
+      </div>
+    </div>
+    <div class="x-scrollcue" aria-hidden="true"><span></span></div>
+  </section>
+
+  <!-- Moving strip of what gets checked -->
+  <div class="x-marquee" aria-label="What we check">
+    <div class="x-track">
+      <span>Ridge tiles</span><span>Chimney stacks</span><span>Flashing</span><span>Valleys</span><span>Gutters</span><span>Fascias &amp; soffits</span><span>Roof lights</span><span>Solar panels</span><span>Flat roofs</span><span>Dormers</span>
+      <span aria-hidden="true">Ridge tiles</span><span aria-hidden="true">Chimney stacks</span><span aria-hidden="true">Flashing</span><span aria-hidden="true">Valleys</span><span aria-hidden="true">Gutters</span><span aria-hidden="true">Fascias &amp; soffits</span><span aria-hidden="true">Roof lights</span><span aria-hidden="true">Solar panels</span><span aria-hidden="true">Flat roofs</span><span aria-hidden="true">Dormers</span>
+    </div>
+  </div>
+
+  <!-- Statement: words light up as you scroll -->
+  <section class="x-statement">
+    <div class="x-wrap">
+      <p class="x-lit" data-lit>Most roof problems can't be seen from the ground. Slipped tiles, cracked mortar and lifted flashing let water in quietly. <strong>We find them before they turn into leaks.</strong></p>
+    </div>
+  </section>
+
+  <!-- Numbers -->
+  <section class="x-stats">
+    <div class="x-wrap x-stats-grid">
+      <div class="x-stat" data-x="up"><div class="x-stat-v"><span data-count="60">0</span><small>sec</small></div><div class="x-stat-l">to get your price online</div></div>
+      <div class="x-stat" data-x="up" style="--d:.1s"><div class="x-stat-v"><span data-count="0">0</span></div><div class="x-stat-l">ladders, scaffolding or roof walking</div></div>
+      <div class="x-stat" data-x="up" style="--d:.2s"><div class="x-stat-v"><span data-count="5">0</span><small>days</small></div><div class="x-stat-l">to your written report (24 hours with Express)</div></div>
+      <div class="x-stat" data-x="up" style="--d:.3s"><div class="x-stat-v"><span data-count="3">0</span><small>ratings</small></div><div class="x-stat-l">green, amber, red for every part of the roof</div></div>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section class="x-sec" id="how-it-works">
+    <div class="x-wrap">
+      <div class="x-head" data-x="up"><div class="x-eye">How it works</div><h2 class="x-h2">From price to report in three steps</h2></div>
+      <div class="x-steps" data-line>
+        <div class="x-steps-line" aria-hidden="true"><span></span></div>
+        <div class="x-step" data-x="up">
+          <div class="x-step-n">01</div>
+          <h3>Get your price</h3>
+          <p>Tell us the address and a few details. You see the price straight away and pick a date. A small deposit secures it.</p>
+        </div>
+        <div class="x-step" data-x="up" style="--d:.15s">
+          <div class="x-step-n">02</div>
+          <h3>We fly the roof</h3>
+          <p>A CAA-licensed pilot photographs every slope, chimney, gutter and flashing. Usually under an hour, and you don't need to be in.</p>
+        </div>
+        <div class="x-step" data-x="up" style="--d:.3s">
+          <div class="x-step-n">03</div>
+          <h3>Get your report</h3>
+          <p>A written PDF report with photos, a condition rating for each part and a schedule of anything that needs work.</p>
+        </div>
       </div>
     </div>
   </section>
 
-  <section class="pad reveal" id="how-it-works">
-    <div class="wrap">
-      <div class="section-head center">
-        <div class="eyebrow">Simple process</div>
-        <h2 class="section-title">From quote to report, in three steps</h2>
+  <!-- The report -->
+  <section class="x-sec x-report">
+    <div class="x-wrap x-report-grid">
+      <div data-x="left">
+        <div class="x-eye">The report</div>
+        <h2 class="x-h2">A proper written assessment, not a folder of photos</h2>
+        <p class="x-p">Every inspection ends with a document you can forward to a contractor, solicitor or insurer, and keep for your records.</p>
+        <ul class="x-checks">
+          <li data-x="up" style="--d:.1s">Traffic-light rating for every part of the roof</li>
+          <li data-x="up" style="--d:.2s">Schedule of works with priorities</li>
+          <li data-x="up" style="--d:.3s">Clear photos of anything we flag</li>
+          <li data-x="up" style="--d:.4s">Plain-English recommendations</li>
+        </ul>
+        <a class="x-btn" href="sample-report.pdf" target="_blank" rel="noopener noreferrer">See a sample report <span class="x-btn-i">&rarr;</span></a>
       </div>
-      <div class="timeline">
-        <div class="tl-item tl-expand" onclick="this.classList.toggle('open')"><div class="tl-num">01</div><h3>Get your instant quote</h3><p>Answer a few quick questions about the property, its type, location, and any roof features, and see your price straight away. No call needed.</p><p class="tl-more">Takes about a minute. Pay a £50 deposit online to lock in your date; the balance is due once the job's done.</p></div>
-        <div class="tl-item tl-expand" onclick="this.classList.toggle('open')"><div class="tl-num">02</div><h3>We fly and inspect</h3><p>Our CAA-licensed pilot captures high-resolution imagery of every element: chimneys, ridges, flashings, gutters.</p><p class="tl-more">Most inspections take under an hour on site, including setup and safety checks. You don't need to be home unless you'd like to be.</p></div>
-        <div class="tl-item tl-expand" onclick="this.classList.toggle('open')"><div class="tl-num">03</div><h3>Receive your report</h3><p>A fully written condition report with photos, ratings, and a contractor-ready Schedule of Works, within 5 working days.</p><p class="tl-more">Delivered as a PDF in your secure client portal, which you can then forward to a contractor, solicitor, or insurer.</p></div>
-      </div>
-      <div style="text-align:center;margin-top:8px;"><span class="muted" style="font-size:12px;">Tap a step for more detail</span></div>
-    </div>
-  </section>
-
-  <section class="pad reveal sec-report" style="background:#F3EEE1;">
-    <div class="wrap report-grid">
-      <div>
-        <div class="eyebrow">The report</div>
-        <h2 class="section-title" style="font-size:clamp(1.6rem,2.8vw,2rem);margin-bottom:16px;">A full written assessment, not just photos</h2>
-        <p class="muted" style="font-size:15px;line-height:1.8;margin:0 0 26px;">Every inspection produces a professionally formatted document you can hand to a contractor, solicitor, or insurer.</p>
-        <div class="check-list">
-          <div class="check-item"><span class="dash">—</span><span>Traffic-light condition ratings for every element</span></div>
-          <div class="check-item"><span class="dash">—</span><span>Schedule of Works with priority levels</span></div>
-          <div class="check-item"><span class="dash">—</span><span>Observations with supporting photography</span></div>
-          <div class="check-item"><span class="dash">—</span><span>Written recommendations for defects found</span></div>
-          <div class="check-item"><span class="dash">—</span><span>PDF delivered within 5 working days</span></div>
-        </div>
-      </div>
-      <div class="panel" style="padding:16px;background:var(--white);">
-        <div class="eyebrow" style="margin-bottom:12px;">Sample report</div>
-        <iframe src="sample-report.pdf" title="Sample RoofScan UK inspection report" style="width:100%;height:340px;border:1px solid var(--line);border-radius:2px;">
-          <p style="padding:14px;font-size:13px;color:var(--muted);">Your browser can't preview PDFs inline. <a class="textlink" href="sample-report.pdf" target="_blank" rel="noopener noreferrer">View the sample report →</a></p>
-        </iframe>
-        <div style="text-align:center;margin-top:14px;">
-          <a class="btn small" href="sample-report.pdf" target="_blank" rel="noopener noreferrer">View full sample report →</a>
+      <div class="x-doc-stack" data-x="right" aria-hidden="true">
+        <div class="x-doc x-doc-back"></div>
+        <div class="x-doc x-doc-mid"></div>
+        <div class="x-doc x-doc-front">
+          <div class="x-doc-top"><span class="x-doc-logo">RoofScan UK</span><span class="x-doc-tag">Roof condition report</span></div>
+          <div class="x-doc-photo" style="background-image:url(icons/roof-aerial-top.jpg)"></div>
+          <div class="x-rows">
+            <div class="x-row"><span>Ridge &amp; hips</span><b class="g">Good</b><i><em style="--w:90%" class="g"></em></i></div>
+            <div class="x-row"><span>Chimney</span><b class="a">Monitor</b><i><em style="--w:58%" class="a"></em></i></div>
+            <div class="x-row"><span>Gutters</span><b class="r">Repair</b><i><em style="--w:32%" class="r"></em></i></div>
+            <div class="x-row"><span>Main slopes</span><b class="g">Good</b><i><em style="--w:84%" class="g"></em></i></div>
+          </div>
+          <div class="x-doc-sum"><div><span>Schedule of works</span><b>1 repair · 1 to monitor</b></div><div class="x-doc-score">82<small>/100</small></div></div>
         </div>
       </div>
     </div>
   </section>
 
-  <section class="pad reveal sec-trust" style="padding-top:56px;padding-bottom:56px;">
-    <div class="wrap-n">
-      <div class="section-head center">
-        <div class="eyebrow">Why trust us</div>
-        <h2 class="section-title" style="font-size:clamp(1.5rem,2.6vw,1.9rem);">Licensed, insured, and built for accuracy</h2>
-      </div>
-      <div class="panel" style="padding:6px 28px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:15px 0;border-bottom:1px solid var(--line);"><span class="muted" style="font-size:14px;">CAA Operator ID</span><span style="font-size:13px;font-weight:700;color:#1E7A46;">✓ Verified</span></div>
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:15px 0;border-bottom:1px solid var(--line);"><span class="muted" style="font-size:14px;">CAA Flyer ID</span><span style="font-size:13px;font-weight:700;color:#1E7A46;">✓ Verified</span></div>
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:15px 0;border-bottom:1px solid var(--line);"><span class="muted" style="font-size:14px;">Public liability insurance</span><span style="font-size:13px;font-weight:700;color:#1E7A46;">✓ Active</span></div>
-        <div class="trust-extra">
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:15px 0;border-bottom:1px solid var(--line);"><span class="muted" style="font-size:14px;">Coverage area</span><span style="font-size:13px;font-weight:700;color:#1E7A46;">✓ All of Sussex</span></div>
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:15px 0;"><span class="muted" style="font-size:14px;">Report delivery</span><span style="font-size:13px;font-weight:700;color:#1E7A46;">✓ Within 5 working days</span></div>
-        </div>
-      </div>
-      <div class="trust-toggle" onclick="this.parentElement.querySelector('.trust-extra').classList.toggle('open');this.textContent=this.parentElement.querySelector('.trust-extra').classList.contains('open')?'Show fewer credentials':'See all credentials';" style="display:none;text-align:center;margin-top:10px;color:var(--gold);font-size:12.5px;font-weight:600;cursor:pointer;">See all credentials</div>
-      <div style="text-align:center;margin-top:16px;"><span class="muted" style="font-size:12.5px;">Copies of insurance and licensing documents are available on request. <a href="mailto:info@roofscanuk.co.uk" class="textlink" style="font-size:12.5px;">Email us</a>.</span></div>
-    </div>
-  </section>
-
-  <section class="pad reveal sec-offer" style="background:var(--navy);">
-    <div class="wrap">
-      <div class="section-head">
-        <div class="eyebrow">What we offer</div>
-        <h2 class="section-title" style="color:var(--paper);">Services built for your situation</h2>
-      </div>
-      <div class="num-list">
-        <div class="num-row"><div class="idx">01</div><div><h3>Residential Inspections</h3><p>One-off inspections for homeowners across Sussex. Full report, photos, and ratings. No scaffolding, no disruption.</p></div><button class="go" onclick="go('book')">Get a quote →</button></div>
-        <div class="num-row"><div class="idx">02</div><div><h3>A Referral Partnership <span style="font-weight:600;color:var(--gold);font-size:0.7em;">— for businesses, not homeowners</span></h3><p>For estate agents, letting agents, block management, and solicitors. Your branch receives £50 for every referred report that is paid in full. No contract, no minimum.</p></div><button class="go" onclick="go('services')">Learn more →</button></div>
-        <div class="num-row"><div class="idx">03</div><div><h3>Surveyor & Lender Support</h3><p>Independent drone evidence to support a RICS survey or lending decision. Fast, unbiased, and attachable to your own paperwork.</p></div><button class="go" onclick="go('contact')">Get in touch →</button></div>
+  <!-- Who it's for -->
+  <section class="x-sec x-uses">
+    <div class="x-wrap">
+      <div class="x-head" data-x="up"><div class="x-eye">Who it's for</div><h2 class="x-h2">Whatever brought you here</h2></div>
+      <div class="x-cards">
+        <button class="x-card" data-x="up" onclick="go('book')"><span class="x-card-i"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg></span><h3>Homeowners</h3><p>A check-up on the roof you can't see. Catch small jobs before they become big ones.</p><span class="x-card-go">Get a price &rarr;</span></button>
+        <button class="x-card" data-x="up" style="--d:.08s" onclick="go('book')"><span class="x-card-i"><svg viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9"/><path d="M17 6l3 3"/><path d="M15 8l2 2"/></svg></span><h3>Buying a home</h3><p>See the roof properly before you exchange. Fast enough to fit your sale.</p><span class="x-card-go">Get a price &rarr;</span></button>
+        <a class="x-card" data-x="up" style="--d:.16s" href="storm.html"><span class="x-card-i"><svg viewBox="0 0 24 24"><path d="M7 17a4 4 0 010-8 5 5 0 019.6-1.5A4 4 0 1117 17"/><path d="M12 13l-2 4h4l-2 4"/></svg></span><h3>After a storm</h3><p>Check for lifted tiles and flashing without anyone climbing a wet roof.</p><span class="x-card-go">Storm checks &rarr;</span></a>
+        <button class="x-card" data-x="up" style="--d:.24s" onclick="go('book')"><span class="x-card-i"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg></span><h3>After roof work</h3><p>An independent look at the finished job. We don't do repairs, so we have nothing to sell you.</p><span class="x-card-go">Get a price &rarr;</span></button>
+        <button class="x-card" data-x="up" style="--d:.32s" onclick="go('services')"><span class="x-card-i"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="1"/><path d="M8 7h2M14 7h2M8 11h2M14 11h2M8 15h2M14 15h2"/><path d="M10 21v-3h4v3"/></svg></span><h3>Agents &amp; landlords</h3><p>Estate and letting agents, block managers and solicitors. Your branch earns £50 for each paid referral.</p><span class="x-card-go">Referral partnership &rarr;</span></button>
+        <button class="x-card" data-x="up" style="--d:.4s" onclick="go('contact')"><span class="x-card-i"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1"/><path d="M8.5 11h7M8.5 15h5"/></svg></span><h3>Surveyors &amp; lenders</h3><p>Independent drone evidence to sit alongside your own survey or lending paperwork.</p><span class="x-card-go">Get in touch &rarr;</span></button>
       </div>
     </div>
   </section>
 
-  <section class="cta-banner reveal">
-    <div class="wrap-b">
-      <h2>Ready to see what's happening on your roof?</h2>
-      <p>No scaffolding. No disruption. Full report within 5 working days, covering all of Sussex.</p>
-      <button class="btn" style="background:var(--gold);border-color:var(--gold);color:var(--navy);" onclick="go('book')">Book your inspection</button>
+  <!-- Trust -->
+  <section class="x-sec x-trust">
+    <div class="x-wrap x-trust-grid">
+      <div data-x="left">
+        <div class="x-eye">Why trust us</div>
+        <h2 class="x-h2">Licensed, insured and independent</h2>
+        <p class="x-p">We inspect and report. We don't carry out repairs, so our report has no reason to find work that isn't there. Copies of our insurance and licences are available on request. <a href="mailto:info@roofscanuk.co.uk" class="x-link">Email us</a>.</p>
+      </div>
+      <div class="x-creds">
+        <div class="x-cred" data-x="right"><span class="x-tick">&#10003;</span>CAA Operator ID<em>Verified</em></div>
+        <div class="x-cred" data-x="right" style="--d:.1s"><span class="x-tick">&#10003;</span>CAA Flyer ID<em>Verified</em></div>
+        <div class="x-cred" data-x="right" style="--d:.2s"><span class="x-tick">&#10003;</span>Public liability insurance<em>Active</em></div>
+        <div class="x-cred" data-x="right" style="--d:.3s"><span class="x-tick">&#10003;</span>Report delivery<em>5 working days</em></div>
+      </div>
     </div>
   </section>
+
+  <!-- Quick answers -->
+  <section class="x-sec x-faq">
+    <div class="x-wrap x-faq-grid">
+      <div data-x="left">
+        <div class="x-eye">Quick answers</div>
+        <h2 class="x-h2">Questions people ask before booking</h2>
+        <p class="x-p">Anything else, <a class="x-link" href="faq.html">see all FAQs</a> or call <a class="x-link" href="tel:07498364197">07498 364197</a>.</p>
+      </div>
+      <div class="x-acc">
+        <details data-x="up"><summary>How much does it cost?</summary><div>It depends on the size of your roof. Prices start from £180, and you see your exact price online before you book. A £50 deposit secures the date and comes off the total.</div></details>
+        <details data-x="up" style="--d:.05s"><summary>Do I need to be home?</summary><div>No. We fly from outside the property and nobody goes inside or onto the roof. You're welcome to be there if you'd like.</div></details>
+        <details data-x="up" style="--d:.1s"><summary>What if the weather is bad?</summary><div>We never fly in unsafe conditions. If your slot can't go ahead, we email you a link to pick a new time at no extra cost, and your deposit carries over.</div></details>
+        <details data-x="up" style="--d:.15s"><summary>How quickly do I get the report?</summary><div>Within 5 working days of the inspection, or within 24 hours with Express.</div></details>
+        <details data-x="up" style="--d:.2s"><summary>Is it legal and insured?</summary><div>Yes. Our pilots hold CAA Flyer IDs, we're registered with a CAA Operator ID, and we carry public liability insurance. Copies are available on request.</div></details>
+        <details data-x="up" style="--d:.25s"><summary>Can I move my booking?</summary><div>Yes, free of charge with at least 48 hours' notice, using the link in your booking email.</div></details>
+      </div>
+    </div>
+  </section>
+
+  <!-- Final call to action -->
+  <section class="x-cta-wrap">
+    <div class="x-wrap">
+      <div class="x-cta" data-x="zoom">
+        <div class="x-cta-glow" aria-hidden="true"></div>
+        <h2>Ready to see what's on your roof?</h2>
+        <p>Price online in a minute. Inspections from 72 hours' notice, or 48 hours with Express.</p>
+        <button class="x-btn" onclick="go('book')">Get your instant price <span class="x-btn-i">&rarr;</span></button>
+      </div>
+    </div>
+  </section>
+  <div class="x-progress" aria-hidden="true"><span></span></div>
+  <div class="x-sticky" id="x-sticky"><div><b>Drone roof inspection</b><span>Price online in a minute, from £180</span></div><button class="x-btn" onclick="go('book')">Get price <span class="x-btn-i">&rarr;</span></button></div>
 </div>
+
 
 <!-- ============ PRICING ============ -->
 <div id="page-pricing" class="page">
@@ -601,7 +945,7 @@ textarea{resize:vertical;}
           <h2>Residential Inspections</h2>
           <p class="body">A complete external roof inspection for your home, captured by drone and delivered as a full written report. Ideal if you've spotted a leak, lost tiles in a storm, are buying or selling, or simply want peace of mind before winter. No scaffolding or ladders needed, and most inspections take under an hour on site.</p>
           <div class="check-list" style="margin-bottom:20px;">
-            <div class="check-item"><span class="dash">—</span><span>Priced by your roof's measured area from £175</span></div>
+            <div class="check-item"><span class="dash">—</span><span>Priced by your roof's measured area from £180</span></div>
             <div class="check-item"><span class="dash">—</span><span>Full report with photos within 5 working days</span></div>
             <div class="check-item"><span class="dash">—</span><span>Condition ratings and Schedule of Works</span></div>
           </div>
@@ -1849,6 +2193,97 @@ async function lmRouteToAccount(email, token){
   document.getElementById('lm-notfound-msg').innerHTML = 'We couldn\'t find a homeowner or trade account for <strong>'+email+'</strong>.<br><br>Double check it\'s the exact email you used, or <a href="mailto:info@roofscanuk.co.uk" style="color:var(--navy);font-weight:600;">contact us</a> for help.<br><br>New here? <a href="#" onclick="closeLoginModal();go(\'book\');return false;" style="color:var(--navy);font-weight:600;">Book an inspection →</a>';
   lmShowStep('lm-step-notfound');
 }
+
+// ===================== Homepage motion (2026 redesign) =====================
+// Everything here is decoration: if it fails, the content is still visible (see the catch at the bottom).
+(function(){
+  try {
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // Headline: wrap each word so it can rise into place.
+    document.querySelectorAll('[data-split]').forEach(h => {
+      let i = 0;
+      const walk = node => [...node.childNodes].forEach(n => {
+        if (n.nodeType === 3) {
+          const frag = document.createDocumentFragment();
+          n.textContent.split(/(\s+)/).forEach(part => {
+            if (!part) return;
+            if (/^\s+$/.test(part)) { frag.appendChild(document.createTextNode(part)); return; }
+            const w = document.createElement('span'); w.className = 'w';
+            const inner = document.createElement('span'); inner.textContent = part; inner.style.setProperty('--i', i++);
+            w.appendChild(inner); frag.appendChild(w);
+          });
+          n.replaceWith(frag);
+        } else if (n.nodeType === 1) walk(n);
+      });
+      walk(h);
+      requestAnimationFrame(() => setTimeout(() => h.classList.add('in'), 60));
+    });
+    // Scroll-lit statement: split into words.
+    document.querySelectorAll('[data-lit]').forEach(p => {
+      const walk = node => [...node.childNodes].forEach(n => {
+        if (n.nodeType === 3) {
+          const frag = document.createDocumentFragment();
+          n.textContent.split(/(\s+)/).forEach(part => {
+            if (!part) return;
+            if (/^\s+$/.test(part)) frag.appendChild(document.createTextNode(part));
+            else { const s = document.createElement('span'); s.className = 'lw'; s.textContent = part; frag.appendChild(s); }
+          });
+          n.replaceWith(frag);
+        } else if (n.nodeType === 1) walk(n);
+      });
+      walk(p);
+    });
+    // Count-up numbers.
+    const countUp = el => {
+      if (el.dataset.done) return; el.dataset.done = 1;
+      const end = Number(el.dataset.count) || 0;
+      if (reduce || end === 0) { el.textContent = end; return; }
+      const t0 = performance.now(), dur = 1400;
+      const step = t => { const k = Math.min(1, (t - t0) / dur); el.textContent = Math.round(end * (1 - Math.pow(1 - k, 3))); if (k < 1) requestAnimationFrame(step); };
+      requestAnimationFrame(step);
+    };
+    // Reveal when scrolled into view.
+    const io = 'IntersectionObserver' in window ? new IntersectionObserver(entries => entries.forEach(e => {
+      if (!e.isIntersecting) return;
+      e.target.classList.add('in');
+      e.target.querySelectorAll && e.target.querySelectorAll('[data-count]').forEach(countUp);
+      if (e.target.dataset.count != null) countUp(e.target);
+      io.unobserve(e.target);
+    }), { threshold: 0.15, rootMargin: '0px 0px -6% 0px' }) : null;
+    const watch = document.querySelectorAll('[data-x], .x-doc-stack, .x-hero-art, .x-stat');
+    if (io && !reduce) watch.forEach(el => io.observe(el));
+    else { watch.forEach(el => el.classList.add('in')); document.querySelectorAll('[data-count]').forEach(countUp); }
+    // Scroll-linked effects: parallax, lit words, process line.
+    const par = [...document.querySelectorAll('[data-parallax]')];
+    const lit = [...document.querySelectorAll('[data-lit]')];
+    const line = document.querySelector('[data-line]');
+    const bar = document.querySelector('.x-progress span'), sticky = document.getElementById('x-sticky'), hero = document.querySelector('.x-hero');
+    let ticking = false;
+    const onScroll = () => {
+      ticking = false;
+      const vh = window.innerHeight, home = document.getElementById('page-home');
+      if (!home || !home.classList.contains('active')) return;
+      if (!reduce) par.forEach(el => { const r = el.getBoundingClientRect(); const c = r.top + r.height / 2 - vh / 2; el.style.translate = `0 ${(c * Number(el.dataset.parallax)).toFixed(1)}px`; });
+      lit.forEach(p => {
+        const r = p.getBoundingClientRect(); const words = p.querySelectorAll('.lw');
+        const prog = Math.max(0, Math.min(1, (vh * 0.9 - r.top) / (r.height + vh * 0.25)));
+        const n = Math.round(prog * words.length);
+        words.forEach((w, i) => w.classList.toggle('on', reduce || i < n));
+      });
+      const docH = document.documentElement.scrollHeight - vh;
+      if (bar) bar.style.width = (docH > 0 ? Math.min(100, scrollY / docH * 100) : 0).toFixed(1) + '%';
+      if (sticky && hero) sticky.classList.toggle('show', hero.getBoundingClientRect().bottom < 0 && (document.documentElement.scrollHeight - scrollY - vh) > 260);
+      if (line) { const r = line.getBoundingClientRect(); const prog = Math.max(0, Math.min(1, (vh * 0.8 - r.top) / (r.height * 0.9))); line.style.setProperty('--p', (prog * 100).toFixed(1) + '%'); const s = line.querySelector('.x-steps-line span'); if (s) s.style.width = (prog * 100).toFixed(1) + '%'; }
+    };
+    window.addEventListener('scroll', () => { if (!ticking) { ticking = true; requestAnimationFrame(onScroll); } }, { passive: true });
+    window.addEventListener('resize', onScroll);
+    window.addEventListener('hashchange', () => setTimeout(onScroll, 50));
+    onScroll();
+  } catch (e) {
+    document.querySelectorAll('[data-x]').forEach(el => el.classList.add('in'));
+    document.querySelectorAll('[data-split]').forEach(el => el.classList.add('in'));
+  }
+})();
 </script>
 
 <script>
