@@ -107,6 +107,7 @@ tr:last-child td{border-bottom:none;}
     <div class="cols">
       <div>
         <section><div class="lbl">Needs your attention</div><div id="needs"></div></section>
+        <section><div class="lbl"><span>Storm alerts</span><span id="storm-n" class="small"></span></div><div class="box pad" id="storm"><span class="muted small">Loading...</span></div></section>
         <section><div class="lbl"><span>Contractors</span><span id="ctrs-n"></span></div><div class="box" id="ctrs"></div></section>
         <section><div class="lbl"><span>Booking hours (Cal.com)</span><span id="cal-name" class="small"></span></div><div class="box pad" id="cal"><span class="muted small">Loading...</span></div></section>
         <section><div class="lbl">Time off (Cal.com out of office)</div><div class="box pad" id="ooo"><span class="muted small">Loading...</span></div></section>
@@ -173,7 +174,7 @@ async function load(){
   if(!localStorage.getItem(TK)){showLogin();return;}
   const r=await api('/owner/overview');if(!r.ok){if(r.status!==401)showLogin('Could not load. Try again.');return;}
   data=r.data;$('login').style.display='none';$('app').style.display='block';
-  loadCap();loadHome();loadCovMap();loadSeats();loadReviews();loadSuggestions();loadCal();loadOoo();
+  loadCap();loadHome();loadCovMap();loadStorm();loadSeats();loadReviews();loadSuggestions();loadCal();loadOoo();
   const c=data.counts;
   $('stats').innerHTML=[['Scans open',c.scansOpen],['Reports open',c.reportsOpen],['Scans claimed',c.scansClaimed],['Reports claimed',c.reportsClaimed]].map(x=>`<div class="metric"><div class="n">${x[1]}</div><div class="t">${x[0]}</div></div>`).join('');
   $('needs').innerHTML=data.needsYou.length?data.needsYou.map(n=>`<div class="attn"><b>${esc(n.name)}</b><ul>${n.needs.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`).join(''):'<div class="box empty">Nothing needs your attention.</div>';
@@ -206,7 +207,7 @@ async function load(){
       return `<span class="when">${esc(when)}</span><span>${esc(rest)}</span>`;
     }).join('')+'</div>';
   };
-  $('stood').innerHTML=jl(data.standDowns,j=>`<div class="item"><div class="ch"><span class="name">${jobName(j)}</span><span class="chip warn">Stood down</span></div>${kv([['Job date',esc(j.date)],['Property',esc(j.address)]])}${fmtLog(j.reason)}</div>`);
+  $('stood').innerHTML=jl(data.standDowns,j=>`<div class="item"><div class="ch"><span class="name">${jobName(j)}</span><span class="chip warn">Stood down</span></div>${kv([['Job date',esc(j.date)],['Property',esc(j.address)]])}${fmtLog(j.reason)}${j.weatherCheck?`<div class="small muted" style="margin-top:6px;white-space:pre-wrap;"><b>Weather checks before the job:</b>\n${esc(j.weatherCheck)}</div>`:'<div class="small muted" style="margin-top:6px;">No weather check was logged before this job.</div>'}</div>`);
   $('missed').innerHTML=jl(data.misses,j=>`<div class="item"><div class="ch"><span class="name">${jobName(j)}</span><span class="chip bad">Missed</span></div>${kv([['Job date',esc(j.date)],['Scan missed by',esc(j.scanBy)],['Report missed by',esc(j.reportBy)]])}</div>`);
 }
 let reviewList=[];
@@ -402,6 +403,37 @@ async function loadCovMap(){
   setTimeout(()=>covMap.invalidateSize(),50);
   const live=d.flyers.filter(f=>f.live).length, wanted=d.demand.reduce((n,x)=>n+x.checks,0);
   $('covkey').innerHTML=`<span style="color:#1B7F4B;">&#9679;</span> ${live} flyer${live===1?'':'s'} taking jobs &nbsp; <span style="color:#8A94A0;">&#9679;</span> not taking jobs &nbsp; <span style="color:#1B4F8A;">- - -</span> home area &nbsp; <span style="color:#F29A2E;">&#9679;</span> ${wanted} out-of-area quote attempt${wanted===1?'':'s'}. Flyers with no base postcode are not shown.`;
+}
+// Storm alerts: Met Office wind warnings in regions RoofScan covers, checked every hour. Send the storm email once it has passed.
+async function loadStorm(){
+  const el=$('storm'); const r=await api('/owner/storm');
+  if(!r.ok){ el.innerHTML='<span class="muted small">Could not load storm alerts.</span>'; return; }
+  const d=r.data, ls=d.lastScan;
+  const last=ls?`Last checked ${new Date(ls.at).toLocaleString('en-GB',{weekday:'short',hour:'2-digit',minute:'2-digit'})} (${ls.regions.length} region${ls.regions.length===1?'':'s'})${ls.errors&&ls.errors.length?`. <span style="color:var(--bad);">Feed problem: ${esc(ls.errors[0])}</span>`:''}`:'Not checked yet.';
+  const promo=d.promoUntil&&Date.parse(d.promoUntil)>Date.now()?`<div class="small" style="margin-bottom:8px;">Storm offer showing on the website until ${new Date(d.promoUntil).toLocaleDateString('en-GB',{day:'numeric',month:'short'})}.</div>`:'';
+  $('storm-n').textContent=d.alerts.length?d.alerts.length+' new':'';
+  const items=d.alerts.map(a=>{
+    const col=a.level==='red'?'var(--bad)':(a.level==='amber'?'#C86B00':'#9A7B00');
+    const who=a.clients==null?'Could not count past clients.':`${a.clients} past client${a.clients===1?'':'s'} in this region${a.sent?`, ${a.sent} already emailed`:''}.`;
+    const left=(a.clients||0)-(a.sent||0);
+    return `<div style="border-left:4px solid ${col};padding:6px 10px;margin:8px 0;background:#FAFBFC;">
+      <div><b style="color:${col};text-transform:capitalize;">${esc(a.level||'Wind')}</b> ${esc(a.title)}</div>
+      <div class="small muted">${esc(a.regionName)} · ${esc(String(a.issued).slice(0,22))}${a.link?` · <a href="${esc(a.link)}" target="_blank" rel="noopener">Met Office</a>`:''}</div>
+      <div class="small" style="margin:4px 0;">${who}</div>
+      <div>${left>0?`<button class="btn" onclick="stormSend('${a.id}',${left})" ${d.emailReady?'':'disabled title="Storm email Zap not connected yet"'}>Email ${left} client${left===1?'':'s'}</button>`:''}
+      <button class="btn text" onclick="stormDismiss('${a.id}')">Dismiss</button></div></div>`;}).join('');
+  el.innerHTML=promo+(items||'<div class="small muted">No wind warnings in your areas.</div>')+
+    `<div class="small muted" style="margin-top:8px;">${last} <button class="btn text" onclick="stormScan()">Check now</button></div>`+
+    `<div class="small muted">Send once the storm has passed, so the email lands when people are checking their roofs.${d.emailReady?'':' The client email Zap is not connected yet.'}</div>`;
+}
+async function stormScan(){ const r=await api('/owner/storm-scan','POST'); if(!r.ok) alert('Could not check the Met Office feed.'); else if(r.data.errors&&r.data.errors.length) alert('Feed problem: '+r.data.errors.join(', ')); loadStorm(); }
+async function stormDismiss(id){ await api('/owner/storm-dismiss','POST',{id}); loadStorm(); }
+async function stormSend(id,n){
+  if(!confirm(`Send the storm email to ${n} past client${n===1?'':'s'} in this region? Each person gets it once. Anyone who unsubscribed is left out.`)) return;
+  const r=await api('/owner/storm-send','POST',{id});
+  if(!r.ok){ alert((r.data&&r.data.error)||'Could not send.'); return; }
+  alert(`Sent ${r.data.sentNow}.`+(r.data.left?` ${r.data.left} left: press the button again to send the next batch.`:''));
+  loadStorm();
 }
 // Inspections at the same time = flyers able to take jobs. Synced to Cal.com "seats" automatically when flyers change.
 async function loadSeats(){

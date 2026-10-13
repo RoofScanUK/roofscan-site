@@ -420,7 +420,8 @@ function scanPanel(j){
   const ready = canMarkScan(j.id);
   const blocked = st.weather==='red' || st.airspace==='red';
   return `<div style="margin-top:12px;border-top:1px solid var(--br);padding-top:10px;"><div class="jt" style="font-size:13px;">Scan checklist <a href="photo-guide.html" target="_blank" rel="noopener" style="font-weight:400;font-size:12px;margin-left:8px;color:var(--muted);">What to photograph</a></div>
-  <div class="acts" style="margin-top:6px;"><button class="btn ghost" onclick="runChecks('${j.id}')">${st.weather?'Re-check':'Check'} weather and airspace</button></div>
+  ${needsCheck(j, st) ? `<div class="banner b-amber" style="margin:8px 0;"><b>Check the weather before you leave home.</b> If the check says no-go, stand down from home. Standing down pays nothing for the job, including mileage, so do not travel without checking.</div>` : ''}
+  <div class="acts" style="margin-top:6px;"><button class="btn ${needsCheck(j, st)?'':'ghost'}" onclick="runChecks('${j.id}')">Check weather before you leave</button>${st.checkedAt?`<span class="muted" style="font-size:12px;align-self:center;">Last checked ${new Date(st.checkedAt).toLocaleString('en-GB',{weekday:'short',hour:'2-digit',minute:'2-digit'})}</span>`:''}</div>
   ${w}${a}${locked('weather')}${locked('airspace')}${manual}
   <div class="acts" style="margin-top:8px;align-items:center;">
     <button class="btn ${st.checkin?'ghost':''}" id="ci-${j.id}" onclick="checkIn('${j.id}')">${st.checkin?'Check in again':'I\'m on site'}</button>
@@ -431,7 +432,8 @@ function scanPanel(j){
   <div class="acts">
     <button class="btn" id="scanbtn-${j.id}" ${ready?'':'disabled'} onclick="completeScan('${j.id}')">Mark scan done</button>
     ${blocked?`<button class="btn warn" onclick="standDown('${j.id}')">Unsafe to fly. Stand down</button>`:`<button class="btn ghost" onclick="standDown('${j.id}')">Stand down (unsafe)</button>`}
-  </div></div>`;
+  </div>
+  <div class="muted" style="font-size:11.5px;margin-top:6px;">Standing down is never a miss, but it pays nothing for the job, including mileage or fuel. Check the weather before you set off.</div></div>`;
 }
 function setManual(id, k, v){ const c = get(LS.checks, {}); c[id] = c[id] || {}; c[id][k] = v; put(LS.checks, c); render(); }
 // A link must be a full https:// address (no spaces). The server checks it again.
@@ -609,8 +611,16 @@ function completeScan(id){
   act({type:'complete', jobId:id, kind:'scan', link:st.link});
 }
 function completeReport(id){ const st = get(LS.checks, {})[id] || {}; act({type:'complete', jobId:id, kind:'report', link:st.rlink}); }
+// The pre-departure check is due once the job is within 24 hours and there has been no check in the last 6 hours.
+function needsCheck(j, st){
+  const t = j.start ? Date.parse(j.start) : Date.parse((j.date||'').slice(0,10) + 'T09:00:00Z');
+  if (isNaN(t)) return false;
+  const until = t - Date.now();
+  return until < 24*3600e3 && until > -3*3600e3 && !(st.checkedAt && Date.now() - st.checkedAt < 6*3600e3);
+}
 function standDown(id){
   const st = get(LS.checks, {})[id] || {};
+  if (!confirm('Stand down this scan?\n\nIt goes back on the board for someone else. It is not counted as a miss, but there is no pay for this job, including mileage.')) return;
   const reason = st.weatherMsg && st.weather === 'red' ? st.weatherMsg : (st.airspaceMsg && st.airspace === 'red' ? st.airspaceMsg : (prompt('What makes it unsafe? (this goes to RoofScan, no penalty)') || 'Unsafe to fly'));
   act({type:'standdown', jobId:id, kind:'scan', reason});
 }
@@ -619,6 +629,8 @@ function standDown(id){
 const AERO = [['Gatwick Airport',51.1481,-0.1903],['Heathrow Airport',51.47,-0.4543],['Shoreham (Brighton City) Airport',50.8356,-0.2971],['Southampton Airport',50.9503,-1.3568],['Farnborough Airport',51.2757,-0.7764],['Biggin Hill Airport',51.3308,0.0325],['London City Airport',51.5053,0.0553],['Redhill Aerodrome',51.2064,-0.1467],['Goodwood Aerodrome',50.8564,-0.7589],['Lydd Airport',50.9558,0.9391],['Manston (Kent International) Airport',51.3444,1.3489],['Dunsfold Aerodrome',51.115,-0.5397],['Blackbushe Airport',51.3237,-0.8478],['Stansted Airport',51.886,0.2389],['Luton Airport',51.8747,-0.3683]];
 function km(a,b,c,d){ const R=6371,r=Math.PI/180,dl=(c-a)*r,dn=(d-b)*r,x=Math.sin(dl/2)**2+Math.cos(a*r)*Math.cos(c*r)*Math.sin(dn/2)**2; return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x)); }
 async function geocode(address){
+  const pc = (String(address||'').toUpperCase().match(/\b[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}\b/) || [])[0];
+  if (pc) { try { const r = await fetch('https://api.postcodes.io/postcodes/'+encodeURIComponent(pc.replace(/\s/g,''))); const d = await r.json(); if (d.result) return { lat:d.result.latitude, lon:d.result.longitude }; } catch(e) {} }
   const parts = String(address||'').split(','); const town = (parts.length>1 ? parts[parts.length-2] : parts[0]).trim();
   const r = await fetch('https://geocoding-api.open-meteo.com/v1/search?name='+encodeURIComponent(town)+'&count=1&country=GB'); const d = await r.json();
   if(!d.results || !d.results[0]) return { lat:50.8225, lon:-0.1372, guessed:true };
@@ -636,21 +648,28 @@ async function runChecks(id){
     else if (near.d <= 8) { c[id].airspace='amber'; c[id].airspaceMsg = `Close to ${near.n} (${d1} km). Check the NATS UAS Restrictions Map or DJI geo-zone layer before flying. Contact RoofScan to confirm.`; }
     else { c[id].airspace='ok'; c[id].airspaceMsg = `Nearest listed aerodrome is ${near.n}, ${d1} km away. Still check the DJI Fly geo-zone map on site.`; }
     // weather: next hours on the job date, judged against this drone's limit
-    const date = (j.date||'').slice(0,10) || new Date().toISOString().slice(0,10);
+    // With a booked start time, judge the hour before to two hours after it. Without one, judge daylight hours 07:00 to 19:00.
+    const st0 = j.start ? new Date(j.start) : null, hasStart = st0 && !isNaN(st0);
+    const date = hasStart ? st0.toLocaleDateString('en-CA',{timeZone:'Europe/London'}) : ((j.date||'').slice(0,10) || new Date().toISOString().slice(0,10));
+    const sh = hasStart ? Number(st0.toLocaleString('en-GB',{hour:'2-digit',hour12:false,timeZone:'Europe/London'})) % 24 : null;
+    const lo = hasStart ? sh - 1 : 7, hi = hasStart ? sh + 2 : 19;
     const wr = await fetch('https://api.open-meteo.com/v1/forecast?latitude='+pos.lat+'&longitude='+pos.lon+'&hourly=wind_speed_10m,wind_gusts_10m,precipitation_probability,visibility&timezone=Europe/London&start_date='+date+'&end_date='+date);
     const w = await wr.json(); const h = w.hourly; if(!h) throw new Error('no weather');
-    const nowH = new Date().getHours(), todayStr = new Date().toISOString().slice(0,10);
+    const nowH = Number(new Date().toLocaleString('en-GB',{hour:'2-digit',hour12:false,timeZone:'Europe/London'})) % 24, todayStr = new Date().toLocaleDateString('en-CA',{timeZone:'Europe/London'});
     let worst = { wind:0, gust:0, rain:0, vis:99999 }, n = 0;
-    h.time.forEach((t,i) => { const hr = new Date(t).getHours(); if (hr < 7 || hr > 19) return; if (date === todayStr && hr < nowH) return; n++;
+    h.time.forEach((t,i) => { const hr = Number(String(t).slice(11,13)); if (hr < lo || hr > hi) return; if (date === todayStr && hr < nowH && !hasStart) return; n++;
       worst.wind = Math.max(worst.wind, h.wind_speed_10m[i]/3.6); worst.gust = Math.max(worst.gust, h.wind_gusts_10m[i]/3.6); worst.rain = Math.max(worst.rain, h.precipitation_probability[i]); worst.vis = Math.min(worst.vis, h.visibility[i]); });
     const limit = board.me.windLimit || 10; // falls back to 10 m/s if no drone rating on file
     const ws = Math.round(worst.wind*10)/10, gs = Math.round(worst.gust*10)/10;
-    if (!n) { c[id].weather='amber'; c[id].weatherMsg='No remaining flying hours today. Check the forecast for the job date.'; }
-    else if (gs > limit || worst.rain > 50 || worst.vis < 3000) { c[id].weather='red'; c[id].weatherMsg = `Unsafe to fly: gusts up to ${gs} m/s against your ${limit} m/s limit, ${worst.rain}% rain chance. You can stand down with no penalty.`; }
-    else if (ws > limit*0.85 || gs > limit*0.9 || worst.rain > 20 || worst.vis < 8000) { c[id].weather='amber'; c[id].weatherMsg = `Marginal: wind ${ws} m/s, gusts ${gs} m/s (your limit ${limit}), ${worst.rain}% rain. Re-check before you fly.`; }
-    else { c[id].weather='ok'; c[id].weatherMsg = `Good to fly: wind ${ws} m/s, gusts ${gs} m/s (your limit ${limit}), ${worst.rain}% rain chance.`; }
+    const when = hasStart ? `around your ${String(sh).padStart(2,'0')}:00 start` : 'during the day';
+    if (!n) { c[id].weather='amber'; c[id].weatherMsg='No forecast hours left for this job. Check again on the day.'; }
+    else if (gs > limit || worst.rain > 50 || worst.vis < 3000) { c[id].weather='red'; c[id].weatherMsg = `No-go ${when}: gusts up to ${gs} m/s against your ${limit} m/s limit, ${worst.rain}% rain chance. Do not travel. Stand down from here (no penalty).`; }
+    else if (ws > limit*0.85 || gs > limit*0.9 || worst.rain > 20 || worst.vis < 8000) { c[id].weather='amber'; c[id].weatherMsg = `Marginal ${when}: wind ${ws} m/s, gusts ${gs} m/s (your limit ${limit}), ${worst.rain}% rain. Only set off if you are happy to fly in this. Check again just before leaving.`; }
+    else { c[id].weather='ok'; c[id].weatherMsg = `Good to fly ${when}: wind ${ws} m/s, gusts ${gs} m/s (your limit ${limit}), ${worst.rain}% rain chance.`; }
     c[id].checkedAt = Date.now();
     put(LS.checks, c); render();
+    // Logged on the job so RoofScan can see what the forecast said when you checked.
+    api('/contractor/weather-check', 'POST', { jobId:id, verdict: c[id].weather === 'ok' ? 'GO' : (c[id].weather === 'red' ? 'NO-GO' : 'MARGINAL'), summary: c[id].weatherMsg }).catch(() => {});
   } catch(e){ notice('Could not run the checks just now. They stay locked until they succeed.', 'amber'); }
 }
 

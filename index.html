@@ -420,6 +420,8 @@ textarea{resize:vertical;}
 
 <!-- ============ HOME ============ -->
 <div id="page-home" class="page active">
+  <!-- Storm banner: shown only while a storm offer is running (switched on from the owner dashboard). -->
+  <a id="storm-banner" href="storm.html" style="display:none;background:#1C2B4A;color:#fff;text-align:center;padding:12px 16px;font-size:14px;font-weight:600;text-decoration:none;">Storm in your area? We can check your whole roof by drone, no ladders. <span style="color:#C9A84C;text-decoration:underline;">See how</span></a>
   <section class="hero">
     <div class="wrap hero-grid">
       <div>
@@ -1849,5 +1851,8 @@ async function lmRouteToAccount(email, token){
 }
 </script>
 
+<script>
+fetch('https://roofscan-api.tiny-voice-ac40.workers.dev/storm-status').then(r=>r.json()).then(d=>{ if(d&&d.active){ var e=document.getElementById('storm-banner'); if(e) e.style.display='block'; } }).catch(function(){});
+</script>
 </body>
 </html>
