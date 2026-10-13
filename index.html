@@ -1547,7 +1547,8 @@ async function loadSlots(){
   const {start, end} = windowDates(weekOffset);
   try{
     const exp = document.getElementById('express-opt') && document.getElementById('express-opt').checked;
-    const res = await fetch(`${LM_API_BASE}/available-slots?start=${encodeURIComponent(start.toISOString())}&end=${encodeURIComponent(end.toISOString())}${exp?'&express=1':''}`);
+    const pcq = postcodeInfo && postcodeInfo.postcode ? '&postcode='+encodeURIComponent(postcodeInfo.postcode) : '';   // only times a nearby flyer is free
+    const res = await fetch(`${LM_API_BASE}/available-slots?start=${encodeURIComponent(start.toISOString())}&end=${encodeURIComponent(end.toISOString())}${exp?'&express=1':''}${pcq}`);
     const data = await res.json();
     renderSlots(data.slots || {}, start, end);
   }catch(e){

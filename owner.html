@@ -117,6 +117,7 @@ tr:last-child td{border-bottom:none;}
         <section><div class="lbl">Coverage map</div><div class="box pad">
           <div id="covmap" style="height:380px;border-radius:6px;overflow:hidden;background:#EEF1F4;"></div>
           <div class="muted small" id="covkey" style="margin-top:8px;line-height:1.7;"></div>
+          <div class="muted small" id="seatsline" style="margin-top:6px;line-height:1.7;"></div>
         </div></section>
         <section><div class="lbl"><span>Reports waiting for approval</span><span id="rev-n"></span></div><div class="box" id="reviews"><div class="empty">Loading...</div></div></section>
         <section><div class="lbl"><span>Suggestions from contractors</span><span id="sug-n"></span></div><div class="box" id="suggest"><div class="empty">Loading...</div></div></section>
@@ -172,7 +173,7 @@ async function load(){
   if(!localStorage.getItem(TK)){showLogin();return;}
   const r=await api('/owner/overview');if(!r.ok){if(r.status!==401)showLogin('Could not load. Try again.');return;}
   data=r.data;$('login').style.display='none';$('app').style.display='block';
-  loadCap();loadHome();loadCovMap();loadReviews();loadSuggestions();loadCal();loadOoo();
+  loadCap();loadHome();loadCovMap();loadSeats();loadReviews();loadSuggestions();loadCal();loadOoo();
   const c=data.counts;
   $('stats').innerHTML=[['Scans open',c.scansOpen],['Reports open',c.reportsOpen],['Scans claimed',c.scansClaimed],['Reports claimed',c.reportsClaimed]].map(x=>`<div class="metric"><div class="n">${x[1]}</div><div class="t">${x[0]}</div></div>`).join('');
   $('needs').innerHTML=data.needsYou.length?data.needsYou.map(n=>`<div class="attn"><b>${esc(n.name)}</b><ul>${n.needs.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`).join(''):'<div class="box empty">Nothing needs your attention.</div>';
@@ -391,6 +392,13 @@ async function loadCovMap(){
   const live=d.flyers.filter(f=>f.live).length, wanted=d.demand.reduce((n,x)=>n+x.checks,0);
   $('covkey').innerHTML=`<span style="color:#1B7F4B;">&#9679;</span> ${live} flyer${live===1?'':'s'} taking jobs &nbsp; <span style="color:#8A94A0;">&#9679;</span> not taking jobs &nbsp; <span style="color:#1B4F8A;">- - -</span> home area &nbsp; <span style="color:#F29A2E;">&#9679;</span> ${wanted} out-of-area quote attempt${wanted===1?'':'s'}. Flyers with no base postcode are not shown.`;
 }
+// Inspections at the same time = flyers able to take jobs. Synced to Cal.com "seats" automatically when flyers change.
+async function loadSeats(){
+  const r=await api('/owner/cal-seats'); const el=$('seatsline'); if(!el) return;
+  if(!r.ok){ el.textContent=''; return; }
+  el.innerHTML=`Inspections that can be booked at the same time: <b>${r.data.seats}</b> (one per flyer taking jobs${r.data.flyers!==r.data.seats&&r.data.flyers>1?', Cal.com not yet updated':''}). <button class="btn text" onclick="syncSeats()">Sync with Cal.com</button>`;
+}
+async function syncSeats(){ const r=await api('/owner/cal-seats','POST'); if(!r.ok||r.data.ok===false){ alert((r.data&&r.data.error)||'Could not update Cal.com.'); } loadSeats(); }
 async function saveHome(){const v=Number($('homeIn').value);const r=await api('/owner/home-area','POST',{range:v});if(!r.ok){alert(r.data.error||'Could not save.');return;}loadHome();loadCovMap();}
 async function loadCap(){
   const r=await api('/owner/capacity');
@@ -403,7 +411,9 @@ async function loadCap(){
 }
 async function saveCap(){const v=$('capIn').value.trim();if(v===''||!/^\d+$/.test(v)){alert('Enter a whole number, for example 10.');return;}const r=await api('/owner/capacity','POST',{override:Number(v)});if(!r.ok){alert(r.data.error||'Could not save.');return;}loadCap();}
 async function clearCap(){const r=await api('/owner/capacity','POST',{override:null});if(!r.ok){alert(r.data.error||'Could not save.');return;}loadCap();}
-async function upd(id,change){const r=await api('/owner/contractor','POST',Object.assign({id},change));if(!r.ok){alert(r.data.error||'Could not save.');return;}load();}
+async function upd(id,change){const r=await api('/owner/contractor','POST',Object.assign({id},change));if(!r.ok){alert(r.data.error||'Could not save.');return;}
+  if(r.data.seats&&r.data.seats.ok===false) alert('Saved, but Cal.com could not be updated with the number of flyers: '+r.data.seats.error);
+  load();}
 $('email').addEventListener('keydown',e=>{if(e.key==='Enter')sendCode();});
 $('otp').addEventListener('keydown',e=>{if(e.key==='Enter')verifyCode();});
 load();
