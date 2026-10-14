@@ -108,6 +108,7 @@ tr:last-child td{border-bottom:none;}
     <div class="metrics" id="stats"></div>
     <div class="cols">
       <div>
+        <section><div class="lbl"><span>Trade accounts: monthly invoicing</span><span class="small"><input type="month" id="tm-month" class="dt" onchange="loadTradeMonth()" aria-label="Month to show"></span></div><div class="box pad" id="trade-month"><span class="muted small">Loading…</span></div></section>
         <section><div class="lbl"><span>System health</span><span id="health-n" class="small"></span></div><div class="box pad" id="health"><span class="muted small">Checking…</span></div></section>
         <section><div class="lbl">Needs your attention</div><div id="needs"></div></section>
         <section><div class="lbl"><span>Booking changes</span><span id="sched-n" class="small"></span></div><div class="box pad" id="sched"><span class="muted small">Loading…</span></div></section>
@@ -178,7 +179,7 @@ async function load(){
   if(!localStorage.getItem(TK)){showLogin();return;}
   const r=await api('/owner/overview');if(!r.ok){if(r.status!==401)showLogin('Could not load. Try again.');return;}
   data=r.data;$('login').style.display='none';$('app').style.display='block';
-  loadCap();loadHome();loadCovMap();loadStorm();loadSched();loadHealth();loadSeats();loadReviews();loadSuggestions();loadCal();loadOoo();
+  loadCap();loadHome();loadTradeMonth();loadCovMap();loadStorm();loadSched();loadHealth();loadSeats();loadReviews();loadSuggestions();loadCal();loadOoo();
   const c=data.counts;
   $('stats').innerHTML=[['Scans open',c.scansOpen],['Reports open',c.reportsOpen],['Scans claimed',c.scansClaimed],['Reports claimed',c.reportsClaimed]].map(x=>`<div class="metric"><div class="n">${x[1]}</div><div class="t">${x[0]}</div></div>`).join('');
   $('needs').innerHTML=data.needsYou.length?data.needsYou.map(n=>`<div class="attn"><b>${esc(n.name)}</b><ul>${n.needs.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`).join(''):'<div class="box empty">Nothing needs your attention.</div>';
@@ -493,6 +494,28 @@ async function upd(id,change){const r=await api('/owner/contractor','POST',Objec
 $('email').addEventListener('keydown',e=>{if(e.key==='Enter')sendCode();});
 $('otp').addEventListener('keydown',e=>{if(e.key==='Enter')verifyCode();});
 load();
+
+// Trade accounts: what each business has booked this month, ready to invoice at month end.
+let tmData=null;
+async function loadTradeMonth(){
+  const box=$('trade-month'), inp=$('tm-month');
+  if(!inp.value){const d=new Date();inp.value=d.toISOString().slice(0,7);}
+  const r=await api('/owner/trade-month?month='+encodeURIComponent(inp.value));
+  if(!r.ok){box.innerHTML='<span class="muted small">Could not load trade jobs.</span>';return;}
+  tmData=r.data;
+  if(!r.data.accounts.length){box.innerHTML='<span class="muted small">No trade jobs this month.</span>';return;}
+  box.innerHTML=r.data.accounts.map((a,i)=>`<div class="item"><div class="ch"><span class="name">${esc(a.company)}</span><span class="chip">${a.jobs.length} job${a.jobs.length===1?'':'s'} &middot; &pound;${a.total.toLocaleString('en-GB')}${a.unpriced?` + ${a.unpriced} to quote`:''}</span></div>
+    <div class="muted small" style="margin:6px 0 8px;">${esc(a.email)}</div>
+    <button class="btn sec" onclick="tmCsv(${i})">Download invoice lines (CSV)</button></div>`).join('');
+}
+function tmCsv(i){
+  const a=tmData.accounts[i];
+  const q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
+  const rows=[['Date','Site address','Your reference','Roof size','Thermal','Next-day report','Status','Price (GBP)']].concat(a.jobs.map(j=>[j.date,j.address,j.ref,j.band,j.thermal?'Yes':'No',j.nextDay?'Yes':'No',j.stage,j.price==null?'To quote':j.price]));
+  rows.push(['','','','','','','Total',a.total]);
+  const blob=new Blob([rows.map(r=>r.map(q).join(',')).join('\n')],{type:'text/csv'});
+  const link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download=`RoofScan-${a.company.replace(/[^a-z0-9]+/gi,'-')}-${tmData.month}.csv`;link.click();
+}
 </script>
 </body>
 </html>

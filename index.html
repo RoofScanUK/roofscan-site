@@ -943,6 +943,12 @@ section[id],#how-it-works{scroll-margin-top:88px;}
 .x-shot figcaption{position:absolute;left:12px;right:12px;bottom:12px;padding:11px 14px;border-radius:14px;background:rgba(17,28,51,.78);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#fff;font-size:13.5px;line-height:1.45;}
 @media (max-width:900px){ .x-shots-head{grid-template-columns:1fr;gap:12px;} .x-shot-a,.x-shot-b,.x-shot-c,.x-shot-d{grid-column:span 12;} .x-shot img{min-height:220px;max-height:300px;} .x-shots{padding-bottom:90px;} .x-shot figcaption{font-size:12.5px;padding:9px 12px;left:10px;right:10px;bottom:10px;} }
 @media (prefers-reduced-motion:reduce){ .x-shot img,.form-err{transition:none;animation:none;} .x-shot:hover img{transform:none;} }
+  .sv-grid{display:grid;gap:8px;margin:0 0 14px;}
+  .sv-opt{display:flex;gap:12px;align-items:flex-start;padding:13px 15px;border:1px solid var(--line);border-radius:10px;background:var(--paper);cursor:pointer;font-size:14px;line-height:1.45;}
+  .sv-opt input{width:18px;height:18px;margin-top:2px;flex:none;accent-color:var(--ink,#1a1a1a);}
+  .sv-opt:has(input:checked){border-color:var(--ink,#1a1a1a);box-shadow:0 0 0 1px var(--ink,#1a1a1a);}
+  .sv-opt em{font-style:normal;font-weight:500;color:var(--muted,#6b6b6b);font-size:13px;margin-left:4px;}
+  .sv-sub{display:block;color:var(--muted,#6b6b6b);font-size:12.5px;margin-top:2px;}
 </style>
 </head>
 <body>
@@ -1510,16 +1516,25 @@ section[id],#how-it-works{scroll-margin-top:88px;}
 
         <div id="book-step-5" style="display:none;">
           <h2 style="font-size:1.15rem;margin:0 0 6px;">Your inspection price</h2>
-          <p class="muted" style="font-size:13px;margin:0 0 22px;line-height:1.6;">Here's your full breakdown. Ready to book whenever you are.</p>
+          <p class="muted" style="font-size:13px;margin:0 0 16px;line-height:1.6;">Pick what you need. Here's your full breakdown.</p>
+          <div class="sv-grid" role="radiogroup" aria-label="Survey type">
+            <label class="sv-opt"><input type="radio" name="survey" value="visual" checked onchange="onSurveyChange()"><span><strong>Roof report</strong><span class="sv-sub">Close-up photos of every part of the roof, condition ratings and a written report.</span></span></label>
+            <label class="sv-opt"><input type="radio" name="survey" value="thermal" onchange="onSurveyChange()"><span><strong>Thermal leak scan <em>+£100</em></strong><span class="sv-sub">For a damp patch or leak you can't trace. A heat map showing where water may be getting in. Flown after dark, no photo report.</span></span></label>
+            <label class="sv-opt"><input type="radio" name="survey" value="both" onchange="onSurveyChange()"><span><strong>Report + thermal <em>+£175</em></strong><span class="sv-sub">The full roof report plus the thermal scan, in one evening visit: photos in the last daylight, thermal once it's dark.</span></span></label>
+          </div>
           <div class="total-card">
             <div class="label">Total</div>
             <div class="amt" id="total-amt">£0</div>
             <div id="total-lines"></div>
-            <div style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(251,250,247,.12);color:rgba(251,250,247,.5);font-size:12px;line-height:1.7;">Drone survey · full written report · photos · condition ratings · Schedule of Works · <span id="delivery-line">5-day delivery</span> · fully insured</div>
+            <div id="sv-includes" style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(251,250,247,.12);color:rgba(251,250,247,.5);font-size:12px;line-height:1.7;">Drone survey · full written report · photos · condition ratings · Schedule of Works · <span id="delivery-line">5-day delivery</span> · fully insured</div>
           </div>
           <label style="display:flex;gap:12px;align-items:flex-start;margin-top:14px;padding:14px 16px;border:1px solid var(--line);border-radius:10px;background:var(--paper);cursor:pointer;">
             <input type="checkbox" id="express-opt" onchange="selectedSlot=null;renderPrice();if(step6Inited)loadSlots();" style="width:20px;height:20px;margin-top:2px;flex:none;">
             <span style="font-size:14px;line-height:1.5;"><strong>Express, +£99</strong><br><span class="muted" style="font-size:13px;">Book from 48 hours ahead instead of 72, and get your report within 24 hours of the inspection instead of 5 working days. Handy for house sales and insurance deadlines.</span></span>
+          </label>
+          <label id="anytime-wrap" style="display:flex;gap:12px;align-items:flex-start;margin-top:10px;padding:14px 16px;border:1px solid var(--line);border-radius:10px;background:var(--paper);cursor:pointer;">
+            <input type="checkbox" id="anytime-opt" onchange="selectedSlot=null;renderPrice();applyAnytime();" style="width:20px;height:20px;margin-top:2px;flex:none;">
+            <span style="font-size:14px;line-height:1.5;"><strong>Any time, save £20</strong><br><span class="muted" style="font-size:13px;">Let our pilot pick a time in the next 5 working days. We'll email you the exact date and time at least 24 hours before. Nobody needs to be home.</span></span>
           </label>
           <div id="exact-price-offer" style="display:none;margin-top:14px;padding:14px 16px;border:1px solid var(--line);border-radius:10px;background:var(--paper);">
             <div id="exact-price-message" style="font-size:13px;line-height:1.6;margin-bottom:10px;"></div>
@@ -2081,7 +2096,7 @@ function goStep(n){
     checkContactFields();
   }
   if(n===5) renderPrice();
-  if(n===6) initBookingStep();
+  if(n===6){ initBookingStep(); applyAnytime(); }
 }
 
 function nextFromStep(n){
@@ -2178,17 +2193,25 @@ function renderPrice(){
   const travCharge = postcodeInfo ? postcodeInfo.charge : 0;
   const addonTotal = AD.reduce((s,a)=>s+counts[a.id]*a.unit,0);
   const expressOn = !!(document.getElementById('express-opt') && document.getElementById('express-opt').checked);
-  const total = roofPrice + travCharge + addonTotal + (expressOn ? EXPRESS_FEE : 0);
+  const sv = surveyType(), svAdd = SURVEY_ADD[sv];
+  const anyOn = anytimeOn() && sv === 'visual';
+  const total = roofPrice + svAdd + travCharge + addonTotal + (expressOn ? EXPRESS_FEE : 0) - (anyOn ? ANYTIME_DISCOUNT : 0);
   document.getElementById('total-amt').textContent = fmt(total);
 
   const lines = [];
-  lines.push(['Roof inspection ('+Math.round(area)+'m²'+(isEstimate?', estimated':'')+')', roofPrice]);
+  lines.push([(sv==='thermal'?'Thermal leak scan':'Roof inspection')+' ('+Math.round(area)+'m²'+(isEstimate?', estimated':'')+')', roofPrice]);
+  if(sv==='thermal') lines.push(['Thermal camera, flown after dark', svAdd]);
+  if(sv==='both') lines.push(['Thermal scan in the same visit', svAdd]);
   if(travCharge>0) lines.push(['Mileage'+(postcodeInfo?', '+postcodeInfo.postcode:''), travCharge]);
   AD.forEach(a=>{ if(counts[a.id]>0) lines.push([a.label+' ×'+counts[a.id], counts[a.id]*a.unit]); });
   if(expressOn) lines.push(['Express: report within 24 hours of the inspection', EXPRESS_FEE]);
+  if(anyOn) lines.push(['Any time booking: pilot picks the time', -ANYTIME_DISCOUNT]);
+  const ctaBtn = document.getElementById('book-cta-link'); if(ctaBtn) ctaBtn.textContent = flexOn() ? 'Pay £50 deposit & book →' : 'Pick your date & pay £50 deposit →';
+  const inc = document.getElementById('sv-includes');
+  if(inc) inc.innerHTML = (sv==='thermal' ? 'Thermal drone scan after dark · heat map of likely water ingress · short written findings' : sv==='both' ? 'Drone survey · full written report · photos · condition ratings · Schedule of Works · thermal heat map' : 'Drone survey · full written report · photos · condition ratings · Schedule of Works') + ' · <span id="delivery-line">5-day delivery</span> · fully insured';
   const dl = document.getElementById('delivery-line'); if(dl) dl.textContent = expressOn ? '24-hour report' : '5-day delivery';
   document.getElementById('total-lines').innerHTML = lines.map(([l,v])=>
-    `<div class="total-row"><span class="l">${l}</span><span class="v">${fmt(v)}</span></div>`).join('');
+    `<div class="total-row"><span class="l">${l}</span><span class="v">${v<0?'−'+fmt(-v):fmt(v)}</span></div>`).join('');
 
   // Offer the manual "exact price" option whenever we're not fully confident in the area we're
   // pricing from — either because automation couldn't confirm it (isEstimate) or because it did
@@ -2259,6 +2282,31 @@ const STRIPE_PK = 'pk_live_51Trv87QcApNGjNdfmHcSoqHDYS69kmFe7bFzYTEluYIgGZE4GPqG
 let stripeClient = null, cardElement = null, selectedSlot = null, piClientSecret = null, piId = null, step6Inited = false;
 let weekOffset = 0;
 let slotsByDay = {};
+
+// "Any time" option: no slot to pick, the pilot chooses a time in the next 5 working days and the client is emailed it.
+const ANYTIME_DISCOUNT = 20;
+const SURVEY_ADD = { visual: 0, thermal: 100, both: 175 };
+function surveyType(){ const el = document.querySelector('input[name=survey]:checked'); return el && SURVEY_ADD[el.value] != null ? el.value : 'visual'; }
+function anytimeOn(){ const el = document.getElementById('anytime-opt'); return !!(el && el.checked); }
+// Thermal products are always flown on an evening the pilot picks, so there is no slot to choose.
+function flexOn(){ return anytimeOn() || surveyType() !== 'visual'; }
+function onSurveyChange(){
+  const th = surveyType() !== 'visual', w = document.getElementById('anytime-wrap');
+  if(w) w.style.display = th ? 'none' : 'flex';
+  selectedSlot = null; renderPrice(); applyAnytime();
+}
+function applyAnytime(){
+  if(!step6Inited) return;
+  const on = flexOn(), th = surveyType() !== 'visual', show = (id, v) => { const el = document.getElementById(id); if(el) el.style.display = v; };
+  const intro = document.getElementById('step6-intro');
+  if(intro) intro.innerHTML = th
+    ? '<h2 style="font-size:1.15rem;margin:0 0 6px;">Confirm your booking</h2><p class="muted" style="font-size:13px;margin:0 0 22px;line-height:1.6;">Thermal scans are flown after dark, after a dry day, so there is no slot to pick. Our thermal pilot will choose a suitable evening in the next 5 working days and we will email you the exact date and time at least 24 hours before. Nobody needs to be home. Pay your £50 deposit to confirm.</p>'
+    : on
+    ? '<h2 style="font-size:1.15rem;margin:0 0 6px;">Confirm your booking</h2><p class="muted" style="font-size:13px;margin:0 0 22px;line-height:1.6;">You chose Any time, so there is no slot to pick. Our pilot will fly within the next 5 working days and we will email you the exact date and time at least 24 hours before. Pay your £50 deposit to confirm.</p>'
+    : '<h2 style="font-size:1.15rem;margin:0 0 6px;">Pick your inspection date</h2><p class="muted" style="font-size:13px;margin:0 0 22px;line-height:1.6;">Choose an available slot, then pay your £50 deposit to confirm your booking. Inspections need at least 72 hours\' notice so we can plan the flight (48 hours with Express).</p>';
+  if(on){ ['slot-loading','slot-nav','slot-days','slot-times-wrap','slot-empty'].forEach(id => show(id,'none')); show('payment-section','block'); }
+  else if(!selectedSlot){ show('payment-section','none'); if(document.getElementById('slot-nav').style.display === 'none' && document.getElementById('slot-days').style.display === 'none') loadSlots(); }
+}
 
 function initBookingStep(){
   if(step6Inited) return;
@@ -2356,6 +2404,7 @@ function renderSlots(raw, start, end){
     document.getElementById('slot-times-wrap').style.display = 'none';
     document.getElementById('slot-empty').style.display = 'block';
   }
+  if(flexOn()) applyAnytime();
 }
 
 function showTimesForDay(day){
@@ -2404,7 +2453,7 @@ async function createDepositIntent(){
 }
 
 async function submitPayment(){
-  if(!selectedSlot){ formErr('book-step-6', 'Pick a date and time first.', 'slot-nav'); return; }
+  if(!selectedSlot && !flexOn()){ formErr('book-step-6', 'Pick a date and time first.', 'slot-nav'); return; }
   if(!piClientSecret){ document.getElementById('card-errors').textContent = 'Payment not ready yet. Please wait a moment and try again.'; return; }
   const payBtn = document.getElementById('pay-btn');
   payBtn.disabled = true;
@@ -2427,7 +2476,9 @@ async function submitPayment(){
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({
         paymentIntentId: piId,
-        slotStart: selectedSlot,
+        slotStart: flexOn() ? undefined : selectedSlot,
+        flexible: flexOn(),
+        surveyType: surveyType(),
         propertyType: prop,
         addons: counts,
         postcode: postcodeInfo ? postcodeInfo.postcode : '',
@@ -2450,10 +2501,15 @@ async function submitPayment(){
     document.getElementById('progress-row').parentElement.style.display = 'none';
     document.getElementById('book-step-title').textContent = 'Booking confirmed';
     document.getElementById('book-step-sub').textContent = "Thanks, here's what happens next.";
-    const bookedDt = new Date(selectedSlot);
-    const dateLabel = bookedDt.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
-    const timeLabel = bookedDt.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/London'});
-    document.getElementById('confirmed-slot-line').textContent = `Inspection booked for ${dateLabel} at ${timeLabel}.`;
+    if(flexOn()){
+      const dl = data.deadline ? new Date(data.deadline + 'T12:00:00Z').toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'}) : 'the next 5 working days';
+      document.getElementById('confirmed-slot-line').textContent = `Booked. Our pilot will fly by ${dl}${surveyType()!=='visual'?' (an evening, after dark)':''}, and we'll email you the exact date and time at least 24 hours before.`;
+    } else {
+      const bookedDt = new Date(selectedSlot);
+      const dateLabel = bookedDt.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
+      const timeLabel = bookedDt.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/London'});
+      document.getElementById('confirmed-slot-line').textContent = `Inspection booked for ${dateLabel} at ${timeLabel}.`;
+    }
     document.getElementById('booking-confirmed').style.display = 'block';
   }catch(e){
     document.getElementById('card-errors').textContent = 'Payment succeeded but booking could not be confirmed. Please contact us at info@roofscanuk.co.uk with your payment reference: ' + piId;

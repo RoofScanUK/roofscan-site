@@ -144,7 +144,9 @@ let board = get(LS.board, null), notices = [], busy = false;
 
 function fmtDate(d){ if(!d) return ''; const x = new Date(d); return isNaN(x) ? d : x.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}); }
 // Date plus the booked start time when the job has one (older jobs only have a date).
-function fmtWhen(j){ const t = j.start ? new Date(j.start) : null; return fmtDate(j.date) + (t && !isNaN(t) ? ', ' + t.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/London'}) : ''); }
+function fmtWhen(j){ if (j.flexible) return 'Any time up to ' + fmtDate(j.date); const t = j.start ? new Date(j.start) : null; return fmtDate(j.date) + (t && !isNaN(t) ? ', ' + t.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/London'}) : (j.prefTime && j.prefTime !== 'Any time' ? ', ' + j.prefTime.toLowerCase() : '')); }
+// Commercial (trade) job tags: who it is for, roof size, thermal.
+function tradeTags(j){ let t = ''; if (j.roofCovering && j.roofCovering.length) t += `<span class="tag" style="background:#EFEBE0;color:#1C2B4A;margin-left:6px;">${esc(j.roofCovering.join(', ').toLowerCase())}</span>`; if (j.trade) t += `<span class="tag" style="background:#E6EEF8;color:#1C2B4A;margin-left:6px;">commercial${j.band ? ': ' + esc(j.band.toLowerCase()) + ' roof' : ''}</span>`; if (j.thermal) t += `<span class="tag" style="background:#FDE3D6;color:#8A2E0B;margin-left:6px;">${j.surveyType === 'Report + thermal' ? 'report + thermal: arrive before sunset, thermal after dark' : j.surveyType === 'Thermal leak scan' ? 'thermal leak scan only: fly after dark' : 'thermal: fly after sunset'}</span>`; return t; }
 function money(n){ return '£' + (Number(n)||0); }
 function notice(msg, kind){ notices.push({msg, kind: kind||'amber'}); renderNotices(); }
 function renderNotices(){
@@ -333,7 +335,7 @@ function poolCard(j, kind){
   if (parts.boost) bits.push('+' + money(parts.boost) + ' boost');
   if (parts.express) bits.push('+' + money(parts.express) + ' express');
   const exp = j.express ? `<span class="tag" style="background:#FDEBD3;color:#8A4B00;margin-left:6px;">express${kind==='report'?': report within 24h':''}</span>` : '';
-  return `<div class="card pool"><div class="row"><div><span class="tag ${kind==='scan'?'t-scan':'t-rep'}">${kind}</span>${exp}<div class="jt">${esc(j.area)} · ${esc(j.propertyType)||'Property'}</div><div class="jm">${esc(fmtWhen(j))}</div>${bits.length?`<div class="jm" style="color:var(--g);">${bits.join(' · ')}</div>`:''}</div><div class="pay">${money(pay)}</div></div>
+  return `<div class="card pool"><div class="row"><div><span class="tag ${kind==='scan'?'t-scan':'t-rep'}">${kind}</span>${exp}${tradeTags(j)}<div class="jt">${esc(j.area)} · ${esc(j.propertyType)||'Property'}</div><div class="jm">${esc(fmtWhen(j))}</div>${bits.length?`<div class="jm" style="color:var(--g);">${bits.join(' · ')}</div>`:''}</div><div class="pay">${money(pay)}</div></div>
   <div class="acts"><div class="slide${locked?' dis':''}" data-id="${j.id}" data-kind="${kind}" tabindex="0" role="button" aria-label="Slide right to claim this ${kind}"><div class="slide-t">${locked?'Scans switched off':'Slide to claim '+kind}</div><div class="slide-h">&rarr;</div></div><button class="btn ghost" onclick="passJob('${j.id}')">Not for me</button></div></div>`;
 }
 function passJob(id){ const p = get(LS.pass, {}); p[id] = 1; put(LS.pass, p); render(); }
@@ -358,12 +360,13 @@ document.addEventListener('keydown', e => { const b = e.target.classList && e.ta
 function claim(id, kind){ flashId = id; act({type:'claim', jobId:id, kind}); }
 
 function mineCard(j){
-  let html = `<div class="card mine" id="job-${j.id}"><span class="tag ${j.scanMine?'t-scan':'t-rep'}">${j.scanMine?'scan':'report'}</span><div class="jt">${esc(j.client)}</div><div class="jm">${esc(j.address)}${j.phone?' · '+esc(j.phone):''}</div><div class="jm">${esc(fmtWhen(j))}</div>`;
+  let html = `<div class="card mine" id="job-${j.id}"><span class="tag ${j.scanMine?'t-scan':'t-rep'}">${j.scanMine?'scan':'report'}</span>${tradeTags(j)}<div class="jt">${esc(j.client)}</div><div class="jm">${esc(j.address)}${j.phone?' · '+esc(j.phone):''}</div>${j.siteContact?`<div class="jm">Site contact: ${esc(j.siteContact)}</div>`:''}<div class="jm">${esc(fmtWhen(j))}</div>`;
   const myPay = j.scanMine ? j.scanPay : j.reportPay;
   if (j.scheduleNote && /moved|stood down/i.test(j.scheduleNote)) html += `<div class="jm" style="color:var(--am,#B26A00);">Latest change: ${esc(j.scheduleNote.replace(/^\S+ \S+ UTC /,''))}</div>`;
   if (myPay) html += `<div class="jm" style="color:var(--g);font-weight:600;">Your pay for this job: ${money(myPay)}${j.express?' · EXPRESS'+(j.reportMine?': report due within 24 hours of the flight':''):''}</div>`;
   if (j.scanReminder && j.scanMine) html += `<div class="banner b-amber" style="margin-top:8px;">Not marked done yet. If it auto-releases you miss out on up to ${money(j.scanAtRisk)}.</div>`;
   if (j.reportReminder && j.reportMine) html += `<div class="banner b-amber" style="margin-top:8px;">Report not marked done yet. If it auto-releases you miss out on up to ${money(j.reportAtRisk)}.</div>`;
+  if (j.scanMine && (j.flexible || j.trade)) html += timePanel(j);
   if (j.scanMine) html += scanPanel(j);
   if (j.reportMine) html += reportPanel(j);
   return html + '</div>';
@@ -417,6 +420,30 @@ function checkIn(id){
     render();
   }, () => { notice('Location was blocked. Allow location for this page in your phone settings, then press I\'m on site again.', 'amber'); render(); },
   { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
+}
+// "Any time" jobs: the flyer picks the flight time; the client is emailed it. Thermal surveys must be after dark.
+function timePanel(j){
+  const tomorrow = new Date(Date.now() + 24*3600e3).toISOString().slice(0,10);
+  const ssTxt = j.sunset ? new Date(j.sunset).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/London'}) : '';
+  const hint = j.thermal ? `Thermal survey: fly after dark, between 30 minutes and 3 hours after sunset${ssTxt ? ' (sunset is around ' + ssTxt + ')' : ''}.` : 'Daytime only, 08:00 to 19:00. At least 24 hours from now.';
+  const head = j.needsTime ? `<b>Pick your flight time</b> by ${esc(fmtDate(j.date))}. The client is emailed it straight away.` : `<b>Flight time: ${esc(fmtWhen(Object.assign({}, j, {flexible:false})))}</b>. You can change it until 24 hours before.`;
+  return `<div class="banner ${j.needsTime?'b-amber':'b-green'}" style="margin-top:8px;line-height:1.6;">${head}<div class="muted" style="font-size:12.5px;margin-top:4px;">${esc(hint)}</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;"><input type="date" id="ft-d-${j.id}" min="${!j.flexible&&j.trade?esc(j.date):tomorrow}" ${j.needsTime||(!j.flexible&&j.trade)?`max="${esc(j.date)}"`:''} style="flex:1;min-width:140px;"><input type="time" id="ft-t-${j.id}" step="900" value="${j.thermal?'19:00':'10:00'}" style="flex:1;min-width:110px;"><button class="btn" onclick="setFlightTime('${j.id}')">${j.needsTime?'Set time':'Change time'}</button></div></div>`;
+}
+async function setFlightTime(id){
+  const d = $('ft-d-' + id).value, t = $('ft-t-' + id).value;
+  if (!d || !t) { notice('Pick a date and a time.'); return; }
+  // The time is London time: work out the offset for that day (BST or GMT).
+  const guess = new Date(d + 'T' + t + ':00Z');
+  const lon = new Date(guess.toLocaleString('en-US', { timeZone: 'Europe/London' }));
+  const utc = new Date(guess.toLocaleString('en-US', { timeZone: 'UTC' }));
+  const start = new Date(guess.getTime() - (lon - utc)).toISOString();
+  try {
+    const r = await api('/contractor/set-time', 'POST', { jobId: id, start });
+    if (!r.ok) { notice(r.data.error || 'Could not set the time.'); return; }
+    notice(r.data.notified ? 'Time set. The client has been emailed it.' : 'Time set. RoofScan will let the client know.', 'green');
+    refresh(false);
+  } catch(e) { if (e.message !== 'auth') notice('No connection. Try again when you have signal.'); }
 }
 function scanPanel(j){
   const st = get(LS.checks, {})[j.id] || {};

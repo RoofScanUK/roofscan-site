@@ -2,25 +2,227 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="refresh" content="0; url=referral-portal.html">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#111C33">
-<title>Redirecting | RoofScan UK</title>
+<meta name="robots" content="noindex">
+<title>Trade Account | RoofScan UK</title>
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="public.css">
 <style>
-:root{--n:#1C2B4A;--g:#C9A84C;--bg:#F8F6F0;--mu:#6B7A8D;}
+:root{--n:#1C2B4A;--deep:#111C33;--g:#C9A84C;--sun:#F2B640;--bg:#F8F6F0;--cd:#FFF;--br:#E8E4D8;--mu:#6B7A8D;--gr:#1E8A4F;--am:#9A6512;--rd:#B3381F;}
 *{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--n);min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;}
-.box{max-width:360px;}
-h1{font-size:18px;margin-bottom:8px;}
-p{font-size:14px;color:var(--mu);line-height:1.6;}
-a{color:var(--n);font-weight:700;}
+body{font-family:'Geist',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--n);min-height:100vh;}
+.wrap{max-width:780px;margin:0 auto;padding:0 18px 60px;}
+.top{background:radial-gradient(60% 120% at 85% 0%,rgba(242,182,64,.16),transparent 60%),linear-gradient(180deg,#14213D,#0D162A);color:#fff;padding:26px 0 58px;}
+.top .wrap{padding-bottom:0;display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;}
+.brand{font-size:12px;font-weight:700;color:var(--sun);letter-spacing:.12em;text-transform:uppercase;}
+h1{font-family:'Fraunces',Georgia,serif;font-weight:600;font-size:clamp(24px,4vw,32px);letter-spacing:-.01em;margin-top:6px;}
+.sub{color:rgba(255,255,255,.65);font-size:14px;margin-top:4px;}
+.out{background:none;border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:999px;padding:8px 14px;font:inherit;font-size:13px;cursor:pointer;}
+.out:hover{background:rgba(255,255,255,.08);}
+.card{background:var(--cd);border:1px solid var(--br);border-radius:18px;padding:22px;margin-top:18px;box-shadow:0 10px 30px -22px rgba(17,28,51,.35);}
+.card h2{font-family:'Fraunces',Georgia,serif;font-weight:600;font-size:21px;margin-bottom:4px;}
+.muted{color:var(--mu);font-size:13.5px;line-height:1.55;}
+.tally{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:-34px;}
+.t{background:var(--cd);border:1px solid var(--br);border-radius:16px;padding:16px 18px;box-shadow:0 14px 30px -24px rgba(17,28,51,.45);}
+.t b{display:block;font-family:'Fraunces',Georgia,serif;font-size:28px;font-weight:600;font-variant-numeric:tabular-nums;}
+.t span{font-size:12.5px;color:var(--mu);}
+label.l{display:block;font-size:13px;font-weight:600;margin:16px 0 6px;}
+input[type=text],input[type=date],select,textarea{width:100%;border:1px solid #DDD8CA;border-radius:12px;padding:12px 14px;font:inherit;font-size:16px;background:#FBFAF7;color:var(--n);}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--sun);background:#fff;box-shadow:0 0 0 4px rgba(242,182,64,.2);}
+textarea{min-height:76px;resize:vertical;}
+.opts{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+.opts.two{grid-template-columns:1fr 1fr;}
+.opt{position:relative;}
+.opt input{position:absolute;opacity:0;inset:0;cursor:pointer;}
+.opt div{border:1.5px solid #DDD8CA;border-radius:14px;padding:12px;height:100%;background:#FBFAF7;transition:border-color .15s,background-color .15s,box-shadow .15s;}
+.opt div b{display:block;font-size:14.5px;}
+.opt div small{display:block;color:var(--mu);font-size:12px;margin-top:2px;line-height:1.4;}
+.opt div em{display:block;font-style:normal;font-weight:700;margin-top:6px;font-variant-numeric:tabular-nums;}
+.opt input:checked + div{border-color:var(--sun);background:#FFF8E8;box-shadow:0 0 0 3px rgba(242,182,64,.18);}
+.opt input:focus-visible + div{outline:3px solid var(--sun);outline-offset:2px;}
+.chk{display:flex;gap:10px;align-items:flex-start;margin-top:10px;font-size:14px;line-height:1.5;}
+.chk input{width:18px;height:18px;margin-top:2px;flex:none;}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.price{display:flex;justify-content:space-between;align-items:center;margin-top:20px;padding:14px 16px;border-radius:14px;background:var(--deep);color:#fff;}
+.price b{font-family:'Fraunces',Georgia,serif;font-size:24px;color:var(--sun);font-variant-numeric:tabular-nums;}
+.go{width:100%;margin-top:14px;background:var(--sun);color:var(--deep);border:none;border-radius:999px;padding:15px;font:inherit;font-size:16px;font-weight:700;cursor:pointer;transition:transform .15s,background-color .15s;}
+.go:hover{background:#FFC857;} .go:active{transform:scale(.98);} .go:disabled{opacity:.6;cursor:default;}
+.err{margin-top:12px;padding:12px 14px;border-radius:12px;background:#FDECE8;color:#8A2A1B;font-size:14px;display:none;}
+.ok{margin-top:12px;padding:12px 14px;border-radius:12px;background:#E6F4EC;color:#14532D;font-size:14px;display:none;}
+.job{display:grid;grid-template-columns:1fr auto;gap:4px 16px;padding:14px 0;border-top:1px solid var(--br);}
+.job:first-child{border-top:0;}
+.job .a{font-weight:600;font-size:14.5px;}
+.job .m{color:var(--mu);font-size:13px;}
+.job .p{text-align:right;font-weight:700;font-variant-numeric:tabular-nums;}
+.chip{display:inline-block;font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:999px;background:#EFEBE0;color:var(--n);margin-right:4px;}
+.chip.g{background:#E6F4EC;color:var(--gr);} .chip.a{background:#FDF1DC;color:var(--am);} .chip.r{background:#FCE6E2;color:var(--rd);} .chip.t{background:#FDE3D6;color:#8A2E0B;}
+.job a{color:var(--n);font-weight:700;}
+.gate{text-align:center;padding:30px 22px;}
+.gate a.go{display:inline-block;width:auto;padding:13px 26px;text-decoration:none;margin-top:16px;}
+.hide{display:none !important;}
+@media (max-width:640px){ .opts{grid-template-columns:1fr 1fr;} .tally{grid-template-columns:1fr 1fr;} .tally .t:last-child{grid-column:span 2;} .row2{grid-template-columns:1fr;} }
 </style>
 </head>
 <body>
-<div class="box">
-  <h1>This page has moved</h1>
-  <p>Our Trade Account portal is now the Referral Partner portal. Taking you there now. If you're not redirected automatically, <a href="referral-portal.html">click here</a>.</p>
+<div class="top"><div class="wrap">
+  <div><div class="brand">RoofScan UK · Trade Account</div><h1 id="co">Your trade account</h1><div class="sub" id="who">Book inspections. One invoice at the end of each month.</div></div>
+  <button class="out hide" id="out" onclick="signOut()">Sign out</button>
+</div></div>
+
+<div class="wrap">
+  <div id="gate" class="card gate hide">
+    <h2 id="gate-h">Sign in to your trade account</h2>
+    <p class="muted" id="gate-p">Use the email address on your trade account. We'll send you a 6-digit code.</p>
+    <a class="go" href="login.html">Sign in</a>
+  </div>
+
+  <div id="app" class="hide">
+    <div class="tally">
+      <div class="t"><b id="t-count">0</b><span>inspections this month</span></div>
+      <div class="t"><b id="t-total">£0</b><span>this month so far</span></div>
+      <div class="t"><b id="t-month">Oct</b><span>invoiced at the end of the month</span></div>
+    </div>
+
+    <div class="card">
+      <h2>Book an inspection</h2>
+      <p class="muted">The pilot photographs the whole roof by drone. You get a written report with photos, condition ratings and a schedule of works. The price is added to this month's invoice.</p>
+
+      <label class="l" for="addr">Site address, including postcode</label>
+      <input type="text" id="addr" autocomplete="off" placeholder="e.g. 12 High Street, Guildford GU1 3AA">
+
+      <label class="l" id="band-l">Roof size</label>
+      <div class="opts" role="radiogroup" aria-labelledby="band-l" id="bands"></div>
+
+      <label class="l" id="when-l">When can it be flown?</label>
+      <div class="opts two" role="radiogroup" aria-labelledby="when-l">
+        <label class="opt"><input type="radio" name="when" value="flexible" checked><div><b>Any time</b><small>Within the next 5 working days. Usually quickest.</small></div></label>
+        <label class="opt"><input type="radio" name="when" value="date"><div><b>On a set date</b><small>At least 2 days from today.</small></div></label>
+      </div>
+      <div class="row2 hide" id="date-row">
+        <div><label class="l" for="date">Date</label><input type="date" id="date"></div>
+        <div><label class="l" for="time">Time of day</label><select id="time"><option>Any time</option><option>Morning</option><option>Afternoon</option><option hidden>Evening (after sunset)</option></select></div>
+      </div>
+
+      <label class="l">Extras</label>
+      <label class="chk"><input type="checkbox" id="thermal"><span><b>Thermal moisture survey</b> <span id="thermal-p"></span><br><span class="muted">Finds likely trapped water under flat roofs. Flown about an hour after sunset, after a dry, sunny day.</span></span></label>
+      <label class="chk"><input type="checkbox" id="nextday"><span><b>Next-day report</b> <span id="nextday-p"></span><br><span class="muted">Report within 24 hours of the flight.</span></span></label>
+
+      <div class="row2">
+        <div><label class="l" for="contact">Site contact (optional)</label><input type="text" id="contact" placeholder="Name and phone"></div>
+        <div><label class="l" for="ref">Your reference or PO (optional)</label><input type="text" id="ref" placeholder="Shown on your invoice"></div>
+      </div>
+      <label class="l" for="notes">Notes for the pilot (optional)</label>
+      <textarea id="notes" placeholder="Access, parking, who to ask for on site, areas to focus on"></textarea>
+
+      <div class="price"><span id="price-l">Price</span><b id="price">£0</b></div>
+      <button class="go" id="book" onclick="book()">Book this inspection</button>
+      <div class="err" id="err" role="alert"></div>
+      <div class="ok" id="ok" role="status"></div>
+    </div>
+
+    <div class="card">
+      <h2>Your inspections</h2>
+      <p class="muted" id="jobs-empty">Nothing booked yet.</p>
+      <div id="jobs"></div>
+    </div>
+    <p class="muted" style="text-align:center;margin-top:22px;">Questions? <a href="mailto:info@roofscanuk.co.uk" style="color:var(--n);font-weight:700;">info@roofscanuk.co.uk</a> or 07498 364197</p>
+  </div>
 </div>
-<script>window.location.replace('referral-portal.html');</script>
+
+<script>
+var API = 'https://roofscan-api.tiny-voice-ac40.workers.dev';
+var $ = function(id){ return document.getElementById(id); };
+var email = '', token = '', prices = null;
+var BANDS = [['Small','Under 500 m²'],['Medium','500 to 1,500 m²'],['Large','1,500 to 4,000 m²'],['Very large','Over 4,000 m²']];
+function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function money(n){ return '£' + Number(n || 0).toLocaleString('en-GB'); }
+function fmtDate(d){ if (!d) return ''; var x = new Date(d + 'T12:00:00Z'); return x.toLocaleDateString('en-GB', {weekday:'short', day:'numeric', month:'short'}); }
+function showGate(h, p){ $('app').classList.add('hide'); $('out').classList.add('hide'); $('gate').classList.remove('hide'); if (h) $('gate-h').textContent = h; if (p) $('gate-p').textContent = p; }
+function signOut(){ try{ localStorage.removeItem('rs_trade_email'); localStorage.removeItem('rs_trade_token'); }catch(e){} location.href = 'login.html'; }
+async function get(path){
+  var r = await fetch(API + path, { headers: { Authorization: 'Bearer ' + token } });
+  var d = {}; try { d = await r.json(); } catch(e) {}
+  return { ok: r.ok, status: r.status, data: d };
+}
+
+function renderBands(){
+  $('bands').innerHTML = BANDS.map(function(b, i){
+    var p = b[0] === 'Very large' ? 'We quote' : money(prices[b[0]]);
+    return '<label class="opt"><input type="radio" name="band" value="' + b[0] + '"' + (i === 1 ? ' checked' : '') + '><div><b>' + b[0] + '</b><small>' + b[1] + '</small><em>' + p + '</em></div></label>';
+  }).join('');
+  $('thermal-p').textContent = '+' + money(prices.Thermal);
+  $('nextday-p').textContent = '+' + money(prices.NextDay);
+  document.querySelectorAll('input[name=band], input[name=when], #thermal, #nextday').forEach(function(el){ el.addEventListener('change', update); });
+}
+function val(name){ var el = document.querySelector('input[name=' + name + ']:checked'); return el ? el.value : ''; }
+function update(){
+  var band = val('band'), when = val('when'), th = $('thermal').checked, sel = $('time');
+  $('date-row').classList.toggle('hide', when !== 'date');
+  // Thermal surveys only work after dark: the time is fixed to the evening.
+  sel.value = th ? 'Evening (after sunset)' : (sel.value === 'Evening (after sunset)' ? 'Any time' : sel.value);
+  sel.disabled = th;
+  var flexDesc = document.querySelector('input[name=when][value=flexible] + div small');
+  if (flexDesc) flexDesc.textContent = th ? 'Any evening in the next 5 working days, after sunset.' : 'Within the next 5 working days. Usually quickest.';
+  if (band === 'Very large') { $('price').textContent = 'We quote'; $('price-l').textContent = 'Very large roofs are quoted before flying'; return; }
+  var p = prices[band] + ($('thermal').checked ? prices.Thermal : 0) + ($('nextday').checked ? prices.NextDay : 0);
+  $('price').textContent = money(p); $('price-l').textContent = 'Added to this month\'s invoice';
+}
+
+async function loadAll(){
+  var a = await get('/trade-account?email=' + encodeURIComponent(email));
+  if (a.status === 401) { showGate('Please sign in again', 'For security, sign-ins expire. It only takes a moment.'); return; }
+  if (!a.ok) { showGate('Trade account not found', a.data.error || 'This email is not set up as a trade account. Please contact info@roofscanuk.co.uk.'); return; }
+  prices = a.data.prices;
+  $('co').textContent = a.data.company || 'Your trade account';
+  $('who').textContent = (a.data.contact ? 'Signed in as ' + a.data.contact + '. ' : '') + 'One invoice at the end of each month.';
+  $('t-count').textContent = a.data.month.count;
+  $('t-total').textContent = money(a.data.month.total) + (a.data.month.quotesPending ? '+' : '');
+  $('t-month').textContent = new Date().toLocaleDateString('en-GB', {month:'long'});
+  $('gate').classList.add('hide'); $('app').classList.remove('hide'); $('out').classList.remove('hide');
+  if (!$('bands').children.length) renderBands();
+  var d = new Date(Date.now() + 2 * 864e5); $('date').min = d.toISOString().slice(0, 10);
+  update(); loadJobs();
+}
+async function loadJobs(){
+  var r = await get('/trade-jobs?email=' + encodeURIComponent(email));
+  if (!r.ok) return;
+  var list = r.data.records || [];
+  $('jobs-empty').classList.toggle('hide', list.length > 0);
+  $('jobs').innerHTML = list.map(function(j){
+    var cls = j.stage === 'Report ready' ? 'g' : j.stage === 'Cancelled' ? 'r' : j.stage === 'Booked' ? '' : 'a';
+    var when = j.flexible ? 'Any time by ' + fmtDate(j.date) : fmtDate(j.date) + (j.time && j.time !== 'Any time' ? ', ' + j.time.toLowerCase() : '');
+    var extras = (j.band ? '<span class="chip">' + esc(j.band) + ' roof</span>' : '') + (j.thermal ? '<span class="chip t">Thermal</span>' : '') + (j.nextDay ? '<span class="chip">Next-day report</span>' : '');
+    return '<div class="job"><div><div class="a">' + esc(j.address) + '</div><div class="m">' + esc(when) + (j.ref ? ' · Ref ' + esc(j.ref) : '') + '</div><div style="margin-top:6px;"><span class="chip ' + cls + '">' + esc(j.stage) + '</span>' + extras + '</div>' +
+      (j.reportLink ? '<div class="m" style="margin-top:6px;"><a href="' + esc(j.reportLink) + '" target="_blank" rel="noopener">Open report</a>' + (j.roofScore ? ' · RoofScore ' + j.roofScore + '/100' : '') + '</div>' : '') +
+      '</div><div class="p">' + (j.price == null ? '<span class="m">To quote</span>' : money(j.price)) + '</div></div>';
+  }).join('');
+}
+async function book(){
+  var err = $('err'), ok = $('ok'); err.style.display = 'none'; ok.style.display = 'none';
+  var addr = $('addr').value.trim(), when = val('when');
+  if (!/\b[A-Z]{1,2}[0-9][A-Z0-9]?\s*[0-9][A-Z]{2}\b/i.test(addr)) { err.textContent = 'Please enter the full site address, including the postcode.'; err.style.display = 'block'; $('addr').focus(); return; }
+  if (when === 'date' && !$('date').value) { err.textContent = 'Please choose a date, or pick Any time.'; err.style.display = 'block'; $('date').focus(); return; }
+  var btn = $('book'); btn.disabled = true; btn.textContent = 'Booking…';
+  try {
+    var r = await fetch(API + '/trade-submit', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify({ email: email, address: addr, band: val('band'), timing: when, date: $('date').value, time: $('time').value,
+        thermal: $('thermal').checked, nextDay: $('nextday').checked, siteContact: $('contact').value, ref: $('ref').value, notes: $('notes').value }) });
+    var d = {}; try { d = await r.json(); } catch(e) {}
+    if (!r.ok) { err.textContent = d.error || 'That did not go through. Please try again.'; err.style.display = 'block'; return; }
+    ok.textContent = 'Booked. ' + (when === 'flexible' ? 'We will fly it by ' + fmtDate(d.date) + '.' : 'Booked for ' + fmtDate(d.date) + '.') + (d.price == null ? ' We will send you a price before flying.' : ' ' + money(d.price) + ' added to this month\'s invoice.');
+    ok.style.display = 'block';
+    ['addr','contact','ref','notes'].forEach(function(id){ $(id).value = ''; }); $('thermal').checked = false; $('nextday').checked = false; update();
+    loadAll();
+  } catch(e) { err.textContent = 'Connection problem. Please try again.'; err.style.display = 'block'; }
+  finally { btn.disabled = false; btn.textContent = 'Book this inspection'; }
+}
+(function(){
+  try { email = localStorage.getItem('rs_trade_email') || ''; token = localStorage.getItem('rs_trade_token') || ''; } catch(e) {}
+  if (!email || !token) { showGate(); return; }
+  loadAll();
+})();
+</script>
 </body>
 </html>

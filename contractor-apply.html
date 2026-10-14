@@ -49,6 +49,10 @@ textarea{min-height:96px;resize:vertical;}
 .error{color:var(--red);font-size:14px;margin-top:14px;display:none;line-height:1.5;}
 .notice{background:#FFF7E8;border:1px solid #EBD9B0;border-radius:6px;padding:14px 16px;font-size:14px;color:#6A5314;margin:0 0 22px;line-height:1.55;}
 .hidden{display:none !important;}
+.rx-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.rx{display:flex;gap:8px;align-items:center;padding:10px 12px;border:1px solid #DDD8CA;border-radius:12px;font-size:14px;font-weight:500;cursor:pointer;background:#FBFAF7;}
+.rx input{width:auto;margin:0;}
+@media (max-width:520px){.rx-grid{grid-template-columns:1fr;}}
 .drop{border:1.5px dashed var(--line);border-radius:6px;padding:16px;background:var(--paper);text-align:center;cursor:pointer;font-size:14px;color:var(--navy);font-weight:600;}
 .drop:hover{border-color:var(--gold);}
 .drop small{display:block;font-weight:400;color:var(--muted);font-size:12px;margin-top:3px;}
@@ -211,6 +215,20 @@ footer{text-align:center;margin-top:40px;font-size:12.5px;color:var(--muted);}
         <div class="check-row">
           <input type="checkbox" id="f-pc">
           <label for="f-pc">I will write reports on my own password-protected computer, not a shared or public one.</label>
+        </div>
+        <div class="field">
+          <label class="l">Roof types you have experience with</label>
+          <p class="hint" style="margin:-2px 0 8px;font-size:13px;color:var(--muted,#6B7A8D);">Tick every type you have worked on or reported on. You will only be offered reports for these roof types.</p>
+          <div class="rx-grid">
+          <label class="rx"><input type="checkbox" name="roofexp" value="Concrete tiles"> <span>Concrete tiles</span></label>
+          <label class="rx"><input type="checkbox" name="roofexp" value="Clay tiles"> <span>Clay tiles</span></label>
+          <label class="rx"><input type="checkbox" name="roofexp" value="Slate"> <span>Slate</span></label>
+          <label class="rx"><input type="checkbox" name="roofexp" value="Flat: felt or asphalt"> <span>Flat: felt or asphalt</span></label>
+          <label class="rx"><input type="checkbox" name="roofexp" value="Flat: single-ply, EPDM or GRP"> <span>Flat: single-ply, EPDM or GRP</span></label>
+          <label class="rx"><input type="checkbox" name="roofexp" value="Metal sheet"> <span>Metal sheet</span></label>
+          <label class="rx"><input type="checkbox" name="roofexp" value="Thatch"> <span>Thatch</span></label>
+          <label class="rx"><input type="checkbox" name="roofexp" value="Green or sedum roof"> <span>Green or sedum roof</span></label>
+          </div>
         </div>
       </div>
 
@@ -426,6 +444,8 @@ $('apply-form').addEventListener('submit', async function(e){
     if ($('f-thermal').checked && (!v('f-tdrone') || !v('f-ttrain'))) { showErr('Please fill in your thermal drone and thermography training, or untick the thermal drone box.'); return; }
   }
   if (writer && !v('f-exp')) { showErr('Please tell us a little about your experience.'); return; }
+  const roofExp = Array.prototype.map.call(document.querySelectorAll('input[name=roofexp]:checked'), function(x){ return x.value; });
+  if (writer && !roofExp.length) { showErr('Please tick the roof types you have experience with.'); return; }
   if (!$('c-self').checked || !$('c-conf').checked || !$('c-true').checked) { showErr('Please tick all three confirmations at the bottom.'); return; }
 
   const btn = $('submit-btn'); btn.disabled = true; btn.textContent = 'Sending…';
@@ -437,7 +457,7 @@ $('apply-form').addEventListener('submit', async function(e){
   if (flyer) Object.assign(payload, { basePostcode: v('f-basepc'), travelRange: Number($('f-range').value), droneModel: v('f-drone'), droneSerial: v('f-serial'), droneWind: v('f-wind'),
     operatorId: v('f-opid'), operatorExpiry: $('f-opexp').value, flyerId: v('f-flid'), flyerExpiry: $('f-flexp').value, otherQualifications: v('f-other'),
     thermal: $('f-thermal').checked, thermalDrone: v('f-tdrone'), thermalTraining: v('f-ttrain') });
-  if (writer) Object.assign(payload, { experience: v('f-exp'), privateComputer: $('f-pc').checked });
+  if (writer) Object.assign(payload, { experience: v('f-exp'), privateComputer: $('f-pc').checked, roofExperience: roofExp });
 
   let app;
   try { app = await post('/contractor-apply', payload); }
