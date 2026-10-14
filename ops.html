@@ -2,11 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#1C2B4A">
-<title>RoofScan — Operations</title>
+<title>RoofScan | Operations</title>
 <script src="airtable-api.js"></script>
 <style>
 :root{--n:#1C2B4A;--s:#1E4080;--g:#C9A84C;--bg:#F8F6F0;--cd:#FFF;--br:#E8E4D8;--mu:#6B7A8D;--gr:#27AE60;--am:#E67E22;--rd:#C0392B;--gbg:#E8F8EF;--abg:#FEF3E2;--rbg:#FDECEA;}
@@ -20,7 +20,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .hs{color:rgba(255,255,255,0.45);font-size:11px;}
 .tabs{display:flex;overflow-x:auto;scrollbar-width:none;gap:0;}
 .tabs::-webkit-scrollbar{display:none;}
-.tb{padding:10px 16px;font-size:13px;font-weight:600;color:rgba(255,255,255,0.45);background:none;border:none;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;transition:all 0.15s;}
+.tb{padding:10px 16px;font-size:13px;font-weight:600;color:rgba(255,255,255,0.45);background:none;border:none;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;transition:color 0.15s,background-color 0.15s,border-color 0.15s,box-shadow 0.15s,transform 0.15s,opacity 0.15s;}
 .tb.active{color:var(--g);border-bottom-color:var(--g);}
 main{padding:14px;}
 .tc{display:none;animation:fadeIn 0.15s ease;}
@@ -32,7 +32,7 @@ main{padding:14px;}
 .sl::after{content:'';flex:1;height:1px;background:var(--br);}
 .chk{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid var(--br);cursor:pointer;}
 .chk:last-child{border-bottom:none;}
-.chk-box{width:22px;height:22px;border:2px solid var(--br);border-radius:6px;flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;transition:all 0.15s;}
+.chk-box{width:22px;height:22px;border:2px solid var(--br);border-radius:6px;flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;transition:color 0.15s,background-color 0.15s,border-color 0.15s,box-shadow 0.15s,transform 0.15s,opacity 0.15s;}
 .chk.done .chk-box{background:var(--gr);border-color:var(--gr);}
 .chk.done .chk-box::after{content:'✓';color:white;font-size:13px;font-weight:700;}
 .chk.done .chk-text{color:var(--mu);text-decoration:line-through;}
@@ -67,7 +67,7 @@ main{padding:14px;}
 .spacer{height:20px;}
 
 /* ═══ VISUAL UPGRADE: typography, depth, motion ═══ */
-*{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
+*{font-family:'Geist',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
 .card,.job-card,.tool-primary,.tool-sm,.today-card,.action-card,.exp-row,.banner,.client-info-card,.job-picker-card,.rs-card,.at-connect{
   box-shadow:0 1px 3px rgba(28,43,74,0.06),0 1px 2px rgba(28,43,74,0.04);
 }
@@ -87,7 +87,7 @@ main{padding:14px;}
 @keyframes obPulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
 
 /* VOICE BUTTON */
-.voice-btn{background:#F8F6F0;border:1px solid #E8E4D8;border-radius:8px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;flex-shrink:0;transition:all 0.15s;}
+.voice-btn{background:#F8F6F0;border:1px solid #E8E4D8;border-radius:8px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;flex-shrink:0;transition:color 0.15s,background-color 0.15s,border-color 0.15s,box-shadow 0.15s,transform 0.15s,opacity 0.15s;}
 .voice-btn.listening{background:#FDECEA;border-color:#C0392B;animation:voicePulse 1s ease-in-out infinite;}
 @keyframes voicePulse{0%,100%{box-shadow:0 0 0 0 rgba(192,57,43,0.4);}50%{box-shadow:0 0 0 6px rgba(192,57,43,0);}}
 .field-with-voice{display:flex;gap:8px;align-items:flex-start;}
@@ -106,12 +106,12 @@ main{padding:14px;}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
 <script src="app-shell.js" defer></script>
 <link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="portal.css">
 </head>
 <body>
 <div class="hdr">
@@ -130,7 +130,7 @@ main{padding:14px;}
 <div class="tc active" id="tab-jobs">
   <div id="jobs-setup" style="display:none;" class="at-setup">
     <div style="font-size:12px;font-weight:700;color:var(--mu);margin-bottom:6px;">Connect Airtable to see live jobs</div>
-    <input type="password" id="jobs-token" class="at-input" placeholder="patXXX...">
+    <input type="password" id="jobs-token" class="at-input" placeholder="patXXX…">
     <button class="at-btn" onclick="jobsConnect()">Connect →</button>
   </div>
   <div class="filter-row" id="jobs-filters" style="display:none;">
@@ -139,7 +139,7 @@ main{padding:14px;}
     <button class="filter-btn" onclick="filterJobs(this,'Complete')">Complete</button>
     <button class="filter-btn" onclick="filterJobs(this,'Report Sent')">Report Sent</button>
   </div>
-  <div id="jobs-loading" style="display:none;text-align:center;padding:20px;color:var(--mu);font-size:13px;"><span class="spinner"></span> Loading...</div>
+  <div id="jobs-loading" style="display:none;text-align:center;padding:20px;color:var(--mu);font-size:13px;"><span class="spinner"></span> Loading…</div>
   <div id="jobs-list"></div>
 </div>
 
@@ -157,14 +157,14 @@ main{padding:14px;}
     <div class="chk" data-id="d4" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Memory cards formatted and empty</div></div>
     <div class="chk" data-id="d5" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">ND filters packed<div class="chk-note">ND8 overcast · ND16 bright · ND32 direct sun</div></div></div>
     <div class="chk" data-id="d6" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Hi-vis vest in bag</div></div>
-    <div class="chk" data-id="d7" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Phone charged — DJI Fly app updated</div></div>
+    <div class="chk" data-id="d7" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Phone charged: DJI Fly app updated</div></div>
   </div>
 
   <div class="sl">On site</div>
   <div class="card">
-    <div class="chk" data-id="d10" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Walk the site — identify hazards</div></div>
+    <div class="chk" data-id="d10" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Walk the site: identify hazards</div></div>
     <div class="chk" data-id="d12" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Select clear take-off zone</div></div>
-    <div class="chk" data-id="d14" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">DJI preflight check — all sensors green</div></div>
+    <div class="chk" data-id="d14" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">DJI preflight check: all sensors green</div></div>
     <div class="chk" data-id="d15" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Capture all 4 elevations</div></div>
     <div class="chk" data-id="d16" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Capture chimneys, flashings, gutters, ridge close-up</div></div>
     <div class="chk" data-id="d17" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Top-down overview shot</div></div>
@@ -173,13 +173,13 @@ main{padding:14px;}
 
   <div class="sl">The one that matters most</div>
   <div class="card" style="border:1.5px solid var(--g);background:#FBF7EC;">
-    <div class="chk" data-id="d20" onclick="tick(this)"><div class="chk-box" style="border-color:var(--g);"></div><div class="chk-text" style="font-weight:700;">Mark job Complete in Live Jobs<div class="chk-note">This is what fires the balance payment link to the client — everything else downstream depends on this one tap</div></div></div>
+    <div class="chk" data-id="d20" onclick="tick(this)"><div class="chk-box" style="border-color:var(--g);"></div><div class="chk-text" style="font-weight:700;">Mark job Complete in Live Jobs<div class="chk-note">This is what fires the balance payment link to the client: everything else downstream depends on this one tap</div></div></div>
   </div>
 
   <div class="sl">Back at desk</div>
   <div class="card">
-    <div class="chk" data-id="d21" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Transfer footage to laptop — back up immediately</div></div>
-    <div class="chk" data-id="d22" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Write the report — RoofScore and summaries generate automatically</div></div>
+    <div class="chk" data-id="d21" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Transfer footage to laptop: back up immediately</div></div>
+    <div class="chk" data-id="d22" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Write the report: RoofScore and summaries generate automatically</div></div>
     <div class="chk" data-id="d26" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Charge all batteries for next job</div></div>
   </div>
   <div class="spacer"></div>
@@ -245,13 +245,13 @@ async function loadJobs(){
     try{localStorage.setItem('rs_jobs_cache',JSON.stringify(_allJobs));}catch(e){}
     renderJobs();
   }catch(e){
-    // Offline or error — fall back to cached jobs if available
+    // Offline or error: fall back to cached jobs if available
     try{
       var cached=JSON.parse(localStorage.getItem('rs_jobs_cache'));
       if(cached&&cached.length){
         _allJobs=cached;
         renderJobs();
-        document.getElementById('jobs-list').insertAdjacentHTML('afterbegin','<div style="text-align:center;color:var(--mu);font-size:11px;padding:6px;">Showing cached jobs — offline</div>');
+        document.getElementById('jobs-list').insertAdjacentHTML('afterbegin','<div style="text-align:center;color:var(--mu);font-size:11px;padding:6px;">Showing cached jobs: offline</div>');
       }else{
         document.getElementById('jobs-list').innerHTML='<div class="empty">Error: '+e.message+'</div>';
       }
@@ -306,7 +306,7 @@ async function updateStatus(id,status){
     RSOffline.queueAction({type:'status', recordId:id, status:status});
   }
 }
-// Init jobs tab on load — defensive in case airtable-api.js failed to load
+// Init jobs tab on load: defensive in case airtable-api.js failed to load
 try {
   if(typeof AT !== 'undefined' && AT.hasToken()) initJobs();
   else document.getElementById('jobs-setup').style.display='block';

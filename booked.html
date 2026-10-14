@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#111C33">
 <title>You're booked: RoofScan UK</title>
 <style>
 :root{--n:#1C2B4A;--g:#C9A84C;--bg:#F8F6F0;--cd:#FFF;--br:#E8E4D8;--mu:#6B7A8D;--gr:#27AE60;}
@@ -33,7 +34,7 @@ main{padding:16px;}
 .contact a{color:var(--n);font-weight:600;text-decoration:none;}
 
 /* ═══ VISUAL UPGRADE: typography, depth, motion ═══ */
-*{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
+*{font-family:'Geist',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
 .card,.job-card,.tool-primary,.tool-sm,.today-card,.action-card,.exp-row,.banner,.client-info-card,.job-picker-card,.rs-card,.at-connect{
   box-shadow:0 1px 3px rgba(28,43,74,0.06),0 1px 2px rgba(28,43,74,0.04);
 }
@@ -53,7 +54,7 @@ main{padding:16px;}
 @keyframes obPulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
 
 /* VOICE BUTTON */
-.voice-btn{background:#F8F6F0;border:1px solid #E8E4D8;border-radius:8px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;flex-shrink:0;transition:all 0.15s;}
+.voice-btn{background:#F8F6F0;border:1px solid #E8E4D8;border-radius:8px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;flex-shrink:0;transition:color 0.15s,background-color 0.15s,border-color 0.15s,box-shadow 0.15s,transform 0.15s,opacity 0.15s;}
 .voice-btn.listening{background:#FDECEA;border-color:#C0392B;animation:voicePulse 1s ease-in-out infinite;}
 @keyframes voicePulse{0%,100%{box-shadow:0 0 0 0 rgba(192,57,43,0.4);}50%{box-shadow:0 0 0 6px rgba(192,57,43,0);}}
 .field-with-voice{display:flex;gap:8px;align-items:flex-start;}
@@ -72,12 +73,12 @@ main{padding:16px;}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
 <script src="app-shell.js" defer></script>
 <link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="public.css">
 </head>
 <body>
 <div class="hdr">
@@ -99,15 +100,15 @@ main{padding:16px;}
     <div class="step">
       <div class="step-num">2</div>
       <div class="step-text">
-        <div class="step-title">Day-before reminder</div>
-        <div class="step-detail">We'll email you the evening before your inspection with a reminder and any on-the-day information.</div>
+        <div class="step-title">Reminder email</div>
+        <div class="step-detail">We'll email you a reminder 24 hours before your inspection, with the time and address.</div>
       </div>
     </div>
     <div class="step">
       <div class="step-num">3</div>
       <div class="step-text">
         <div class="step-title">The inspection</div>
-        <div class="step-detail">We'll arrive at the agreed time. The inspection takes around 45 minutes. You don't need to be present, but if you are, we'll brief you on arrival.</div>
+        <div class="step-detail">We'll arrive at the agreed time. The inspection usually takes under an hour. You don't need to be present, but if you are, we'll brief you on arrival.</div>
       </div>
     </div>
     <div class="step">
@@ -122,7 +123,7 @@ main{padding:16px;}
   <div class="card">
     <div class="card-title">Good to know</div>
     <div class="info-row"><span class="info-label">Deposit</span><span class="info-val">£50, secures your booking</span></div>
-    <div class="info-row"><span class="info-label">Report turnaround</span><span class="info-val">5 working days</span></div>
+    <div class="info-row"><span class="info-label">Report turnaround</span><span class="info-val">5 working days (24 hours with Express)</span></div>
     <div class="info-row"><span class="info-label">Do you need to be home?</span><span class="info-val">No, but pets indoors please</span></div>
     <div class="info-row"><span class="info-label">Weather cancellation?</span><span class="info-val">We'll rebook at no extra cost</span></div>
     <div class="info-row"><span class="info-label">Cancel or reschedule?</span><span class="info-val">Free with 48hrs notice</span></div>

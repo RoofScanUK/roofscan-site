@@ -3,15 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#111C33">
 <meta name="robots" content="noindex">
-<title>RoofScan UK — Owner</title>
+<title>RoofScan UK | Owner</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Geist:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{--navy:#1C2B4A;--gold:#B8945F;--ink:#20262F;--paper:#FBFAF7;--line:#DEDACE;--muted:#6B6F76;--white:#FFFFFF;--ok:#2F6B4F;--warn:#9A6A1C;--bad:#9B2C2C;}
 *{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--paper);color:var(--ink);font-size:14px;line-height:1.5;min-height:100vh;}
+body{font-family:'Geist','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--paper);color:var(--ink);font-size:14px;line-height:1.5;min-height:100vh;}
 h1,h2,.serif{font-family:'Fraunces',Georgia,serif;font-weight:500;letter-spacing:-.01em;color:var(--navy);}
 .top{background:var(--navy);color:var(--white);}
 .top-in{max-width:1180px;margin:0 auto;padding:22px 32px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;}
@@ -86,6 +87,7 @@ tr:last-child td{border-bottom:none;}
 </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="stylesheet" href="portal.css">
 </head>
 <body>
 <div id="login" style="display:none;padding:60px 18px;max-width:420px;margin:0 auto;">
@@ -106,24 +108,24 @@ tr:last-child td{border-bottom:none;}
     <div class="metrics" id="stats"></div>
     <div class="cols">
       <div>
-        <section><div class="lbl"><span>System health</span><span id="health-n" class="small"></span></div><div class="box pad" id="health"><span class="muted small">Checking...</span></div></section>
+        <section><div class="lbl"><span>System health</span><span id="health-n" class="small"></span></div><div class="box pad" id="health"><span class="muted small">Checking…</span></div></section>
         <section><div class="lbl">Needs your attention</div><div id="needs"></div></section>
-        <section><div class="lbl"><span>Booking changes</span><span id="sched-n" class="small"></span></div><div class="box pad" id="sched"><span class="muted small">Loading...</span></div></section>
-        <section><div class="lbl"><span>Storm alerts</span><span id="storm-n" class="small"></span></div><div class="box pad" id="storm"><span class="muted small">Loading...</span></div></section>
+        <section><div class="lbl"><span>Booking changes</span><span id="sched-n" class="small"></span></div><div class="box pad" id="sched"><span class="muted small">Loading…</span></div></section>
+        <section><div class="lbl"><span>Storm alerts</span><span id="storm-n" class="small"></span></div><div class="box pad" id="storm"><span class="muted small">Loading…</span></div></section>
         <section><div class="lbl"><span>Contractors</span><span id="ctrs-n"></span></div><div class="box" id="ctrs"></div></section>
-        <section><div class="lbl"><span>Booking hours (Cal.com)</span><span id="cal-name" class="small"></span></div><div class="box pad" id="cal"><span class="muted small">Loading...</span></div></section>
-        <section><div class="lbl">Time off (Cal.com out of office)</div><div class="box pad" id="ooo"><span class="muted small">Loading...</span></div></section>
+        <section><div class="lbl"><span>Booking hours (Cal.com)</span><span id="cal-name" class="small"></span></div><div class="box pad" id="cal"><span class="muted small">Loading…</span></div></section>
+        <section><div class="lbl">Time off (Cal.com out of office)</div><div class="box pad" id="ooo"><span class="muted small">Loading…</span></div></section>
       </div>
       <div>
-        <section><div class="lbl">Weekly booking capacity</div><div class="box pad" id="cap"><span class="muted small">Loading...</span></div></section>
-        <section><div class="lbl">Area covered</div><div class="box pad" id="homearea"><span class="muted small">Loading...</span></div></section>
+        <section><div class="lbl">Weekly booking capacity</div><div class="box pad" id="cap"><span class="muted small">Loading…</span></div></section>
+        <section><div class="lbl">Area covered</div><div class="box pad" id="homearea"><span class="muted small">Loading…</span></div></section>
         <section><div class="lbl">Coverage map</div><div class="box pad">
           <div id="covmap" style="height:380px;border-radius:6px;overflow:hidden;background:#EEF1F4;"></div>
           <div class="muted small" id="covkey" style="margin-top:8px;line-height:1.7;"></div>
           <div class="muted small" id="seatsline" style="margin-top:6px;line-height:1.7;"></div>
         </div></section>
-        <section><div class="lbl"><span>Reports waiting for approval</span><span id="rev-n"></span></div><div class="box" id="reviews"><div class="empty">Loading...</div></div></section>
-        <section><div class="lbl"><span>Suggestions from contractors</span><span id="sug-n"></span></div><div class="box" id="suggest"><div class="empty">Loading...</div></div></section>
+        <section><div class="lbl"><span>Reports waiting for approval</span><span id="rev-n"></span></div><div class="box" id="reviews"><div class="empty">Loading…</div></div></section>
+        <section><div class="lbl"><span>Suggestions from contractors</span><span id="sug-n"></span></div><div class="box" id="suggest"><div class="empty">Loading…</div></div></section>
         <section><div class="lbl">Claimed right now</div><div class="box" id="claimed"></div></section>
         <section><div class="lbl">Stand-downs (unsafe to fly, no penalty)</div><div class="box" id="stood"></div></section>
         <section><div class="lbl">Missed jobs</div><div class="box" id="missed"></div></section>
@@ -336,7 +338,7 @@ async function saveCal(){
   for(const d of CAL_DAYS){ if(!$('cd-on-'+d).checked) continue; const s=$('cd-s-'+d).value,e=$('cd-e-'+d).value;
     if(!(s<e)){$('cal-msg').textContent=d+': the end time must be after the start time.';return;}
     (groups[s+'-'+e]=groups[s+'-'+e]||{days:[],startTime:s,endTime:e}).days.push(d); }
-  $('cal-msg').textContent='Saving...';
+  $('cal-msg').textContent='Saving…';
   const r=await api('/owner/cal-schedule','POST',{id:calSched.id,availability:Object.values(groups),overrides:calOverrides});
   $('cal-msg').textContent=r.ok?'Saved to Cal.com.':(r.data.error||'Could not save.');
   if(r.ok) setTimeout(loadCal,800);
@@ -365,7 +367,7 @@ async function addOoo(){
   const from=$('ooo-from').value,to=$('ooo-to').value||from;
   if(!from){$('ooo-msg').textContent='Pick a start date.';return;}
   if(to<from){$('ooo-msg').textContent='The end date must be on or after the start date.';return;}
-  $('ooo-msg').textContent='Saving...';
+  $('ooo-msg').textContent='Saving…';
   const r=await api('/owner/cal-ooo','POST',{from,to,reason:$('ooo-reason').value,notes:$('ooo-notes').value.trim()});
   if(!r.ok){$('ooo-msg').textContent=r.data.error||'Could not save.';return;}
   loadOoo();

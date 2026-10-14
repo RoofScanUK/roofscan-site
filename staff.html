@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="RoofScan Staff">
 <link rel="manifest" href="manifest.json">
@@ -12,7 +12,7 @@
 <meta name="theme-color" content="#1C2B4A">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>RoofScan UK — Staff</title>
+<title>RoofScan UK | Staff</title>
 <style>
 :root{
   --navy:#1C2B4A;--slate:#1E4080;--gold:#C9A84C;
@@ -24,7 +24,7 @@
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--navy);min-height:100vh;}
 /* On phones (this app's main use case) the app fills the screen edge-to-edge as before.
    On anything wider (laptop/desktop), the old fixed 520px column just left huge blank
-   margins either side, which read as "broken" rather than deliberate — this instead
+   margins either side, which read as "broken" rather than deliberate: this instead
    centres a comfortably-sized panel with its own card styling, so it looks like an
    intentional app view on a big screen rather than a tiny strip of a page. */
 @media (min-width:640px){
@@ -39,7 +39,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .staff-badge{background:rgba(255,255,255,0.12);color:rgba(255,255,255,0.7);font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:0.05em;}
 .tabs{display:flex;overflow-x:auto;scrollbar-width:none;gap:0;}
 .tabs::-webkit-scrollbar{display:none;}
-.tb{padding:10px 12px;font-size:12px;font-weight:600;color:rgba(255,255,255,0.45);background:none;border:none;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;transition:all 0.15s;}
+.tb{padding:10px 12px;font-size:12px;font-weight:600;color:rgba(255,255,255,0.45);background:none;border:none;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;transition:color 0.15s,background-color 0.15s,border-color 0.15s,box-shadow 0.15s,transform 0.15s,opacity 0.15s;}
 .tb.active{color:var(--gold);border-bottom-color:var(--gold);}
 main{padding:14px;}
 .tc{display:none;animation:fadeIn 0.15s ease;}
@@ -53,13 +53,13 @@ main{padding:14px;}
 /* CHECKLIST */
 .chk{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);cursor:pointer;-webkit-tap-highlight-color:transparent;}
 .chk:last-child{border-bottom:none;}
-.chk-box{width:22px;height:22px;border:2px solid var(--border);border-radius:6px;flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;transition:all 0.15s;}
+.chk-box{width:22px;height:22px;border:2px solid var(--border);border-radius:6px;flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;transition:color 0.15s,background-color 0.15s,border-color 0.15s,box-shadow 0.15s,transform 0.15s,opacity 0.15s;}
 .chk.done .chk-box{background:var(--green);border-color:var(--green);}
 .chk.done .chk-box::after{content:'✓';color:white;font-size:13px;font-weight:700;}
 .chk.done .chk-text{color:var(--muted);text-decoration:line-through;}
 .chk-text{flex:1;font-size:14px;line-height:1.45;}
 .chk-note{font-size:11px;color:var(--muted);margin-top:2px;}
-/* Reference-shot diagrams — replaced the stock-photo thumbnails (Tak found them a poor match,
+/* Reference-shot diagrams: replaced the stock-photo thumbnails (Tak found them a poor match,
    real-estate-style photos don't show the close inspection framing these shots need) with small
    drawn diagrams instead: drone position, distance and pass direction sketched out to match each
    chk-note's own instructions exactly, rather than approximating with whatever stock photo came
@@ -135,7 +135,7 @@ main{padding:14px;}
 .airspace-override .saved{font-size:11px;color:var(--green);margin-top:4px;}
 .cal-day-detail{margin-top:12px;}
 .cal-day-detail .job-item{margin-bottom:8px;}
-/* STAGES — progressive one-at-a-time job checklist */
+/* STAGES: progressive one-at-a-time job checklist */
 .stage{border:1px solid var(--border);border-radius:12px;margin-bottom:10px;background:var(--card);overflow:hidden;}
 .stage.locked{opacity:.55;}
 .stage-h{display:flex;align-items:center;gap:10px;padding:13px 16px;cursor:pointer;}
@@ -155,6 +155,7 @@ main{padding:14px;}
 </style>
 <script src="airtable-api.js"></script>
 <link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="portal.css">
 </head>
 <body>
 <div class="hdr">
@@ -177,7 +178,7 @@ main{padding:14px;}
 </div>
 <main>
 <!-- ══════════════════════════════════════════ -->
-<!-- JOB — the only tab used mid-job. One stage open at a time. -->
+<!-- JOB: the only tab used mid-job. One stage open at a time. -->
 <!-- ══════════════════════════════════════════ -->
 <div class="tc active" id="tab-job">
   <div class="prog-wrap">
@@ -197,7 +198,7 @@ main{padding:14px;}
     <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">📋 Set today's job (owner only)</div>
     <div id="staff-job-picker" style="display:none;margin-bottom:8px;">
       <select id="staff-job-picker-select" onchange="selectStaffJob(this.value)" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;color:var(--navy);background:var(--bg);outline:none;">
-        <option value="">— Load a job from Airtable —</option>
+        <option value="">Load a job from Airtable —</option>
       </select>
     </div>
     <div id="staff-job-picker-loading" style="display:none;font-size:11px;color:var(--muted);margin-bottom:8px;">Loading jobs from Airtable…</div>
@@ -213,47 +214,47 @@ main{padding:14px;}
   <div class="card" id="airspace-jobflow-card" style="display:none;"></div>
   <div class="card" id="overdue-card" style="display:none;"></div>
 
-  <!-- MORNING EQUIPMENT CHECK — deliberately NOT a numbered stage. It sits above the per-job
+  <!-- MORNING EQUIPMENT CHECK: deliberately NOT a numbered stage. It sits above the per-job
        stages so you naturally see it first, but it's day-scoped (resets automatically each
-       morning, not per job) and untouched by "Reset checklist for new job" — do it once before
+       morning, not per job) and untouched by "Reset checklist for new job": do it once before
        your first job, not again between jobs on a multi-job day. -->
   <div class="sl" onclick="toggleEquipCollapse()" style="cursor:pointer;">Morning equipment check <span id="equip-count" style="margin-left:auto;font-weight:700;color:var(--navy);text-transform:none;letter-spacing:normal;"></span><span id="equip-chevron" style="margin-left:6px;color:var(--muted);font-size:10px;transition:transform .15s;">▾</span></div>
   <div class="card" id="equip-card" style="margin-bottom:12px;">
     <div id="equip-card-body">
-      <div class="safety-note" style="margin-top:0;">Resets automatically each morning — do this once before your first job, not before every job today.</div>
+      <div class="safety-note" style="margin-top:0;">Resets automatically each morning: do this once before your first job, not before every job today.</div>
       <div id="equip-list"></div>
     </div>
   </div>
 
-  <!-- Per-job stages — this is what "Reset checklist for new job" clears, so on a multi-job day
+  <!-- Per-job stages: this is what "Reset checklist for new job" clears, so on a multi-job day
        you tap that button between jobs and only these three reset, not the daily cards above/below. -->
   <div id="gate-warning" class="alert red" style="display:none;margin-bottom:10px;"><div class="alert-icon">🔒</div><div>Flying and after-the-job steps are locked until the safety case below is logged.</div></div>
   <div id="unsynced-banner" style="display:none;margin-bottom:10px;"></div>
   <div id="job-stages">
-  <!-- STAGE 1 — On site, before flying (arrival + the legal pre-flight safety case) -->
+  <!-- STAGE 1: On site, before flying (arrival + the legal pre-flight safety case) -->
   <div class="stage" data-stage="1" data-open="0">
     <div class="stage-h" onclick="toggleStage(1)">
       <div class="stage-num" id="stage-num-1"></div>
       <div class="stage-title-wrap">
-        <div class="stage-title">On site — before flying</div>
+        <div class="stage-title">On site: before flying</div>
         <div class="stage-sub" id="stage-sub-1">0 of 9</div>
       </div>
       <div class="stage-chev">▾</div>
     </div>
     <div class="stage-b">
       <div class="stage-b-inner">
-        <div class="chk" data-id="staff-10" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Introduce yourself to client — politely and professionally</div></div>
+        <div class="chk" data-id="staff-10" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Introduce yourself to client: politely and professionally</div></div>
         <div class="chk" data-id="staff-11" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Walk the full site before flying<div class="chk-note">Look for power lines, trees, antennas, obstructions</div></div></div>
-        <div class="chk" data-id="staff-12" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Select clear take-off and landing zone — away from people</div></div>
-        <div class="chk" data-id="staff-13" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Attach the correct filter for today's light<div class="chk-note">ND8 — overcast or cloudy. ND32 — bright but hazy, or partial sun. ND128 — direct strong sunlight. CPL — cuts glare and reflection off tiles and wet roofs; stack it with whichever ND you're using any time there's glare, regardless of brightness.</div></div></div>
+        <div class="chk" data-id="staff-12" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Select clear take-off and landing zone: away from people</div></div>
+        <div class="chk" data-id="staff-13" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Attach the correct filter for today's light<div class="chk-note">ND8: overcast or cloudy. ND32: bright but hazy, or partial sun. ND128: direct strong sunlight. CPL: cuts glare and reflection off tiles and wet roofs; stack it with whichever ND you're using any time there's glare, regardless of brightness.</div></div></div>
         <div class="alert red" style="margin-top:10px;margin-bottom:6px;"><div class="alert-icon">🚫</div><div><strong>Never fly if:</strong> wind is above 12m/s, visibility is poor, it's raining, or you feel unsafe about the site.</div></div>
-        <div class="safety-note">This is your written safety case — required before EVERY flight, not just once a day. Tap through the 5 checks then confirm.</div>
-        <div class="chk" data-id="sc-weather" onclick="tickSC(this)"><div class="chk-box"></div><div class="chk-text">Weather checked — wind under 12m/s, no rain, clear visibility</div></div>
+        <div class="safety-note">This is your written safety case: required before EVERY flight, not just once a day. Tap through the 5 checks then confirm.</div>
+        <div class="chk" data-id="sc-weather" onclick="tickSC(this)"><div class="chk-box"></div><div class="chk-text">Weather checked: wind under 12m/s, no rain, clear visibility</div></div>
         <div id="weather-screen" style="display:none;margin-bottom:9px;"></div>
         <div id="airspace-screen" style="display:none;margin-bottom:9px;"></div>
-        <div class="chk" data-id="sc-airspace" onclick="tickSC(this)"><div class="chk-box"></div><div class="chk-text">Airspace checked — no NOTAMs or restrictions for this site<div class="chk-note">First-pass check only — also confirm on the NATS UAS Restrictions Map or DJI Fly geo-zone layer</div></div></div>
-        <div class="chk" data-id="sc-distance" onclick="tickSC(this)"><div class="chk-box"></div><div class="chk-text">CAA distance rules confirmed — 120m max altitude, 50m from uninvolved people</div></div>
-        <div class="chk" data-id="sc-equipment" onclick="tickSC(this)"><div class="chk-box"></div><div class="chk-text">Equipment ready — DJI preflight sensors green, Operator ID visible</div></div>
+        <div class="chk" data-id="sc-airspace" onclick="tickSC(this)"><div class="chk-box"></div><div class="chk-text">Airspace checked: no NOTAMs or restrictions for this site<div class="chk-note">First-pass check only: also confirm on the NATS UAS Restrictions Map or DJI Fly geo-zone layer</div></div></div>
+        <div class="chk" data-id="sc-distance" onclick="tickSC(this)"><div class="chk-box"></div><div class="chk-text">CAA distance rules confirmed: 120m max altitude, 50m from uninvolved people</div></div>
+        <div class="chk" data-id="sc-equipment" onclick="tickSC(this)"><div class="chk-box"></div><div class="chk-text">Equipment ready: DJI preflight sensors green, Operator ID visible</div></div>
         <div id="equip-status-line" style="font-size:11px;color:var(--muted);margin:-4px 0 9px 30px;"></div>
         <div class="chk" data-id="sc-insurance" onclick="tickSC(this)"><div class="chk-box"></div><div class="chk-text">Flock Cover session started<div class="chk-note">You are not insured until this is active</div></div></div>
         <button class="sc-confirm-btn" onclick="logSafetyCase()">✅ Confirm &amp; log safety case for this flight</button>
@@ -263,36 +264,36 @@ main{padding:14px;}
     </div>
   </div>
 
-  <!-- STAGE 2 — Flying / capture -->
+  <!-- STAGE 2: Flying / capture -->
   <div class="stage" data-stage="2" data-open="0">
     <div class="stage-h" onclick="toggleStage(2)">
       <div class="stage-num" id="stage-num-2"></div>
       <div class="stage-title-wrap">
-        <div class="stage-title">Flying — capture the roof</div>
+        <div class="stage-title">Flying: capture the roof</div>
         <div class="stage-sub" id="stage-sub-2">0 of 8</div>
       </div>
       <div class="stage-chev">▾</div>
     </div>
     <div class="stage-b">
       <div class="stage-b-inner">
-        <div class="chk" data-id="staff-15" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Front elevation<div class="chk-note">Hover level with the roofline, ~10-15m back, slow steady pass left to right. Include the full front slope and gutter line in frame — this is the "cover shot" for the report.<div class="shot-diagram" id="diagram-elevation"></div></div></div></div>
+        <div class="chk" data-id="staff-15" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Front elevation<div class="chk-note">Hover level with the roofline, ~10-15m back, slow steady pass left to right. Include the full front slope and gutter line in frame: this is the "cover shot" for the report.<div class="shot-diagram" id="diagram-elevation"></div></div></div></div>
         <div class="chk" data-id="staff-16" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Rear elevation<div class="chk-note">Same height and distance as the front pass. Check gardens/neighbours for anyone in frame before flying over.<div class="shot-diagram" id="diagram-elevation-rear"></div></div></div></div>
         <div class="chk" data-id="staff-17" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Both side elevations<div class="chk-note">One pass per side, perpendicular to the wall. These catch valleys and hip ends the front/rear shots miss.<div class="shot-diagram" id="diagram-side"></div></div></div></div>
-        <div class="chk" data-id="staff-18" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Every chimney — close-up<div class="chk-note">One shot per stack, close enough to see individual pots, flaunching/mortar cracks, and the chimney-to-roof flashing seal. Circle it if you can — flashing failures often show up on the side you'd otherwise miss.<div class="shot-diagram" id="diagram-chimney"></div></div></div></div>
-        <div class="chk" data-id="staff-19" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Ridge line — full length<div class="chk-note">Slow pass directly along the ridge, close enough to spot slipped/cracked ridge tiles or open joints.<div class="shot-diagram" id="diagram-ridge"></div></div></div></div>
-        <div class="chk" data-id="staff-19b" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">All flashings and valleys<div class="chk-note">Close-up on every roof-to-wall junction, valley, and any skylight/vent — these are the most common leak points and easy to under-shoot from a distance.<div class="shot-diagram" id="diagram-valley"></div></div></div></div>
-        <div class="chk" data-id="staff-19c" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Guttering — full run<div class="chk-note">Follow every gutter run close enough to see sagging, blockages, or missing sections, not just from the elevation shots.<div class="shot-diagram" id="diagram-gutter"></div></div></div></div>
-        <div class="chk" data-id="staff-19d" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Any visible defect — extra close-up<div class="chk-note">Slipped/missing tiles, moss buildup, cracked sections, staining. If you spot something during the fly-through, stop and get a dedicated close shot of it — don't rely on it appearing in a wider pass.<div class="shot-diagram" id="diagram-defect"></div></div></div></div>
+        <div class="chk" data-id="staff-18" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Every chimney: close-up<div class="chk-note">One shot per stack, close enough to see individual pots, flaunching/mortar cracks, and the chimney-to-roof flashing seal. Circle it if you can: flashing failures often show up on the side you'd otherwise miss.<div class="shot-diagram" id="diagram-chimney"></div></div></div></div>
+        <div class="chk" data-id="staff-19" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Ridge line: full length<div class="chk-note">Slow pass directly along the ridge, close enough to spot slipped/cracked ridge tiles or open joints.<div class="shot-diagram" id="diagram-ridge"></div></div></div></div>
+        <div class="chk" data-id="staff-19b" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">All flashings and valleys<div class="chk-note">Close-up on every roof-to-wall junction, valley, and any skylight/vent: these are the most common leak points and easy to under-shoot from a distance.<div class="shot-diagram" id="diagram-valley"></div></div></div></div>
+        <div class="chk" data-id="staff-19c" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Guttering: full run<div class="chk-note">Follow every gutter run close enough to see sagging, blockages, or missing sections, not just from the elevation shots.<div class="shot-diagram" id="diagram-gutter"></div></div></div></div>
+        <div class="chk" data-id="staff-19d" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Any visible defect: extra close-up<div class="chk-note">Slipped/missing tiles, moss buildup, cracked sections, staining. If you spot something during the fly-through, stop and get a dedicated close shot of it: don't rely on it appearing in a wider pass.<div class="shot-diagram" id="diagram-defect"></div></div></div></div>
         <div class="chk" data-id="staff-20" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Top-down overview of the full roof<div class="chk-note">Straight-down, high enough to fit the entire roof (all slopes) in one frame. This is the shot the area/footprint measurement and the report's overview image both rely on.<div class="shot-diagram" id="diagram-topdown"></div></div></div></div>
-        <div class="chk" data-id="staff-20b" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Angled 3/4 overview<div class="chk-note">A higher, angled shot showing the roof in context with the rest of the property — gives the client a "whole picture" shot the straight-down one doesn't.<div class="shot-diagram" id="diagram-angled"></div></div></div></div>
-        <div class="chk" data-id="staff-21" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Review footage on phone before landing<div class="chk-note">Check every elevation, chimney, and defect shot is sharp and in frame. Reshoot anything blurry or cut off now — going back up later means a second trip.</div></div></div>
-        <div class="chk" data-id="staff-22" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Land safely — stop Flock Cover session</div></div>
+        <div class="chk" data-id="staff-20b" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Angled 3/4 overview<div class="chk-note">A higher, angled shot showing the roof in context with the rest of the property: gives the client a "whole picture" shot the straight-down one doesn't.<div class="shot-diagram" id="diagram-angled"></div></div></div></div>
+        <div class="chk" data-id="staff-21" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Review footage on phone before landing<div class="chk-note">Check every elevation, chimney, and defect shot is sharp and in frame. Reshoot anything blurry or cut off now: going back up later means a second trip.</div></div></div>
+        <div class="chk" data-id="staff-22" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Land safely: stop Flock Cover session</div></div>
         <div id="job-complete-status" style="display:none;font-size:12px;margin-top:8px;"></div>
       </div>
     </div>
   </div>
 
-  <!-- STAGE 3 — After the job -->
+  <!-- STAGE 3: After the job -->
   <div class="stage" data-stage="3" data-open="0">
     <div class="stage-h" onclick="toggleStage(3)">
       <div class="stage-num" id="stage-num-3"></div>
@@ -305,14 +306,14 @@ main{padding:14px;}
     <div class="stage-b">
       <div class="stage-b-inner">
         <div class="chk" data-id="staff-23" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Transfer all footage to laptop and back up immediately</div></div>
-        <div class="chk" data-id="staff-24" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Select best photos — minimum 20 for the report</div></div>
-        <div class="alert blue" style="margin-top:2px;"><div class="alert-icon">📝</div><div>Writing the report itself happens on the separate report generator site, not here. Report due within 5 working days — aim for 3.</div></div>
+        <div class="chk" data-id="staff-24" onclick="tick(this)"><div class="chk-box"></div><div class="chk-text">Select best photos: minimum 20 for the report</div></div>
+        <div class="alert blue" style="margin-top:2px;"><div class="alert-icon">📝</div><div>Writing the report itself happens on the separate report generator site, not here. Report due within 5 working days: aim for 3.</div></div>
       </div>
     </div>
   </div>
   </div>
 
-  <!-- READY FOR TOMORROW — same treatment as the morning equipment check: day-scoped, not a
+  <!-- READY FOR TOMORROW: same treatment as the morning equipment check: day-scoped, not a
        numbered stage, untouched by "Reset checklist for new job". Sits after the per-job stages
        so it's naturally the last thing you see, once after your last job of the day. -->
   <div class="sl">Ready for tomorrow <span id="ready-count" style="margin-left:auto;font-weight:700;color:var(--navy);text-transform:none;letter-spacing:normal;"></span></div>
@@ -324,17 +325,17 @@ main{padding:14px;}
 </div>
 
 <!-- ══════════════════════════════════════════ -->
-<!-- REFERENCE — everything you look up, not act through -->
+<!-- REFERENCE: everything you look up, not act through -->
 <!-- ══════════════════════════════════════════ -->
 <div class="tc" id="tab-ref">
-  <div class="alert blue"><div class="alert-icon">🧰</div><div><strong>Equipment check:</strong> lives at the top of the Job tab now, above the per-job checklist — do it there once each morning, not here.</div></div>
+  <div class="alert blue"><div class="alert-icon">🧰</div><div><strong>Equipment check:</strong> lives at the top of the Job tab now, above the per-job checklist: do it there once each morning, not here.</div></div>
   <div class="sl">On-site notes</div>
   <div class="card" style="margin-bottom:12px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-      <div style="font-size:12px;font-weight:700;color:var(--navy);">Notes — tap to edit</div>
+      <div style="font-size:12px;font-weight:700;color:var(--navy);">Notes: tap to edit</div>
       <button onclick="clearSiteNotes()" style="font-size:11px;color:var(--muted);background:none;border:1px solid var(--border);border-radius:6px;padding:2px 8px;cursor:pointer;">Clear</button>
     </div>
-    <textarea id="site-notes" placeholder="Anything you want to remember or tell Takhy after the job..."
+    <textarea id="site-notes" placeholder="Anything you want to remember or tell Takhy after the job…"
       style="width:100%;min-height:100px;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;color:var(--navy);background:var(--bg);resize:none;outline:none;line-height:1.5;"
       oninput="saveSiteNotes()"></textarea>
     <button onclick="copySiteNotes()" style="width:100%;background:var(--navy);color:var(--gold);border:none;border-radius:8px;padding:8px;font-size:12px;font-weight:700;cursor:pointer;margin-top:6px;">📋 Copy notes to send to Takhy</button>
@@ -345,26 +346,26 @@ main{padding:14px;}
     <div class="row"><span class="rl">Rain</span><span class="rv r">Never fly in rain</span></div>
     <div class="row"><span class="rl">Minimum visibility</span><span class="rv">Clear visual contact at all times</span></div>
     <div class="row"><span class="rl">Fog or low cloud</span><span class="rv r">Do not fly</span></div>
-    <div class="row"><span class="rl">Cold weather (below 0°C)</span><span class="rv a">Reduce battery efficiency — check charge</span></div>
+    <div class="row"><span class="rl">Cold weather (below 0°C)</span><span class="rv a">Reduce battery efficiency: check charge</span></div>
     <div class="row"><span class="rl">Strong gusts</span><span class="rv r">Cancel even if avg wind is ok</span></div>
   </div>
-  <div class="sl">CAA rules — always follow these</div>
+  <div class="sl">CAA rules: always follow these</div>
   <div class="card" style="margin-bottom:12px;">
     <div class="row"><span class="rl">Maximum altitude</span><span class="rv">120 metres (400 feet)</span></div>
-    <div class="row"><span class="rl">Keep drone in sight</span><span class="rv">Always — visual line of sight only</span></div>
+    <div class="row"><span class="rl">Keep drone in sight</span><span class="rv">Always: visual line of sight only</span></div>
     <div class="row"><span class="rl">Distance from uninvolved people</span><span class="rv">50 metres minimum</span></div>
     <div class="row"><span class="rl">Distance from crowds/gatherings</span><span class="rv a">Do not fly over</span></div>
     <div class="row"><span class="rl">Near airports/heliports</span><span class="rv r">Never without permission</span></div>
     <div class="row"><span class="rl">Emergency vehicles / police scene</span><span class="rv r">Land immediately if asked</span></div>
-    <div class="row"><span class="rl">Privacy — filming people</span><span class="rv">Roof only — never film interiors</span></div>
+    <div class="row"><span class="rl">Privacy: filming people</span><span class="rv">Roof only: never film interiors</span></div>
     <div class="row"><span class="rl">Operator ID</span><span class="rv">Must be on aircraft and visible</span></div>
   </div>
-  <div class="alert blue"><div class="alert-icon">🧍</div><div><strong>Can't get 50m clear of people (busy street etc):</strong> This is a hard limit, not a judgement call — don't fly through it. In order of preference: (1) ask people nearby to step back 50m while you fly that pass, (2) change your flight path or take-off point so the drone itself stays 50m clear even if people are on the street, (3) use a spotter or briefly cordon the pavement under your flight path, (4) fly at a quieter time. If none of that gets you to 50m, reschedule the job — don't fly anyway.</div></div>
+  <div class="alert blue"><div class="alert-icon">🧍</div><div><strong>Can't get 50m clear of people (busy street etc):</strong> This is a hard limit, not a judgement call: don't fly through it. In order of preference: (1) ask people nearby to step back 50m while you fly that pass, (2) change your flight path or take-off point so the drone itself stays 50m clear even if people are on the street, (3) use a spotter or briefly cordon the pavement under your flight path, (4) fly at a quieter time. If none of that gets you to 50m, reschedule the job: don't fly anyway.</div></div>
   <div class="sl">If something goes wrong</div>
-  <div class="alert amber"><div class="alert-icon">⚠️</div><div><strong>Drone crash or incident:</strong> Stop flying immediately. Check if anyone is injured — call 999 if needed. Secure the area. Call Takhy on 07498 364197. Do not post anything on social media.</div></div>
+  <div class="alert amber"><div class="alert-icon">⚠️</div><div><strong>Drone crash or incident:</strong> Stop flying immediately. Check if anyone is injured: call 999 if needed. Secure the area. Call Takhy on 07498 364197. Do not post anything on social media.</div></div>
   <div class="alert amber"><div class="alert-icon">⚠️</div><div><strong>Someone asks you to land:</strong> Land immediately and politely. You are not obliged to explain but be respectful. Call Takhy if there's any dispute.</div></div>
   <div class="alert amber"><div class="alert-icon">⚠️</div><div><strong>Lost signal or fly-away:</strong> Do not panic. The drone will hover and return to home. Call Takhy on 07498 364197 as soon as it's safe to do so.</div></div>
-  <div class="alert blue"><div class="alert-icon">📋</div><div><strong>Flock Cover:</strong> Always start and stop your session in the app. This is your insurance — without it active you are not covered.</div></div>
+  <div class="alert blue"><div class="alert-icon">📋</div><div><strong>Flock Cover:</strong> Always start and stop your session in the app. This is your insurance: without it active you are not covered.</div></div>
   <div class="sl">On-site safety</div>
   <div class="card" style="margin-bottom:12px;">
     <div class="row"><span class="rl">Hi-vis vest</span><span class="rv">Always worn during flight</span></div>
@@ -374,20 +375,20 @@ main{padding:14px;}
     <div class="row"><span class="rl">Client's garden / property</span><span class="rv">Ask permission before entering garden</span></div>
     <div class="row"><span class="rl">Never leave drone unattended</span><span class="rv">Keep eyes on it at all times</span></div>
   </div>
-  <div class="sl">Client questions — what to say</div>
+  <div class="sl">Client questions: what to say</div>
   <div class="card" style="margin-bottom:12px;">
-    <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Clients sometimes ask these on the doorstep. Give a calm, canned answer — don't improvise.</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Clients sometimes ask these on the doorstep. Give a calm, canned answer: don't improvise.</div>
     <div class="acc" data-open="0">
       <div class="acc-h" onclick="toggleAcc(this)"><span>"Is this legal?"</span><span class="acc-chev">▾</span></div>
-      <div class="acc-b">Yes. We're a CAA-registered drone operator with a visible Operator ID on the aircraft, and we're fully insured through Flock Cover. We only ever film roofs — never interiors or gardens beyond what's needed to reach the roofline.</div>
+      <div class="acc-b">Yes. We're a CAA-registered drone operator with a visible Operator ID on the aircraft, and we're fully insured through Flock Cover. We only ever film roofs: never interiors or gardens beyond what's needed to reach the roofline.</div>
     </div>
     <div class="acc" data-open="0">
       <div class="acc-h" onclick="toggleAcc(this)"><span>"Will you film my neighbours?"</span><span class="acc-chev">▾</span></div>
-      <div class="acc-b">No. The flight path stays directly over your property and roofline. We're not looking into neighbouring gardens or windows — the camera is angled at the roof, not sideways.</div>
+      <div class="acc-b">No. The flight path stays directly over your property and roofline. We're not looking into neighbouring gardens or windows: the camera is angled at the roof, not sideways.</div>
     </div>
     <div class="acc" data-open="0">
       <div class="acc-h" onclick="toggleAcc(this)"><span>"Do I need to tell my neighbours?"</span><span class="acc-chev">▾</span></div>
-      <div class="acc-b">You're not legally required to, but it's a nice courtesy if a drone flying nearby might surprise them — entirely up to you.</div>
+      <div class="acc-b">You're not legally required to, but it's a nice courtesy if a drone flying nearby might surprise them: entirely up to you.</div>
     </div>
     <div class="acc" data-open="0">
       <div class="acc-h" onclick="toggleAcc(this)"><span>"How long will this take?"</span><span class="acc-chev">▾</span></div>
@@ -395,7 +396,7 @@ main{padding:14px;}
     </div>
     <div class="acc" data-open="0">
       <div class="acc-h" onclick="toggleAcc(this)"><span>"What if it's too windy or starts raining?"</span><span class="acc-chev">▾</span></div>
-      <div class="acc-b">Safety comes first — if conditions aren't safe to fly we'll reschedule at no extra cost. We'd rather come back than risk a bad flight.</div>
+      <div class="acc-b">Safety comes first: if conditions aren't safe to fly we'll reschedule at no extra cost. We'd rather come back than risk a bad flight.</div>
     </div>
     <div class="acc" data-open="0">
       <div class="acc-h" onclick="toggleAcc(this)"><span>"Can I watch?"</span><span class="acc-chev">▾</span></div>
@@ -406,7 +407,7 @@ main{padding:14px;}
       <div class="acc-b">They're stored securely and used only to build your report. We don't share or publish them without your permission.</div>
     </div>
   </div>
-  <div class="alert amber"><div class="alert-icon">🤐</div><div><strong>What not to say:</strong> don't guarantee outcomes ("you'll definitely need a new roof"), don't give structural or legal advice beyond what's in the report, don't badmouth other roofers or trades, and don't negotiate or change the price on site — refer pricing questions to Takhy.</div></div>
+  <div class="alert amber"><div class="alert-icon">🤐</div><div><strong>What not to say:</strong> don't guarantee outcomes ("you'll definitely need a new roof"), don't give structural or legal advice beyond what's in the report, don't badmouth other roofers or trades, and don't negotiate or change the price on site: refer pricing questions to Takhy.</div></div>
   <div class="alert amber"><div class="alert-icon">😬</div><div><strong>If a client complains:</strong> stay calm and polite. Don't admit fault or promise a refund on the spot. Note down exactly what they said, then tell Takhy as soon as possible so it can be handled properly.</div></div>
   <div class="sl">Emergency contacts</div>
   <div class="card" style="margin-bottom:12px;">
@@ -418,9 +419,9 @@ main{padding:14px;}
   </div>
   <div class="sl">Incident log</div>
   <div class="card" style="margin-bottom:12px;">
-    <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Record any on-site issue for insurance and CAA records — near miss, weather abort, confrontation, equipment fault.</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Record any on-site issue for insurance and CAA records: near miss, weather abort, confrontation, equipment fault.</div>
     <select id="incident-type" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:9px;font-size:13px;background:white;color:var(--navy);outline:none;margin-bottom:8px;">
-      <option value="">— Incident type —</option>
+      <option value="">Incident type —</option>
       <option>Near miss</option>
       <option>Weather abort</option>
       <option>Equipment fault</option>
@@ -428,7 +429,7 @@ main{padding:14px;}
       <option>Property damage</option>
       <option>Other</option>
     </select>
-    <textarea id="incident-notes" placeholder="What happened, when, where..." style="width:100%;min-height:70px;border:1px solid var(--border);border-radius:8px;padding:9px;font-size:13px;font-family:inherit;color:var(--navy);background:var(--bg);resize:none;outline:none;margin-bottom:8px;"></textarea>
+    <textarea id="incident-notes" placeholder="What happened, when, where…" style="width:100%;min-height:70px;border:1px solid var(--border);border-radius:8px;padding:9px;font-size:13px;font-family:inherit;color:var(--navy);background:var(--bg);resize:none;outline:none;margin-bottom:8px;"></textarea>
     <button onclick="logIncident()" style="background:var(--red);color:white;border:none;border-radius:8px;padding:9px;font-size:13px;font-weight:700;cursor:pointer;width:100%;">⚠️ Log incident</button>
     <div id="incident-result" style="font-size:12px;text-align:center;margin-top:6px;"></div>
     <div id="incident-history" style="margin-top:10px;"></div>
@@ -482,7 +483,7 @@ main{padding:14px;}
 </div>
 
 <!-- ══════════════════════════════════════════ -->
-<!-- JOBS — the claim board. Contractors (scanners / report writers) claim jobs themselves    -->
+<!-- JOBS: the claim board. Contractors (scanners / report writers) claim jobs themselves    -->
 <!-- instead of being assigned one, which keeps the arrangement genuinely self-employed and   -->
 <!-- gives a natural fallback: an unclaimed or stale-claimed job is always visible for someone -->
 <!-- else to pick up. See airtable-api.js's "Job-claiming pool" section for the release logic. -->
@@ -491,7 +492,7 @@ main{padding:14px;}
   <div class="sl">Who are you</div>
   <div class="card" style="margin-bottom:12px;">
     <select id="claim-who-select" onchange="onClaimWhoChange(this.value)" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;color:var(--navy);background:var(--bg);outline:none;">
-      <option value="">— Select your name —</option>
+      <option value="">Select your name —</option>
     </select>
     <div style="font-size:11px;color:var(--muted);margin-top:8px;">Remembered on this device. Only your matching role (scanner / report writer) sees jobs it can claim.</div>
   </div>
@@ -537,8 +538,8 @@ function showTab(id,btn){
   if(id === 'job'){ loadJobFlowLive(); loadAirspaceScreen(); loadWeatherScreen(); loadStaffJobPicker(); }
   if(id === 'claim'){ initClaimTab(); }
 }
-// ═══ JOB CLAIM BOARD — contractors claim their own scan/report jobs ═══
-// "Who you are" is just a remembered Contractors record id in localStorage — there's no separate
+// ═══ JOB CLAIM BOARD: contractors claim their own scan/report jobs ═══
+// "Who you are" is just a remembered Contractors record id in localStorage: there's no separate
 // per-person login here (the app already sits behind the shared staff passphrase), this is only
 // so the board knows which role/jobs to show and who a claim belongs to.
 function getClaimWhoId(){ try{ return localStorage.getItem('rs_claim_who') || ''; }catch(e){ return ''; } }
@@ -565,7 +566,7 @@ async function loadClaimWhoSelect(){
     _claimContractors = await AT.getActiveContractors();
   }catch(e){ _claimContractors = []; }
   var saved = getClaimWhoId();
-  sel.innerHTML = '<option value="">— Select your name —</option>' + _claimContractors.map(function(c){
+  sel.innerHTML = '<option value="">Select your name —</option>' + _claimContractors.map(function(c){
     var f = c.fields;
     var role = f[AT.FIELDS.contractors.role] ? (f[AT.FIELDS.contractors.role].name || f[AT.FIELDS.contractors.role]) : '';
     var label = (f[AT.FIELDS.contractors.name]||'Unnamed') + (role ? ' (' + role + ')' : '');
@@ -584,9 +585,9 @@ function _claimContractorRole(id){
   return r ? (r.name || r) : '';
 }
 function _jobLabel(f){
-  return (f[AT.FIELDS.jobs.client]||'Client') + ' — ' + (f[AT.FIELDS.jobs.address]||'') + (f[AT.FIELDS.jobs.date] ? (' · ' + AT.fmtDate(f[AT.FIELDS.jobs.date])) : '');
+  return (f[AT.FIELDS.jobs.client]||'Client') + ': ' + (f[AT.FIELDS.jobs.address]||'') + (f[AT.FIELDS.jobs.date] ? (' · ' + AT.fmtDate(f[AT.FIELDS.jobs.date])) : '');
 }
-// In-app notification for an idle claimed job — same warning the reminder email sends, shown as a
+// In-app notification for an idle claimed job: same warning the reminder email sends, shown as a
 // banner inside the Jobs tab plus a red badge on the tab button so it's visible without opening it.
 async function refreshClaimReminders(whoId){
   var box = document.getElementById('claim-reminders');
@@ -663,7 +664,7 @@ async function loadClaimBoard(){
     mineEmpty.style.display='block'; mineEmpty.textContent='Select your name above to see your claimed jobs.'; mineList.innerHTML='';
   }
 
-  // Available scans — hidden entirely if your role can't do scans
+  // Available scans: hidden entirely if your role can't do scans
   var canScan = !whoId || role === 'Scanner' || role === 'Both';
   scansCard.style.display = canScan ? 'block' : 'none';
   if(canScan){
@@ -680,7 +681,7 @@ async function loadClaimBoard(){
     }catch(e){ scansEmpty.style.display='block'; scansEmpty.textContent='Could not load available scans.'; scansList.innerHTML=''; }
   }
 
-  // Available reports — hidden entirely if your role can't write reports
+  // Available reports: hidden entirely if your role can't write reports
   var canReport = !whoId || role === 'Report Writer' || role === 'Both';
   reportsCard.style.display = canReport ? 'block' : 'none';
   if(canReport){
@@ -706,10 +707,10 @@ async function claimAction(action, jobId){
     else if(action === 'completeReport') await AT.completeReport(jobId);
     await loadClaimBoard();
   }catch(e){
-    alert('Couldn\'t update that job — check your connection and try again.');
+    alert('Couldn\'t update that job: check your connection and try again.');
   }
 }
-// ═══ JOB PICKER — same idea as the report generator's "Load job from Airtable" dropdown ═══
+// ═══ JOB PICKER: same idea as the report generator's "Load job from Airtable" dropdown ═══
 // Lists jobs in the next 14 days (today included) so you can pick tomorrow's or a later one too,
 // not just whatever's dated today. Selecting one fills the same box the manual "Set today's job"
 // textarea uses, going through the existing manual-edit-protection logic so it won't silently
@@ -725,9 +726,9 @@ async function loadStaffJobPicker(){
     var jobs = await AT.getUpcomingJobs(14);
     if(loading) loading.style.display='none';
     if(!jobs.length){ wrap.style.display='none'; return; }
-    sel.innerHTML = '<option value="">— Load a job from Airtable —</option>' + jobs.map(function(j){
+    sel.innerHTML = '<option value="">Load a job from Airtable —</option>' + jobs.map(function(j){
       var f = j.fields;
-      var label = AT.fmtDate(f[AT.FIELDS.jobs.date]) + ' — ' + (f[AT.FIELDS.jobs.client]||'Client') + ', ' + (f[AT.FIELDS.jobs.address]||'');
+      var label = AT.fmtDate(f[AT.FIELDS.jobs.date]) + ': ' + (f[AT.FIELDS.jobs.client]||'Client') + ', ' + (f[AT.FIELDS.jobs.address]||'');
       return '<option value="'+j.id+'">'+label.replace(/"/g,'&quot;')+'</option>';
     }).join('');
     wrap.style.display='block';
@@ -741,11 +742,11 @@ function selectStaffJob(recordId){
   AT.listRecords(AT.TABLES.jobs, [AT.FIELDS.jobs.client, AT.FIELDS.jobs.address, AT.FIELDS.jobs.propType, AT.FIELDS.jobs.notes], "RECORD_ID()='"+recordId+"'", null, 1).then(function(recs){
     if(!recs || !recs.length) return;
     var f = recs[0].fields;
-    // Address must be first line — loadAirspaceScreen()/loadWeatherScreen() both parse line 1
+    // Address must be first line: loadAirspaceScreen()/loadWeatherScreen() both parse line 1
     // as the address (matching the manual-entry placeholder's own convention). This was
     // previously client-first, which silently broke the airspace/weather safety-case checks
     // for any job loaded via this picker (worked fine for hand-typed jobs, since those followed
-    // the placeholder's address-first convention) — caught in council round 2 review.
+    // the placeholder's address-first convention): caught in council round 2 review.
     var details = [
       f[AT.FIELDS.jobs.address] || '',
       f[AT.FIELDS.jobs.client] || '',
@@ -768,10 +769,10 @@ function selectStaffJob(recordId){
   }).catch(function(){});
 }
 // Per council round 2: the "Weather checked" safety-case item was a bare checkbox with no
-// actual number next to it — ticking it meant taking your own word for the wind speed rather
+// actual number next to it: ticking it meant taking your own word for the wind speed rather
 // than looking at one. This pulls the real, current reading for today's job's address right
 // next to the tap target, same pattern as the existing airspace check below it.
-// ── Live "checked Xm ago" labels — a single ticker updates every timestamped status line every
+// ── Live "checked Xm ago" labels: a single ticker updates every timestamped status line every
 // 30s without re-fetching anything, so weather/airspace/equipment all read their actual age
 // instead of a frozen "just now" from whenever the page happened to load.
 function timeAgo(iso){
@@ -843,7 +844,7 @@ function loadAirspaceScreen(){
       '</div></div></div>';
   }).catch(function(){ box.style.display='none'; box.innerHTML=''; });
 }
-// Calendar + monthly stats are opt-in now (see council note above the markup) — remembers the
+// Calendar + monthly stats are opt-in now (see council note above the markup): remembers the
 // choice per device so it doesn't have to be re-expanded every visit once Takhy actually wants it.
 function togglePlanningAdvanced(){
   var adv = document.getElementById('planning-advanced');
@@ -870,17 +871,17 @@ function toggleAcc(headerEl){
   var open = acc.getAttribute('data-open')==='1';
   acc.setAttribute('data-open', open?'0':'1');
 }
-// ═══ STAGES — progressive one-at-a-time job checklist ═══════════════════
+// ═══ STAGES: progressive one-at-a-time job checklist ═══════════════════
 // Each stage auto-collapses when fully ticked and hands off to the next one, so only one stage's
 // items are visible at a time instead of all ~30 tasks at once. Tapping a stage header always
 // still opens it manually (e.g. to go back and check something), this only controls the default.
 var STAGE_COUNT = 3;
-// ── HARD GATE — per council review: ticking the 5 safety-case checkboxes was never actually
+// ── HARD GATE: per council review: ticking the 5 safety-case checkboxes was never actually
 // tied to pressing "Confirm & log safety case", so a stage could show as "complete" (and
 // auto-advance let you into Flying) without the safety case ever really being logged. That's
 // a real gap on a legally/insurance-load-bearing check, not just a UX nicety. Now Stage 2
-// (Flying) and Stage 3 (After the job) are hard-locked — can't be opened, and their items can't
-// be ticked — until logSafetyCase() has actually run and passed for this job. Cleared per job by
+// (Flying) and Stage 3 (After the job) are hard-locked: can't be opened, and their items can't
+// be ticked: until logSafetyCase() has actually run and passed for this job. Cleared per job by
 // "Reset checklist for new job", same as everything else in #job-stages.
 function flightCleared(){ try{ return localStorage.getItem('rs_flight_cleared')==='1'; }catch(e){ return false; } }
 function setFlightCleared(v){ try{ if(v) localStorage.setItem('rs_flight_cleared','1'); else localStorage.removeItem('rs_flight_cleared'); }catch(e){} }
@@ -905,7 +906,7 @@ function updateStageUI(){
     el.classList.toggle('done', complete && !locked);
     el.classList.toggle('locked', locked);
     document.getElementById('stage-num-'+n).textContent = locked ? '🔒' : (complete ? '' : n);
-    document.getElementById('stage-sub-'+n).textContent = locked ? 'Log the safety case above first' : (complete ? 'Done — tap to reopen' : (done+' of '+all));
+    document.getElementById('stage-sub-'+n).textContent = locked ? 'Log the safety case above first' : (complete ? 'Done: tap to reopen' : (done+' of '+all));
   }
 }
 function toggleStage(n, force){
@@ -927,7 +928,7 @@ function autoAdvance(){
   toggleStage(STAGE_COUNT);
 }
 function tick(el){
-  // Hard stop, not just a dimmed-looking stage — if the safety case isn't logged, items inside
+  // Hard stop, not just a dimmed-looking stage: if the safety case isn't logged, items inside
   // stage 2/3 simply cannot be ticked, even if someone finds a way to open the stage.
   var stageParent = el.closest('.stage');
   var stageNum = stageParent ? +stageParent.dataset.stage : 0;
@@ -940,10 +941,10 @@ function tick(el){
   if(stageNum === 2) maybeSyncJobComplete();
 }
 // ── Marks the linked Airtable job Complete as soon as Stage 2 (Flying) is fully ticked, not
-// waiting for Stage 3 — per Tak's request, since a multi-job day means footage transfer/photo
+// waiting for Stage 3: per Tak's request, since a multi-job day means footage transfer/photo
 // selection (Stage 3) might not happen until much later, and the office side shouldn't have to
 // wait for that to know the flight itself is done. Only fires once per job (rs_job_status_synced),
-// and only if a specific Airtable job was actually linked via the picker or auto-fill — if Tak
+// and only if a specific Airtable job was actually linked via the picker or auto-fill: if Tak
 // typed the job in by hand with no Airtable record behind it, there's nothing to write back to.
 function maybeSyncJobComplete(){
   var all = stageChecks(2).length, done = stageDoneCount(2);
@@ -952,24 +953,24 @@ function maybeSyncJobComplete(){
   var already = ''; try{ already = localStorage.getItem('rs_job_status_synced') || ''; }catch(e){}
   var statusEl = document.getElementById('job-complete-status');
   if(!jobId){
-    if(statusEl){ statusEl.style.display='block'; statusEl.style.color='var(--muted)'; statusEl.textContent='No Airtable job linked — pick one from the dropdown above to auto-update its status.'; }
+    if(statusEl){ statusEl.style.display='block'; statusEl.style.color='var(--muted)'; statusEl.textContent='No Airtable job linked: pick one from the dropdown above to auto-update its status.'; }
     return;
   }
   if(already === '1') return;
   if(typeof AT === 'undefined' || !AT.hasToken()){
-    if(statusEl){ statusEl.style.display='block'; statusEl.style.color='var(--amber)'; statusEl.textContent='Flying complete — connect Airtable in Planning to mark the job Complete automatically.'; }
+    if(statusEl){ statusEl.style.display='block'; statusEl.style.color='var(--amber)'; statusEl.textContent='Flying complete: connect Airtable in Planning to mark the job Complete automatically.'; }
     return;
   }
   if(statusEl){ statusEl.style.display='block'; statusEl.style.color='var(--muted)'; statusEl.textContent='Marking job Complete in Airtable…'; }
   AT.setJobStatus(jobId, 'Complete').then(function(){
     try{ localStorage.setItem('rs_job_status_synced','1'); }catch(e){}
-    if(statusEl){ statusEl.style.color='var(--green)'; statusEl.textContent='✓ Job marked Complete in Airtable — safe to move on to the next one.'; }
+    if(statusEl){ statusEl.style.color='var(--green)'; statusEl.textContent='✓ Job marked Complete in Airtable: safe to move on to the next one.'; }
   }).catch(function(){
     // Per council round 2: this used to just show a line of text that scrolled out of view —
     // a failed write here (job never actually marked Complete) was as invisible as the
     // safety-case sync failures round 1 fixed. Now it queues into the same persistent
     // unsynced-banner/retry system instead of silently disappearing.
-    if(statusEl){ statusEl.style.color='var(--red)'; statusEl.textContent='⚠ Could not update Airtable — queued to retry.'; }
+    if(statusEl){ statusEl.style.color='var(--red)'; statusEl.textContent='⚠ Could not update Airtable: queued to retry.'; }
     var pending = []; try{ pending = JSON.parse(localStorage.getItem('rs_pending_job_status'))||[]; }catch(e){}
     if(!pending.some(function(p){ return p.jobId === jobId; })) pending.push({ jobId: jobId, time: new Date().toISOString() });
     try{ localStorage.setItem('rs_pending_job_status', JSON.stringify(pending)); }catch(e){}
@@ -977,7 +978,7 @@ function maybeSyncJobComplete(){
   });
 }
 function updateProg(){
-  // Scoped to #job-stages only — the daily equipment/ready-for-tomorrow cards have their own
+  // Scoped to #job-stages only: the daily equipment/ready-for-tomorrow cards have their own
   // small counters instead, since they're once-a-day, not once-per-job, and shouldn't dilute
   // (or be wiped by) the per-job progress bar/reset button.
   const all=document.querySelectorAll('#job-stages .chk');
@@ -993,7 +994,7 @@ function resetChecks(){
     if(e.dataset.id) localStorage.removeItem('rschk_'+e.dataset.id);
   });
   setFlightCleared(false);
-  // Moving to a new job — unlink the previous one so its completion sync can't leak onto
+  // Moving to a new job: unlink the previous one so its completion sync can't leak onto
   // whichever job comes next until it's explicitly (re)selected.
   try{ localStorage.removeItem('rs_job_today_id'); localStorage.removeItem('rs_job_status_synced'); }catch(e){}
   var statusEl = document.getElementById('job-complete-status');
@@ -1001,9 +1002,9 @@ function resetChecks(){
   updateProg();
   autoAdvance();
 }
-// ═══ DAILY CARDS — morning equipment check & ready for tomorrow ════════════
+// ═══ DAILY CARDS: morning equipment check & ready for tomorrow ════════════
 // Both use date-scoped keys (rs_equip_/rs_ready_ + today's date), so they reset themselves
-// automatically each morning rather than being tied to "Reset checklist for new job" — that
+// automatically each morning rather than being tied to "Reset checklist for new job": that
 // button only touches #job-stages, so ticking through several jobs in a day won't wipe either
 // of these. Each has its own small counter next to its heading rather than feeding the main
 // per-job progress bar.
@@ -1011,19 +1012,19 @@ var EQUIP_ITEMS = [
   'Drone (aircraft)',
   '3× batteries charged to 100%',
   'Charger packed',
-  'All filters packed — ND8, ND32, ND128, CPL',
+  'All filters packed: ND8, ND32, ND128, CPL',
   'Memory cards formatted and empty (+ spare)',
-  'Phone charged — DJI Fly app open and updated',
+  'Phone charged: DJI Fly app open and updated',
   'Hi-vis vest packed',
   'Operator ID label visible on aircraft',
   'Controller/tablet charged',
-  'Flock Cover app — account logged in and ready'
+  'Flock Cover app: account logged in and ready'
 ];
 var READY_ITEMS = [
   'Charge all batteries used today',
   'Format and empty memory cards for tomorrow',
-  'Re-pack the bag — all filters, hi-vis, charger, spare card',
-  'Know your first stop tomorrow — check Airtable, or if nothing\'s booked yet, that\'s fine too',
+  'Re-pack the bag: all filters, hi-vis, charger, spare card',
+  'Know your first stop tomorrow: check Airtable, or if nothing\'s booked yet, that\'s fine too',
   'Anything broken or low? Note it for Takhy now, not tomorrow morning'
 ];
 function todayStr(){ return new Date().toISOString().slice(0,10); }
@@ -1052,7 +1053,7 @@ function tickEquip(el){
   try{ if(el.classList.contains('done')) localStorage.setItem(key,'1'); else localStorage.removeItem(key); }catch(e){}
   updateDailyCount('equip-list','equip-count');
   applyEquipCollapse();
-  // Stamp (or clear) the completion time as soon as the last item is ticked — this is what the
+  // Stamp (or clear) the completion time as soon as the last item is ticked: this is what the
   // safety-case "Equipment ready" line reads from, so Tak can see it was actually confirmed this
   // morning rather than just trusting a stale tick from yesterday.
   var doneAtKey = 'rs_equip_completed_at_'+todayStr();
@@ -1063,7 +1064,7 @@ function tickEquip(el){
   renderEquipStatusLine();
 }
 // Reads back the local, already-tracked equipment-check state for the safety-case "Equipment
-// ready" line — no external API for this one (it's a physical sensor/label check), so the best
+// ready" line: no external API for this one (it's a physical sensor/label check), so the best
 // live source is the morning checklist Tak already ticks through.
 function renderEquipStatusLine(){
   var el = document.getElementById('equip-status-line');
@@ -1071,14 +1072,14 @@ function renderEquipStatusLine(){
   var doneAt = null;
   try{ doneAt = localStorage.getItem('rs_equip_completed_at_'+todayStr()); }catch(e){}
   if(doneAt){
-    el.innerHTML = '✅ Confirmed this morning — <span id="equip-checked-ago" data-checked-at="'+doneAt+'">'+timeAgo(doneAt)+'</span>';
+    el.innerHTML = '✅ Confirmed this morning: <span id="equip-checked-ago" data-checked-at="'+doneAt+'">'+timeAgo(doneAt)+'</span>';
     el.style.color = 'var(--green)';
   } else {
-    el.innerHTML = '⚠️ Not yet confirmed today — finish the morning equipment list above';
+    el.innerHTML = '⚠️ Not yet confirmed today: finish the morning equipment list above';
     el.style.color = 'var(--amber)';
   }
 }
-// ── Equipment card auto-collapse — per Tak's request, once every item is ticked the card
+// ── Equipment card auto-collapse: per Tak's request, once every item is ticked the card
 // tucks itself away (like the numbered stages do) instead of sitting there fully expanded
 // taking up screen space. Header stays tappable to reopen/re-close manually at any time.
 var equipManualOpen = null; // null = auto (collapse only when complete), true/false = user override
@@ -1108,7 +1109,7 @@ function tickReady(el){
   try{ if(el.classList.contains('done')) localStorage.setItem(key,'1'); else localStorage.removeItem(key); }catch(e){}
   updateDailyCount('ready-list','ready-count');
 }
-// ── Shot-framing diagrams — small drawn drone/house sketches for the Stage 2 flying checklist,
+// ── Shot-framing diagrams: small drawn drone/house sketches for the Stage 2 flying checklist,
 // replacing the stock photos Tak found didn't match the actual close inspection framing needed.
 // Each one is built once here rather than repeating SVG markup five times in the HTML above.
 function droneIcon(cx,cy){
@@ -1240,7 +1241,7 @@ function setCurrentJobId(id){
   }catch(e){}
 }
 // Splits the free-text job blob (address line, then client/property-type lines, then an
-// optional "\n\nNotes: ..." tail — the convention both the Airtable auto-fill and the manual
+// optional "\n\nNotes: ..." tail: the convention both the Airtable auto-fill and the manual
 // textarea placeholder follow) into separate address / meta / notes elements instead of one
 // run-on paragraph. Notes over 140 chars collapse behind a "Show more" toggle since test/real
 // notes can run long and shouldn't push the address off screen.
@@ -1286,7 +1287,7 @@ function updateJobBanner(){
       if(jobs && jobs.length > 0) {
         var job = jobs[0];
         var f = job.fields;
-        // Same address-first fix as selectStaffJob() — this is the other Airtable auto-fill
+        // Same address-first fix as selectStaffJob(): this is the other Airtable auto-fill
         // path (today's job via getTodaysJobs()) and had the identical client-first bug.
         var details = [
           f['fldk2TDM0kE3BJkc3'] || '',
@@ -1303,7 +1304,7 @@ function updateJobBanner(){
           banner.dataset.jobId = job.id;
           setCurrentJobId(job.id);
           // Previously this always overwrote whatever was manually typed in the "Set today's
-          // job" box with the live Airtable value, silently — a data-loss pattern the council
+          // job" box with the live Airtable value, silently: a data-loss pattern the council
           // flagged (access notes, gate codes etc. typed by hand could vanish with no warning).
           // Now: only auto-fill the box if it's empty or still holds exactly what we last wrote
           // there from Airtable ourselves (tracked below). If it holds something actually typed
@@ -1325,13 +1326,13 @@ function updateJobBanner(){
               warn.style.cssText = 'font-size:11px;color:var(--amber);margin-top:6px;line-height:1.4;';
               input.parentElement.insertBefore(warn, input.nextSibling);
             }
-            warn.textContent = '⚠️ Airtable also shows a job today (see banner above) — your typed notes below were kept as-is, not overwritten. Update them by hand if they\'re now out of date.';
+            warn.textContent = '⚠️ Airtable also shows a job today (see banner above): your typed notes below were kept as-is, not overwritten. Update them by hand if they\'re now out of date.';
           }
         }
         if(jobs.length > 1 && banner) {
           var badge = document.createElement('div');
           badge.style.cssText = 'font-size:10px;color:rgba(255,255,255,0.45);margin-top:4px;';
-          badge.textContent = jobs.length + ' jobs today — showing first';
+          badge.textContent = jobs.length + ' jobs today: showing first';
           banner.appendChild(badge);
         }
         return;
@@ -1413,14 +1414,14 @@ function logIncident(){
       entry.synced = false;
       try { localStorage.setItem('rs_incidents', JSON.stringify(incidents)); } catch(e){}
       result.style.color='var(--red)';
-      result.textContent='⚠️ Logged on this device only — Airtable save failed. Tell Takhy so this incident isn\'t lost if the device is.';
+      result.textContent='⚠️ Logged on this device only: Airtable save failed. Tell Takhy so this incident isn\'t lost if the device is.';
       renderIncidents();
     });
   } else {
     entry.synced = false;
     try { localStorage.setItem('rs_incidents', JSON.stringify(incidents)); } catch(e){}
     result.style.color='var(--amber)';
-    result.textContent='⚠️ Logged on this device only — no Airtable connection. Connect Airtable in Planning to back this up.';
+    result.textContent='⚠️ Logged on this device only: no Airtable connection. Connect Airtable in Planning to back this up.';
   }
 }
 function renderIncidents(){
@@ -1433,14 +1434,14 @@ function renderIncidents(){
     var syncBadge = inc.synced === true
       ? '<span style="color:var(--green);">✓ saved to Airtable</span>'
       : inc.synced === false
-        ? '<span style="color:var(--red);font-weight:700;">⚠ device only — not backed up</span>'
+        ? '<span style="color:var(--red);font-weight:700;">⚠ device only: not backed up</span>'
         : '<span style="color:var(--muted);">saving…</span>';
     return '<div style="background:var(--rbg);border-radius:8px;padding:8px 10px;margin-bottom:5px;font-size:12px;"><strong style="color:var(--red);">'+inc.type+'</strong> <span style="color:var(--muted);">· '+inc.date+'</span><div style="color:#7B241C;margin-top:2px;">'+inc.notes+'</div><div style="margin-top:3px;font-size:11px;">'+syncBadge+'</div></div>';
   }).join('');
   updateUnsyncedBanner();
 }
 renderIncidents();
-// ═══ UNSYNCED-RECORD BANNER — per council review ════════════════════════
+// ═══ UNSYNCED-RECORD BANNER: per council review ════════════════════════
 // A safety case or incident that only saved to this device is a compliance record one dropped
 // phone away from not existing. The per-entry badges below the history lists are easy to miss on
 // a long day, so this puts a persistent, hard-to-miss banner above the job flow whenever anything
@@ -1468,14 +1469,14 @@ function updateUnsyncedBanner(){
   if(u.incidents.length) parts.push(u.incidents.length+' incident'+(u.incidents.length>1?'s':''));
   if(u.jobStatuses.length) parts.push(u.jobStatuses.length+' job status update'+(u.jobStatuses.length>1?'s':''));
   banner.innerHTML = '<div class="alert red" style="margin-bottom:0;"><div class="alert-icon">⚠️</div><div>'+
-    '<strong>'+parts.join(', ')+' saved on this device only</strong> — not backed up to Airtable yet. '+
+    '<strong>'+parts.join(', ')+' saved on this device only</strong>: not backed up to Airtable yet. '+
     '<a href="#" onclick="event.preventDefault();retrySync();" style="color:inherit;font-weight:700;text-decoration:underline;">Retry sync now</a>'+
     '<div id="unsynced-retry-status" style="margin-top:4px;font-size:11px;"></div></div></div>';
 }
 function retrySync(){
   var status = document.getElementById('unsynced-retry-status');
   if(typeof AT === 'undefined' || !AT.hasToken()){
-    if(status) status.textContent = 'No Airtable connection — connect it in Planning first.';
+    if(status) status.textContent = 'No Airtable connection: connect it in Planning first.';
     return;
   }
   var u = getUnsyncedEntries();
@@ -1518,7 +1519,7 @@ function retrySync(){
     var stillCount = stillUnsynced.cases.length + stillUnsynced.incidents.length + stillUnsynced.jobStatuses.length;
     if(stillCount > 0){
       var freshStatus = document.getElementById('unsynced-retry-status');
-      if(freshStatus) freshStatus.textContent = stillCount+' still failed — check your connection and try again.';
+      if(freshStatus) freshStatus.textContent = stillCount+' still failed: check your connection and try again.';
     }
   });
 }
@@ -1529,17 +1530,17 @@ function tickSC(el){
   autoAdvance();
 }
 function logSafetyCase(){
-  // Only the 5 sc-* checks count toward "is the safety case actually done" — not the whole of
+  // Only the 5 sc-* checks count toward "is the safety case actually done": not the whole of
   // stage 1 (which also has intro/site-walk/filter items that aren't part of the legal safety
   // case itself). Was previously checking stage 2 entirely, a leftover from before the stages
-  // were renumbered — silently comparing against the wrong stage's items.
+  // were renumbered: silently comparing against the wrong stage's items.
   var scBoxes = stageEl(1).querySelectorAll('.chk[data-id^="sc-"]');
   var scDone = stageEl(1).querySelectorAll('.chk[data-id^="sc-"].done');
   var result = document.getElementById('sc-result');
   if(!result) return;
   if(scDone.length < scBoxes.length){
     result.style.color='var(--amber)';
-    result.textContent='Tick all 5 checks above before logging — this is your legal safety case.';
+    result.textContent='Tick all 5 checks above before logging: this is your legal safety case.';
     return;
   }
   setFlightCleared(true);
@@ -1563,20 +1564,20 @@ function logSafetyCase(){
       entry.synced = true;
       try{ localStorage.setItem('rs_safetycase_log', JSON.stringify(cases)); }catch(e){}
       result.style.color='var(--green)';
-      result.textContent='✅ Safety case logged and saved to Airtable — clear to fly.';
+      result.textContent='✅ Safety case logged and saved to Airtable: clear to fly.';
       renderSafetyCases();
     }).catch(function(err){
       entry.synced = false;
       try{ localStorage.setItem('rs_safetycase_log', JSON.stringify(cases)); }catch(e){}
       result.style.color='var(--red)';
-      result.textContent='⚠️ Logged on this device only — Airtable save failed. This record will not survive if this device is lost or reset. You can still fly (checks were genuinely done), but tell Takhy about the sync failure.';
+      result.textContent='⚠️ Logged on this device only: Airtable save failed. This record will not survive if this device is lost or reset. You can still fly (checks were genuinely done), but tell Takhy about the sync failure.';
       renderSafetyCases();
     });
   } else {
     entry.synced = false;
     try{ localStorage.setItem('rs_safetycase_log', JSON.stringify(cases)); }catch(e){}
     result.style.color='var(--amber)';
-    result.textContent='⚠️ Logged on this device only — no Airtable connection. Connect Airtable in Planning to back this up.';
+    result.textContent='⚠️ Logged on this device only: no Airtable connection. Connect Airtable in Planning to back this up.';
   }
 }
 function renderSafetyCases(){
@@ -1589,7 +1590,7 @@ function renderSafetyCases(){
     var syncBadge = c.synced === true
       ? '<span style="color:var(--green);">✓ saved to Airtable</span>'
       : c.synced === false
-        ? '<span style="color:var(--red);font-weight:700;">⚠ device only — not backed up</span>'
+        ? '<span style="color:var(--red);font-weight:700;">⚠ device only: not backed up</span>'
         : '<span style="color:var(--muted);">saving…</span>';
     return '<div style="background:var(--rbg);border-radius:8px;padding:8px 10px;margin-bottom:5px;font-size:12px;"><strong style="color:var(--green);">✓ Cleared to fly</strong> <span style="color:var(--muted);">· '+c.date+'</span><div style="color:#333;margin-top:2px;">'+c.job+'</div><div style="margin-top:3px;font-size:11px;">'+syncBadge+'</div></div>';
   }).join('');
@@ -1597,7 +1598,7 @@ function renderSafetyCases(){
 }
 renderSafetyCases();
 updateUnsyncedBanner();
-// ═══ JOB — live weather + overdue + airspace ════════════════════════
+// ═══ JOB: live weather + overdue + airspace ════════════════════════
 async function loadJobFlowLive(){
   if(typeof AT === 'undefined' || !AT.hasToken()) return;
   try{
@@ -1628,8 +1629,8 @@ async function loadWeatherCard(jobsIn){
       '<div class="row"><span class="rl">Chance of rain</span><span class="rv '+(w.rainChance>50?'r':(w.rainChance>20?'a':'g'))+'">'+w.rainChance+'%</span></div>'+
       '<div class="row"><span class="rl">Cloud cover</span><span class="rv '+(w.cloudCover>90?'a':'g')+'">'+w.cloudCover+'%</span></div>'+
       '<div class="row"><span class="rl">Visibility</span><span class="rv '+(w.visibility<3000?'r':(w.visibility<8000?'a':'g'))+'">'+Math.round(w.visibility/1000*10)/10+' km</span></div>'+
-      (w.coldWarning ? '<div class="row"><span class="rl">Cold snap</span><span class="rv a">Below 0°C today — check battery</span></div>' : '');
-    card.innerHTML = '<div class="alert '+alertClass+'" style="margin-bottom:8px;"><div class="alert-icon">'+icon+'</div><div><strong>Next job — '+
+      (w.coldWarning ? '<div class="row"><span class="rl">Cold snap</span><span class="rv a">Below 0°C today: check battery</span></div>' : '');
+    card.innerHTML = '<div class="alert '+alertClass+'" style="margin-bottom:8px;"><div class="alert-icon">'+icon+'</div><div><strong>Next job: '+
       (next.fields[AT.FIELDS.jobs.client]||'Client')+', '+AT.fmtDate(w.date)+':</strong> '+w.summary+'</div></div>'+
       detailRows;
   }catch(e){ card.style.display='none'; card.innerHTML=''; }
@@ -1647,7 +1648,7 @@ async function loadAirspaceJobFlowCard(jobsIn){
     var cls = r.risk === 'restricted' ? 'red' : 'amber';
     var icon = r.risk === 'restricted' ? '🚫' : '🟡';
     card.style.display='block';
-    card.innerHTML = '<div class="alert '+cls+'" style="margin-bottom:0;"><div class="alert-icon">'+icon+'</div><div><strong>Next job — '+
+    card.innerHTML = '<div class="alert '+cls+'" style="margin-bottom:0;"><div class="alert-icon">'+icon+'</div><div><strong>Next job: '+
       (next.fields[AT.FIELDS.jobs.client]||'Client')+':</strong> '+r.note+'</div></div>';
   }catch(e){ card.style.display='none'; card.innerHTML=''; }
 }
@@ -1661,7 +1662,7 @@ async function loadOverdueCard(){
     card.style.display='block';
     card.innerHTML = '<div class="sl" style="margin-top:0;">Overdue reports</div>'+overdue.map(function(a){
       return '<div class="job-item"><div class="job-client">'+a.client+'</div>'+
-        '<div class="job-addr">Inspected '+a.date+' — no report sent yet</div>'+
+        '<div class="job-addr">Inspected '+a.date+': no report sent yet</div>'+
         '<div class="job-meta"><span class="job-badge" style="background:var(--rbg);color:var(--red);">'+a.msg+'</span></div></div>';
     }).join('');
   }catch(e){ card.style.display='none'; card.innerHTML=''; }
@@ -1670,7 +1671,7 @@ loadJobFlowLive();
 loadAirspaceScreen();
 loadWeatherScreen();
 loadStaffJobPicker();
-// ═══ PLANNING TAB — calendar + monthly stats ═══════════════════════
+// ═══ PLANNING TAB: calendar + monthly stats ═══════════════════════
 function atRefreshKeyUI(){
   var connected = typeof AT !== 'undefined' && AT.hasToken();
   var entry = document.getElementById('at-key-entry');
@@ -1701,7 +1702,7 @@ var calSelected = null;
 async function loadPlanning(){
   var grid = document.getElementById('cal-days');
   if(typeof AT === 'undefined' || !AT.hasToken()){
-    if(grid) grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;">No Airtable connection — open on a device with the token set.</div>';
+    if(grid) grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;">No Airtable connection: open on a device with the token set.</div>';
     return;
   }
   try{

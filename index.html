@@ -3,11 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#111C33">
 <title>RoofScan UK: Drone Roof Inspections, Sussex</title>
 <meta name="description" content="Professional drone roof inspections across Sussex. A full written report with condition ratings and a Schedule of Works, within 5 working days. No scaffolding.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="RoofScan UK">
+<meta property="og:title" content="RoofScan UK: drone roof inspections">
+<meta property="og:description" content="See every inch of your roof without a ladder. Written drone roof report, price online in a minute, from £232.">
+<meta property="og:url" content="https://roofscanuk.co.uk/">
+<meta property="og:image" content="https://roofscanuk.co.uk/icons/og-roof.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="canonical" href="https://roofscanuk.co.uk/">
+<link rel="preload" as="image" href="icons/roof-hero-1200.webp" imagesrcset="icons/roof-hero-700.webp 700w, icons/roof-hero-1200.webp 1200w" imagesizes="(max-width:900px) 92vw, 560px">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Geist:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
@@ -19,7 +29,7 @@
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 html{scroll-behavior:smooth;}
-body{font-family:'Inter',-apple-system,sans-serif;background:var(--paper);color:var(--ink);min-height:100vh;font-size:16px;line-height:1.5;}
+body{font-family:'Geist','Inter',-apple-system,sans-serif;background:var(--paper);color:var(--ink);min-height:100vh;font-size:16px;line-height:1.5;}
 h1,h2,h3{font-family:'Fraunces',Georgia,serif;font-weight:500;letter-spacing:-0.01em;color:var(--navy);}
 a{color:inherit;text-decoration:none;}
 .wrap{max-width:1080px;margin:0 auto;padding:0 24px;}
@@ -253,7 +263,7 @@ textarea{resize:vertical;}
 .progress-label{font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .progress-label.active{color:var(--navy);font-weight:600;}
 .prop-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px;}
-.prop-btn{background:var(--white);color:var(--navy);border:1px solid var(--line);border-radius:2px;padding:20px;cursor:pointer;font-family:inherit;text-align:left;transition:all .15s;}
+.prop-btn{background:var(--white);color:var(--navy);border:1px solid var(--line);border-radius:2px;padding:20px;cursor:pointer;font-family:inherit;text-align:left;transition:border-color .15s,background-color .15s,color .15s,box-shadow .15s,transform .15s;}
 .prop-btn.sel{background:var(--navy);color:var(--paper);border-color:var(--navy);}
 .prop-btn .badge{margin-bottom:12px;}
 .prop-btn.sel .badge{border-color:rgba(251,250,247,.5);color:var(--paper);}
@@ -376,11 +386,11 @@ textarea{resize:vertical;}
 .x-hero-art:hover .x-photo{transform:perspective(1200px) rotateY(0) rotateX(0);}
 .x-photo img{width:100%;height:100%;object-fit:cover;display:block;transform:scale(1.08);}
 .x-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(242,182,64,.18) 1px,transparent 1px),linear-gradient(90deg,rgba(242,182,64,.18) 1px,transparent 1px);background-size:40px 40px;opacity:.45;mix-blend-mode:screen;}
-.x-scan{position:absolute;left:0;right:0;top:-30%;height:30%;background:linear-gradient(180deg,transparent,rgba(242,182,64,.08) 60%,rgba(242,182,64,.55) 98%,#FFD98A 100%);animation:xScan 3.6s cubic-bezier(.45,0,.55,1) infinite;}
+.x-scan{position:absolute;left:0;right:0;top:-30%;height:30%;background:linear-gradient(180deg,transparent,rgba(242,182,64,.08) 60%,rgba(242,182,64,.55) 98%,#FFD98A 100%);animation:xScan 3.6s cubic-bezier(.45,0,.55,1) 2 forwards;}
 @keyframes xScan{0%{top:-30%}100%{top:100%}}
 .x-pin{position:absolute;left:var(--x);top:var(--y);opacity:0;transform:translateY(8px) scale(.9);animation:xPin .6s cubic-bezier(.2,.8,.2,1.3) forwards;animation-delay:var(--d);}
 @keyframes xPin{to{opacity:1;transform:none}}
-.x-pin b{position:absolute;left:-7px;top:-7px;width:14px;height:14px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 0 currentColor;animation:xRing 2.2s infinite;animation-delay:var(--d);}
+.x-pin b{position:absolute;left:-7px;top:-7px;width:14px;height:14px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 0 currentColor;animation:xRing 2.2s 3;animation-delay:var(--d);}
 @keyframes xRing{0%{box-shadow:0 0 0 0 currentColor}80%,100%{box-shadow:0 0 0 14px transparent}}
 .x-pin span{position:absolute;left:14px;top:-16px;white-space:nowrap;background:rgba(13,22,42,.82);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.14);color:#fff;font-size:12.5px;font-weight:600;padding:7px 11px;border-radius:10px;}
 .x-pin i{font-style:normal;margin-left:8px;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;}
@@ -504,11 +514,11 @@ textarea{resize:vertical;}
 .x-cta p{color:rgba(255,255,255,.72);font-size:17px;margin:0 auto 34px;max-width:46ch;}
 
 /* Reveal-on-scroll for homepage pieces */
-[data-x]{opacity:0;transition:opacity .9s cubic-bezier(.2,.8,.2,1),transform .9s cubic-bezier(.2,.8,.2,1);transition-delay:var(--d,0s);}
-[data-x="up"]{transform:translateY(34px);}
-[data-x="left"]{transform:translateX(-46px);}
-[data-x="right"]{transform:translateX(46px);}
-[data-x="zoom"]{transform:scale(.92);}
+[data-x]{opacity:0;transition:opacity .7s cubic-bezier(.2,.8,.2,1),transform .7s cubic-bezier(.2,.8,.2,1);transition-delay:var(--d,0s);}
+[data-x="up"]{transform:translateY(18px);}
+[data-x="left"]{transform:translateY(18px);}
+[data-x="right"]{transform:translateY(18px);}
+[data-x="zoom"]{transform:scale(.97);}
 [data-x].in{opacity:1;transform:none;}
 
 /* Mobile */
@@ -574,7 +584,7 @@ nav.topnav{background:rgba(251,250,247,.82) !important;backdrop-filter:saturate(
 .x-progress span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--sun),#FFD98A);}
 .x-sticky{display:none;}
 @media (max-width:720px){
-  .x-sticky{display:flex;position:fixed;left:10px;right:10px;bottom:10px;z-index:250;align-items:center;justify-content:space-between;gap:10px;background:rgba(17,28,51,.94);backdrop-filter:blur(10px);color:#fff;border-radius:20px;padding:10px 10px 10px 18px;box-shadow:0 20px 40px -12px rgba(0,0,0,.5);transform:translateY(140%);transition:transform .45s cubic-bezier(.2,.8,.2,1);}
+  .x-sticky{display:flex;position:fixed;left:10px;right:10px;bottom:10px;z-index:250;align-items:center;justify-content:space-between;gap:10px;background:rgba(17,28,51,.94);backdrop-filter:blur(10px);color:#fff;border-radius:20px;padding:10px 10px 10px 18px;box-shadow:0 20px 40px -12px rgba(0,0,0,.5);transform:translateY(140%);margin-bottom:env(safe-area-inset-bottom,0px);transition:transform .45s cubic-bezier(.2,.8,.2,1);}
   .x-sticky.show{transform:none;}
   .x-sticky b{display:block;font-size:14px;}
   .x-sticky span{font-size:12px;color:rgba(255,255,255,.65);}
@@ -584,6 +594,353 @@ nav.topnav{background:rgba(251,250,247,.82) !important;backdrop-filter:saturate(
 }
 @media (max-width:900px){ .x-faq-grid{grid-template-columns:1fr;gap:28px;} .x-steps{margin-top:70px;} }
 @media (prefers-reduced-motion:reduce){ .x-sticky{transition:none;} }
+
+/* ===================== Inner pages (2026 redesign) ===================== */
+.x-band{position:relative;overflow:hidden;background:var(--deep);color:#fff;padding:96px 0 90px;}
+.x-band-in{position:relative;}
+.x-band-h{font-family:'Fraunces',Georgia,serif;color:#fff;font-weight:600;font-size:clamp(2.4rem,5.4vw,4.2rem);line-height:1.04;letter-spacing:-.03em;margin:0 0 20px;max-width:18ch;}
+.x-band-h em{font-style:italic;font-weight:500;color:var(--sun);}
+.x-band-p{color:rgba(255,255,255,.72);font-size:clamp(16px,1.5vw,18.5px);line-height:1.7;max-width:54ch;margin:0 0 30px;}
+.x-sec-tight{padding:90px 0;}
+.x-alt{background:#fff;}
+.x-note{color:#7A7F8A;font-size:14px;margin:22px 0 0;}
+.x-two{display:grid;grid-template-columns:.85fr 1.15fr;gap:64px;align-items:start;}
+.x-h2-sm{font-size:clamp(1.7rem,3vw,2.3rem);}
+/* price cards */
+.x-prices{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
+.x-price{position:relative;background:#fff;border:1px solid #ECE7DA;border-radius:24px;padding:28px 24px;transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s;}
+.x-price:hover{transform:translateY(-8px);box-shadow:0 30px 60px -30px rgba(28,43,74,.4);}
+.x-price-hot{background:var(--deep);border-color:transparent;color:#fff;}
+.x-price-hot .x-price-t{color:#fff} .x-price-hot .x-price-d{color:rgba(255,255,255,.65)} .x-price-hot .x-price-v{color:var(--sun)}
+.x-price-tag{position:absolute;top:-12px;left:24px;background:var(--sun);color:var(--deep);font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:5px 12px;border-radius:999px;}
+.x-price-t{font-family:'Fraunces',serif;font-weight:600;font-size:21px;color:var(--navy);}
+.x-price-d{color:#5C6270;font-size:14px;line-height:1.5;margin:6px 0 22px;min-height:42px;}
+.x-price-v{font-family:'Fraunces',serif;font-weight:600;font-size:40px;color:var(--navy);line-height:1;}
+.x-price-v small{display:block;font-family:'Geist','Inter',sans-serif;font-size:12px;font-weight:600;color:#9AA0AB;text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;}
+/* list rows */
+.x-list{display:grid;gap:12px;}
+.x-li{display:flex;align-items:center;justify-content:space-between;gap:16px;background:#F6F3EA;border-radius:18px;padding:18px 22px;transition:transform .3s,background .3s;}
+.x-li:hover{transform:translateX(-6px);}
+.x-li span{font-weight:700;color:var(--navy);font-size:16px;}
+.x-li small{display:block;font-weight:400;color:#5C6270;font-size:13.5px;margin-top:3px;}
+.x-li b{font-family:'Fraunces',serif;font-size:22px;color:var(--navy);white-space:nowrap;}
+.x-li .x-free{color:#1E8A4F;}
+.x-li-gold{background:var(--deep);} .x-li-gold span{color:#fff} .x-li-gold small{color:rgba(255,255,255,.65)} .x-li-gold b{color:var(--sun)}
+/* tiles */
+.x-tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
+.x-tile{background:#F6F3EA;border-radius:24px;padding:26px 22px;transition:transform .35s,background .35s;}
+.x-tile:hover{transform:translateY(-6px);background:#FCEFD2;}
+.x-tile-i{width:46px;height:46px;border-radius:14px;background:var(--deep);color:var(--sun);display:flex;align-items:center;justify-content:center;margin-bottom:16px;}
+.x-tile-i svg,.x-cc-i svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+.x-tile h3{font-size:19px;font-weight:600;margin:0 0 8px;}
+.x-tile p{color:#5C6270;font-size:14.5px;line-height:1.65;margin:0;}
+/* services */
+.x-svcs{display:grid;gap:22px;}
+.x-svc{display:grid;grid-template-columns:120px 1fr;gap:30px;background:#fff;border:1px solid #ECE7DA;border-radius:28px;padding:40px;transition:box-shadow .35s,transform .35s;}
+.x-svc:hover{box-shadow:0 30px 60px -34px rgba(28,43,74,.45);transform:translateY(-4px);}
+.x-svc-n{font-family:'Fraunces',serif;font-size:72px;font-weight:600;line-height:.9;color:transparent;-webkit-text-stroke:1.5px #C9A04F;}
+.x-svc:hover .x-svc-n{color:var(--sun);-webkit-text-stroke:0;}
+.x-mini{list-style:none;padding:0;margin:0 0 28px;display:grid;gap:10px;}
+.x-mini li{position:relative;padding-left:30px;color:var(--navy);font-weight:600;font-size:15px;}
+.x-mini li::before{content:"✓";position:absolute;left:0;top:0;width:20px;height:20px;border-radius:50%;background:#FCEFD2;color:#A9771F;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;}
+/* about */
+.x-about{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;}
+.x-ab{background:#fff;border:1px solid #ECE7DA;border-radius:24px;padding:30px 26px;transition:transform .35s,box-shadow .35s;}
+.x-ab:hover{transform:translateY(-6px);box-shadow:0 30px 60px -32px rgba(28,43,74,.4);}
+.x-ab-n{width:44px;height:44px;border-radius:50%;background:var(--deep);color:var(--sun);display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-weight:600;margin-bottom:18px;}
+.x-ab h3{font-size:21px;font-weight:600;margin:0 0 10px;}
+.x-ab p{color:#5C6270;font-size:15px;line-height:1.7;margin:0;}
+/* contact */
+.x-contact{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:start;}
+.x-cards-c{display:grid;gap:14px;}
+.x-cc{display:flex;align-items:center;gap:16px;background:#fff;border:1px solid #ECE7DA;border-radius:20px;padding:20px 22px;color:inherit;transition:transform .3s,box-shadow .3s,border-color .3s;}
+a.x-cc:hover{transform:translateY(-4px);box-shadow:0 24px 50px -30px rgba(28,43,74,.45);border-color:transparent;}
+.x-cc-i{width:48px;height:48px;border-radius:14px;background:#FCEFD2;color:#A9771F;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.x-cc small{display:block;font-size:11.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#9AA0AB;}
+.x-cc b{display:block;font-size:18px;color:var(--navy);margin:2px 0;}
+.x-cc em{font-style:normal;font-size:13.5px;color:#5C6270;}
+.x-cc-biz{flex-direction:column;align-items:flex-start;background:var(--deep);border-color:transparent;}
+.x-cc-biz b{color:#fff} .x-cc-biz em{color:rgba(255,255,255,.7);display:block;margin-bottom:14px;} .x-cc-biz small{color:var(--sun)}
+.x-form{background:#fff;border:1px solid #ECE7DA;border-radius:28px;padding:34px;display:grid;gap:14px;box-shadow:0 30px 60px -40px rgba(28,43,74,.35);}
+.x-form label{display:grid;gap:6px;font-size:13px;font-weight:700;color:var(--navy);}
+.x-form label i{font-weight:400;color:#9AA0AB;font-style:normal;}
+.x-form input,.x-form textarea{font:inherit;font-size:15px;font-weight:400;border:1px solid #DDD8CA;border-radius:14px;padding:13px 15px;background:#FBFAF7;color:var(--ink);transition:border-color .2s,box-shadow .2s,background .2s;}
+.x-form input:focus,.x-form textarea:focus{outline:none;border-color:var(--sun);background:#fff;box-shadow:0 0 0 4px rgba(242,182,64,.2);}
+.x-form .x-btn{justify-self:start;margin-top:6px;}
+.x-form-note{font-size:12.5px;color:#9AA0AB;margin:0;}
+@media (max-width:900px){
+  .x-band{padding:70px 0 64px;}
+  .x-two,.x-contact{grid-template-columns:1fr;gap:28px;}
+  .x-prices,.x-tiles{grid-template-columns:1fr 1fr;}
+  .x-about{grid-template-columns:1fr;}
+  .x-svc{grid-template-columns:1fr;gap:10px;padding:30px 24px;}
+  .x-svc-n{font-size:54px;}
+  .x-sec-tight{padding:70px 0;}
+}
+@media (max-width:560px){ .x-prices,.x-tiles{grid-template-columns:1fr;} .x-price-d{min-height:0;} .x-form{padding:24px 20px;} }
+.x-svc{grid-template-columns:1fr 260px;}
+.x-svc-side{align-self:stretch;background:var(--deep);color:#fff;border-radius:22px;padding:26px 24px;display:flex;flex-direction:column;justify-content:flex-end;position:relative;overflow:hidden;}
+.x-svc-side::before{content:"";position:absolute;width:220px;height:220px;right:-80px;top:-80px;border-radius:50%;background:radial-gradient(circle,rgba(242,182,64,.35),transparent 70%);}
+.x-svc-side small{font-size:11.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.6);}
+.x-svc-side b{font-family:'Fraunces',serif;font-size:54px;font-weight:600;color:var(--sun);line-height:1.05;}
+.x-svc-side span{font-size:14px;color:rgba(255,255,255,.75);}
+@media (max-width:900px){ .x-svc{grid-template-columns:1fr;} .x-svc-side{min-height:150px;} }
+
+/* Quote page header, matched to the new style */
+.book-hero{position:relative;overflow:hidden;background:radial-gradient(60% 90% at 85% 20%,rgba(242,182,64,.18),transparent 60%),linear-gradient(180deg,#14213D,#0D162A) !important;padding:72px 24px 56px !important;}
+.book-hero h1{font-weight:600;font-size:clamp(2rem,4vw,3rem) !important;letter-spacing:-.02em;color:#fff !important;}
+.book-hero p{font-size:15.5px !important;color:rgba(255,255,255,.72) !important;}
+.book-hero .eyebrow{color:var(--sun) !important;}
+
+/* ===================== Quote flow, login, footer (2026 style) ===================== */
+.x-navbtn{white-space:nowrap;}
+/* buttons everywhere: pill shape */
+.btn{border-radius:999px;transition:transform .25s cubic-bezier(.2,.8,.2,1),box-shadow .25s,opacity .2s;}
+.btn:hover{opacity:1;transform:translateY(-1px);}
+/* header */
+#page-book .book-hero{padding:72px 24px 110px !important;}
+#page-book .book-hero::after{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);background-size:56px 56px;mask-image:radial-gradient(70% 80% at 60% 30%,#000,transparent);pointer-events:none;}
+#page-book .book-hero .wrap-b{position:relative;z-index:1;max-width:760px;}
+/* the steps sit in a floating card that overlaps the header */
+#page-book section + section .wrap-b{position:relative;z-index:2;max-width:760px;background:#fff;border-radius:28px;margin-top:-70px;padding:30px 34px 36px;box-shadow:0 40px 80px -40px rgba(17,28,51,.45),0 0 0 1px rgba(17,28,51,.05);}
+@media (max-width:600px){ #page-book section + section .wrap-b{padding:22px 18px 28px;border-radius:22px;margin-top:-60px;} }
+/* progress */
+#page-book .progress{padding:4px 0 30px;}
+#page-book .progress-row{gap:6px;}
+#page-book .progress-bar{height:6px;border-radius:9px;background:#ECE7DA;margin-bottom:9px;}
+#page-book .progress-bar.active{background:linear-gradient(90deg,var(--sun),#E59E1C);box-shadow:0 4px 12px -4px rgba(242,182,64,.8);}
+#page-book .progress-label{font-size:10px;font-weight:700;letter-spacing:.08em;color:#A3A8B2;}
+#page-book .progress-label.active{color:var(--navy);}
+/* each step slides in */
+#page-book [id^="book-step-"]{animation:xStepIn .5s cubic-bezier(.2,.8,.2,1);}
+@keyframes xStepIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+#page-book [id^="book-step-"] h2{font-size:clamp(1.5rem,3vw,1.9rem) !important;font-weight:600;letter-spacing:-.02em;margin-bottom:8px !important;}
+#page-book [id^="book-step-"] > p.muted{font-size:14.5px !important;}
+/* inputs */
+#page-book input:not([type=checkbox]):not([type=radio]),#page-book select{border:1px solid #DDD8CA !important;border-radius:14px !important;padding:14px 16px !important;background:#FBFAF7 !important;font-size:16px !important;transition:border-color .2s,box-shadow .2s,background .2s;}
+#page-book input:not([type=checkbox]):focus,#page-book select:focus{border-color:var(--sun) !important;background:#fff !important;box-shadow:0 0 0 4px rgba(242,182,64,.22);outline:none;}
+#page-book .town-clear{top:13px;right:14px;}
+#page-book .town-list{border-radius:14px;overflow:hidden;border-color:#ECE7DA;box-shadow:0 20px 40px -20px rgba(17,28,51,.35);}
+#page-book .town-item{padding:12px 16px;}
+#page-book .contact-fields{gap:14px;}
+#page-book input[type=checkbox]{accent-color:var(--sun);}
+/* property type cards */
+#page-book .prop-btn{border-radius:18px;border:1px solid #ECE7DA;padding:20px;transition:transform .3s cubic-bezier(.2,.8,.2,1),box-shadow .3s,border-color .3s,background .3s;}
+#page-book .prop-btn:hover{transform:translateY(-4px);box-shadow:0 20px 40px -24px rgba(17,28,51,.4);border-color:transparent;}
+#page-book .prop-btn.sel{background:var(--deep);border-color:var(--deep);box-shadow:0 20px 40px -20px rgba(17,28,51,.6);}
+#page-book .prop-btn .badge{border-radius:12px;background:#FCEFD2;color:#A9771F;border-color:transparent;}
+#page-book .prop-btn.sel .badge{background:var(--sun);color:var(--deep);}
+/* add-ons */
+#page-book .addon-list{display:grid;gap:10px;}
+#page-book .addon-row{background:#F6F3EA;border:none !important;border-radius:16px;padding:16px 18px;}
+#page-book .counter button{border-radius:50%;width:34px;height:34px;transition:transform .15s;}
+#page-book .counter button:active{transform:scale(.9);}
+#page-book .counter button.plus{background:var(--sun);border-color:var(--sun);color:var(--deep);}
+/* main buttons */
+#page-book .btn.full{background:var(--sun);border-color:var(--sun);color:var(--deep);font-weight:700;font-size:15.5px;padding:16px 24px;box-shadow:0 12px 28px -12px rgba(242,182,64,.8);}
+#page-book .btn.full:hover{background:var(--sun-2);box-shadow:0 16px 34px -12px rgba(242,182,64,.9);}
+#page-book .btn.full:disabled{background:#ECE7DA;border-color:#ECE7DA;color:#9AA0AB;box-shadow:none;transform:none;cursor:not-allowed;}
+#page-book .back-btn{border-radius:999px;border-color:#DDD8CA;color:var(--navy);transition:border-color .2s,background .2s;}
+#page-book .back-btn:hover:not(:disabled){border-color:var(--navy);background:#F6F3EA;}
+#page-book .row-btns{gap:10px;}
+#page-book .row-btns .back-btn{flex:0 0 auto;padding:13px 22px;white-space:nowrap;}
+/* price card */
+#page-book .total-card{position:relative;overflow:hidden;border-radius:24px;padding:30px 30px 26px;background:linear-gradient(160deg,#14213D,#0D162A);box-shadow:0 30px 60px -30px rgba(17,28,51,.7);}
+#page-book .total-card::before{content:"";position:absolute;width:320px;height:320px;right:-120px;top:-140px;border-radius:50%;background:radial-gradient(circle,rgba(242,182,64,.35),transparent 70%);pointer-events:none;}
+#page-book .total-card > *{position:relative;}
+#page-book .total-card .label{color:rgba(255,255,255,.6);font-weight:700;}
+#page-book .total-card .amt{color:var(--sun);font-weight:600;font-size:clamp(2.8rem,7vw,3.6rem);letter-spacing:-.02em;animation:xPop .6s cubic-bezier(.2,.8,.2,1.3);}
+@keyframes xPop{from{transform:scale(.85);opacity:0}to{transform:none;opacity:1}}
+#page-book .total-row .l{color:rgba(255,255,255,.65);}
+#page-book .book-cta{border-radius:999px !important;background:var(--sun);color:var(--deep);padding:17px;font-size:16px;box-shadow:0 12px 28px -12px rgba(242,182,64,.85);transition:transform .25s,box-shadow .25s,background .25s;margin-top:16px;}
+#page-book .book-cta:hover{transform:translateY(-2px);background:var(--sun-2);}
+#page-book label:has(#express-opt){border-radius:18px !important;border:1.5px solid #ECE7DA !important;transition:border-color .25s,background .25s,box-shadow .25s;}
+#page-book label:has(#express-opt:checked){border-color:var(--sun) !important;background:#FFF7E3 !important;box-shadow:0 12px 30px -18px rgba(242,182,64,.9);}
+#page-book #exact-price-offer,#page-book .agent-disc{border-radius:16px !important;}
+/* dates and times */
+#page-book #slot-days .back-btn{border-radius:14px;padding:12px 4px !important;}
+#page-book #slot-days .back-btn:not(:disabled):hover{border-color:var(--sun);background:#FFF7E3;}
+#page-book #slot-times-wrap button{border-radius:999px !important;}
+#page-book #card-element{border-radius:14px !important;border:1px solid #DDD8CA !important;padding:16px !important;background:#FBFAF7 !important;}
+#page-book #booking-confirmed h2{font-size:2rem !important;}
+#page-book #booking-confirmed{animation:xPop .6s cubic-bezier(.2,.8,.2,1.3);}
+#page-book #postcode-input::placeholder{text-transform:none;}
+/* client login pop-up */
+.login-overlay{background:rgba(13,22,42,.6);backdrop-filter:blur(6px);}
+.login-modal{border-radius:28px;box-shadow:0 40px 100px -30px rgba(0,0,0,.6);animation:xPop .45s cubic-bezier(.2,.8,.2,1.2);}
+.login-modal-side{background:radial-gradient(70% 80% at 80% 10%,rgba(242,182,64,.25),transparent 60%),linear-gradient(160deg,#14213D,#0D162A);}
+.login-modal-side .eyebrow{color:var(--sun);}
+.login-modal-side h3{color:#fff;font-weight:600;}
+.login-inp{border-radius:14px;border-color:#DDD8CA;padding:14px 16px;}
+.login-inp:focus{border-color:var(--sun);box-shadow:0 0 0 4px rgba(242,182,64,.22);}
+.login-modal-btn{border-radius:999px;background:var(--sun);color:var(--deep);font-weight:700;box-shadow:0 12px 28px -12px rgba(242,182,64,.85);}
+.login-choose-btn{border-radius:16px;}
+.login-choose-btn:hover{border-color:var(--sun);background:#FFF7E3;}
+/* footer */
+footer{background:var(--deep) !important;border-top:none !important;color:rgba(255,255,255,.7);position:relative;overflow:hidden;}
+footer::before{content:"";position:absolute;width:520px;height:520px;right:-180px;top:-260px;border-radius:50%;background:radial-gradient(circle,rgba(242,182,64,.18),transparent 70%);pointer-events:none;}
+footer .wrap{position:relative;}
+footer .brand-name{color:#fff;}
+footer .muted{color:rgba(255,255,255,.6) !important;}
+footer .footer-title{color:var(--sun);}
+footer .footer-link{color:rgba(255,255,255,.7);transition:color .2s,transform .2s;}
+footer .footer-link:hover{color:#fff;transform:translateX(3px);}
+footer .footer-bottom{border-top-color:rgba(255,255,255,.12);color:rgba(255,255,255,.5);}
+footer .brand-logo{filter:drop-shadow(0 4px 10px rgba(0,0,0,.4));}
+.mobile-menu{border-radius:18px;}
+@media (prefers-reduced-motion:reduce){ #page-book [id^="book-step-"],#page-book .total-card .amt,.login-modal,#page-book #booking-confirmed{animation:none;} }
+
+/* Small phones: keep the top bar on one line and the progress labels inside the card */
+.brand-name{white-space:nowrap;}
+@media (max-width:520px){
+  .nav-inner{padding:0 14px;height:64px;gap:10px;}
+  .brand-sub{display:none;}
+  .brand-logo{height:28px;}
+  .brand-name{font-size:17px;}
+  .nav-links{gap:12px;}
+  .x-navbtn{padding:9px 14px !important;font-size:12.5px !important;}
+  .mobile-menu{top:72px;}
+  #page-book .progress-label{font-size:0;letter-spacing:0;}
+  #page-book .progress-label.active{font-size:10px;overflow:visible;}
+}
+@media (max-width:360px){ .x-navbtn{display:none;} }
+
+/* ===== Finishing details (2026 skills pass) ===== */
+html{-webkit-tap-highlight-color:rgba(242,182,64,.2);scrollbar-color:#9AA6BB transparent;}
+::selection{background:#F2B640;color:#111C33;}
+:focus-visible{outline:3px solid #F2B640;outline-offset:3px;border-radius:6px;}
+.x-btn:focus-visible,.book-cta:focus-visible{outline-offset:4px;border-radius:999px;}
+button,a,[role=button],[role=link],.prop-btn,.x-card,label{touch-action:manipulation;}
+h1,h2,h3,.x-h1,.x-h2,.x-band-h{text-wrap:balance;}
+p,li,figcaption{text-wrap:pretty;}
+.x-p,.x-lead{max-width:62ch;}
+.x-price-v,.amt,.x-stat-v,.x-score-v,.x-doc-score,[data-count],#total-lines{font-variant-numeric:tabular-nums;}
+section[id],#how-it-works{scroll-margin-top:88px;}
+.x-btn,.x-ghost,.prop-btn,.book-cta,.back-btn,.btn{-webkit-user-select:none;user-select:none;}
+.x-btn:active,.book-cta:active,.btn:active,.prop-btn:active,.back-btn:active,.x-card:active{transform:scale(.97);transition-duration:.08s;}
+[role=link],[role=button]{cursor:pointer;}
+::-webkit-scrollbar{width:11px;height:11px;}
+::-webkit-scrollbar-thumb{background:#AEB7C7;border-radius:999px;border:3px solid #FBFAF7;}
+::-webkit-scrollbar-track{background:transparent;}
+/* Quote form: visible labels and inline errors */
+#page-book label.fld,#page-book div.fld{display:block;font-size:12.5px;font-weight:600;color:var(--navy);margin:14px 0 6px;}
+#page-book label.fld:first-child{margin-top:0;}
+#page-book .contact-fields input[aria-invalid=true],#page-book input[aria-invalid=true]{border-color:#E5533D !important;box-shadow:0 0 0 4px rgba(229,83,61,.15);}
+.form-err{display:flex;gap:10px;align-items:flex-start;margin:10px 0 4px;padding:12px 14px;border-radius:12px;background:#FDECE8;color:#8A2A1B;font-size:13.5px;font-weight:500;line-height:1.5;animation:fErr .25s cubic-bezier(.2,.8,.2,1);}
+.form-err::before{content:"";flex:none;width:8px;height:8px;margin-top:6px;border-radius:50%;background:#E5533D;}
+@keyframes fErr{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:none;}}
+@media (pointer:coarse){ input:not([type=checkbox]):not([type=radio]),select,textarea{font-size:max(16px,1em) !important;} }
+.x-pin-l span{left:auto;right:14px;}
+@media (max-width:560px){ .x-hero-art{margin-bottom:72px;} .x-score{bottom:-92px;width:140px;padding:12px 14px;} .x-cap{max-width:52%;white-space:normal;line-height:1.35;border-radius:10px;font-size:10.5px;} }
+
+/* ===== Scroll story (How it works) ===== */
+.x-story{background:#fff;padding:140px 0 40px;}
+.x-story-h{max-width:18ch;margin:0 0 8px;}
+.x-story-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:72px;align-items:start;}
+.x-stage{position:sticky;top:max(96px,calc(50vh - 270px));}
+.x-stage-frame{position:relative;width:100%;aspect-ratio:4/3.3;max-height:calc(100vh - 130px);border-radius:28px;overflow:hidden;background:#1C2B4A;box-shadow:0 40px 80px -36px rgba(17,28,51,.55),0 0 0 1px rgba(17,28,51,.06);}
+.x-stage-frame>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scale(1.04);filter:saturate(.8) brightness(.72);transition:transform 1.6s cubic-bezier(.2,.8,.2,1),filter .8s ease;}
+.x-stage[data-stage="1"] .x-stage-frame>img{transform:scale(1.1);filter:none;}
+.x-stage[data-stage="2"] .x-stage-frame>img{transform:scale(1.02);filter:brightness(.6) saturate(.8);}
+.x-stage-quote{position:absolute;left:24px;bottom:24px;width:min(260px,70%);background:#fff;border-radius:18px;padding:16px 18px 14px;box-shadow:0 24px 50px -20px rgba(0,0,0,.6);transition:opacity .45s ease,transform .6s cubic-bezier(.2,.8,.2,1);}
+.x-sq-row{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600;color:var(--deep);padding:6px 0;}
+.x-sq-t{flex:none;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:#E6F4EC;color:#1E8A4F;font-size:12px;}
+.x-sq-foot{margin-top:8px;padding-top:10px;border-top:1px solid #EEE9DC;font-size:12px;font-weight:700;color:#A9771F;}
+.x-stage:not([data-stage="0"]) .x-stage-quote{opacity:0;transform:translateY(16px) scale(.98);}
+.x-stage-scan{position:absolute;left:0;right:0;top:0;height:24%;background:linear-gradient(180deg,transparent,rgba(242,182,64,.12) 60%,rgba(242,182,64,.6) 97%,#FFD98A);transform:translateY(-110%);opacity:0;pointer-events:none;}
+.x-stage[data-stage="1"] .x-stage-scan{opacity:1;transform:translateY(420%);transition:transform 1.9s cubic-bezier(.45,0,.55,1) .15s,opacity .3s;}
+.x-stage-fly{position:absolute;inset:0;transform:translateX(-35%);opacity:0;transition:transform 1.9s cubic-bezier(.45,0,.2,1),opacity .4s ease;pointer-events:none;}
+.x-stage[data-stage="1"] .x-stage-fly{transform:translateX(74%);opacity:1;}
+.x-stage[data-stage="2"] .x-stage-fly{transform:translateX(110%);opacity:0;}
+.x-stage-drone{position:absolute;left:0;top:1%;width:110px;filter:drop-shadow(0 18px 18px rgba(0,0,0,.45));}
+.x-stage-drone svg{display:block;width:100%;height:auto;}
+.x-spin{position:absolute;left:var(--x);top:var(--y);opacity:0;transform:translateY(8px) scale(.7);transition:opacity .35s ease,transform .5s cubic-bezier(.2,.8,.2,1.35);}
+.x-stage[data-stage="1"] .x-spin{opacity:1;transform:none;transition-delay:var(--d);}
+.x-stage[data-stage="2"] .x-spin{opacity:0;transform:translateY(-6px);}
+.x-spin b{position:absolute;left:-7px;top:-7px;width:14px;height:14px;border-radius:50%;border:3px solid #fff;}
+.x-spin span{position:absolute;left:14px;top:-16px;white-space:nowrap;background:rgba(13,22,42,.85);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.14);color:#fff;font-size:12.5px;font-weight:600;padding:7px 11px;border-radius:10px;}
+.x-spin-l span{left:auto;right:14px;}
+.x-spin i{font-style:normal;margin-left:8px;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;}
+.x-spin-g b{background:#2FB36B} .x-spin-g i{background:rgba(47,179,107,.2);color:#7BE0A6}
+.x-spin-a b{background:#F2A93B} .x-spin-a i{background:rgba(242,169,59,.2);color:#FFC874}
+.x-spin-r b{background:#E5533D} .x-spin-r i{background:rgba(229,83,61,.22);color:#FF9A88}
+.x-stage-doc{position:absolute;left:7%;right:7%;bottom:0;background:#fff;border-radius:22px 22px 0 0;padding:22px 24px 20px;box-shadow:0 -20px 50px -20px rgba(0,0,0,.5);transform:translateY(104%);transition:transform .8s cubic-bezier(.2,.8,.2,1);}
+.x-stage[data-stage="2"] .x-stage-doc{transform:none;}
+.x-sd-top{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding-bottom:12px;border-bottom:1px solid #EEE9DC;margin-bottom:6px;}
+.x-sd-top b{font-family:'Fraunces',Georgia,serif;font-size:17px;color:var(--deep);}
+.x-sd-top span{font-size:12px;color:#8A8F99;}
+.x-sd-row{display:grid;grid-template-columns:1fr auto 34%;align-items:center;gap:12px;padding:9px 0;font-size:14px;color:var(--deep);}
+.x-sd-row em{font-style:normal;font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:999px;}
+.x-sd-row em.g{background:#E6F4EC;color:#1E8A4F} .x-sd-row em.a{background:#FDF1DC;color:#9A6512} .x-sd-row em.r{background:#FCE6E2;color:#B3381F}
+.x-sd-row i{display:block;height:6px;border-radius:999px;background:#EFEBE0;overflow:hidden;}
+.x-sd-row u{display:block;height:100%;width:0;border-radius:inherit;transition:width .9s cubic-bezier(.2,.8,.2,1);}
+.x-sd-row u.g{background:#2FB36B} .x-sd-row u.a{background:#F2A93B} .x-sd-row u.r{background:#E5533D}
+.x-stage[data-stage="2"] .x-sd-row u{width:var(--w);}
+.x-stage[data-stage="2"] .x-sd-row:nth-child(2) u{transition-delay:.15s} .x-stage[data-stage="2"] .x-sd-row:nth-child(3) u{transition-delay:.3s}
+.x-sd-sum{display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:12px;border-top:1px solid #EEE9DC;}
+.x-sd-sum>div:first-child span{display:block;font-size:11.5px;color:#8A8F99;} .x-sd-sum>div:first-child b{font-size:14px;color:var(--deep);}
+.x-sd-score{font-family:'Fraunces',Georgia,serif;font-size:40px;font-weight:600;color:var(--deep);line-height:1;font-variant-numeric:tabular-nums;}
+.x-sd-score small{font-size:15px;color:#8A8F99;}
+.x-story-steps{padding:4vh 0 10vh;}
+.x-beat{min-height:72vh;display:flex;flex-direction:column;justify-content:center;opacity:.25;transition:opacity .5s ease;}
+.x-beat.on{opacity:1;}
+.x-beat h3{font-family:'Fraunces',Georgia,serif;font-size:clamp(28px,3vw,38px);font-weight:600;letter-spacing:-.015em;color:var(--deep);margin:0 0 14px;}
+.x-beat p{font-size:17px;line-height:1.7;color:#4F5562;margin:0;max-width:40ch;}
+.x-beat-link{margin-top:18px;font-weight:700;align-self:flex-start;}
+@media (max-width:900px){
+  .x-story{padding:90px 0 20px;}
+  .x-story-grid{grid-template-columns:1fr;gap:0;}
+  .x-stage{top:64px;height:auto;z-index:3;background:#fff;padding:14px 0 16px;margin:0 -4px;}
+  .x-stage-frame{aspect-ratio:4/3.2;border-radius:22px;}
+  .x-stage-quote{left:14px;bottom:14px;padding:12px 14px 10px;} .x-sq-row{font-size:12.5px;padding:4px 0;} .x-sq-t{width:18px;height:18px;font-size:10px;}
+  .x-stage-drone{width:84px;}
+  .x-spin span{font-size:11px;padding:5px 8px;top:-14px;}
+  .x-stage-doc{left:4%;right:4%;padding:14px 16px 12px;} .x-sd-top{padding-bottom:8px;} .x-sd-top b{font-size:14px;} .x-sd-top span{font-size:10.5px;}
+  .x-sd-row{padding:5px 0;font-size:12px;gap:8px;} .x-sd-row em{font-size:10px;padding:2px 7px;}
+  .x-sd-sum{margin-top:6px;padding-top:8px;} .x-sd-score{font-size:30px;} .x-sd-sum>div:first-child b{font-size:12px;}
+  .x-story-steps{padding:0 0 6vh;}
+  .x-beat{min-height:56vh;justify-content:flex-start;padding-top:28px;}
+}
+@media (prefers-reduced-motion:reduce){
+  .x-stage *,.x-beat{transition:none !important;}
+  .x-stage-fly,.x-stage-scan{display:none;}
+}
+/* ===== Who it's for: one clear list ===== */
+.x-uses-grid{display:grid;grid-template-columns:.85fr 1.15fr;gap:72px;align-items:start;}
+.x-uses-side{position:sticky;top:110px;}
+.x-uses-photo{display:block;width:100%;height:auto;aspect-ratio:4/3;object-fit:cover;border-radius:22px;margin-top:28px;box-shadow:0 30px 60px -34px rgba(17,28,51,.5);}
+.x-ulist{border-bottom:1px solid #E4DFD1;}
+.x-urow{display:grid;grid-template-columns:1fr auto;gap:6px 28px;align-items:center;width:100%;padding:26px 6px;border:0;border-top:1px solid #E4DFD1;background:transparent;text-align:left;font:inherit;color:inherit;text-decoration:none;cursor:pointer;transition:background-color .25s ease;}
+.x-urow:hover{background:#FBF8F0;}
+.x-urow-t{grid-column:1;font-family:'Fraunces',Georgia,serif;font-size:clamp(22px,2.2vw,27px);font-weight:600;letter-spacing:-.01em;color:var(--deep);}
+.x-urow-d{grid-column:1;color:#5C6270;font-size:15.5px;line-height:1.6;max-width:52ch;}
+.x-urow-go{grid-column:2;grid-row:1 / span 2;color:#A9771F;font-weight:700;font-size:14.5px;white-space:nowrap;}
+.x-urow-go i{font-style:normal;display:inline-block;margin-left:4px;transition:transform .25s cubic-bezier(.2,.8,.2,1);}
+.x-urow:hover .x-urow-go i{transform:translateX(5px);}
+@media (max-width:900px){ .x-uses-grid{grid-template-columns:1fr;gap:28px;} .x-uses-side{position:static;} .x-uses-photo{display:none;} .x-urow{grid-template-columns:1fr;padding:22px 2px;} .x-urow-go{grid-column:1;grid-row:auto;margin-top:4px;} }
+/* ===== FAQ: everything visible ===== */
+.x-faq-head{display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:end;margin-bottom:40px;}
+.x-faq-head .x-p{margin:0;}
+.x-qa{display:grid;grid-template-columns:1fr 1fr;gap:0 64px;margin:0;}
+.x-qa>div{padding:26px 0 28px;border-top:1px solid #DFD9CA;}
+.x-qa dt{font-family:'Fraunces',Georgia,serif;font-size:21px;font-weight:600;color:var(--deep);margin:0 0 8px;letter-spacing:-.01em;}
+.x-qa dd{margin:0;color:#5C6270;font-size:15.5px;line-height:1.7;max-width:54ch;}
+@media (max-width:900px){ .x-faq-head{grid-template-columns:1fr;gap:12px;} .x-qa{grid-template-columns:1fr;} .x-qa dt{font-size:19px;} }
+/* Audience line on Services, quieter decoration */
+.x-for{margin:-4px 0 14px;color:#A9771F;font-size:14px;font-weight:600;}
+.x-cta-glow{animation:none !important;opacity:.55;}
+/* Real photo gallery */
+.x-shots{background:#fff;padding:20px 0 120px;}
+.x-shots-head{display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:end;margin-bottom:44px;}
+.x-shots-head .x-p{margin:0;}
+.x-shots-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:18px;}
+.x-shot{margin:0;position:relative;border-radius:22px;overflow:hidden;background:#E9E5DA;}
+.x-shot-a{grid-column:span 7;} .x-shot-b{grid-column:span 5;} .x-shot-c{grid-column:span 5;} .x-shot-d{grid-column:span 7;}
+.x-shot img{display:block;width:100%;height:100%;min-height:300px;max-height:420px;object-fit:cover;transition:transform .9s cubic-bezier(.2,.8,.2,1);}
+.x-shot:hover img{transform:scale(1.035);}
+.x-shot figcaption{position:absolute;left:12px;right:12px;bottom:12px;padding:11px 14px;border-radius:14px;background:rgba(17,28,51,.78);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#fff;font-size:13.5px;line-height:1.45;}
+@media (max-width:900px){ .x-shots-head{grid-template-columns:1fr;gap:12px;} .x-shot-a,.x-shot-b,.x-shot-c,.x-shot-d{grid-column:span 12;} .x-shot img{min-height:220px;max-height:300px;} .x-shots{padding-bottom:90px;} .x-shot figcaption{font-size:12.5px;padding:9px 12px;left:10px;right:10px;bottom:10px;} }
+@media (prefers-reduced-motion:reduce){ .x-shot img,.form-err{transition:none;animation:none;} .x-shot:hover img{transform:none;} }
 </style>
 </head>
 <body>
@@ -591,18 +948,18 @@ nav.topnav{background:rgba(251,250,247,.82) !important;backdrop-filter:saturate(
 <nav class="topnav">
   <div class="nav-inner">
     <button class="brand" onclick="go('home')">
-      <img class="brand-logo" src="icons/roofscanuk-logo.png" alt="RoofScan UK">
+      <img class="brand-logo" src="icons/roofscanuk-logo.png" width="636" height="512" alt="RoofScan UK">
       <div>
         <div class="brand-name">RoofScan UK</div>
         <div class="brand-sub">Drone Roof Inspections · Sussex</div>
       </div>
     </button>
     <div class="nav-links">
-      <span class="nav-link" onclick="go('services')">Services</span>
-      <span class="nav-link" onclick="go('pricing')">Pricing</span>
-      <span class="nav-link" onclick="go('about')">About</span>
-      <span class="nav-link" onclick="go('contact')">Contact</span>
-      <span class="nav-link nav-link-login" style="color:var(--muted);" onclick="openLoginModal()">Client Login</span>
+      <span class="nav-link" role="link" tabindex="0" onclick="go('services')">Services</span>
+      <span class="nav-link" role="link" tabindex="0" onclick="go('pricing')">Pricing</span>
+      <span class="nav-link" role="link" tabindex="0" onclick="go('about')">About</span>
+      <span class="nav-link" role="link" tabindex="0" onclick="go('contact')">Contact</span>
+      <span class="nav-link nav-link-login" role="button" tabindex="0" style="color:var(--muted);" onclick="openLoginModal()">Client Login</span>
       <button class="btn small x-navbtn" onclick="go('book')">Get instant quote</button>
       <button class="hamburger" id="hamburger-btn" onclick="toggleMobileMenu()" aria-label="Menu" aria-expanded="false">
         <span></span><span></span><span></span>
@@ -612,11 +969,11 @@ nav.topnav{background:rgba(251,250,247,.82) !important;backdrop-filter:saturate(
 </nav>
 
 <div class="mobile-menu" id="mobile-menu">
-  <span class="mobile-menu-link" onclick="mobileNavGo('services')">Services</span>
-  <span class="mobile-menu-link" onclick="mobileNavGo('pricing')">Pricing</span>
-  <span class="mobile-menu-link" onclick="mobileNavGo('about')">About</span>
-  <span class="mobile-menu-link" onclick="mobileNavGo('contact')">Contact</span>
-  <span class="mobile-menu-link" onclick="mobileNavLogin()">Client Login</span>
+  <span class="mobile-menu-link" role="link" tabindex="0" onclick="mobileNavGo('services')">Services</span>
+  <span class="mobile-menu-link" role="link" tabindex="0" onclick="mobileNavGo('pricing')">Pricing</span>
+  <span class="mobile-menu-link" role="link" tabindex="0" onclick="mobileNavGo('about')">About</span>
+  <span class="mobile-menu-link" role="link" tabindex="0" onclick="mobileNavGo('contact')">Contact</span>
+  <span class="mobile-menu-link" role="link" tabindex="0" onclick="mobileNavLogin()">Client Login</span>
   <a class="mobile-menu-link" href="tel:07498364197">Call 07498 364197</a>
 </div>
 
@@ -633,7 +990,7 @@ nav.topnav{background:rgba(251,250,247,.82) !important;backdrop-filter:saturate(
       <div id="lm-step-email">
         <h2>Sign in to your account</h2>
         <div class="login-modal-sub">Enter the email address you used to book an inspection, or your referral partner email. We'll send a 6-digit code to confirm it's you, then take you straight to the right place.</div>
-        <input type="email" id="lm-email" class="login-inp" placeholder="your@email.com" onkeydown="if(event.key==='Enter')lmRequestCode()">
+        <input type="email" id="lm-email" class="login-inp" aria-label="Email address" autocomplete="email" spellcheck="false" autocapitalize="off" placeholder="your@email.com" onkeydown="if(event.key==='Enter')lmRequestCode()">
         <button class="login-modal-btn" id="lm-request-btn" onclick="lmRequestCode()">Send me a code →</button>
         <div class="login-modal-error" id="lm-login-error"></div>
       </div>
@@ -641,7 +998,7 @@ nav.topnav{background:rgba(251,250,247,.82) !important;backdrop-filter:saturate(
       <div id="lm-step-code" style="display:none;">
         <h2>Enter your code</h2>
         <div class="login-modal-sub">We sent a 6-digit code to <strong id="lm-code-sent-to" style="color:var(--navy);"></strong>. It expires in 10 minutes.</div>
-        <input type="text" inputmode="numeric" maxlength="6" id="lm-code" class="login-inp" placeholder="123456" onkeydown="if(event.key==='Enter')lmVerifyCode()">
+        <input type="text" inputmode="numeric" maxlength="6" id="lm-code" class="login-inp" aria-label="6-digit login code" autocomplete="one-time-code" placeholder="123456" onkeydown="if(event.key==='Enter')lmVerifyCode()">
         <button class="login-modal-btn" id="lm-verify-btn" onclick="lmVerifyCode()">Verify &amp; continue →</button>
         <div class="login-modal-error" id="lm-code-error"></div>
         <div style="display:flex;justify-content:space-between;margin-top:14px;">
@@ -651,7 +1008,7 @@ nav.topnav{background:rgba(251,250,247,.82) !important;backdrop-filter:saturate(
       </div>
 
       <div id="lm-step-checking" style="display:none;">
-        <div class="login-checking"><span class="login-spinner"></span><p>Checking your account...</p></div>
+        <div class="login-checking"><span class="login-spinner"></span><p>Checking your account…</p></div>
       </div>
 
       <div id="lm-step-choose" style="display:none;">
@@ -685,7 +1042,7 @@ nav.topnav{background:rgba(251,250,247,.82) !important;backdrop-filter:saturate(
     <div class="x-hero-bg" aria-hidden="true"></div>
     <div class="x-wrap x-hero-grid">
       <div class="x-hero-copy">
-        <div class="x-pill" data-x="up"><span class="x-dot"></span>CAA licensed · Fully insured · Sussex</div>
+        <div class="x-pill" data-x="up"><span class="x-dot"></span>CAA registered · Fully insured · Sussex</div>
         <h1 class="x-h1" data-split>See every inch of your roof. <em>Without a ladder.</em></h1>
         <p class="x-lead" data-x="up" style="--d:.5s">Drone roof inspections with a written report you can hand to a roofer, a solicitor or your insurer. Get your price online in about a minute.</p>
         <div class="x-ctas" data-x="up" style="--d:.65s">
@@ -693,18 +1050,18 @@ nav.topnav{background:rgba(251,250,247,.82) !important;backdrop-filter:saturate(
           <a class="x-ghost" href="#how-it-works" onclick="event.preventDefault();document.getElementById('how-it-works').scrollIntoView({behavior:'smooth'});">See how it works</a>
         </div>
         <ul class="x-ticks" data-x="up" style="--d:.8s">
-          <li>Prices from £180</li><li>Report in 5 working days</li><li>No scaffolding or ladders</li><li>Nobody needs to be home</li>
+          <li>Prices from £232</li><li>Report in 5 working days</li><li>No scaffolding or ladders</li><li>Nobody needs to be home</li>
         </ul>
       </div>
       <div class="x-hero-art" data-x="zoom" style="--d:.2s">
         <div class="x-photo" data-parallax="-0.06">
-          <img src="icons/roof-aerial-top.jpg" alt="Drone photo looking straight down on a UK roof, taken by RoofScan UK" loading="eager" fetchpriority="high">
-          <div class="x-cap">Real photo from a RoofScan inspection</div>
+          <img src="icons/roof-hero-1200.webp" srcset="icons/roof-hero-700.webp 700w, icons/roof-hero-1200.webp 1200w" sizes="(max-width:900px) 92vw, 560px" width="1200" height="1020" alt="Drone photo of an old clay-tiled roof with two chimneys and lichen on the tiles, taken by RoofScan UK" loading="eager" fetchpriority="high">
+          <div class="x-cap">Real RoofScan photo · example findings</div>
           <div class="x-grid" aria-hidden="true"></div>
           <div class="x-scan" aria-hidden="true"></div>
-          <div class="x-pin x-pin-g" style="--x:30%;--y:30%;--d:1.4s"><b></b><span>Ridge tiles <i>Good</i></span></div>
-          <div class="x-pin x-pin-a" style="--x:58%;--y:52%;--d:2.0s"><b></b><span>Chimney flashing <i>Monitor</i></span></div>
-          <div class="x-pin x-pin-r" style="--x:26%;--y:78%;--d:2.6s"><b></b><span>Gutter joint <i>Repair</i></span></div>
+          <div class="x-pin x-pin-g" style="--x:31%;--y:17%;--d:1.4s"><b></b><span>Chimney stack <i>Good</i></span></div>
+          <div class="x-pin x-pin-a x-pin-l" style="--x:58%;--y:44%;--d:2.0s"><b></b><span>Lichen on tiles <i>Monitor</i></span></div>
+          <div class="x-pin x-pin-r" style="--x:40%;--y:69%;--d:2.6s"><b></b><span>Gutter joint <i>Repair</i></span></div>
         </div>
         <div class="x-score" data-parallax="0.05" aria-hidden="true">
           <div class="x-score-l">RoofScore</div>
@@ -737,36 +1094,78 @@ nav.topnav{background:rgba(251,250,247,.82) !important;backdrop-filter:saturate(
     </div>
   </section>
 
-  <!-- Numbers -->
-  <section class="x-stats">
-    <div class="x-wrap x-stats-grid">
-      <div class="x-stat" data-x="up"><div class="x-stat-v"><span data-count="60">0</span><small>sec</small></div><div class="x-stat-l">to get your price online</div></div>
-      <div class="x-stat" data-x="up" style="--d:.1s"><div class="x-stat-v"><span data-count="0">0</span></div><div class="x-stat-l">ladders, scaffolding or roof walking</div></div>
-      <div class="x-stat" data-x="up" style="--d:.2s"><div class="x-stat-v"><span data-count="5">0</span><small>days</small></div><div class="x-stat-l">to your written report (24 hours with Express)</div></div>
-      <div class="x-stat" data-x="up" style="--d:.3s"><div class="x-stat-v"><span data-count="3">0</span><small>ratings</small></div><div class="x-stat-l">green, amber, red for every part of the roof</div></div>
+  <!-- Real photos from our own flights -->
+  <section class="x-shots" aria-labelledby="shots-h">
+    <div class="x-wrap">
+      <div class="x-shots-head" data-x="up">
+        <h2 class="x-h2" id="shots-h">What the drone sees that you can't</h2>
+        <p class="x-p">Every photo here comes from our own flights. This is the level of detail that goes into your report.</p>
+      </div>
+      <div class="x-shots-grid">
+        <figure class="x-shot x-shot-a" data-x="up">
+          <img src="icons/roof-lichen-1600.webp" srcset="icons/roof-lichen-800.webp 800w, icons/roof-lichen-1600.webp 1600w" sizes="(max-width:900px) 92vw, 680px" width="1600" height="900" loading="lazy" decoding="async" alt="Old clay-tile roof from above, with patches of lichen and moss across the tiles">
+          <figcaption>Lichen and moss across old clay tiles. From the garden it just looks dark.</figcaption>
+        </figure>
+        <figure class="x-shot x-shot-b" data-x="up" style="--d:.08s">
+          <img src="icons/roof-hipped-800.webp" srcset="icons/roof-hipped-800.webp 800w, icons/roof-hipped-1600.webp 1600w" sizes="(max-width:900px) 92vw, 480px" width="1600" height="900" loading="lazy" decoding="async" alt="Hipped clay-tile roof with a central brick chimney, seen from above the front garden">
+          <figcaption>A hipped roof and its chimney stack, every slope in one frame.</figcaption>
+        </figure>
+        <figure class="x-shot x-shot-c" data-x="up">
+          <img src="icons/roof-farmhouse-800.webp" srcset="icons/roof-farmhouse-800.webp 800w, icons/roof-farmhouse-1600.webp 1600w" sizes="(max-width:900px) 92vw, 480px" width="1600" height="793" loading="lazy" decoding="async" alt="Older house with two different roof coverings meeting at a valley, with two tall chimneys">
+          <figcaption>Two roof coverings meeting on one house, with the valleys and chimneys between them.</figcaption>
+        </figure>
+        <figure class="x-shot x-shot-d" data-x="up" style="--d:.08s">
+          <img src="icons/roof-newbuild-1600.webp" srcset="icons/roof-newbuild-800.webp 800w, icons/roof-newbuild-1600.webp 1600w" sizes="(max-width:900px) 92vw, 680px" width="1600" height="900" loading="lazy" decoding="async" alt="New-build house at roof-frame stage, timber trusses seen from directly above">
+          <figcaption>A new build at roof-frame stage, straight down from above.</figcaption>
+        </figure>
+      </div>
     </div>
   </section>
 
-  <!-- How it works -->
-  <section class="x-sec" id="how-it-works">
+  <!-- How it works: one scroll story. The picture on the left changes as each step scrolls past. -->
+  <section class="x-story" id="how-it-works" aria-labelledby="story-h">
     <div class="x-wrap">
-      <div class="x-head" data-x="up"><div class="x-eye">How it works</div><h2 class="x-h2">From price to report in three steps</h2></div>
-      <div class="x-steps" data-line>
-        <div class="x-steps-line" aria-hidden="true"><span></span></div>
-        <div class="x-step" data-x="up">
-          <div class="x-step-n">01</div>
-          <h3>Get your price</h3>
-          <p>Tell us the address and a few details. You see the price straight away and pick a date. A small deposit secures it.</p>
+      <h2 class="x-h2 x-story-h" id="story-h">From price to report in three steps</h2>
+      <div class="x-story-grid">
+        <div class="x-stage" data-stage="0" aria-hidden="true">
+          <div class="x-stage-frame">
+            <img src="icons/roof-lichen-1600.webp" srcset="icons/roof-lichen-800.webp 800w, icons/roof-lichen-1600.webp 1600w" sizes="(max-width:900px) 92vw, 640px" width="1600" height="900" alt="" loading="lazy" decoding="async">
+            <div class="x-stage-quote">
+              <div class="x-sq-row"><span class="x-sq-t">&#10003;</span>Price shown online</div>
+              <div class="x-sq-row"><span class="x-sq-t">&#10003;</span>Date picked</div>
+              <div class="x-sq-row"><span class="x-sq-t">&#10003;</span>£50 deposit paid</div>
+              <div class="x-sq-foot">Booking confirmed</div>
+            </div>
+            <div class="x-stage-scan"></div>
+            <div class="x-stage-fly"><div class="x-stage-drone"><svg viewBox="0 0 220 120"><g fill="none" stroke="#FBFAF7" stroke-width="5" stroke-linecap="round"><path d="M110 60 L40 28"/><path d="M110 60 L180 28"/><path d="M110 60 L48 92"/><path d="M110 60 L172 92"/></g><g class="x-prop"><ellipse cx="40" cy="26" rx="30" ry="5"/><ellipse cx="180" cy="26" rx="30" ry="5"/><ellipse cx="48" cy="92" rx="30" ry="5"/><ellipse cx="172" cy="92" rx="30" ry="5"/></g><rect x="88" y="44" width="44" height="32" rx="12" fill="#FBFAF7"/><circle cx="110" cy="80" r="9" fill="#1C2B4A" stroke="#FBFAF7" stroke-width="3"/><circle cx="110" cy="80" r="3.5" fill="#F2B640"/></svg></div></div>
+            <div class="x-spin x-spin-g" style="--x:35%;--y:17%;--d:.5s"><b></b><span>Chimney stack <i>Good</i></span></div>
+            <div class="x-spin x-spin-a x-spin-l" style="--x:64%;--y:46%;--d:.85s"><b></b><span>Lichen on tiles <i>Monitor</i></span></div>
+            <div class="x-spin x-spin-r" style="--x:30%;--y:70%;--d:1.2s"><b></b><span>Gutter joint <i>Repair</i></span></div>
+            <div class="x-stage-doc">
+              <div class="x-sd-top"><b>RoofScan UK</b><span>Roof condition report</span></div>
+              <div class="x-sd-rows">
+                <div class="x-sd-row"><span>Chimney stack</span><em class="g">Good</em><i><u class="g" style="--w:88%"></u></i></div>
+                <div class="x-sd-row"><span>Main slopes</span><em class="a">Monitor</em><i><u class="a" style="--w:58%"></u></i></div>
+                <div class="x-sd-row"><span>Gutters</span><em class="r">Repair</em><i><u class="r" style="--w:30%"></u></i></div>
+              </div>
+              <div class="x-sd-sum"><div><span>Schedule of works</span><b>1 repair · 1 to monitor</b></div><div class="x-sd-score"><span class="x-sd-n">0</span><small>/100</small></div></div>
+            </div>
+          </div>
         </div>
-        <div class="x-step" data-x="up" style="--d:.15s">
-          <div class="x-step-n">02</div>
-          <h3>We fly the roof</h3>
-          <p>A CAA-licensed pilot photographs every slope, chimney, gutter and flashing. Usually under an hour, and you don't need to be in.</p>
-        </div>
-        <div class="x-step" data-x="up" style="--d:.3s">
-          <div class="x-step-n">03</div>
-          <h3>Get your report</h3>
-          <p>A written PDF report with photos, a condition rating for each part and a schedule of anything that needs work.</p>
+        <div class="x-story-steps">
+          <article class="x-beat on" data-beat="0">
+            <h3>Get your price</h3>
+            <p>Tell us the address and a few details. You see the price straight away and pick a date. A £50 deposit secures it.</p>
+          </article>
+          <article class="x-beat" data-beat="1">
+            <h3>We fly the roof</h3>
+            <p>A CAA-registered pilot photographs every slope, chimney, gutter and flashing. Usually under an hour, and you don't need to be in.</p>
+          </article>
+          <article class="x-beat" data-beat="2">
+            <h3>Get your report</h3>
+            <p>A written PDF report with photos, a condition rating for each part and a schedule of anything that needs work.</p>
+            <a class="x-link x-beat-link" href="sample-report.pdf" target="_blank" rel="noopener noreferrer">See a sample report &rarr;</a>
+          </article>
         </div>
       </div>
     </div>
@@ -776,7 +1175,7 @@ nav.topnav{background:rgba(251,250,247,.82) !important;backdrop-filter:saturate(
   <section class="x-sec x-report">
     <div class="x-wrap x-report-grid">
       <div data-x="left">
-        <div class="x-eye">The report</div>
+        
         <h2 class="x-h2">A proper written assessment, not a folder of photos</h2>
         <p class="x-p">Every inspection ends with a document you can forward to a contractor, solicitor or insurer, and keep for your records.</p>
         <ul class="x-checks">
@@ -792,7 +1191,7 @@ nav.topnav{background:rgba(251,250,247,.82) !important;backdrop-filter:saturate(
         <div class="x-doc x-doc-mid"></div>
         <div class="x-doc x-doc-front">
           <div class="x-doc-top"><span class="x-doc-logo">RoofScan UK</span><span class="x-doc-tag">Roof condition report</span></div>
-          <div class="x-doc-photo" style="background-image:url(icons/roof-aerial-top.jpg)"></div>
+          <div class="x-doc-photo" style="background-image:url(icons/roof-hipped-800.webp)"></div>
           <div class="x-rows">
             <div class="x-row"><span>Ridge &amp; hips</span><b class="g">Good</b><i><em style="--w:90%" class="g"></em></i></div>
             <div class="x-row"><span>Chimney</span><b class="a">Monitor</b><i><em style="--w:58%" class="a"></em></i></div>
@@ -807,15 +1206,19 @@ nav.topnav{background:rgba(251,250,247,.82) !important;backdrop-filter:saturate(
 
   <!-- Who it's for -->
   <section class="x-sec x-uses">
-    <div class="x-wrap">
-      <div class="x-head" data-x="up"><div class="x-eye">Who it's for</div><h2 class="x-h2">Whatever brought you here</h2></div>
-      <div class="x-cards">
-        <button class="x-card" data-x="up" onclick="go('book')"><span class="x-card-i"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg></span><h3>Homeowners</h3><p>A check-up on the roof you can't see. Catch small jobs before they become big ones.</p><span class="x-card-go">Get a price &rarr;</span></button>
-        <button class="x-card" data-x="up" style="--d:.08s" onclick="go('book')"><span class="x-card-i"><svg viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9"/><path d="M17 6l3 3"/><path d="M15 8l2 2"/></svg></span><h3>Buying a home</h3><p>See the roof properly before you exchange. Fast enough to fit your sale.</p><span class="x-card-go">Get a price &rarr;</span></button>
-        <a class="x-card" data-x="up" style="--d:.16s" href="storm.html"><span class="x-card-i"><svg viewBox="0 0 24 24"><path d="M7 17a4 4 0 010-8 5 5 0 019.6-1.5A4 4 0 1117 17"/><path d="M12 13l-2 4h4l-2 4"/></svg></span><h3>After a storm</h3><p>Check for lifted tiles and flashing without anyone climbing a wet roof.</p><span class="x-card-go">Storm checks &rarr;</span></a>
-        <button class="x-card" data-x="up" style="--d:.24s" onclick="go('book')"><span class="x-card-i"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg></span><h3>After roof work</h3><p>An independent look at the finished job. We don't do repairs, so we have nothing to sell you.</p><span class="x-card-go">Get a price &rarr;</span></button>
-        <button class="x-card" data-x="up" style="--d:.32s" onclick="go('services')"><span class="x-card-i"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="1"/><path d="M8 7h2M14 7h2M8 11h2M14 11h2M8 15h2M14 15h2"/><path d="M10 21v-3h4v3"/></svg></span><h3>Agents &amp; landlords</h3><p>Estate and letting agents, block managers and solicitors. Your branch earns £50 for each paid referral.</p><span class="x-card-go">Referral partnership &rarr;</span></button>
-        <button class="x-card" data-x="up" style="--d:.4s" onclick="go('contact')"><span class="x-card-i"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1"/><path d="M8.5 11h7M8.5 15h5"/></svg></span><h3>Surveyors &amp; lenders</h3><p>Independent drone evidence to sit alongside your own survey or lending paperwork.</p><span class="x-card-go">Get in touch &rarr;</span></button>
+    <div class="x-wrap x-uses-grid">
+      <div class="x-uses-side" data-x="up">
+        <h2 class="x-h2">Whatever brought you here</h2>
+        <p class="x-p">Pick the one that sounds most like you.</p>
+        <img class="x-uses-photo" src="icons/roof-farmhouse-800.webp" width="800" height="397" loading="lazy" decoding="async" alt="Older house from above, with two different roof coverings and two tall chimneys">
+      </div>
+      <div class="x-ulist">
+        <button class="x-urow" onclick="go('book')"><span class="x-urow-t">Homeowners</span><span class="x-urow-d">A check-up on the roof you can't see. Catch small jobs before they become big ones.</span><span class="x-urow-go">Get a price <i>&rarr;</i></span></button>
+        <button class="x-urow" onclick="go('book')"><span class="x-urow-t">Buying a home</span><span class="x-urow-d">See the roof properly before you exchange. Fast enough to fit your sale, with Express if you need it in 24 hours.</span><span class="x-urow-go">Get a price <i>&rarr;</i></span></button>
+        <a class="x-urow" href="storm.html"><span class="x-urow-t">After a storm</span><span class="x-urow-d">Check for lifted tiles and flashing without anyone climbing a wet roof.</span><span class="x-urow-go">Storm checks <i>&rarr;</i></span></a>
+        <button class="x-urow" onclick="go('book')"><span class="x-urow-t">After roof work</span><span class="x-urow-d">An independent look at the finished job. We don't do repairs, so we have nothing to sell you.</span><span class="x-urow-go">Get a price <i>&rarr;</i></span></button>
+        <button class="x-urow" onclick="go('services')"><span class="x-urow-t">Agents &amp; landlords</span><span class="x-urow-d">Estate and letting agents, block managers and solicitors. Your branch earns £50 for each paid referral.</span><span class="x-urow-go">Partnership <i>&rarr;</i></span></button>
+        <button class="x-urow" onclick="go('contact')"><span class="x-urow-t">Surveyors &amp; lenders</span><span class="x-urow-d">Independent drone evidence to sit alongside your own survey or lending paperwork.</span><span class="x-urow-go">Get in touch <i>&rarr;</i></span></button>
       </div>
     </div>
   </section>
@@ -824,8 +1227,8 @@ nav.topnav{background:rgba(251,250,247,.82) !important;backdrop-filter:saturate(
   <section class="x-sec x-trust">
     <div class="x-wrap x-trust-grid">
       <div data-x="left">
-        <div class="x-eye">Why trust us</div>
-        <h2 class="x-h2">Licensed, insured and independent</h2>
+        
+        <h2 class="x-h2">Registered, insured and independent</h2>
         <p class="x-p">We inspect and report. We don't carry out repairs, so our report has no reason to find work that isn't there. Copies of our insurance and licences are available on request. <a href="mailto:info@roofscanuk.co.uk" class="x-link">Email us</a>.</p>
       </div>
       <div class="x-creds">
@@ -837,22 +1240,21 @@ nav.topnav{background:rgba(251,250,247,.82) !important;backdrop-filter:saturate(
     </div>
   </section>
 
-  <!-- Quick answers -->
+  <!-- Quick answers: all visible at once, no clicking -->
   <section class="x-sec x-faq">
-    <div class="x-wrap x-faq-grid">
-      <div data-x="left">
-        <div class="x-eye">Quick answers</div>
+    <div class="x-wrap">
+      <div class="x-faq-head" data-x="up">
         <h2 class="x-h2">Questions people ask before booking</h2>
         <p class="x-p">Anything else, <a class="x-link" href="faq.html">see all FAQs</a> or call <a class="x-link" href="tel:07498364197">07498 364197</a>.</p>
       </div>
-      <div class="x-acc">
-        <details data-x="up"><summary>How much does it cost?</summary><div>It depends on the size of your roof. Prices start from £180, and you see your exact price online before you book. A £50 deposit secures the date and comes off the total.</div></details>
-        <details data-x="up" style="--d:.05s"><summary>Do I need to be home?</summary><div>No. We fly from outside the property and nobody goes inside or onto the roof. You're welcome to be there if you'd like.</div></details>
-        <details data-x="up" style="--d:.1s"><summary>What if the weather is bad?</summary><div>We never fly in unsafe conditions. If your slot can't go ahead, we email you a link to pick a new time at no extra cost, and your deposit carries over.</div></details>
-        <details data-x="up" style="--d:.15s"><summary>How quickly do I get the report?</summary><div>Within 5 working days of the inspection, or within 24 hours with Express.</div></details>
-        <details data-x="up" style="--d:.2s"><summary>Is it legal and insured?</summary><div>Yes. Our pilots hold CAA Flyer IDs, we're registered with a CAA Operator ID, and we carry public liability insurance. Copies are available on request.</div></details>
-        <details data-x="up" style="--d:.25s"><summary>Can I move my booking?</summary><div>Yes, free of charge with at least 48 hours' notice, using the link in your booking email.</div></details>
-      </div>
+      <dl class="x-qa">
+        <div><dt>How much does it cost?</dt><dd>It depends on the size of your roof. A typical terraced house starts from £232 (very small roofs can be less), and you see your exact price online before you book. A £50 deposit secures the date and comes off the total.</dd></div>
+        <div><dt>Do I need to be home?</dt><dd>No. We fly from outside the property and nobody goes inside or onto the roof. You're welcome to be there if you'd like.</dd></div>
+        <div><dt>What if the weather is bad?</dt><dd>We never fly in unsafe conditions. If your slot can't go ahead, we email you a link to pick a new time at no extra cost, and your deposit carries over.</dd></div>
+        <div><dt>How quickly do I get the report?</dt><dd>Within 5 working days once the inspection is done and the balance is paid. We send the payment link straight after the flight. With Express, it's within 24 hours of the flight.</dd></div>
+        <div><dt>Is it legal and insured?</dt><dd>Yes. Our pilots hold CAA Flyer IDs, we're registered with a CAA Operator ID, and we carry public liability insurance. Copies are available on request.</dd></div>
+        <div><dt>Can I move my booking?</dt><dd>Yes, free of charge with at least 48 hours' notice, using the link in your booking email.</dd></div>
+      </dl>
     </div>
   </section>
 
@@ -868,203 +1270,207 @@ nav.topnav{background:rgba(251,250,247,.82) !important;backdrop-filter:saturate(
     </div>
   </section>
   <div class="x-progress" aria-hidden="true"><span></span></div>
-  <div class="x-sticky" id="x-sticky"><div><b>Drone roof inspection</b><span>Price online in a minute, from £180</span></div><button class="x-btn" onclick="go('book')">Get price <span class="x-btn-i">&rarr;</span></button></div>
+  <div class="x-sticky" id="x-sticky"><div><b>Drone roof inspection</b><span>Price online in a minute, from £232</span></div><button class="x-btn" onclick="go('book')">Get price <span class="x-btn-i">&rarr;</span></button></div>
 </div>
 
 
 <!-- ============ PRICING ============ -->
 <div id="page-pricing" class="page">
-  <section class="page-hero-band">
-    <div class="wrap">
-      <div class="eyebrow">Pricing</div>
-      <h1 style="color:var(--paper);font-size:clamp(1.9rem,3.6vw,2.7rem);margin:0 0 12px;">Clear pricing. No surprises.</h1>
-      <p style="color:rgba(251,250,247,.7);font-size:15.5px;line-height:1.7;max-width:52ch;margin:0;">Price is based on your roof's actual measured area, any additional roof features, and distance from Brighton &amp; Hove. £50 deposit to book, balance on completion.</p>
+  <section class="x-band">
+    <div class="x-hero-bg" aria-hidden="true"></div>
+    <div class="x-wrap x-band-in">
+      
+      <h1 class="x-band-h" data-x="up" style="--d:.08s">Clear pricing. <em>No surprises.</em></h1>
+      <p class="x-band-p" data-x="up" style="--d:.16s">Priced by your roof's measured area, plus any extra features. You see the exact figure online before you book, with a £50 deposit to secure the date.</p>
+      <div data-x="up" style="--d:.24s"><button class="x-btn" onclick="go('book')">Get your exact price <span class="x-btn-i">&rarr;</span></button></div>
     </div>
   </section>
-  <section class="pad reveal">
-    <div class="wrap">
-      <h2 style="font-size:1.3rem;margin-bottom:6px;">Residential inspections</h2>
-      <p class="muted" style="font-size:13px;margin-bottom:18px;line-height:1.7;">We price by your roof's measured area rather than a fixed price per house type, so you're never charged more than your roof actually needs. Typical prices below, based on a standard pitched roof — enter your postcode in the instant quote to see your exact figure.</p>
-      <div style="margin-bottom:56px;">
-        <div class="price-row"><div class="badge">T</div><div class="info"><div class="t">Terraced house</div><div class="d">Mid or end terrace, ~45m² roof</div></div><div class="amt">from £227</div></div>
-        <div class="price-row"><div class="badge">S</div><div class="info"><div class="t">Semi-detached</div><div class="d">Semi-detached house, ~65m² roof</div></div><div class="amt">from £291</div></div>
-        <div class="price-row"><div class="badge">D</div><div class="info"><div class="t">Detached house</div><div class="d">Standalone property, ~100m² roof</div></div><div class="amt">from £401</div></div>
-        <div class="price-row"><div class="badge">L</div><div class="info"><div class="t">Large detached</div><div class="d">5+ beds or large footprint, ~160m²+ roof</div></div><div class="amt">from £591</div></div>
+
+  <section class="x-sec x-sec-tight">
+    <div class="x-wrap">
+      <div class="x-head" data-x="up"><h2 class="x-h2">Based on a standard pitched roof</h2><p class="x-p">We measure your actual roof, so you never pay for more than it needs. Your exact price appears as soon as you enter your address.</p></div>
+      <div class="x-prices">
+        <div class="x-price" data-x="up"><div class="x-price-t">Terraced</div><div class="x-price-d">Mid or end terrace, about 45m² of roof</div><div class="x-price-v"><small>from</small>£232</div></div>
+        <div class="x-price x-price-hot" data-x="up" style="--d:.08s"><div class="x-price-tag">Most common</div><div class="x-price-t">Semi-detached</div><div class="x-price-d">About 65m² of roof</div><div class="x-price-v"><small>from</small>£296</div></div>
+        <div class="x-price" data-x="up" style="--d:.16s"><div class="x-price-t">Detached</div><div class="x-price-d">About 100m² of roof</div><div class="x-price-v"><small>from</small>£406</div></div>
+        <div class="x-price" data-x="up" style="--d:.24s"><div class="x-price-t">Large detached</div><div class="x-price-d">5+ beds or a large footprint, 160m²+</div><div class="x-price-v"><small>from</small>£596</div></div>
       </div>
-
-      <h2 style="font-size:1.3rem;margin-bottom:6px;">Add-ons</h2>
-      <p class="muted" style="font-size:13px;margin-bottom:18px;line-height:1.7;">Not sure what applies to your property? These are shown as a guide, we confirm the exact add-ons that apply to your roof before your booking is finalised, so you're never charged for something you didn't expect.</p>
-      <div style="margin-bottom:56px;">
-        <div class="price-row"><div class="badge">＋</div><div class="info"><div class="t">Chimney stacks</div><div class="d">Each stack, all four sides inspected close up</div></div><div class="amt" style="font-size:1.1rem;">+£35</div></div>
-        <div class="price-row"><div class="badge">＋</div><div class="info"><div class="t">Extensions / flat roofs</div><div class="d">Rear or side extensions</div></div><div class="amt" style="font-size:1.1rem;">+£30</div></div>
-        <div class="price-row"><div class="badge">＋</div><div class="info"><div class="t">Dormer windows</div><div class="d">Each dormer window</div></div><div class="amt" style="font-size:1.1rem;">+£20</div></div>
-        <div class="price-row"><div class="badge">＋</div><div class="info"><div class="t">Outbuildings / garages</div><div class="d">Separate structures</div></div><div class="amt" style="font-size:1.1rem;">+£40</div></div>
-      </div>
-
-      <h2 style="font-size:1.3rem;margin-bottom:6px;">Travel</h2>
-      <div style="margin-bottom:16px;">
-        <div class="price-row"><div class="badge">→</div><div class="info"><div class="t">Within 7 miles of Brighton &amp; Hove</div><div class="d">Our home patch</div></div><div class="amt" style="font-size:1.1rem;">Free</div></div>
-        <div class="price-row"><div class="badge">→</div><div class="info"><div class="t">Beyond 7 miles</div><div class="d">£1 per mile beyond the free radius, £5 minimum</div></div><div class="amt" style="font-size:1.1rem;">£1/mile</div></div>
-      </div>
-      <p class="muted" style="font-size:13px;margin-bottom:56px;line-height:1.7;">We calculate this automatically from your postcode as part of the instant quote, so you always see the exact figure before you book. Properties beyond about 45 miles fall outside our current coverage area, email info@roofscanuk.co.uk and we'll let you know if we can help.</p>
-
-      <h2 style="font-size:1.3rem;margin-bottom:6px;">Booking, payment & cancellation</h2>
-      <div style="margin-bottom:56px;">
-        <div class="check-list">
-          <div class="check-item"><span class="dash">—</span><span>£50 deposit to book your slot, balance due once your inspection is complete</span></div>
-          <div class="check-item"><span class="dash">—</span><span>Need to reschedule? Free of charge with at least 48 hours' notice; your deposit is refunded or moved to the new date</span></div>
-          <div class="check-item"><span class="dash">—</span><span>If we can't fly on the day due to weather, we'll rebook the next available slot at no extra cost, your 5-working-day report clock starts from the completed flight, not the original booking date</span></div>
-        </div>
-      </div>
-
-      <h2 style="font-size:1.3rem;margin-bottom:6px;">If something's not right</h2>
-      <p class="muted" style="font-size:13px;margin-bottom:56px;line-height:1.7;">We're fully insured for our drone operations. If you're not happy with your report, or something was missed, tell us and we'll put it right, that might mean revisiting the property or reviewing the imagery again, at no extra cost to you.</p>
-
-      <p class="muted" style="font-size:13px;line-height:1.9;margin-bottom:28px;">Every inspection includes: full drone survey of all elevations, professional written report, condition ratings, Schedule of Works, 48-hour delivery after a completed flight. Fully insured, CAA licensed.</p>
-      <button class="btn" onclick="go('book')">Book your inspection →</button>
+      <p class="x-note" data-x="up">Very small roofs can come in lower, with a minimum of £180. Flat roofs cost a little less and mixed roofs a little more.</p>
     </div>
+  </section>
+
+  <section class="x-sec x-sec-tight x-alt">
+    <div class="x-wrap x-two">
+      <div data-x="left">
+        
+        <h2 class="x-h2">Add-ons</h2>
+        <p class="x-p">Only charged if your property has them. We confirm what applies before your booking is final.</p>
+      </div>
+      <div class="x-list">
+        <div class="x-li" data-x="right"><span>Chimney stacks<small>Each stack, all four sides close up</small></span><b>+£35</b></div>
+        <div class="x-li" data-x="right" style="--d:.06s"><span>Extensions or flat roofs<small>Rear or side extensions</small></span><b>+£30</b></div>
+        <div class="x-li" data-x="right" style="--d:.12s"><span>Dormer windows<small>Each dormer</small></span><b>+£20</b></div>
+        <div class="x-li" data-x="right" style="--d:.18s"><span>Outbuildings or garages<small>Separate structures</small></span><b>+£40</b></div>
+        <div class="x-li x-li-gold" data-x="right" style="--d:.24s"><span>Express<small>Inspection from 48 hours' notice, report within 24 hours of the flight</small></span><b>+£99</b></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="x-sec x-sec-tight">
+    <div class="x-wrap x-two">
+      <div data-x="left">
+        
+        <h2 class="x-h2">Mileage, worked out for you</h2>
+        <p class="x-p">Mileage is measured from the nearest RoofScan pilot to your property and added to your price automatically, so you see it before you book.</p>
+      </div>
+      <div class="x-list">
+        <div class="x-li" data-x="right"><span>Within 10 miles of a pilot<small>Most addresses</small></span><b class="x-free">Free</b></div>
+        <div class="x-li" data-x="right" style="--d:.06s"><span>Beyond 10 miles<small>Per extra mile, there and back</small></span><b>90p/mile</b></div>
+        <div class="x-li" data-x="right" style="--d:.12s"><span>Outside our area<small>Leave your email on the quote page and we'll tell you when we cover you</small></span><b>&mdash;</b></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="x-sec x-sec-tight x-alt">
+    <div class="x-wrap">
+      <div class="x-head" data-x="up"><h2 class="x-h2">Booking, payment and changes</h2></div>
+      <div class="x-tiles">
+        <div class="x-tile" data-x="up"><div class="x-tile-i"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/></svg></div><h3>£50 deposit</h3><p>Secures your date and comes off the total. The balance is due once the inspection is done.</p></div>
+        <div class="x-tile" data-x="up" style="--d:.08s"><div class="x-tile-i"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg></div><h3>Free to move</h3><p>Change your date free of charge with at least 48 hours' notice. Your deposit moves with you.</p></div>
+        <div class="x-tile" data-x="up" style="--d:.16s"><div class="x-tile-i"><svg viewBox="0 0 24 24"><path d="M7 17a4 4 0 010-8 5 5 0 019.6-1.5A4 4 0 1117 17"/><path d="M9 20l1-2M13 20l1-2"/></svg></div><h3>Bad weather</h3><p>If it isn't safe to fly, we email you a link to pick a new time at no extra cost.</p></div>
+        <div class="x-tile" data-x="up" style="--d:.24s"><div class="x-tile-i"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg></div><h3>Put right</h3><p>If something in your report isn't right, tell us and we'll fix it, including another look at the roof if needed, at no cost.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="x-cta-wrap">
+    <div class="x-wrap"><div class="x-cta" data-x="zoom"><div class="x-cta-glow" aria-hidden="true"></div>
+      <h2>See your exact price</h2><p>Every inspection includes a full drone survey, a written report with condition ratings and a schedule of works, within 5 working days.</p>
+      <button class="x-btn" onclick="go('book')">Get your instant price <span class="x-btn-i">&rarr;</span></button></div></div>
   </section>
 </div>
 
 <!-- ============ SERVICES ============ -->
 <div id="page-services" class="page">
-  <section class="page-hero-band">
-    <div class="wrap">
-      <div class="eyebrow">Our services</div>
-      <h1 style="color:var(--paper);font-size:clamp(1.9rem,3.6vw,2.7rem);margin:0 0 12px;">One drone. Every roof problem, seen clearly.</h1>
-      <p style="color:rgba(251,250,247,.7);font-size:15.5px;line-height:1.7;max-width:56ch;margin:0;">Whether you're a homeowner who needs answers, or a professional who wants an easy way to help your clients, there's something here for you.</p>
+  <section class="x-band">
+    <div class="x-hero-bg" aria-hidden="true"></div>
+    <div class="x-wrap x-band-in">
+      
+      <h1 class="x-band-h" data-x="up" style="--d:.08s">One drone. <em>Every roof, seen clearly.</em></h1>
+      <p class="x-band-p" data-x="up" style="--d:.16s">For homeowners who want answers, and for professionals who want an easy way to help their clients.</p>
     </div>
   </section>
-  <section class="pad reveal">
-    <div class="wrap svc-list">
 
-      <div class="svc-row">
-        <div class="badge">01</div>
-        <div>
-          <div class="svc-tag">For homeowners</div>
-          <h2>Residential Inspections</h2>
-          <p class="body">A complete external roof inspection for your home, captured by drone and delivered as a full written report. Ideal if you've spotted a leak, lost tiles in a storm, are buying or selling, or simply want peace of mind before winter. No scaffolding or ladders needed, and most inspections take under an hour on site.</p>
-          <div class="check-list" style="margin-bottom:20px;">
-            <div class="check-item"><span class="dash">—</span><span>Priced by your roof's measured area from £180</span></div>
-            <div class="check-item"><span class="dash">—</span><span>Full report with photos within 5 working days</span></div>
-            <div class="check-item"><span class="dash">—</span><span>Condition ratings and Schedule of Works</span></div>
-          </div>
-          <button class="btn small" onclick="go('book')">Book an inspection →</button>
+  <section class="x-sec x-sec-tight">
+    <div class="x-wrap x-svcs">
+      <article class="x-svc" data-x="up">
+        <div class="x-svc-body">
+          <h2 class="x-h2 x-h2-sm">Residential inspections</h2>
+          <p class="x-for">For homeowners</p>
+          <p class="x-p">A complete external roof inspection, photographed by drone and written up as a full report. Ideal after a leak or a storm, when buying or selling, after roof work, or for peace of mind before winter. No scaffolding or ladders, and most inspections take under an hour.</p>
+          <ul class="x-mini"><li>Priced by measured roof area, from £232</li><li>Written report within 5 working days, or 24 hours with Express</li><li>Condition ratings and a schedule of works</li></ul>
+          <button class="x-btn" onclick="go('book')">Get your price <span class="x-btn-i">&rarr;</span></button>
         </div>
-      </div>
-
-      <div class="svc-row">
-        <div class="badge">02</div>
-        <div>
-          <div class="svc-tag">For estate agents, letting agents, block management & solicitors</div>
-          <h2>A Referral Partnership for Your Business</h2>
-          <p class="body">If your business works with clients who ever need a roof looked at, before a sale, a let, a conveyancing check, or a resident concern, we'd like to set up a referral partnership with you. Your branch receives £50 for every referred report that is paid in full, paid once a month. Clients pay our standard price and are told, before they book, that you receive a referral fee. No contract, no minimum, no cost to sign up.</p>
-          <div class="check-list" style="margin-bottom:20px;">
-            <div class="check-item"><span class="dash">—</span><span>An optional, no-pressure report you can offer your vendors and landlords</span></div>
-            <div class="check-item"><span class="dash">—</span><span>£50 for your branch on each referred report paid in full, paid monthly</span></div>
-            <div class="check-item"><span class="dash">—</span><span>Your own tracked referral link, so everything's automatic</span></div>
-          </div>
-          <button class="btn small" onclick="go('contact')">Get in touch →</button>
+        <div class="x-svc-side"><small>Starting price</small><b>£232</b><span>Report in 5 working days</span></div>
+      </article>
+      <article class="x-svc" data-x="up">
+        <div class="x-svc-body">
+          <h2 class="x-h2 x-h2-sm">Referral partnership</h2>
+          <p class="x-for">For estate agents, letting agents, block managers and solicitors</p>
+          <p class="x-p">If your clients ever need a roof looked at, before a sale, a let, a conveyancing check or a resident complaint, refer them to us. Your branch receives £50 for every referred report that is paid in full, paid monthly. Clients pay our standard price and are told before booking that you receive a referral fee. No contract, no minimum, nothing to pay.</p>
+          <ul class="x-mini"><li>An optional, no-pressure report you can offer vendors and landlords</li><li>£50 for your branch on each referred report paid in full</li><li>Your own tracked referral link, so everything is automatic</li></ul>
+          <a class="x-btn x-btn-dark" href="agency-signup.html">Sign up your branch <span class="x-btn-i">&rarr;</span></a>
         </div>
-      </div>
-
-      <div class="svc-row">
-        <div class="badge">03</div>
-        <div>
-          <div class="svc-tag">For surveyors & lenders</div>
-          <h2>Supporting Evidence for Surveys &amp; Lending</h2>
-          <p class="body">Independent drone imagery and condition data to support a RICS survey or a lending decision, especially where roof access is difficult or a second opinion is needed. Delivered as a standalone report you can attach directly to your own paperwork.</p>
-          <div class="check-list" style="margin-bottom:20px;">
-            <div class="check-item"><span class="dash">—</span><span>Independent, unbiased condition evidence</span></div>
-            <div class="check-item"><span class="dash">—</span><span>Delivered as a standalone, attachable report</span></div>
-            <div class="check-item"><span class="dash">—</span><span>Fast turnaround so it doesn't hold up a transaction</span></div>
-          </div>
-          <button class="btn small" onclick="go('contact')">Get in touch →</button>
+        <div class="x-svc-side"><small>Per paid referral</small><b>£50</b><span>Paid to your branch monthly</span></div>
+      </article>
+      <article class="x-svc" data-x="up">
+        <div class="x-svc-body">
+          <h2 class="x-h2 x-h2-sm">Evidence for surveys and lending</h2>
+          <p class="x-for">For surveyors and lenders</p>
+          <p class="x-p">Independent drone photos and condition ratings to support a survey or a lending decision, especially where roof access is difficult or a second opinion is needed. Delivered as a standalone report you can attach to your own paperwork.</p>
+          <ul class="x-mini"><li>Independent, unbiased condition evidence</li><li>A standalone report you can attach</li><li>Fast turnaround that won't hold up a transaction</li></ul>
+          <button class="x-btn x-btn-dark" onclick="go('contact')">Get in touch <span class="x-btn-i">&rarr;</span></button>
         </div>
-      </div>
-
+        <div class="x-svc-side"><small>Delivered as</small><b>PDF</b><span>A standalone report you can attach</span></div>
+      </article>
     </div>
   </section>
-  <section class="cta-banner reveal">
-    <div class="wrap-b" style="max-width:560px;">
-      <h2 style="font-size:clamp(1.4rem,2.6vw,1.9rem);">Not sure which service fits?</h2>
-      <p style="font-size:14.5px;">Tell us what you need and we'll point you the right way. No obligation, no hard sell.</p>
-      <button class="btn" style="background:var(--gold);border-color:var(--gold);color:var(--navy);" onclick="go('contact')">Get in touch</button>
-    </div>
+
+  <section class="x-cta-wrap">
+    <div class="x-wrap"><div class="x-cta" data-x="zoom"><div class="x-cta-glow" aria-hidden="true"></div>
+      <h2>Not sure which fits?</h2><p>Tell us what you need and we'll point you the right way. No obligation, no hard sell.</p>
+      <button class="x-btn" onclick="go('contact')">Get in touch <span class="x-btn-i">&rarr;</span></button></div></div>
   </section>
 </div>
 
 <!-- ============ ABOUT ============ -->
 <div id="page-about" class="page">
-  <section class="page-hero-band">
-    <div class="wrap-n">
-      <div class="eyebrow">About RoofScan UK</div>
-      <h1 style="color:var(--paper);font-size:clamp(1.9rem,3.6vw,2.7rem);margin:0 0 12px;">Roof inspections done properly, from the air</h1>
-      <p style="color:rgba(251,250,247,.7);font-size:15.5px;line-height:1.7;margin:0;">Local, independent, and built on real construction experience.</p>
+  <section class="x-band">
+    <div class="x-hero-bg" aria-hidden="true"></div>
+    <div class="x-wrap x-band-in">
+      
+      <h1 class="x-band-h" data-x="up" style="--d:.08s">Roof inspections done properly, <em>from the air.</em></h1>
+      <p class="x-band-p" data-x="up" style="--d:.16s">Local, independent and built on real construction experience.</p>
     </div>
   </section>
-  <section class="pad reveal">
-    <div class="wrap-n">
-      <div class="about-block"><h2>Why we started</h2><p>A normal roof inspection usually means scaffolding, ladders, cost, and risk, or a roofer climbing up and telling you what they found with nothing to back it up. RoofScan UK exists to fix that. A drone captures every tile, ridge, and flashing in high resolution, so you get a full written report you can actually trust and act on. No scaffolding, no guesswork, and nobody with a stake in what happens next.</p></div>
-      <div class="about-block"><h2>Grounded in the trade</h2><p>RoofScan UK is run by Takhy Ndiaye Marrero, who brings hands-on construction experience and a background in property to every inspection. Reports get written by someone who understands what he's looking at, not just pretty pictures, but a genuine read on what's going on up there and what to do about it.</p></div>
-      <div class="about-block"><h2>Independent by design</h2><p>We don't do the repairs, and we take no fee from anyone who does. That's on purpose. We have nothing to gain from what we find, so our reports stay honest. We tell you what we see, not what's convenient for someone else's next job.</p></div>
-      <div class="about-block"><h2>Local to Sussex</h2><p>We're based in Brighton and cover the whole of Sussex, from Chichester to Rye, the coast to the mid-Sussex villages. Being local means we know the area, the housing stock, and the weather that batters these roofs. It also means a real person answers when you call.</p></div>
-      <div class="cred-grid">
-        <div><div class="t">CAA</div><div class="d">Operator ID &amp; qualified pilot</div></div>
-        <div><div class="t">Insured</div><div class="d">Commercial drone cover</div></div>
-        <div><div class="t">Equipped</div><div class="d">Professional inspection drone</div></div>
-        <div><div class="t">Sussex</div><div class="d">Full county coverage</div></div>
-      </div>
+
+  <section class="x-statement" style="padding:110px 0 70px;">
+    <div class="x-wrap"><p class="x-lit" data-lit>A roof inspection used to mean scaffolding, ladders, cost and risk, or a roofer climbing up and telling you what they found with nothing to back it up. <strong>We built RoofScan to fix that.</strong></p></div>
+  </section>
+
+  <section class="x-sec x-sec-tight" style="padding-top:20px;">
+    <div class="x-wrap x-about">
+      <div class="x-ab" data-x="up"><div class="x-ab-n">01</div><h3>Grounded in the trade</h3><p>RoofScan UK is run by Takhy Ndiaye Marrero, who brings hands-on construction experience and a background in property. Reports are written by people who understand what they're looking at, not just pretty pictures.</p></div>
+      <div class="x-ab" data-x="up" style="--d:.08s"><div class="x-ab-n">02</div><h3>Independent by design</h3><p>We don't do repairs, and we take no fee from anyone who does. We have nothing to gain from what we find, so our reports stay honest. We tell you what we see.</p></div>
+      <div class="x-ab" data-x="up" style="--d:.16s"><div class="x-ab-n">03</div><h3>Local to Sussex</h3><p>Based in Brighton and covering Sussex, from Chichester to Rye. We know the housing stock and the weather that batters these roofs, and a real person answers when you call.</p></div>
     </div>
   </section>
-  <section class="cta-banner reveal">
-    <div class="wrap-b" style="max-width:560px;">
-      <h2 style="font-size:clamp(1.4rem,2.6vw,1.9rem);">See your roof the way we do</h2>
-      <p style="font-size:14.5px;">Book an inspection and get a full report within 5 working days.</p>
-      <button class="btn" style="background:var(--gold);border-color:var(--gold);color:var(--navy);" onclick="go('book')">Book your inspection</button>
+
+  <section class="x-stats" style="padding-bottom:110px;">
+    <div class="x-wrap x-stats-grid">
+      <div class="x-stat" data-x="up"><div class="x-stat-v">CAA</div><div class="x-stat-l">Operator ID and qualified pilots</div></div>
+      <div class="x-stat" data-x="up" style="--d:.08s"><div class="x-stat-v">Insured</div><div class="x-stat-l">Commercial drone cover</div></div>
+      <div class="x-stat" data-x="up" style="--d:.16s"><div class="x-stat-v">Pro kit</div><div class="x-stat-l">Professional inspection drones</div></div>
+      <div class="x-stat" data-x="up" style="--d:.24s"><div class="x-stat-v">Local</div><div class="x-stat-l">Brighton based, covering Sussex</div></div>
     </div>
+  </section>
+
+  <section class="x-cta-wrap">
+    <div class="x-wrap"><div class="x-cta" data-x="zoom"><div class="x-cta-glow" aria-hidden="true"></div>
+      <h2>See your roof the way we do</h2><p>Book an inspection and get a full written report within 5 working days.</p>
+      <button class="x-btn" onclick="go('book')">Get your instant price <span class="x-btn-i">&rarr;</span></button></div></div>
   </section>
 </div>
 
 <!-- ============ CONTACT ============ -->
 <div id="page-contact" class="page">
-  <section class="page-hero-band">
-    <div class="wrap-n">
-      <div class="eyebrow">Contact</div>
-      <h1 style="color:var(--paper);font-size:clamp(1.9rem,3.6vw,2.7rem);margin:0 0 12px;">Get in touch</h1>
-      <p style="color:rgba(251,250,247,.7);font-size:15.5px;line-height:1.7;margin:0;">Questions about a booking or a referral partnership? We reply within 2 hours during business hours.</p>
+  <section class="x-band">
+    <div class="x-hero-bg" aria-hidden="true"></div>
+    <div class="x-wrap x-band-in">
+      
+      <h1 class="x-band-h" data-x="up" style="--d:.08s">Get in touch</h1>
+      <p class="x-band-p" data-x="up" style="--d:.16s">Questions about a booking or a referral partnership? We reply within 2 hours during business hours.</p>
     </div>
   </section>
-  <section style="padding:28px 24px 0;">
-    <div class="wrap-n">
-      <div style="background:var(--white);border:1px solid var(--line);border-radius:2px;padding:26px 28px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;">
-        <div>
-          <div class="eyebrow" style="margin-bottom:6px;">For businesses</div>
-          <div style="font-weight:600;font-size:15.5px;color:var(--navy);margin-bottom:4px;">Estate agent, letting agent, block management, or solicitor?</div>
-          <div class="muted" style="font-size:13.5px;">Set up a referral partnership. Your branch receives £50 for every referred report paid in full. No contract, no minimum.</div>
-        </div>
-        <a class="btn" style="background:var(--gold);border-color:var(--gold);color:var(--navy);white-space:nowrap;" href="mailto:info@roofscanuk.co.uk?subject=Referral%20partnership">Get in touch →</a>
+
+  <section class="x-sec x-sec-tight">
+    <div class="x-wrap x-contact">
+      <div class="x-cards-c">
+        <a class="x-cc" href="tel:07498364197" data-x="up"><span class="x-cc-i"><svg viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 005 5L15 13l5 2v4a2 2 0 01-2 2A16 16 0 013 6a2 2 0 012-2"/></svg></span><span><small>Call or text</small><b>07498 364197</b><em>Mon to Fri 8am to 6pm, Sat 8am to 2pm</em></span></a>
+        <a class="x-cc" href="mailto:info@roofscanuk.co.uk" data-x="up" style="--d:.06s"><span class="x-cc-i"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg></span><span><small>Email</small><b>info@roofscanuk.co.uk</b><em>Reply within 2 hours in business hours</em></span></a>
+        <a class="x-cc" href="https://wa.me/447498364197" target="_blank" rel="noopener" data-x="up" style="--d:.12s"><span class="x-cc-i"><svg viewBox="0 0 24 24"><path d="M4 20l1.3-4A8 8 0 1112 20a8 8 0 01-4-1z"/><path d="M9 9.5c.5 2 2 3.5 4 4l1-1.2 2 .8"/></svg></span><span><small>WhatsApp</small><b>07498 364197</b><em>Message us for a quick reply</em></span></a>
+        <div class="x-cc x-cc-biz" data-x="up" style="--d:.18s"><span><small>For businesses</small><b>Agent, block manager or solicitor?</b><em>Your branch receives £50 for every referred report paid in full. No contract, no minimum.</em></span><a class="x-btn" href="agency-signup.html">Set up a partnership <span class="x-btn-i">&rarr;</span></a></div>
       </div>
-    </div>
-  </section>
-  <section class="pad reveal">
-    <div class="wrap-n contact-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:48px;">
-      <div>
-        <div class="contact-row"><div><div class="label">Call or text</div><div class="value">07498 364197</div><div class="note">Mon-Fri 8am-6pm · Sat 8am-2pm</div></div></div>
-        <div class="contact-row"><div><div class="label">Email</div><div class="value">info@roofscanuk.co.uk</div><div class="note">We reply within 2 hours during business hours</div></div></div>
-        <div class="contact-row"><div><div class="label">WhatsApp</div><div class="value">07498 364197</div><div class="note">Message us for a quick response</div></div></div>
-        <div class="contact-row"><div><div class="label">Based in</div><div class="value">Brighton, East Sussex</div><div class="note">Covering the whole of Sussex</div></div></div>
-      </div>
-      <div>
-        <div class="eyebrow">Send a message</div>
-        <div class="form-stack">
-          <input placeholder="Your name" type="text">
-          <input placeholder="Email address" type="email">
-          <input placeholder="Phone number" type="tel">
-          <textarea placeholder="How can we help?" rows="4"></textarea>
-          <button class="btn full" onclick="alert('Wire this up to your inbox, e.g. via a Zap to Gmail.')">Send message</button>
-        </div>
-      </div>
+      <form class="x-form" data-x="right" style="position:relative;" onsubmit="event.preventDefault();xContactSend(this);">
+        <h2 class="x-h2 x-h2-sm">Send a message</h2>
+        <label>Your name<input name="name" type="text" required autocomplete="name"></label>
+        <label>Email address<input name="email" type="email" required autocomplete="email"></label>
+        <label><span>Phone number <i>(optional)</i></span><input name="phone" type="tel" autocomplete="tel"></label>
+        <label>How can we help?<textarea name="msg" rows="4" required></textarea></label>
+        <button class="x-btn" type="submit">Send message <span class="x-btn-i">&rarr;</span></button>
+        <input type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;">
+        <p class="x-form-note">We reply within 2 hours during business hours.</p>
+      </form>
     </div>
   </section>
 </div>
@@ -1089,12 +1495,12 @@ nav.topnav{background:rgba(251,250,247,.82) !important;backdrop-filter:saturate(
           <h2 style="font-size:1.15rem;margin:0 0 6px;">Where is the property?</h2>
           <p class="muted" style="font-size:13px;margin:0 0 22px;line-height:1.6;">Enter the postcode and we'll start working out your exact price in the background while you answer a couple of quick questions.</p>
           <div class="town-wrap">
-            <input id="postcode-input" placeholder="e.g. BN1 1AA" autocomplete="off" style="text-transform:uppercase;" oninput="onPostcodeInput()">
-            <button class="town-clear" id="postcode-clear" style="display:none;" onclick="clearPostcode()">×</button>
+            <input id="postcode-input" name="postcode" aria-label="Postcode" placeholder="e.g. BN1 1AA" autocomplete="postal-code" autocapitalize="characters" spellcheck="false" style="text-transform:uppercase;" oninput="onPostcodeInput()">
+            <button class="town-clear" id="postcode-clear" type="button" aria-label="Clear postcode" style="display:none;" onclick="clearPostcode()">×</button>
           </div>
-          <div id="postcode-info" class="muted" style="font-size:12px;margin-top:10px;margin-bottom:20px;display:none;"></div>
+          <div id="postcode-info" class="muted" aria-live="polite" style="font-size:12px;margin-top:10px;margin-bottom:20px;display:none;"></div>
           <div id="address-select-wrap" style="display:none;margin-bottom:20px;">
-            <label style="display:block;font-size:11px;font-weight:600;color:#6B7A8D;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Select your address</label>
+            <label for="address-select" style="display:block;font-size:11px;font-weight:600;color:#6B7A8D;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Select your address</label>
             <select id="address-select" onchange="onAddressSelect()" style="width:100%;padding:11px 14px;border:1px solid var(--line);border-radius:8px;font-size:15px;font-family:inherit;background:var(--paper);color:var(--navy);"></select>
             <div id="address-select-note" class="muted" style="font-size:12px;margin-top:8px;"></div>
           </div>
@@ -1121,10 +1527,15 @@ nav.topnav{background:rgba(251,250,247,.82) !important;backdrop-filter:saturate(
           <h2 style="font-size:1.15rem;margin:0 0 6px;">Your details</h2>
           <p class="muted" style="font-size:13px;margin:0 0 22px;line-height:1.6;">We'll use these to confirm your booking and deliver your report.</p>
           <div class="contact-fields">
-            <input id="c-name" placeholder="Full name" oninput="checkContactFields()">
-            <input id="c-email" placeholder="Email address" oninput="checkContactFields()">
-            <input id="c-phone" placeholder="Phone number" oninput="checkContactFields()">
-            <input id="c-street" placeholder="House number/name and street" oninput="checkContactFields()">
+            <label class="fld" for="c-name">Full name</label>
+            <input id="c-name" name="name" type="text" autocomplete="name" placeholder="e.g. Sarah Collins" oninput="checkContactFields()">
+            <label class="fld" for="c-email">Email</label>
+            <input id="c-email" name="email" type="email" inputmode="email" autocomplete="email" spellcheck="false" autocapitalize="off" placeholder="you@example.com" oninput="checkContactFields()">
+            <label class="fld" for="c-phone">Phone</label>
+            <input id="c-phone" name="tel" type="tel" inputmode="tel" autocomplete="tel" placeholder="e.g. 07700 900123" oninput="checkContactFields()">
+            <label class="fld" for="c-street">House number or name, and street</label>
+            <input id="c-street" name="street" type="text" autocomplete="address-line1" placeholder="e.g. 12 Church Lane" oninput="checkContactFields()">
+            <div class="fld" aria-hidden="true">Postcode</div>
             <div id="c-postcode-locked" style="display:flex;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:8px;padding:11px 14px;font-size:15px;color:var(--navy);background:var(--paper);">
               <span id="c-postcode-value">—</span>
               <span class="muted" style="font-size:12px;">Confirmed in step 1 · <a href="#" onclick="event.preventDefault();goStep(1);" class="textlink" style="font-size:12px;">change</a></span>
@@ -1132,7 +1543,7 @@ nav.topnav{background:rgba(251,250,247,.82) !important;backdrop-filter:saturate(
           </div>
           <label style="display:flex;align-items:flex-start;gap:10px;margin:18px 0 4px;cursor:pointer;">
             <input type="checkbox" id="c-optout" style="margin-top:3px;width:16px;height:16px;flex-shrink:0;">
-            <span class="muted" style="font-size:12.5px;line-height:1.6;">We may follow up by email about your quote. Tick here if you'd rather we didn't — you can unsubscribe at any time either way.</span>
+            <span class="muted" style="font-size:12.5px;line-height:1.6;">We may follow up by email about your quote. Tick here if you'd rather we didn't. You can unsubscribe at any time either way.</span>
           </label>
           <div class="row-btns">
             <button class="back-btn" onclick="goStep(3)">← Back</button>
@@ -1157,11 +1568,11 @@ nav.topnav{background:rgba(251,250,247,.82) !important;backdrop-filter:saturate(
             <div id="exact-price-message" style="font-size:13px;line-height:1.6;margin-bottom:10px;"></div>
             <div id="exact-area-input-wrap" style="display:none;">
               <div style="display:flex;gap:8px;align-items:center;">
-                <input id="exact-area-input" type="number" min="1" placeholder="e.g. 90" style="flex:1;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:15px;font-family:inherit;">
+                <input id="exact-area-input" type="number" inputmode="decimal" min="1" aria-label="Roof area in square metres" placeholder="e.g. 90" style="flex:1;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:15px;font-family:inherit;">
                 <span class="muted" style="font-size:13px;">m²</span>
                 <button class="btn" style="flex:none;padding:10px 16px;font-size:13px;" onclick="applyExactArea()">Update price</button>
               </div>
-              <div class="muted" style="font-size:12px;margin-top:8px;line-height:1.6;">A rough figure is fine — you can find this on an EPC certificate or floor plan, or just pace out the footprint of the house and add a bit for the roof's slope.</div>
+              <div class="muted" style="font-size:12px;margin-top:8px;line-height:1.6;">A rough figure is fine. You can find this on an EPC certificate or floor plan, or just pace out the footprint of the house and add a bit for the roof's slope.</div>
             </div>
           </div>
           <div class="agent-disc" style="display:none;background:#F8F6F0;border:1px solid #E8E4D8;border-radius:8px;padding:12px 14px;font-size:13px;line-height:1.6;margin-bottom:14px;"></div>
@@ -1183,7 +1594,7 @@ nav.topnav{background:rgba(251,250,247,.82) !important;backdrop-filter:saturate(
           </div>
           <div id="slot-days" style="display:none;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:4px;"></div>
           <div id="slot-times-wrap" style="display:none;margin-top:8px;"></div>
-          <div id="slot-empty" class="muted" style="display:none;font-size:13px;margin-top:10px;">No available times this week — try Later →.</div>
+          <div id="slot-empty" class="muted" style="display:none;font-size:13px;margin-top:10px;">No available times this week. Press Later → to see the next week.</div>
 
           <div id="payment-section" style="display:none;margin-top:24px;">
             <div class="agent-disc" style="display:none;background:#F8F6F0;border:1px solid #E8E4D8;border-radius:8px;padding:12px 14px;font-size:13px;line-height:1.6;margin-bottom:14px;"></div>
@@ -1199,7 +1610,7 @@ nav.topnav{background:rgba(251,250,247,.82) !important;backdrop-filter:saturate(
           <div id="booking-confirmed" style="display:none;text-align:center;padding:32px 0;">
             <h2 style="font-size:1.3rem;margin:0 0 10px;">You're booked!</h2>
             <p style="font-size:15px;font-weight:600;margin:0 0 14px;" id="confirmed-slot-line"></p>
-            <p class="muted" style="font-size:14px;line-height:1.7;">A confirmation has been sent to your email. Our CAA-licensed pilot will fly the property on the day — the drone survey takes about 30–45 minutes and you don't need to be home. No scaffolding, no disruption. Your full written report follows within 5 working days of the completed flight. The balance payment is due on completion.</p>
+            <p class="muted" style="font-size:14px;line-height:1.7;">A confirmation has been sent to your email. Our CAA-registered pilot will fly the property on the day. The flight usually takes under an hour and you don't need to be home. No scaffolding, no disruption. Straight after the flight we email you a link to pay the balance, and your full written report follows within 5 working days of that payment (or within 24 hours of the flight with Express).</p>
           </div>
 
           <div style="margin-top:22px;"><button class="back-btn" id="step6-back" style="width:auto;padding:9px 18px;font-size:12px;" onclick="goStep(5)">← Back</button></div>
@@ -1215,27 +1626,28 @@ nav.topnav{background:rgba(251,250,247,.82) !important;backdrop-filter:saturate(
   <div class="wrap">
     <div class="footer-grid">
       <div>
-        <img class="brand-logo" src="icons/roofscanuk-logo.png" alt="RoofScan UK" style="margin-bottom:10px;">
+        <img class="brand-logo" src="icons/roofscanuk-logo.png" width="636" height="512" alt="RoofScan UK" loading="lazy" style="margin-bottom:10px;">
         <div class="brand-name" style="margin-bottom:8px;">RoofScan UK</div>
-        <div class="muted" style="font-size:13px;line-height:1.7;">Professional drone roof inspections across Sussex. CAA licensed and fully insured.</div>
+        <div class="muted" style="font-size:13px;line-height:1.7;">Professional drone roof inspections across Sussex. CAA registered and fully insured.</div>
         <div class="muted" style="margin-top:12px;font-size:12px;">07498 364197<br>info@roofscanuk.co.uk<br>Brighton, East Sussex</div>
       </div>
       <div>
         <div class="footer-title">Services</div>
-        <div class="footer-link" onclick="go('services')">Residential Inspections</div>
-        <div class="footer-link" onclick="go('services')">Referral Partnerships</div>
-        <div class="footer-link" onclick="go('services')">Surveyor & Lender Support</div>
+        <div class="footer-link" role="link" tabindex="0" onclick="go('services')">Residential Inspections</div>
+        <div class="footer-link" role="link" tabindex="0" onclick="go('services')">Referral Partnerships</div>
+        <div class="footer-link" role="link" tabindex="0" onclick="go('services')">Surveyor & Lender Support</div>
+        <a class="footer-link" href="storm.html" style="display:block;">Storm damage checks</a>
       </div>
       <div>
         <div class="footer-title">Company</div>
-        <div class="footer-link" onclick="go('about')">About</div>
-        <div class="footer-link" onclick="go('contact')">Contact</div>
-        <div class="footer-link" onclick="go('pricing')">Pricing</div>
+        <div class="footer-link" role="link" tabindex="0" onclick="go('about')">About</div>
+        <div class="footer-link" role="link" tabindex="0" onclick="go('contact')">Contact</div>
+        <div class="footer-link" role="link" tabindex="0" onclick="go('pricing')">Pricing</div>
         <a class="footer-link" href="faq.html" style="display:block;">FAQs</a>
       </div>
       <div>
         <div class="footer-title">Client Portals</div>
-        <div class="footer-link" onclick="openLoginModal()">Portal Login: My Roof & Referral Partner</div>
+        <div class="footer-link" role="link" tabindex="0" onclick="openLoginModal()">Portal Login: My Roof & Referral Partner</div>
       </div>
       <div>
         <div class="footer-title">Legal</div>
@@ -1244,8 +1656,8 @@ nav.topnav{background:rgba(251,250,247,.82) !important;backdrop-filter:saturate(
       </div>
     </div>
     <div class="footer-bottom">
-      <div>© 2026 RoofScan UK. Sole trader registered in England &amp; Wales.</div>
-      <div>CAA Licensed · Fully Insured</div>
+      <div>© 2026 RoofScan UK. All rights reserved.</div>
+      <div>CAA Registered · Fully Insured</div>
     </div>
   </div>
 </footer>
@@ -1486,6 +1898,7 @@ function renderProgress(){
 }
 
 function selectProp(id){
+  formErr('book-step-2','');
   prop = id;
   PT.forEach(p=>document.getElementById('prop-'+p.id).classList.toggle('sel', p.id===id));
 }
@@ -1503,6 +1916,7 @@ function stepCount(id,d,max){
 }
 
 function onPostcodeInput(){
+  formErr('book-step-1','');
   clearTimeout(postcodeTimer);
   postcodeInfo = null;
   roofAreaInfo = null;
@@ -1550,7 +1964,7 @@ async function checkPostcode(raw){
     if(!cov.covered){
       postcodeInfo = null;
       info.innerHTML = "We don't cover "+postcode+" yet, but we're growing. Leave your email and we'll tell you as soon as we do."
-        + '<div style="display:flex;gap:8px;margin-top:8px;"><input id="wait-email" type="email" placeholder="you@email.com" style="flex:1;padding:9px 11px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:14px;">'
+        + '<div style="display:flex;gap:8px;margin-top:8px;"><input id="wait-email" type="email" aria-label="Email for coverage updates" autocomplete="email" spellcheck="false" placeholder="you@email.com" style="flex:1;padding:9px 11px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:14px;">'
         + '<button class="btn" style="flex:none;padding:9px 14px;font-size:13px;" onclick="joinWaitlist(\''+postcode+'\',\''+(admin_district||'').replace(/'/g,'')+'\')">Notify me</button></div>';
       info.style.display = 'block';
       return;
@@ -1579,9 +1993,9 @@ async function joinWaitlist(postcode, town){
   try{
     const r = await fetch(LM_API_BASE+'/area-waitlist', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email, postcode, town }) });
     const d = await r.json().catch(()=>({}));
-    if(!r.ok){ alert(d.error || 'Please check your email address.'); return; }
+    if(!r.ok){ formErr('book-step-1', d.error || 'Please check your email address.', 'wait-email'); return; }
     info.textContent = "Thanks. We'll email you as soon as we cover "+postcode+".";
-  }catch(e){ alert('Please try again in a moment.'); }
+  }catch(e){ formErr('book-step-1', "We couldn't save that just now. Please try again in a moment.", 'wait-email'); }
 }
 function clearPostcode(){
   postcodeInfo = null;
@@ -1614,9 +2028,9 @@ async function loadAddressList(postcode, centroidLat, centroidLng){
       wrap.style.display='none';
       return;
     }
-    sel.innerHTML = '<option value="">Select your address (optional — improves accuracy)</option>'
+    sel.innerHTML = '<option value="">Select your address (optional, improves accuracy)</option>'
       + list.map(a=>`<option value="${a.id}">${a.label}</option>`).join('')
-      + '<option value="__none__">Can\'t find it — that\'s fine, continue with postcode only</option>';
+      + '<option value="__none__">Can\'t find it? That\'s fine, continue with postcode only</option>';
     note.textContent = '';
     wrap.style.display = 'block';
   }catch(err){
@@ -1630,7 +2044,7 @@ function onAddressSelect(){
   const note = document.getElementById('address-select-note');
   if(sel.value === '' || sel.value === '__none__'){
     selectedAddress = null;
-    note.textContent = sel.value === '__none__' ? "No problem — we'll use your postcode's general location." : '';
+    note.textContent = sel.value === '__none__' ? "No problem, we'll use your postcode's general location." : '';
     return;
   }
   const addr = addressList.find(a=>a.id===sel.value);
@@ -1647,6 +2061,7 @@ function onAddressSelect(){
 }
 
 function checkContactFields(){
+  ['c-name','c-email','c-phone','c-street'].forEach(id => { const el = document.getElementById(id); if(el && el.value.trim() && el.getAttribute('aria-invalid')==='true') el.setAttribute('aria-invalid','false'); });
   contact.name = document.getElementById('c-name').value;
   contact.email = document.getElementById('c-email').value;
   contact.phone = document.getElementById('c-phone').value;
@@ -1655,6 +2070,23 @@ function checkContactFields(){
   // from a real validated postcode rather than retyped free text — removes
   // the mismatch risk entirely instead of just flagging it.
   contact.address = postcodeInfo ? (street ? street + ', ' + postcodeInfo.postcode : '') : street;
+}
+
+// Shows a message inside the current step (no pop-up boxes) and moves focus to the field that needs fixing.
+function formErr(stepId, msg, focusId){
+  const step = document.getElementById(stepId); if(!step) return;
+  let box = step.querySelector('.form-err');
+  if(!msg){ if(box) box.remove(); return; }
+  if(!box){ box = document.createElement('div'); box.className = 'form-err'; box.setAttribute('role','alert'); }
+  // Put the message right under the field that needs fixing; otherwise just above the step's buttons.
+  const f = focusId && document.getElementById(focusId);
+  if(f && f.matches('input,select,textarea')) f.insertAdjacentElement('afterend', box);
+  else {
+    const anchor = step.querySelector('.row-btns') || step.querySelector('.btn.full') || step.querySelector('.book-cta');
+    if(anchor) anchor.parentNode.insertBefore(box, anchor); else step.appendChild(box);
+  }
+  box.textContent = msg;
+  if(f){ const t = f.matches('input,select,textarea,button') ? f : f.querySelector('button,input,select'); if(t){ t.focus({preventScroll:true}); } (t||f).scrollIntoView({behavior:'smooth', block:'center'}); }
 }
 
 function goStep(n){
@@ -1696,9 +2128,21 @@ function goStep(n){
 }
 
 function nextFromStep(n){
-  if(n===1 && !postcodeInfo){ alert('Please enter a valid postcode within our coverage area.'); return; }
-  if(n===2 && !prop){ alert('Please select a property type.'); return; }
-  if(n===4 && !(contact.name && contact.email && contact.phone && contact.address)){ alert('Please fill in all fields.'); return; }
+  formErr('book-step-'+n, '');
+  if(n===1 && !postcodeInfo){ formErr('book-step-1', 'Enter a full postcode in our area, for example BN1 1AA.', 'postcode-input'); return; }
+  if(n===2 && !prop){ formErr('book-step-2', 'Pick the type of property so we can work out the roof size.', 'prop-grid'); return; }
+  if(n===4){
+    checkContactFields();
+    const checks = [
+      ['c-name', contact.name.trim().length > 1, 'Add your full name.'],
+      ['c-email', /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(contact.email.trim()), 'Check your email address, for example you@example.com.'],
+      ['c-phone', contact.phone.replace(/[^0-9]/g,'').length >= 10, 'Add a phone number so the pilot can reach you on the day.'],
+      ['c-street', !!contact.address, 'Add the house number or name and street.'],
+    ];
+    checks.forEach(([id, ok]) => document.getElementById(id).setAttribute('aria-invalid', ok ? 'false' : 'true'));
+    const bad = checks.find(c => !c[1]);
+    if(bad){ formErr('book-step-4', bad[2], bad[0]); return; }
+  }
   if(n===4) captureLead('details');
   goStep(n+1);
 }
@@ -1797,7 +2241,7 @@ function renderPrice(){
   const propertyLabel = (PT.find(p=>p.id===prop)||{}).label || 'this property type';
   const exactPriceMsg = document.getElementById('exact-price-message');
   if(areaFlagged){
-    exactPriceMsg.innerHTML = `Heads up — the measured roof area (${Math.round(area)}m²) is larger or smaller than typical for a ${propertyLabel.toLowerCase()}. If that doesn't sound right for your property, let us know the actual figure. <a href="#" onclick="event.preventDefault();showExactAreaInput();" class="textlink" id="exact-price-link" style="font-size:13px;">Enter it for an exact price</a>`;
+    exactPriceMsg.innerHTML = `Heads up: the measured roof area (${Math.round(area)}m²) is larger or smaller than typical for a ${propertyLabel.toLowerCase()}. If that doesn't sound right for your property, let us know the actual figure. <a href="#" onclick="event.preventDefault();showExactAreaInput();" class="textlink" id="exact-price-link" style="font-size:13px;">Enter it for an exact price</a>`;
   } else {
     exactPriceMsg.innerHTML = `We couldn't automatically confirm your roof's exact area, so this uses a typical estimate for your property type. Know the actual figure? <a href="#" onclick="event.preventDefault();showExactAreaInput();" class="textlink" id="exact-price-link" style="font-size:13px;">Enter it for an exact price</a>`;
   }
@@ -1815,7 +2259,8 @@ function showExactAreaInput(){
 
 function applyExactArea(){
   const val = Number(document.getElementById('exact-area-input').value);
-  if(!Number.isFinite(val) || val <= 0){ alert('Please enter your roof area in m².'); return; }
+  if(!Number.isFinite(val) || val <= 0){ formErr('book-step-5', 'Enter the roof area as a number of square metres, for example 90.', 'exact-area-input'); return; }
+  formErr('book-step-5', '');
   manualAreaM2 = val;
   renderPrice();
 }
@@ -1898,7 +2343,7 @@ async function loadSlots(){
     const data = await res.json();
     renderSlots(data.slots || {}, start, end);
   }catch(e){
-    document.getElementById('slot-loading').textContent = 'Could not load availability — please refresh and try again.';
+    document.getElementById('slot-loading').textContent = 'Could not load availability. Please refresh and try again.';
   }
 }
 
@@ -1930,7 +2375,7 @@ function renderSlots(raw, start, end){
   prevBtn.disabled = weekOffset === 0;
   prevBtn.style.opacity = weekOffset === 0 ? '0.4' : '1';
   const endLabel = new Date(end); endLabel.setDate(endLabel.getDate()-1);
-  document.getElementById('week-label').textContent = start.toLocaleDateString('en-GB',{day:'numeric',month:'short'}) + ' – ' + endLabel.toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+  document.getElementById('week-label').textContent = start.toLocaleDateString('en-GB',{day:'numeric',month:'short'}) + ' to ' + endLabel.toLocaleDateString('en-GB',{day:'numeric',month:'short'});
 
   const days = [];
   for(let d = new Date(start); d < end; d.setDate(d.getDate()+1)){
@@ -1983,6 +2428,7 @@ function showTimesForDay(day){
 }
 
 function selectSlot(iso, btn){
+  formErr('book-step-6','');
   selectedSlot = iso;
   document.querySelectorAll('#slot-times-wrap .back-btn').forEach(b=>b.classList.remove('sel'));
   btn.classList.add('sel');
@@ -1996,13 +2442,13 @@ async function createDepositIntent(){
     piClientSecret = data.clientSecret;
     piId = data.paymentIntentId;
   }catch(e){
-    document.getElementById('card-errors').textContent = 'Could not start payment — please refresh and try again.';
+    document.getElementById('card-errors').textContent = 'Could not start payment. Please refresh and try again.';
   }
 }
 
 async function submitPayment(){
-  if(!selectedSlot){ alert('Please pick a date and time first.'); return; }
-  if(!piClientSecret){ document.getElementById('card-errors').textContent = 'Payment not ready yet — please wait a moment and try again.'; return; }
+  if(!selectedSlot){ formErr('book-step-6', 'Pick a date and time first.', 'slot-nav'); return; }
+  if(!piClientSecret){ document.getElementById('card-errors').textContent = 'Payment not ready yet. Please wait a moment and try again.'; return; }
   const payBtn = document.getElementById('pay-btn');
   payBtn.disabled = true;
   payBtn.textContent = 'Processing…';
@@ -2046,14 +2492,14 @@ async function submitPayment(){
     document.getElementById('step6-intro').style.display = 'none';
     document.getElementById('progress-row').parentElement.style.display = 'none';
     document.getElementById('book-step-title').textContent = 'Booking confirmed';
-    document.getElementById('book-step-sub').textContent = "Thanks — here's what happens next.";
+    document.getElementById('book-step-sub').textContent = "Thanks, here's what happens next.";
     const bookedDt = new Date(selectedSlot);
     const dateLabel = bookedDt.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
     const timeLabel = bookedDt.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/London'});
     document.getElementById('confirmed-slot-line').textContent = `Inspection booked for ${dateLabel} at ${timeLabel}.`;
     document.getElementById('booking-confirmed').style.display = 'block';
   }catch(e){
-    document.getElementById('card-errors').textContent = 'Payment succeeded but booking could not be confirmed — please contact us at info@roofscanuk.co.uk with your payment reference: ' + piId;
+    document.getElementById('card-errors').textContent = 'Payment succeeded but booking could not be confirmed. Please contact us at info@roofscanuk.co.uk with your payment reference: ' + piId;
     payBtn.disabled = false;
     payBtn.textContent = 'Pay £50 deposit & book →';
   }
@@ -2194,6 +2640,24 @@ async function lmRouteToAccount(email, token){
   lmShowStep('lm-step-notfound');
 }
 
+
+// Contact form: sends the message to RoofScan through the Worker. If that fails, it opens the visitor's email app instead.
+async function xContactSend(f){
+  const v = n => (f.elements[n] && f.elements[n].value || '').trim();
+  const btn = f.querySelector('button[type=submit]'), note = f.querySelector('.x-form-note');
+  const mailto = () => { const body = `${v('msg')}\n\nName: ${v('name')}\nEmail: ${v('email')}${v('phone') ? '\nPhone: ' + v('phone') : ''}`;
+    location.href = 'mailto:info@roofscanuk.co.uk?subject=' + encodeURIComponent('Website enquiry from ' + v('name')) + '&body=' + encodeURIComponent(body); };
+  if (btn) { btn.disabled = true; btn.firstChild.textContent = 'Sending… '; }
+  try {
+    const r = await fetch('https://roofscan-api.tiny-voice-ac40.workers.dev/contact-message', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ name:v('name'), email:v('email'), phone:v('phone'), msg:v('msg'), website:v('website'), page:'contact' }) });
+    const d = await r.json().catch(() => ({}));
+    if (r.ok && d.ok) { f.innerHTML = '<h2 class="x-h2 x-h2-sm">Thanks, ' + (v('name').split(' ')[0] || 'we got it').replace(/[<>&]/g,'') + '</h2><p class="x-p">Your message is with us. We reply within 2 hours during business hours, usually by email.</p>'; return; }
+    if (r.status === 400 || r.status === 429) { if (note) { note.textContent = d.error || 'Please check the form.'; note.style.color = '#C2341F'; } if (btn) { btn.disabled = false; btn.firstChild.textContent = 'Send message '; } return; }
+    mailto();
+  } catch (e) { mailto(); }
+  if (btn) { btn.disabled = false; btn.firstChild.textContent = 'Send message '; }
+}
 // ===================== Homepage motion (2026 redesign) =====================
 // Everything here is decoration: if it fails, the content is still visible (see the catch at the bottom).
 (function(){
@@ -2261,10 +2725,10 @@ async function lmRouteToAccount(email, token){
     let ticking = false;
     const onScroll = () => {
       ticking = false;
-      const vh = window.innerHeight, home = document.getElementById('page-home');
-      if (!home || !home.classList.contains('active')) return;
+      const vh = window.innerHeight;
       if (!reduce) par.forEach(el => { const r = el.getBoundingClientRect(); const c = r.top + r.height / 2 - vh / 2; el.style.translate = `0 ${(c * Number(el.dataset.parallax)).toFixed(1)}px`; });
       lit.forEach(p => {
+        if (!p.offsetParent) return;
         const r = p.getBoundingClientRect(); const words = p.querySelectorAll('.lw');
         const prog = Math.max(0, Math.min(1, (vh * 0.9 - r.top) / (r.height + vh * 0.25)));
         const n = Math.round(prog * words.length);
@@ -2288,6 +2752,42 @@ async function lmRouteToAccount(email, token){
 
 <script>
 fetch('https://roofscan-api.tiny-voice-ac40.workers.dev/storm-status').then(r=>r.json()).then(d=>{ if(d&&d.active){ var e=document.getElementById('storm-banner'); if(e) e.style.display='block'; } }).catch(function(){});
+
+// Keyboard support for the few clickable spans/divs (nav, footer): Enter or Space acts like a click.
+document.addEventListener('keydown', e => {
+  if((e.key==='Enter' || e.key===' ') && e.target.matches && e.target.matches('[role=link][tabindex],[role=button][tabindex]')){ e.preventDefault(); e.target.click(); }
+});
+
+// Scroll story: switch the picture as each step reaches the reading line.
+(function(){
+  const stage = document.querySelector('.x-stage'); if(!stage) return;
+  const beats = [...document.querySelectorAll('.x-beat')];
+  const num = stage.querySelector('.x-sd-n');
+  const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let cur = -1, counted = false;
+  const countTo = end => {
+    if(counted) return; counted = true;
+    if(reduce){ num.textContent = end; return; }
+    const t0 = performance.now(), dur = 1100;
+    const tick = t => { const k = Math.min(1,(t-t0)/dur); num.textContent = Math.round(end*(1-Math.pow(1-k,3))); if(k<1) requestAnimationFrame(tick); };
+    requestAnimationFrame(tick);
+  };
+  const update = () => {
+    if(!stage.offsetParent && stage.getClientRects().length===0) return;
+    const vh = window.innerHeight, line = window.innerWidth < 900 ? vh*0.8 : vh*0.58;
+    let idx = 0;
+    beats.forEach((b,i) => { if(b.getBoundingClientRect().top < line) idx = i; });
+    if(idx === cur) return; cur = idx;
+    stage.dataset.stage = idx;
+    beats.forEach((b,i) => b.classList.toggle('on', i === idx));
+    if(idx === 2) countTo(82);
+  };
+  let tk = false;
+  window.addEventListener('scroll', () => { if(!tk){ tk = true; requestAnimationFrame(() => { tk = false; update(); }); } }, { passive:true });
+  window.addEventListener('resize', update);
+  window.addEventListener('hashchange', () => setTimeout(update, 60));
+  update();
+})();
 </script>
 </body>
 </html>

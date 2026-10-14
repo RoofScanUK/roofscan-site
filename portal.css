@@ -1,0 +1,41 @@
+/* ═══ RoofScan UK working portals, 2026 look ═══
+   Owner dashboard, jobs board, report generator, hub, ops, staff app, login and photo guide.
+   Same colours and feel as the website (deep navy with a gold glow, gold pill buttons, rounded panels),
+   kept calm for daily use: no entrance animations on lists, only small hover effects. */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Geist:wght@400;500;600;700;800&display=swap');
+:root{ --sun:#F2B640; --sun2:#FFCF6B; --deep:#111C33; }
+
+/* Top bars */
+html .top,html .bar,html .hdr,html .header{position:relative;overflow:hidden;background:radial-gradient(60% 140% at 92% 0%,rgba(242,182,64,.24),transparent 60%),linear-gradient(170deg,#16243F,#0D162A) !important;box-shadow:0 10px 30px -18px rgba(13,22,42,.8);}
+html .top::after,html .bar::after,html .hdr::after,html .header::after{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);background-size:44px 44px;mask-image:radial-gradient(70% 120% at 70% 0%,#000,transparent);pointer-events:none;}
+html .top > *,html .bar > *,html .hdr > *,html .header > *{position:relative;z-index:1;}
+html .top h1,html .bar h1,html .hdr h1,html .header h1,html .hdr-title,html .hdr .title,html .ht{font-family:'Fraunces',Georgia,serif !important;font-weight:600 !important;letter-spacing:-.02em !important;color:#fff !important;}
+html .top .eyebrow,html .bar .eyebrow,html .hdr .logo,html .hdr .greeting,html .eyebrow{color:var(--sun) !important;}
+
+/* Buttons */
+html .btn:not(.sec):not(.text):not(.ghost):not(.warn):not(.danger),html .login-btn,html .primary-btn,html .copy-btn,html button.primary{background:var(--sun) !important;border-color:var(--sun) !important;color:var(--deep) !important;border-radius:999px !important;font-weight:700 !important;box-shadow:0 10px 24px -12px rgba(242,182,64,.85) !important;transition:transform .2s,box-shadow .2s,background .2s !important;}
+html .btn:not(.sec):not(.text):not(.ghost):not(.warn):not(.danger):hover:not(:disabled),html .login-btn:hover,html .primary-btn:hover{background:var(--sun2) !important;transform:translateY(-1px) !important;}
+html .btn:disabled{opacity:.5 !important;box-shadow:none !important;transform:none !important;}
+html .btn.sec,html .btn.ghost,html .back{border-radius:999px !important;}
+html .btn.warn{border-radius:999px !important;}
+
+/* Panels and cards */
+html .box,html .card,html .metrics,html .panel,html .tile,html .login-card{border-radius:18px !important;border-color:#ECE7DA !important;box-shadow:0 18px 40px -32px rgba(17,28,51,.45) !important;}
+html .metric .n,html .stat .n,html .stat-n{color:var(--deep) !important;font-family:'Fraunces',Georgia,serif !important;font-weight:600 !important;}
+html .lbl,html .sec-label,html .sl{letter-spacing:.14em !important;}
+
+/* Inputs */
+html input:not([type=checkbox]):not([type=radio]):not([type=range]),html select,html textarea{border-radius:12px !important;transition:border-color .2s,box-shadow .2s;}
+html input:not([type=checkbox]):focus,html select:focus,html textarea:focus{border-color:var(--sun) !important;box-shadow:0 0 0 4px rgba(242,182,64,.2) !important;outline:none !important;}
+html input[type=checkbox],html input[type=radio]{accent-color:#E59E1C;}
+
+/* Tabs */
+html .tab.active,html .tab.on,html .tab-btn.active{color:var(--sun) !important;border-bottom-color:var(--sun) !important;}
+html .chip,html [class*="pill"],html .tag{border-radius:999px !important;}
+
+/* Login screens */
+html #login{max-width:440px !important;}
+html #login h1{font-family:'Fraunces',Georgia,serif !important;font-weight:600 !important;}
+
+/* Stop iPhones zooming into small inputs on focus (zoom is allowed again for accessibility). */
+@media (pointer:coarse){ input:not([type=checkbox]):not([type=radio]),select,textarea{font-size:max(16px,1em) !important;} }

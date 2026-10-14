@@ -2,12 +2,13 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
-<title>Referral Portal — RoofScan UK</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#111C33">
+<title>Referral Portal | RoofScan UK</title>
 <style>
 :root{--n:#1C2B4A;--s:#1E4080;--g:#C9A84C;--bg:#F8F6F0;--cd:#FFF;--br:#E8E4D8;--mu:#6B7A8D;--gr:#27AE60;--am:#E67E22;--rd:#C0392B;--gbg:#E8F8EF;--abg:#FEF3E2;--rbg:#FDECEA;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-body{font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--n);min-height:100vh;max-width:520px;margin:0 auto;}
+body{font-family:'Geist',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--n);min-height:100vh;max-width:520px;margin:0 auto;}
 .hdr{background:linear-gradient(135deg,var(--n) 0%,#2C3E6A 100%);padding:24px 18px 20px;}
 .logo{font-size:12px;font-weight:700;color:var(--g);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;}
 .hdr-title{color:white;font-size:24px;font-weight:800;}
@@ -61,11 +62,11 @@ main{padding:14px;}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
 <link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="public.css">
 </head>
 <body>
 <div class="hdr">
@@ -105,7 +106,7 @@ main{padding:14px;}
 
   <!-- ACCOUNT BANNER -->
   <div class="acct-banner">
-    <div class="acct-name" id="acct-name">Loading...</div>
+    <div class="acct-name" id="acct-name">Loading…</div>
     <div class="acct-sub" id="acct-sub"></div>
     <div class="acct-stats">
       <div><div class="as-val" id="stat-referrals" style="color:var(--g);">0</div><div class="as-label">Referrals</div></div>
@@ -137,12 +138,12 @@ function fmtMoney(n){ return '£'+(n||0).toLocaleString('en-GB'); }
 function statusClass(s){ return String(s||'Booked').replace(/\s+/g,'.'); }
 function statusCaption(s){
   var m = {
-    'Booked': 'Inspection scheduled — nothing to do yet.',
+    'Booked': 'Inspection scheduled, nothing to do yet.',
     'Complete': 'Inspection done, report being prepared.',
-    'Report Sent': 'Report delivered to your client — your agency\'s referral fee is being processed.',
+    'Report Sent': 'Report delivered to your client. Your agency\'s referral fee is being processed.',
     'Paid': 'Referral fee paid to your agency.'
   };
-  return m[s] || 'Inspection scheduled — nothing to do yet.';
+  return m[s] || 'Inspection scheduled, nothing to do yet.';
 }
 
 async function fetchAgentAccount(email, token){
@@ -228,7 +229,7 @@ async function verifyCode(){
 async function loadPortal(email, token){
   document.getElementById('login-section').style.display='none';
   document.getElementById('portal-section').style.display='block';
-  document.getElementById('acct-name').textContent='Loading your account...';
+  document.getElementById('acct-name').textContent='Loading your account…';
   document.getElementById('acct-sub').textContent='';
   document.getElementById('jobs-list').innerHTML='<div class="empty"><span class="spinner"></span></div>';
   try{
