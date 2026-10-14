@@ -177,6 +177,28 @@ footer{text-align:center;margin-top:40px;font-size:12.5px;color:var(--muted);}
           <div class="drop" data-slot="caa">Tap to add files<small>Operator ID, Flyer ID, A2 CofC or GVC. PDF or photo, up to 5 MB each.</small></div>
           <ul class="files" id="files-caa"></ul>
         </div>
+
+        <div class="section-label">Thermal drone (optional)</div>
+        <div class="check-row">
+          <input type="checkbox" id="f-thermal">
+          <label for="f-thermal">I also fly a thermal drone that records temperature data (radiometric), for example a DJI Mavic 3 Thermal or Matrice 30T.</label>
+        </div>
+        <div id="thermal-sec" class="hidden">
+          <div class="notice">Thermal jobs find trapped moisture on flat roofs. They are usually flown about an hour after sunset, after a dry, sunny day, and pay more than a standard scan.</div>
+          <div class="field">
+            <label class="l" for="f-tdrone">Thermal drone make and model</label>
+            <input type="text" id="f-tdrone" placeholder="e.g. DJI Mavic 3 Thermal">
+          </div>
+          <div class="field">
+            <label class="l" for="f-ttrain">Thermography training</label>
+            <input type="text" id="f-ttrain" placeholder="e.g. Level 1 thermography, 2025. Write none if you have not trained yet.">
+          </div>
+          <div class="field">
+            <label class="l">Upload your thermography certificate (if you have one)</label>
+            <div class="drop" data-slot="thermal">Tap to add files<small>PDF or photo, up to 5 MB each.</small></div>
+            <ul class="files" id="files-thermal"></ul>
+          </div>
+        </div>
       </div>
 
       <!-- WRITER SECTION -->
@@ -273,7 +295,7 @@ const MAX_BYTES = 5 * 1024 * 1024;
 const MAX_PER_SLOT = 4;
 const OK_TYPES = ['application/pdf','image/jpeg','image/png','image/webp','image/heic','image/heif'];
 let role = '';
-const files = { caa: [], insurance: [], other: [] };
+const files = { caa: [], insurance: [], other: [], thermal: [] };
 const $ = (id) => document.getElementById(id);
 
 // ----- role choice -----
@@ -299,6 +321,8 @@ document.querySelectorAll('.role').forEach(function(b){
     window.scrollTo({ top: $('main-fields').getBoundingClientRect().top + window.scrollY - 40, behavior: 'smooth' });
   });
 });
+
+$('f-thermal').addEventListener('change', function(){ $('thermal-sec').classList.toggle('hidden', !this.checked); if (!this.checked) { files.thermal = []; renderFiles('thermal'); } });
 
 // ----- file pickers -----
 const picker = document.createElement('input');
@@ -399,6 +423,7 @@ $('apply-form').addEventListener('submit', async function(e){
     if (!files.caa.length) { showErr('Please upload your CAA certificates.'); return; }
     if (!v('f-insprov') || !v('f-insamt') || !v('f-insexp')) { showErr('Please fill in your insurance details.'); return; }
     if (!files.insurance.length) { showErr('Please upload your insurance certificate.'); return; }
+    if ($('f-thermal').checked && (!v('f-tdrone') || !v('f-ttrain'))) { showErr('Please fill in your thermal drone and thermography training, or untick the thermal drone box.'); return; }
   }
   if (writer && !v('f-exp')) { showErr('Please tell us a little about your experience.'); return; }
   if (!$('c-self').checked || !$('c-conf').checked || !$('c-true').checked) { showErr('Please tick all three confirmations at the bottom.'); return; }
@@ -410,7 +435,8 @@ $('apply-form').addEventListener('submit', async function(e){
     selfEmployed: $('c-self').checked, confidentiality: $('c-conf').checked, notes: v('f-notes')
   };
   if (flyer) Object.assign(payload, { basePostcode: v('f-basepc'), travelRange: Number($('f-range').value), droneModel: v('f-drone'), droneSerial: v('f-serial'), droneWind: v('f-wind'),
-    operatorId: v('f-opid'), operatorExpiry: $('f-opexp').value, flyerId: v('f-flid'), flyerExpiry: $('f-flexp').value, otherQualifications: v('f-other') });
+    operatorId: v('f-opid'), operatorExpiry: $('f-opexp').value, flyerId: v('f-flid'), flyerExpiry: $('f-flexp').value, otherQualifications: v('f-other'),
+    thermal: $('f-thermal').checked, thermalDrone: v('f-tdrone'), thermalTraining: v('f-ttrain') });
   if (writer) Object.assign(payload, { experience: v('f-exp'), privateComputer: $('f-pc').checked });
 
   let app;
@@ -422,7 +448,9 @@ $('apply-form').addEventListener('submit', async function(e){
   $('progress').style.display = 'block';
   const list = $('progress-list');
   const jobs = [];
-  [['caa','CAA certificate'],['insurance','Insurance certificate'],['other','Other document']].forEach(function(s){
+  [['caa','CAA certificate'],['insurance','Insurance certificate'],['thermal','Thermography certificate'],['other','Other document']].forEach(function(s){
+    if ((s[0] === 'caa' || s[0] === 'thermal') && !flyer) return;
+    if (s[0] === 'thermal' && !$('f-thermal').checked) return;
     files[s[0]].forEach(function(item){ jobs.push({ slot: s[0], label: s[1], item: item }); });
   });
   let uploaded = 0; const failed = [];
