@@ -73,7 +73,7 @@ footer{text-align:center;margin-top:40px;font-size:12.5px;color:var(--muted);}
 <div class="wrap">
   <div class="eyebrow">RoofScan UK</div>
   <h1>Apply to work with us</h1>
-  <p class="lede">We are looking for drone flyers and report writers for roof inspections in Brighton and Sussex. You choose which jobs you take, and you are paid per job. Fill this in once, upload your documents here, and we will check everything and come back to you by email. It takes about ten minutes.</p>
+  <p class="lede">We are looking for drone flyers and report writers for roof inspections across the UK. You choose which jobs you take, and you are paid per job. Fill this in once, upload your documents here, and we will check everything and come back to you by email. It takes about ten minutes.</p>
 
   <div class="card">
     <form id="apply-form" novalidate>
@@ -118,7 +118,7 @@ footer{text-align:center;margin-top:40px;font-size:12.5px;color:var(--muted);}
         <div class="row2">
           <div class="field">
             <label class="l" for="f-basepc">Home postcode</label>
-            <input type="text" id="f-basepc" placeholder="e.g. BN1 1AA" autocomplete="postal-code" style="text-transform:uppercase;">
+            <input type="text" id="f-basepc" placeholder="e.g. SW1A 1AA" autocomplete="postal-code" style="text-transform:uppercase;">
             <div class="hint">Where you travel from. You are only shown jobs within your travel distance, and mileage is worked out from here. Never shown to clients.</div>
           </div>
           <div class="field">
@@ -393,7 +393,7 @@ $('apply-form').addEventListener('submit', async function(e){
   const writer = role === 'Report Writer' || role === 'Both';
   if (!v('f-name') || !v('f-email') || !v('f-phone') || !v('f-payee') || !v('f-emerg')) { showErr('Please fill in the "About you" section.'); return; }
   if (flyer) {
-    if (!/^[A-Z]{1,2}[0-9][A-Z0-9]?\s*[0-9][A-Z]{2}$/i.test(v('f-basepc'))) { showErr('Please enter your full home postcode, for example BN1 1AA.'); return; }
+    if (!/^[A-Z]{1,2}[0-9][A-Z0-9]?\s*[0-9][A-Z]{2}$/i.test(v('f-basepc'))) { showErr('Please enter your full home postcode, for example SW1A 1AA.'); return; }
     if (!v('f-drone') || !v('f-serial') || !v('f-wind')) { showErr('Please fill in your drone details.'); return; }
     if (!v('f-opid') || !v('f-opexp') || !v('f-flid') || !v('f-flexp')) { showErr('Please fill in your Operator ID and Flyer ID, with expiry dates.'); return; }
     if (!files.caa.length) { showErr('Please upload your CAA certificates.'); return; }
