@@ -334,6 +334,7 @@ function poolCard(j, kind){
   if (parts.mileage) bits.push(money(parts.mileage) + ' mileage' + (j.miles != null ? ' (' + j.miles + ' mi)' : ''));
   if (parts.boost) bits.push('+' + money(parts.boost) + ' boost');
   if (parts.express) bits.push('+' + money(parts.express) + ' express');
+  if (parts.thermal) bits.push('+' + money(parts.thermal) + ' thermal');
   const exp = j.express ? `<span class="tag" style="background:#FDEBD3;color:#8A4B00;margin-left:6px;">express${kind==='report'?': report within 24h':''}</span>` : '';
   return `<div class="card pool"><div class="row"><div><span class="tag ${kind==='scan'?'t-scan':'t-rep'}">${kind}</span>${exp}${tradeTags(j)}<div class="jt">${esc(j.area)} · ${esc(j.propertyType)||'Property'}</div><div class="jm">${esc(fmtWhen(j))}</div>${bits.length?`<div class="jm" style="color:var(--g);">${bits.join(' · ')}</div>`:''}</div><div class="pay">${money(pay)}</div></div>
   <div class="acts"><div class="slide${locked?' dis':''}" data-id="${j.id}" data-kind="${kind}" tabindex="0" role="button" aria-label="Slide right to claim this ${kind}"><div class="slide-t">${locked?'Scans switched off':'Slide to claim '+kind}</div><div class="slide-h">&rarr;</div></div><button class="btn ghost" onclick="passJob('${j.id}')">Not for me</button></div></div>`;

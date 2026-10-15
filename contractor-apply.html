@@ -77,7 +77,7 @@ footer{text-align:center;margin-top:40px;font-size:12.5px;color:var(--muted);}
 <div class="wrap">
   <div class="eyebrow">RoofScan UK</div>
   <h1>Apply to work with us</h1>
-  <p class="lede">We are looking for drone flyers and report writers for roof inspections across the UK. You choose which jobs you take, and you are paid per job. Fill this in once, upload your documents here, and we will check everything and come back to you by email. It takes about ten minutes.</p>
+  <p class="lede">We are looking for drone flyers in London and the South East, and report writers anywhere in the UK (writing is done from home). You choose which jobs you take, and you are paid per job. Fill this in once, upload your documents here, and we will check everything and come back to you by email. It takes about ten minutes.</p>
 
   <div class="card">
     <form id="apply-form" novalidate>
@@ -229,6 +229,10 @@ footer{text-align:center;margin-top:40px;font-size:12.5px;color:var(--muted);}
           <label class="rx"><input type="checkbox" name="roofexp" value="Thatch"> <span>Thatch</span></label>
           <label class="rx"><input type="checkbox" name="roofexp" value="Green or sedum roof"> <span>Green or sedum roof</span></label>
           </div>
+        </div>
+        <div class="check-row">
+          <input type="checkbox" id="f-wtherm">
+          <label for="f-wtherm">I hold a thermography qualification (for example ITC Level 1) and would like to write thermal reports. We will ask for your certificate before you take any.</label>
         </div>
       </div>
 
@@ -457,7 +461,7 @@ $('apply-form').addEventListener('submit', async function(e){
   if (flyer) Object.assign(payload, { basePostcode: v('f-basepc'), travelRange: Number($('f-range').value), droneModel: v('f-drone'), droneSerial: v('f-serial'), droneWind: v('f-wind'),
     operatorId: v('f-opid'), operatorExpiry: $('f-opexp').value, flyerId: v('f-flid'), flyerExpiry: $('f-flexp').value, otherQualifications: v('f-other'),
     thermal: $('f-thermal').checked, thermalDrone: v('f-tdrone'), thermalTraining: v('f-ttrain') });
-  if (writer) Object.assign(payload, { experience: v('f-exp'), privateComputer: $('f-pc').checked, roofExperience: roofExp });
+  if (writer) Object.assign(payload, { experience: v('f-exp'), privateComputer: $('f-pc').checked, roofExperience: roofExp, thermography: $('f-wtherm').checked });
 
   let app;
   try { app = await post('/contractor-apply', payload); }

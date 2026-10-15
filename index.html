@@ -1516,11 +1516,11 @@ section[id],#how-it-works{scroll-margin-top:88px;}
 
         <div id="book-step-5" style="display:none;">
           <h2 style="font-size:1.15rem;margin:0 0 6px;">Your inspection price</h2>
-          <p class="muted" style="font-size:13px;margin:0 0 16px;line-height:1.6;">Pick what you need. Here's your full breakdown.</p>
+          <p class="muted" style="font-size:13px;margin:0 0 16px;line-height:1.6;">Here's your full breakdown. Ready to book whenever you are.</p>
           <div class="sv-grid" role="radiogroup" aria-label="Survey type">
             <label class="sv-opt"><input type="radio" name="survey" value="visual" checked onchange="onSurveyChange()"><span><strong>Roof report</strong><span class="sv-sub">Close-up photos of every part of the roof, condition ratings and a written report.</span></span></label>
-            <label class="sv-opt"><input type="radio" name="survey" value="thermal" onchange="onSurveyChange()"><span><strong>Thermal leak scan <em>+£100</em></strong><span class="sv-sub">For a damp patch or leak you can't trace. A heat map showing where water may be getting in. Flown after dark, no photo report.</span></span></label>
-            <label class="sv-opt"><input type="radio" name="survey" value="both" onchange="onSurveyChange()"><span><strong>Report + thermal <em>+£175</em></strong><span class="sv-sub">The full roof report plus the thermal scan, in one evening visit: photos in the last daylight, thermal once it's dark.</span></span></label>
+            <label class="sv-opt"><input type="radio" name="survey" value="thermal" onchange="onSurveyChange()"><span><strong>Thermal leak scan <em id="sv-th-price"></em></strong><span class="sv-sub">For a damp patch or leak you can't trace. Its own report: a heat map showing where water may be getting in. Flown after dark, priced by roof size.</span></span></label>
+            <label class="sv-opt"><input type="radio" name="survey" value="both" onchange="onSurveyChange()"><span><strong>Report + thermal <em id="sv-both-price"></em></strong><span class="sv-sub">Both reports, in one evening visit: photos in the last daylight, thermal once it's dark. The thermal scan is added to your roof report price.</span></span></label>
           </div>
           <div class="total-card">
             <div class="label">Total</div>
@@ -1743,7 +1743,7 @@ const PITCH_MULT={pitched:1.15,flat:1.0,mixed:1.25};
 // actual roof rather than a guessed house-type label. See the 11 Sep pricing brainstorm in
 // the Vault for how these numbers were derived (£100/hr target, 2-4hr jobs, 25% margin/
 // overhead uplift). Mirrored server-side in roofscan-api-worker.js.
-const AREA_CALLOUT=90, AREA_RATE=2.75, AREA_MIN_PRICE=180;   // mirrored in the Worker; callout includes the £5 mileage allowance
+const AREA_CALLOUT=90, AREA_RATE=2.75, AREA_MIN_PRICE=232;   // mirrored in the Worker; callout includes the £5 mileage allowance
 // Bounds used to decide whether an automated area result is trustworthy enough to price
 // from directly, or whether it's an outlier (bad geocode, garbage footprint match, etc.)
 // that should fall back to the property type's typical area instead of guessing.
@@ -2140,6 +2140,12 @@ function roofPriceForArea(areaM2){
   const raw = AREA_CALLOUT + AREA_RATE*areaM2*mult;
   return Math.max(AREA_MIN_PRICE, Math.round(raw));
 }
+// Thermal leak scan is its own product, priced by the same roof area at the thermal rate. Mirrored in the Worker.
+const THERMAL_CALLOUT=200, THERMAL_RATE=3.0, THERMAL_MIN_PRICE=350;
+function thermalPriceForArea(areaM2){
+  const mult = PITCH_MULT[pitchType] || 1.0;
+  return Math.max(THERMAL_MIN_PRICE, Math.round(THERMAL_CALLOUT + THERMAL_RATE*areaM2*mult));
+}
 
 // Flags a *real, measured* footprint that falls outside the normal range for the property type
 // the customer selected — e.g. OS's building polygon merged two adjoining properties, or the
@@ -2193,17 +2199,22 @@ function renderPrice(){
   const travCharge = postcodeInfo ? postcodeInfo.charge : 0;
   const addonTotal = AD.reduce((s,a)=>s+counts[a.id]*a.unit,0);
   const expressOn = !!(document.getElementById('express-opt') && document.getElementById('express-opt').checked);
-  const sv = surveyType(), svAdd = SURVEY_ADD[sv];
+  const sv = surveyType(), thPrice = thermalPriceForArea(area);
+  const thermalPart = sv === 'visual' ? 0 : thPrice;
+  const roofPart = sv === 'thermal' ? 0 : roofPrice + addonTotal;   // thermal only has no roof report or roof add-ons
   const anyOn = anytimeOn() && sv === 'visual';
-  const total = roofPrice + svAdd + travCharge + addonTotal + (expressOn ? EXPRESS_FEE : 0) - (anyOn ? ANYTIME_DISCOUNT : 0);
+  const total = roofPart + thermalPart + travCharge + (expressOn ? EXPRESS_FEE : 0) - (anyOn ? ANYTIME_DISCOUNT : 0);
+  const thEl = document.getElementById('sv-th-price'), bothEl = document.getElementById('sv-both-price');
+  if(thEl) thEl.textContent = fmt(thPrice);
+  if(bothEl) bothEl.textContent = '+' + fmt(thPrice);
   document.getElementById('total-amt').textContent = fmt(total);
 
   const lines = [];
-  lines.push([(sv==='thermal'?'Thermal leak scan':'Roof inspection')+' ('+Math.round(area)+'m²'+(isEstimate?', estimated':'')+')', roofPrice]);
-  if(sv==='thermal') lines.push(['Thermal camera, flown after dark', svAdd]);
-  if(sv==='both') lines.push(['Thermal scan in the same visit', svAdd]);
+  const areaTxt = ' ('+Math.round(area)+'m²'+(isEstimate?', estimated':'')+')';
+  if(sv!=='thermal') lines.push(['Roof report'+areaTxt, roofPrice]);
+  if(sv!=='visual') lines.push(['Thermal leak scan'+areaTxt+', flown after dark', thPrice]);
   if(travCharge>0) lines.push(['Mileage'+(postcodeInfo?', '+postcodeInfo.postcode:''), travCharge]);
-  AD.forEach(a=>{ if(counts[a.id]>0) lines.push([a.label+' ×'+counts[a.id], counts[a.id]*a.unit]); });
+  if(sv!=='thermal') AD.forEach(a=>{ if(counts[a.id]>0) lines.push([a.label+' ×'+counts[a.id], counts[a.id]*a.unit]); });
   if(expressOn) lines.push(['Express: report within 24 hours of the inspection', EXPRESS_FEE]);
   if(anyOn) lines.push(['Any time booking: pilot picks the time', -ANYTIME_DISCOUNT]);
   const ctaBtn = document.getElementById('book-cta-link'); if(ctaBtn) ctaBtn.textContent = flexOn() ? 'Pay £50 deposit & book →' : 'Pick your date & pay £50 deposit →';
@@ -2285,8 +2296,11 @@ let slotsByDay = {};
 
 // "Any time" option: no slot to pick, the pilot chooses a time in the next 5 working days and the client is emailed it.
 const ANYTIME_DISCOUNT = 20;
-const SURVEY_ADD = { visual: 0, thermal: 100, both: 175 };
-function surveyType(){ const el = document.querySelector('input[name=survey]:checked'); return el && SURVEY_ADD[el.value] != null ? el.value : 'visual'; }
+const SURVEY_TYPES = ['visual','thermal','both'];
+// Switch to true once the thermal report template is built and a thermal pilot + writer are signed up.
+const THERMAL_LIVE = false;
+document.addEventListener('DOMContentLoaded', function(){ if(!THERMAL_LIVE){ const g = document.querySelector('.sv-grid'); if(g) g.style.display = 'none'; } });
+function surveyType(){ if(!THERMAL_LIVE) return 'visual'; const el = document.querySelector('input[name=survey]:checked'); return el && SURVEY_TYPES.includes(el.value) ? el.value : 'visual'; }
 function anytimeOn(){ const el = document.getElementById('anytime-opt'); return !!(el && el.checked); }
 // Thermal products are always flown on an evening the pilot picks, so there is no slot to choose.
 function flexOn(){ return anytimeOn() || surveyType() !== 'visual'; }
