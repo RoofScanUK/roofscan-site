@@ -232,7 +232,18 @@ footer{text-align:center;margin-top:40px;font-size:12.5px;color:var(--muted);}
         </div>
         <div class="check-row">
           <input type="checkbox" id="f-wtherm">
-          <label for="f-wtherm">I hold a thermography qualification (for example ITC Level 1) and would like to write thermal reports. We will ask for your certificate before you take any.</label>
+          <label for="f-wtherm">I hold a thermography qualification (for example ITC Level 1 or 2) and would like to write thermal (heat map) reports.</label>
+        </div>
+        <div id="wtherm-sec" class="hidden">
+          <div class="field">
+            <label class="l" for="f-wttrain">Your thermography qualification</label>
+            <input type="text" id="f-wttrain" placeholder="e.g. ITC Level 1 Thermographer, 2024">
+          </div>
+          <div class="field">
+            <label class="l">Upload your thermography certificate</label>
+            <div class="drop" data-slot="wthermal">Tap to add files<small>PDF or photo, up to 5 MB each.</small></div>
+            <ul class="files" id="files-wthermal"></ul>
+          </div>
         </div>
       </div>
 
@@ -317,7 +328,7 @@ const MAX_BYTES = 5 * 1024 * 1024;
 const MAX_PER_SLOT = 4;
 const OK_TYPES = ['application/pdf','image/jpeg','image/png','image/webp','image/heic','image/heif'];
 let role = '';
-const files = { caa: [], insurance: [], other: [], thermal: [] };
+const files = { caa: [], insurance: [], other: [], thermal: [], wthermal: [] };
 const $ = (id) => document.getElementById(id);
 
 // ----- role choice -----
@@ -344,6 +355,8 @@ document.querySelectorAll('.role').forEach(function(b){
   });
 });
 
+if (/[?&]role=thermal-writer/.test(location.search)) setTimeout(function(){ const b = document.querySelector('[data-role="Report Writer"]'); if (b) b.click(); const t = $('f-wtherm'); t.checked = true; t.dispatchEvent(new Event('change')); }, 50);
+$('f-wtherm').addEventListener('change', function(){ $('wtherm-sec').classList.toggle('hidden', !this.checked); if (!this.checked) { files.wthermal = []; renderFiles('wthermal'); } });
 $('f-thermal').addEventListener('change', function(){ $('thermal-sec').classList.toggle('hidden', !this.checked); if (!this.checked) { files.thermal = []; renderFiles('thermal'); } });
 
 // ----- file pickers -----
@@ -450,6 +463,7 @@ $('apply-form').addEventListener('submit', async function(e){
   if (writer && !v('f-exp')) { showErr('Please tell us a little about your experience.'); return; }
   const roofExp = Array.prototype.map.call(document.querySelectorAll('input[name=roofexp]:checked'), function(x){ return x.value; });
   if (writer && !roofExp.length) { showErr('Please tick the roof types you have experience with.'); return; }
+  if (writer && $('f-wtherm').checked && (!v('f-wttrain') || !files.wthermal.length)) { showErr('Please give your thermography qualification and upload the certificate, or untick the thermal reports box.'); return; }
   if (!$('c-self').checked || !$('c-conf').checked || !$('c-true').checked) { showErr('Please tick all three confirmations at the bottom.'); return; }
 
   const btn = $('submit-btn'); btn.disabled = true; btn.textContent = 'Sending…';
@@ -461,7 +475,7 @@ $('apply-form').addEventListener('submit', async function(e){
   if (flyer) Object.assign(payload, { basePostcode: v('f-basepc'), travelRange: Number($('f-range').value), droneModel: v('f-drone'), droneSerial: v('f-serial'), droneWind: v('f-wind'),
     operatorId: v('f-opid'), operatorExpiry: $('f-opexp').value, flyerId: v('f-flid'), flyerExpiry: $('f-flexp').value, otherQualifications: v('f-other'),
     thermal: $('f-thermal').checked, thermalDrone: v('f-tdrone'), thermalTraining: v('f-ttrain') });
-  if (writer) Object.assign(payload, { experience: v('f-exp'), privateComputer: $('f-pc').checked, roofExperience: roofExp, thermography: $('f-wtherm').checked });
+  if (writer) Object.assign(payload, { experience: v('f-exp'), privateComputer: $('f-pc').checked, roofExperience: roofExp, thermography: $('f-wtherm').checked, thermographyTraining: v('f-wttrain') });
 
   let app;
   try { app = await post('/contractor-apply', payload); }
@@ -472,10 +486,11 @@ $('apply-form').addEventListener('submit', async function(e){
   $('progress').style.display = 'block';
   const list = $('progress-list');
   const jobs = [];
-  [['caa','CAA certificate'],['insurance','Insurance certificate'],['thermal','Thermography certificate'],['other','Other document']].forEach(function(s){
+  [['caa','CAA certificate'],['insurance','Insurance certificate'],['thermal','Thermography certificate'],['wthermal','Thermography certificate'],['other','Other document']].forEach(function(s){
     if ((s[0] === 'caa' || s[0] === 'thermal') && !flyer) return;
     if (s[0] === 'thermal' && !$('f-thermal').checked) return;
-    files[s[0]].forEach(function(item){ jobs.push({ slot: s[0], label: s[1], item: item }); });
+    if (s[0] === 'wthermal' && !(writer && $('f-wtherm').checked)) return;
+    files[s[0]].forEach(function(item){ jobs.push({ slot: s[0] === 'wthermal' ? 'thermal' : s[0], label: s[1], item: item }); });
   });
   let uploaded = 0; const failed = [];
   const rows = jobs.map(function(j){

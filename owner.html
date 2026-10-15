@@ -108,6 +108,7 @@ tr:last-child td{border-bottom:none;}
     <div class="metrics" id="stats"></div>
     <div class="cols">
       <div>
+        <section><div class="lbl"><span>Pay run: who you owe</span><span id="pr-n" class="small"></span></div><div class="box pad" id="payrun"><span class="muted small">Loading…</span></div></section>
         <section><div class="lbl"><span>Trade accounts: monthly invoicing</span><span class="small"><input type="month" id="tm-month" class="dt" onchange="loadTradeMonth()" aria-label="Month to show"></span></div><div class="box pad" id="trade-month"><span class="muted small">Loading…</span></div></section>
         <section><div class="lbl"><span>System health</span><span id="health-n" class="small"></span></div><div class="box pad" id="health"><span class="muted small">Checking…</span></div></section>
         <section><div class="lbl">Needs your attention</div><div id="needs"></div></section>
@@ -179,7 +180,7 @@ async function load(){
   if(!localStorage.getItem(TK)){showLogin();return;}
   const r=await api('/owner/overview');if(!r.ok){if(r.status!==401)showLogin('Could not load. Try again.');return;}
   data=r.data;$('login').style.display='none';$('app').style.display='block';
-  loadCap();loadHome();loadTradeMonth();loadCovMap();loadStorm();loadSched();loadHealth();loadSeats();loadReviews();loadSuggestions();loadCal();loadOoo();
+  loadCap();loadHome();loadPayRun();loadTradeMonth();loadCovMap();loadStorm();loadSched();loadHealth();loadSeats();loadReviews();loadSuggestions();loadCal();loadOoo();
   const c=data.counts;
   $('stats').innerHTML=[['Scans open',c.scansOpen],['Reports open',c.reportsOpen],['Scans claimed',c.scansClaimed],['Reports claimed',c.reportsClaimed]].map(x=>`<div class="metric"><div class="n">${x[1]}</div><div class="t">${x[0]}</div></div>`).join('');
   $('needs').innerHTML=data.needsYou.length?data.needsYou.map(n=>`<div class="attn"><b>${esc(n.name)}</b><ul>${n.needs.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`).join(''):'<div class="box empty">Nothing needs your attention.</div>';
@@ -190,11 +191,11 @@ async function load(){
     const doc=(label,val,key)=>`<div class="ctr-doc"><div class="ctr-lbl">${label}</div>${flyer?`${dateState(val)}<input class="dt" type="date" value="${esc(val)}" onchange="upd('${ct.id}',{${key}:this.value})" title="${label} expiry">`:'<span class="muted small">Not needed</span>'}</div>`;
     return `<div class="ctr">
       <div class="ctr-line"><div class="ctr-main"><div class="name">${esc(ct.name)}</div><div class="muted small">${esc(ct.role)}${flyer&&ct.droneModel?' &middot; '+esc(ct.droneModel)+', '+(ct.ratedWind||'?')+' m/s':''}${flyer&&ct.thermal?' &middot; thermal: '+esc(ct.thermalDrone||'model not given'):''}</div></div>
-        <div class="ctr-status">${ct.active?st('Active','ok'):st('Switched off','bad')}${flyer?(ct.approved?st('Drone approved','ok'):st('Drone not approved','warn')):''}${flyer&&ct.thermal?(ct.thermalApproved?st('Thermal approved','ok'):st('Thermal: check','warn')):''}</div></div>
+        <div class="ctr-status">${ct.active?st('Active','ok'):st('Switched off','bad')}${flyer?(ct.approved?st('Drone approved','ok'):st('Drone not approved','warn')):''}${(flyer&&ct.thermal)||ct.thermalWriter?(ct.thermalApproved?st('Thermal approved','ok'):st(ct.thermalWriter&&!(flyer&&ct.thermal)?'Thermal writer: check certificate':'Thermal: check','warn')):''}</div></div>
       <div class="ctr-line">${flyer?doc('Insurance',ct.insuranceExpiry,'insuranceExpiry')+doc('Operator ID',ct.operatorIdExpiry,'operatorIdExpiry'):'<span class="muted small" style="align-self:center;">No drone documents needed</span>'}
         ${flyer?`<div class="ctr-doc"><div class="ctr-lbl">Base postcode</div><input class="dt" id="bpc-${ct.id}" value="${esc(ct.basePostcode)}" placeholder="BN1 1AA" style="width:110px;text-transform:uppercase;" onchange="upd('${ct.id}',{basePostcode:this.value,travelRange:Number($('rng-${ct.id}').value)})" title="Where this flyer travels from"></div>
         <div class="ctr-doc"><div class="ctr-lbl">Travels up to</div><select class="dt" id="rng-${ct.id}" onchange="${ct.hasBase?`upd('${ct.id}',{travelRange:Number(this.value)})`:''}">${[10,15,20,25,30,35,40].map(m=>`<option value="${m}" ${(ct.travelRange||25)===m?'selected':''}>${m} miles</option>`).join('')}</select></div>`:''}
-        <div class="ctr-acts">${flyer?`<button class="btn sec" onclick="upd('${ct.id}',{approved:${!ct.approved}})">${ct.approved?'Revoke drone':'Approve drone'}</button>`:''}${flyer&&ct.thermal?`<button class="btn sec" onclick="upd('${ct.id}',{thermalApproved:${!ct.thermalApproved}})" title="Check their thermal drone records temperature data and their thermography training first">${ct.thermalApproved?'Revoke thermal':'Approve thermal'}</button>`:''}<button class="btn text ${ct.active?'danger':''}" onclick="upd('${ct.id}',{active:${!ct.active}})">${ct.active?'Switch off':'Switch on'}</button></div></div>
+        <div class="ctr-acts">${flyer?`<button class="btn sec" onclick="upd('${ct.id}',{approved:${!ct.approved}})">${ct.approved?'Revoke drone':'Approve drone'}</button>`:''}${(flyer&&ct.thermal)||ct.thermalWriter?`<button class="btn sec" onclick="upd('${ct.id}',{thermalApproved:${!ct.thermalApproved}})" title="Check their thermography certificate (and for flyers, that their thermal drone records temperature data) first">${ct.thermalApproved?'Revoke thermal':'Approve thermal'}</button>`:''}<button class="btn text ${ct.active?'danger':''}" onclick="upd('${ct.id}',{active:${!ct.active}})">${ct.active?'Switch off':'Switch on'}</button></div></div>
     </div>`;
   }).join('');
   $('ctrs').innerHTML=rows||'<div class="empty">No contractors yet.</div>';
@@ -507,6 +508,53 @@ async function loadTradeMonth(){
   box.innerHTML=r.data.accounts.map((a,i)=>`<div class="item"><div class="ch"><span class="name">${esc(a.company)}</span><span class="chip">${a.jobs.length} job${a.jobs.length===1?'':'s'} &middot; &pound;${a.total.toLocaleString('en-GB')}${a.unpriced?` + ${a.unpriced} to quote`:''}</span></div>
     <div class="muted small" style="margin:6px 0 8px;">${esc(a.email)}</div>
     <button class="btn sec" onclick="tmCsv(${i})">Download invoice lines (CSV)</button></div>`).join('');
+}
+// Pay run: paid automatically through Stripe on the 5th of each month (first weekday on or after). Flyers are owed once
+// the client pays; writers once their report is approved (commercial: once the client pays too).
+let prData=null;
+const pound=v=>'£'+Number(v).toFixed(2);
+async function loadPayRun(){
+  const box=$('payrun');
+  const r=await api('/owner/payrun');
+  if(!r.ok){box.innerHTML='<span class="muted small">Could not load the pay run.</span>';return;}
+  prData=r.data;
+  const total=prData.payees.reduce((t,p)=>t+p.total,0);
+  $('pr-n').textContent=prData.payees.length?(pound(total)+' due'):'';
+  const lines=x=>`<div class="muted small" style="margin:4px 0;">${x.kind==='scan'?'Flight':'Report'} ${esc(x.ref)}, ${esc(x.address)}: <strong>${pound(x.amount)}</strong><br>${x.lines.map(l=>esc(l.label)+' '+pound(l.amount)).join(' &middot; ')}</div>`;
+  let h=`<div class="muted small" style="margin-bottom:8px;">Paid automatically from your Stripe balance on the 5th (next weekday if it's a weekend). Keep enough in Stripe to cover the total; you get an email after each run.</div>`;
+  h+=prData.payees.length?prData.payees.map((p,i)=>`<div class="item"><div class="ch"><span class="name">${esc(p.name)}</span><span class="chip">${pound(p.total)}</span></div>
+    ${p.payoutsReady?'':'<div class="small" style="margin:6px 0;color:#B42318;">Payouts not set up yet. They need to tap Set up payouts in the jobs app before they can be paid.</div>'}
+    ${p.items.map(lines).join('')}
+    <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;"><button class="btn sec" onclick="prStatement(${i})">Copy pay statement</button><button class="btn sec" onclick="markPaid(${i})">Paid outside Stripe</button></div></div>`).join('')
+    :'<span class="muted small">Nobody is owed anything right now.</span>';
+  if(prData.payees.length) h+=`<div style="margin-top:10px;"><button class="btn" onclick="payNow(this)">Pay everyone now (${pound(total)})</button> <span class="muted small">Only needed if you don't want to wait for the 5th, or after topping up.</span></div>`;
+  if(prData.waiting.length) h+=`<div class="muted small" style="margin-top:10px;"><strong>Not due yet (${prData.waiting.length}):</strong><br>${prData.waiting.map(x=>`${esc(x.name)}, ${x.kind==='scan'?'flight':'report'} ${esc(x.ref)}: ${pound(x.amount)} (${esc(x.why)})`).join('<br>')}</div>`;
+  if(prData.last&&prData.last.results&&prData.last.results.length) h+=`<div class="muted small" style="margin-top:10px;"><strong>Last run (${esc(prData.last.day)}):</strong><br>${prData.last.results.map(x=>`${esc(x.name)} ${pound(x.total)}: ${x.ok?'paid':'NOT paid, '+esc(x.why)}`).join('<br>')}</div>`;
+  box.innerHTML=h;
+}
+async function payNow(btn){
+  const total=prData.payees.reduce((t,p)=>t+p.total,0);
+  if(!confirm('Send '+pound(total)+' from your Stripe balance now?'))return;
+  btn.disabled=true;btn.textContent='Paying…';
+  const r=await api('/owner/payrun/run','POST',{});
+  if(!r.ok){alert(r.data.error||'The pay run failed.');}
+  else{const bad=r.data.results.filter(x=>!x.ok);alert(bad.length?('Some were not paid:\n'+bad.map(x=>x.name+': '+x.why).join('\n')):'Everyone has been paid.');}
+  loadPayRun();
+}
+async function markPaid(i){
+  const p=prData.payees[i];
+  if(!confirm('Mark '+pound(p.total)+' to '+p.name+' as paid outside Stripe? Only do this if you paid them another way.'))return;
+  const r=await api('/owner/payrun/mark','POST',{items:p.items.map(x=>({jobId:x.jobId,kind:x.kind}))});
+  if(!r.ok){alert(r.data.error||'Could not mark as paid.');return;}
+  loadPayRun();
+}
+function prStatement(i){
+  const p=prData.payees[i], d=new Date().toLocaleDateString('en-GB');
+  const out=['RoofScan UK pay statement','Paid to: '+p.name,'Date: '+d,''];
+  p.items.forEach(x=>{out.push((x.kind==='scan'?'Flight':'Report')+' '+x.ref+', '+x.address);x.lines.forEach(l=>out.push('  '+l.label+': '+pound(l.amount)));});
+  out.push('','Total: '+pound(p.total),'','Thanks,','Takhy Ndiaye Marrero','RoofScan UK','07498 364197','info@roofscanuk.co.uk','roofscanuk.co.uk');
+  const txt=out.join('\n');
+  navigator.clipboard.writeText(txt).then(()=>alert('Statement copied. Paste it into an email to '+(p.email||p.name)+'.'),()=>alert(txt));
 }
 function tmCsv(i){
   const a=tmData.accounts[i];

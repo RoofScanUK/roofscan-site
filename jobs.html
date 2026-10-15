@@ -115,6 +115,16 @@ h1{font-size:20px;font-weight:800;}
     </div>
   </div></div>
   <div class="wrap">
+    <div id="agree-ov" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(17,28,51,.6);padding:16px;overflow:auto;">
+      <div style="max-width:720px;margin:20px auto;background:#fff;border-radius:14px;padding:18px;box-shadow:0 10px 40px rgba(0,0,0,.25);">
+        <div style="font-size:18px;font-weight:700;margin-bottom:4px;">Please read and agree to the contractor agreement</div>
+        <div class="muted" style="font-size:13.5px;margin-bottom:10px;">You need to agree before you can claim jobs. It covers how you work with us, insurance, pay and confidentiality.</div>
+        <iframe src="contractor-agreement.html?embed=1" title="Contractor agreement" style="width:100%;height:55vh;border:1px solid #E8E4D8;border-radius:10px;"></iframe>
+        <label style="display:flex;gap:10px;align-items:flex-start;margin:12px 0;font-size:14px;cursor:pointer;"><input type="checkbox" id="agree-tick" style="width:18px;height:18px;margin-top:2px;flex:none;"> <span>I have read the contractor agreement and I agree to it.</span></label>
+        <div id="agree-err" class="banner b-red" style="display:none;"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;"><button class="btn" onclick="sendAgree()">I agree</button><button class="btn ghost" onclick="$('agree-ov').style.display='none'">Not now</button><a class="btn ghost" href="contractor-agreement.html" target="_blank" rel="noopener" style="text-decoration:none;">Open in a new tab</a></div>
+      </div>
+    </div>
     <div id="notices" style="position:sticky;top:0;z-index:50;"></div>
     <div id="lock-box"></div>
     <div class="stats" id="stats"></div>
@@ -217,6 +227,8 @@ async function act(a){
   await refresh(false);
 }
 function handleFail(a, r){
+  if (r.data && r.data.needsAgreement) { $('agree-ov').style.display = 'block'; }
+  if (r.data && r.data.needsPayouts) { setTimeout(() => window.scrollTo({top:0, behavior:'smooth'}), 100); }
   notice((r.data.error || 'That did not go through.') + ' [' + r.status + ']', r.data.locked || r.data.gone ? 'red' : 'amber');
 }
 async function syncQueue(){
@@ -259,6 +271,50 @@ async function refresh(manual){
   busy = false; render();
 }
 
+// ── Contractor agreement and bank details ──
+let agreeAsked = false;
+async function sendAgree(){
+  const err = $('agree-err'); err.style.display = 'none';
+  if (!$('agree-tick').checked) { err.textContent = 'Please tick the box to confirm you agree.'; err.style.display = 'block'; return; }
+  try {
+    const r = await api('/contractor/agree', 'POST', { agree: true, version: board.me.agreementVersion });
+    if (!r.ok) { err.textContent = r.data.error || 'Could not save. Please try again.'; err.style.display = 'block'; return; }
+    $('agree-ov').style.display = 'none'; board.me.agreementOk = true; notice('Thanks, the agreement is saved. You can claim jobs now.', 'green'); render();
+  } catch(e) { err.textContent = 'You need to be online to agree.'; err.style.display = 'block'; }
+}
+async function setupPayouts(btn){
+  if (btn) { btn.disabled = true; btn.textContent = 'Opening Stripe…'; }
+  try {
+    const r = await api('/contractor/payouts/setup', 'POST', {});
+    if (r.ok && r.data.url) { location.href = r.data.url; return; }
+    notice(r.data.error || 'Could not open payout setup. Please try again.', 'red');
+  } catch(e) { notice('You need to be online to set up payouts.', 'red'); }
+  if (btn) { btn.disabled = false; btn.textContent = 'Set up payouts'; }
+}
+let myPayHtml = '';
+const money2 = n => '£' + Number(n||0).toFixed(2);
+async function showMyPay(){
+  const box = $('mypay'); if (!box) return;
+  if (box.innerHTML) { box.innerHTML = ''; myPayHtml = ''; return; }
+  box.innerHTML = '<div class="card"><div class="muted">Loading…</div></div>';
+  try {
+    const r = await api('/contractor/pay');
+    if (!r.ok) { box.innerHTML = '<div class="card"><div class="muted">Could not load your pay.</div></div>'; return; }
+    const d = r.data, item = x => `<div style="margin:6px 0;"><strong>${x.kind === 'scan' ? 'Flight' : 'Report'} ${esc(x.ref)}</strong>${x.address ? ', ' + esc(x.address) : ''}: ${money2(x.amount)}<div class="muted" style="font-size:13px;">${x.lines.map(l => esc(l.label) + ' ' + money2(l.amount)).join(' · ')}</div>${x.why ? `<div class="muted" style="font-size:12.5px;">${esc(x.why)}</div>` : ''}</div>`;
+    box.innerHTML = `<div class="card"><div style="font-weight:700;">Due on the next pay day: ${money2(d.due.total)}</div>${d.due.items.map(item).join('') || '<div class="muted">Nothing due yet.</div>'}
+      ${d.waiting.length ? `<div style="font-weight:700;margin-top:10px;">Not due yet</div>${d.waiting.map(item).join('')}` : ''}
+      <div class="muted" style="font-size:12.5px;margin-top:8px;">Pay day is the 5th of each month (the next weekday if it falls on a weekend), for jobs where the client has paid and reports are approved.</div>
+      <button class="btn ghost" style="margin-top:8px;" onclick="openPayoutsDash(this)">See past payouts on Stripe</button></div>`;
+    myPayHtml = box.innerHTML;
+  } catch(e) { box.innerHTML = '<div class="card"><div class="muted">You need to be online to see your pay.</div></div>'; }
+}
+async function openPayoutsDash(btn){
+  btn.disabled = true;
+  try { const r = await api('/contractor/payouts/dashboard', 'POST', {}); if (r.ok && r.data.url) { window.open(r.data.url, '_blank'); } else notice(r.data.error || 'Could not open Stripe.', 'red'); } catch(e) {}
+  btn.disabled = false;
+}
+if (/[?&]payouts=done/.test(location.search)) setTimeout(() => notice('Thanks. If Stripe needs anything else it will say so here; otherwise your payouts are set up.', 'green'), 800);
+
 // ── Rendering ──
 function windLine(){
   const m = board.me;
@@ -269,7 +325,7 @@ function render(){
   if (!board || sliding) return;
   // The board refreshes itself every 2 minutes. Redrawing while someone is pasting a link would knock the cursor out of the box, so wait.
   const ae = document.activeElement;
-  if (ae && /^(plink|rlink)-/.test(ae.id || '')) return;
+  if (ae && /^(plink|rlink|bank)-/.test(ae.id || '')) return;
   $('login').style.display='none'; $('app').style.display='block';
   const m = board.me;
   $('who').textContent = m.name; $('who-sub').textContent = m.role;
@@ -282,8 +338,14 @@ function render(){
   // Messages about your jobs (client moved or cancelled a booking). Dismissed ones are remembered on this phone.
   const seen = get('rs_seen_notices', {});
   const notes = (board.notices || []).filter(n => !seen[n.at]);
-  $('lock-box').innerHTML = ((m.role !== 'Report Writer' && !m.scansAllowed) ? `<div class="banner b-red"><strong>Scans are switched off.</strong> ${esc(m.scansBlockedReason)}</div>` : '') +
+  if (m.agreementOk === false && !agreeAsked) { agreeAsked = true; $('agree-ov').style.display = 'block'; }
+  const agreeBanner = m.agreementOk === false ? `<div class="banner b-red"><strong>Contractor agreement needed.</strong> You need to agree to it before you can claim jobs. <a href="#" onclick="event.preventDefault();$('agree-ov').style.display='block'">Read and agree</a></div>` : '';
+  const bankBanner = m.payoutsReady === false ? `<div class="banner b-amber"><strong>${m.payoutsStarted ? 'Finish setting up your payouts.' : 'Set up your payouts so we can pay you.'}</strong> You add your bank details on Stripe's secure page (we never see them). You need to do this before claiming jobs. Pay goes into your bank on the 5th of each month.
+    <div style="margin-top:8px;"><button class="btn" onclick="setupPayouts(this)">${m.payoutsStarted ? 'Continue payout setup' : 'Set up payouts'}</button></div></div>`
+    : (m.payoutsReady ? `<div style="text-align:right;margin:-4px 0 8px;"><button class="btn ghost" style="padding:4px 10px;font-size:13px;" onclick="showMyPay()">My pay</button></div><div id="mypay"></div>` : '');
+  $('lock-box').innerHTML = agreeBanner + bankBanner + ((m.role !== 'Report Writer' && !m.scansAllowed) ? `<div class="banner b-red"><strong>Scans are switched off.</strong> ${esc(m.scansBlockedReason)}</div>` : '') +
     notes.map(n => `<div class="banner b-amber" style="display:flex;gap:10px;align-items:flex-start;"><span style="flex:1;"><strong>Booking change.</strong> ${esc(n.msg)}</span><button class="btn ghost" style="padding:4px 10px;" onclick="seenNotice('${esc(n.at)}')">OK</button></div>`).join('');
+  if (myPayHtml && $('mypay')) $('mypay').innerHTML = myPayHtml;
   const pass = get(LS.pass, {});
   // mine
   const mineSorted = board.mine.slice().sort((x,y) => String(x.date||'').localeCompare(String(y.date||'')));
