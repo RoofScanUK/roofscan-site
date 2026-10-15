@@ -521,7 +521,9 @@ async function loadPayRun(){
   const total=prData.payees.reduce((t,p)=>t+p.total,0);
   $('pr-n').textContent=prData.payees.length?(pound(total)+' due'):'';
   const lines=x=>`<div class="muted small" style="margin:4px 0;">${x.kind==='scan'?'Flight':'Report'} ${esc(x.ref)}, ${esc(x.address)}: <strong>${pound(x.amount)}</strong><br>${x.lines.map(l=>esc(l.label)+' '+pound(l.amount)).join(' &middot; ')}</div>`;
-  let h=`<div class="muted small" style="margin-bottom:8px;">Paid automatically from your Stripe balance on the 5th (next weekday if it's a weekend). Keep enough in Stripe to cover the total; you get an email after each run.</div>`;
+  const sp=prData.stripe||{};
+  let h=`<div class="small" style="margin-bottom:8px;padding:8px 10px;border-radius:8px;background:${sp.ok?'#E8F5EC':'#FDECEC'};color:${sp.ok?'#1E6B3A':'#B42318'};">${sp.ok?'Stripe payouts connected'+(sp.keySet?'':' (using the bookings account key: add STRIPE_CONNECT_KEY)'):'Stripe payouts NOT connected: '+esc(sp.error||'check the STRIPE_CONNECT_KEY secret')}</div>`;
+  h+=`<div class="muted small" style="margin-bottom:8px;">Paid automatically from your Stripe balance on the 5th (next weekday if it's a weekend). Keep enough in Stripe to cover the total; you get an email after each run.</div>`;
   h+=prData.payees.length?prData.payees.map((p,i)=>`<div class="item"><div class="ch"><span class="name">${esc(p.name)}</span><span class="chip">${pound(p.total)}</span></div>
     ${p.payoutsReady?'':'<div class="small" style="margin:6px 0;color:#B42318;">Payouts not set up yet. They need to tap Set up payouts in the jobs app before they can be paid.</div>'}
     ${p.items.map(lines).join('')}
