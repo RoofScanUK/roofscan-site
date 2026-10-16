@@ -152,11 +152,17 @@ function renderBands(){
     var p = b[0] === 'Very large' ? 'We quote' : money(prices[b[0]]);
     return '<label class="opt"><input type="radio" name="band" value="' + b[0] + '"' + (i === 1 ? ' checked' : '') + '><div><b>' + b[0] + '</b><small>' + b[1] + '</small><em>' + p + '</em></div></label>';
   }).join('');
-  $('thermal-p').textContent = '+' + money(prices.Thermal);
+  thermalLabel();
   $('nextday-p').textContent = '+' + money(prices.NextDay);
   document.querySelectorAll('input[name=band], input[name=when], #thermal, #nextday').forEach(function(el){ el.addEventListener('change', update); });
 }
 function val(name){ var el = document.querySelector('input[name=' + name + ']:checked'); return el ? el.value : ''; }
+// Thermal is priced by roof size (or the account's agreed thermal price, which applies to every size).
+function thermalFor(band){ return (prices.ThermalBy && prices.ThermalBy[band]) || prices.Thermal || 0; }
+function thermalLabel(){
+  var band = val('band');
+  $('thermal-p').textContent = band === 'Very large' ? '(quoted with the roof)' : (band ? '+' + money(thermalFor(band)) : 'from +' + money(thermalFor('Small')));
+}
 function update(){
   var band = val('band'), when = val('when'), th = $('thermal').checked, sel = $('time');
   $('date-row').classList.toggle('hide', when !== 'date');
@@ -165,8 +171,9 @@ function update(){
   sel.disabled = th;
   var flexDesc = document.querySelector('input[name=when][value=flexible] + div small');
   if (flexDesc) flexDesc.textContent = th ? 'Any evening in the next 5 working days, after sunset.' : 'Within the next 5 working days. Usually quickest.';
-  if (band === 'Very large') { $('price').textContent = 'We quote'; $('price-l').textContent = 'Very large roofs are quoted before flying'; return; }
-  var p = prices[band] + ($('thermal').checked ? prices.Thermal : 0) + ($('nextday').checked ? prices.NextDay : 0);
+  if (band === 'Very large') { thermalLabel(); $('price').textContent = 'We quote'; $('price-l').textContent = 'Very large roofs are quoted before flying'; return; }
+  thermalLabel();
+  var p = prices[band] + ($('thermal').checked ? thermalFor(band) : 0) + ($('nextday').checked ? prices.NextDay : 0);
   $('price').textContent = money(p); $('price-l').textContent = 'Added to this month\'s invoice';
 }
 
@@ -195,7 +202,7 @@ async function loadJobs(){
     var when = j.flexible ? 'Any time by ' + fmtDate(j.date) : fmtDate(j.date) + (j.time && j.time !== 'Any time' ? ', ' + j.time.toLowerCase() : '');
     var extras = (j.band ? '<span class="chip">' + esc(j.band) + ' roof</span>' : '') + (j.thermal ? '<span class="chip t">Thermal</span>' : '') + (j.nextDay ? '<span class="chip">Next-day report</span>' : '');
     return '<div class="job"><div><div class="a">' + esc(j.address) + '</div><div class="m">' + esc(when) + (j.ref ? ' · Ref ' + esc(j.ref) : '') + '</div><div style="margin-top:6px;"><span class="chip ' + cls + '">' + esc(j.stage) + '</span>' + extras + '</div>' +
-      (j.reportLink ? '<div class="m" style="margin-top:6px;"><a href="' + esc(j.reportLink) + '" target="_blank" rel="noopener">Open report</a>' + (j.roofScore ? ' · RoofScore ' + j.roofScore + '/100' : '') + '</div>' : '') +
+      (j.reportLink ? '<div class="m" style="margin-top:6px;"><a href="' + esc(j.reportLink) + '" target="_blank" rel="noopener">' + (j.surveyType === 'Thermal leak scan' ? 'Open thermal report' : 'Open report') + '</a>' + (j.roofScore ? ' · RoofScore ' + j.roofScore + '/100' : '') + '</div>' : '') +
       '</div><div class="p">' + (j.price == null ? '<span class="m">To quote</span>' : money(j.price)) + '</div></div>';
   }).join('');
 }

@@ -426,7 +426,7 @@ async function showPortal(email, jobs) {
     html += '</div></div>';
 
     // 12-month reminder, only show if last inspection was Paid and 12+ months ago
-    if(status === 'Paid' && isDueForReinspection(latest.date)) {
+    if((status === 'Paid' || status === 'Report Sent') && isDueForReinspection(latest.date)) {
       html += '<div class="due-reminder"><span class="due-reminder-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg></span><span>It\'s been over a year since your last inspection here. It\'s worth booking a check-up to catch any new issues early.</span></div>';
     }
 
@@ -437,7 +437,7 @@ async function showPortal(email, jobs) {
         var jStatus = j.status||'Booked';
         var jScore = j.roofScore;
         var jReport = j.reportLink;
-        var paid = jStatus === 'Paid';
+        var paid = jStatus === 'Paid' || jStatus === 'Report Sent';
         var prebooked = jStatus === 'Prebooked';
         var badge = paid ? (jReport ? '' : 'Preparing…') : (prebooked ? 'Deposit paid' : 'Awaiting payment');
         html += '<div class="insp-item">'
@@ -445,7 +445,7 @@ async function showPortal(email, jobs) {
           +'<div class="insp-sub">'+(prebooked?'Prebooked, date to be arranged':jStatus)+'</div></div>'
           +'<div class="insp-right">'
           +(jScore?'<span class="insp-score" style="color:'+scoreColor(jScore)+';">'+jScore+'/100</span>':'')
-          +(paid&&jReport?'<a href="'+jReport+'" target="_blank" class="dl-btn">View report</a>':'<span class="dl-btn disabled">'+badge+'</span>')
+          +(paid&&jReport?'<a href="'+jReport+'" target="_blank" class="dl-btn">'+(j.surveyType==='Thermal leak scan'?'View thermal report':'View report')+'</a>'+(j.thermalLink?' <a href="'+j.thermalLink+'" target="_blank" class="dl-btn">View thermal report</a>':''):'<span class="dl-btn disabled">'+badge+'</span>')
           +'</div></div>';
       });
       html += '</div>';
@@ -487,14 +487,14 @@ function renderReportsTab(jobs){
   var sorted = jobs.slice().sort(function(a,b){ return new Date(b.date||0) - new Date(a.date||0); });
   var html = '';
   sorted.forEach(function(j){
-    var paid = j.status === 'Paid';
+    var paid = j.status === 'Paid' || j.status === 'Report Sent';
     var prebooked = j.status === 'Prebooked';
     if(prebooked) return; // nothing to report on yet, shown on the Properties tab instead
     var badge = paid ? (j.reportLink ? '' : 'Preparing…') : 'Awaiting payment';
     html += '<div class="report-row">'
       +'<div><div class="report-addr">'+(j.address||'—')+'</div>'
       +'<div class="report-date">'+fmtDate(j.date)+(j.roofScore?' · <span style="color:'+scoreColor(j.roofScore)+';font-weight:700;">'+j.roofScore+'/100</span>':'')+'</div></div>'
-      +(paid && j.reportLink ? '<a href="'+j.reportLink+'" target="_blank" class="dl-btn">View report</a>' : '<span class="dl-btn disabled">'+badge+'</span>')
+      +(paid && j.reportLink ? '<a href="'+j.reportLink+'" target="_blank" class="dl-btn">'+(j.surveyType === 'Thermal leak scan' ? 'View thermal report' : 'View report')+'</a>'+(j.thermalLink ? ' <a href="'+j.thermalLink+'" target="_blank" class="dl-btn">View thermal report</a>' : '') : '<span class="dl-btn disabled">'+badge+'</span>')
       +'</div>';
   });
   wrap.innerHTML = html;

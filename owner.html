@@ -239,30 +239,33 @@ async function loadReviews(){
       <dt>Property</dt><dd>${esc(j.address||'Not on file')}</dd>
       <dt>Job date</dt><dd>${esc(j.date||'Not on file')}</dd>
       <dt>Written by</dt><dd>${esc(j.writer||'Unknown')}</dd>
+      ${j.surveyType&&j.surveyType!=='Roof report'?`<dt>Survey</dt><dd>${esc(j.surveyType)}${j.surveyType==='Report + thermal'?' (two reports: check both)':''}</dd>`:''}
       ${j.ref?`<dt>Reference</dt><dd>${esc(j.ref)}</dd>`:''}
       ${j.score>0?`<dt>RoofScore</dt><dd>${esc(j.score)}</dd>`:''}
     </dl>
     ${j.earlierFeedback?`<div class="note"><b>Your earlier note:</b> ${esc(j.earlierFeedback)}</div>`:''}
     ${evidenceHtml(j.evidence)}
     <div class="btnrow">
-      ${safeUrl(j.reportLink)?`<button class="btn sec" onclick="openReview(${i})">Review report</button>`:''}
+      ${safeUrl(j.reportLink)?`<button class="btn sec" onclick="openReview(${i},'roof')">${safeUrl(j.thermalLink)?'Review roof report':'Review report'}</button>`:''}
+      ${safeUrl(j.thermalLink)?`<button class="btn sec" onclick="openReview(${i},'thermal')">Review thermal report</button>`:''}
       ${safeUrl(j.photosLink)?`<a class="btn sec" href="${safeUrl(j.photosLink)}" target="_blank" rel="noopener" style="text-decoration:none;">Open photos</a>`:''}
       <span class="grow"></span>
       <button class="btn sec" onclick="reviewReport(${i},'changes')">Request changes</button>
       <button class="btn" onclick="reviewReport(${i},'approve')">Approve</button></div></div>`).join(''):'<div class="empty">Nothing waiting. Submitted reports appear here.</div>';
 }
 let openIdx=-1;
-function openReview(i){
+function openReview(i,which){
   const j=reviewList[i];if(!j)return;
   openIdx=i;
-  const isDocx=/\.docx(\?|$)/i.test(j.reportLink||'');
-  const src=isDocx?'https://docs.google.com/viewer?embedded=true&url='+encodeURIComponent(j.reportLink):j.reportLink;
-  $('rv-title').textContent=j.client||j.address||'Job with no client name';
+  const link=which==='thermal'?j.thermalLink:j.reportLink;
+  const isDocx=/\.docx(\?|$)/i.test(link||'');
+  const src=isDocx?'https://docs.google.com/viewer?embedded=true&url='+encodeURIComponent(link):link;
+  $('rv-title').textContent=(which==='thermal'?'Thermal report: ':'')+(j.client||j.address||'Job with no client name');
   $('rv-meta').innerHTML=[['Property',j.address],['Job date',j.date],['Written by',j.writer],['Reference',j.ref],j.score>0?['RoofScore',j.score]:null].filter(x=>x&&x[1]).map(x=>`<dt>${x[0]}</dt><dd>${esc(x[1])}</dd>`).join('');
   $('rv-earlier').innerHTML=(j.earlierFeedback?`<div class="note"><b>Your earlier note:</b> ${esc(j.earlierFeedback)}</div>`:'')+evidenceHtml(j.evidence);
   $('rv-note').value='';$('rv-err').textContent='';
   $('rv-frame').src=safeUrl(src)?src:'about:blank';
-  $('rv-dl').href=safeUrl(j.reportLink)||'#';
+  $('rv-dl').href=safeUrl(link)||'#';
   $('rv-photos').style.display=safeUrl(j.photosLink)?'inline-block':'none';
   $('rv-photos').href=safeUrl(j.photosLink)||'#';
   $('rv').style.display='flex';document.body.style.overflow='hidden';

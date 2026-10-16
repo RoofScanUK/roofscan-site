@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#111C33">
+<title>Thermal leak scan quote | RoofScan UK</title>
+<meta name="description" content="Instant price for a drone thermal leak scan of your roof, flown after dark by a qualified thermal pilot. Book online with a £50 deposit.">
+<link rel="canonical" href="https://roofscanuk.co.uk/thermal-quote.html">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<script src="https://js.stripe.com/v3/"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F8F6F0;color:#1C2B4A;line-height:1.55;}
+.hdr{background:#1C2B4A;padding:34px 20px 30px;text-align:center;}
+.hdr p{color:#C9A84C;font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px;}
+.hdr h1{color:#fff;font-size:28px;margin-bottom:8px;}
+.hdr-sub{color:rgba(255,255,255,.75);font-size:15px;max-width:560px;margin:0 auto;}
+main{max-width:640px;margin:0 auto;padding:22px 16px 60px;}
+.card{background:#fff;border:1px solid #E8E4D8;border-radius:14px;padding:20px;margin-bottom:16px;}
+.steps{display:flex;gap:6px;margin-bottom:16px;}
+.steps span{flex:1;height:5px;border-radius:3px;background:#E8E4D8;}
+.steps span.on{background:#C9A84C;}
+h2{font-size:20px;margin-bottom:4px;}
+.sub{font-size:14px;color:#6B7A8D;margin-bottom:14px;}
+label{display:block;font-size:13px;font-weight:600;margin:12px 0 4px;}
+input,select,textarea{width:100%;padding:11px 12px;border:1px solid #D8D2C2;border-radius:10px;font:inherit;font-size:15px;background:#FBFAF7;}
+textarea{min-height:80px;resize:vertical;}
+.choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;}
+.choice{border:1.5px solid #E2DDCF;border-radius:12px;padding:12px;cursor:pointer;background:#fff;text-align:left;font:inherit;}
+.choice b{display:block;font-size:14px;}
+.choice small{color:#6B7A8D;font-size:12px;}
+.choice.on{border-color:#C9A84C;background:#FCF6E6;}
+.row{display:flex;gap:10px;margin-top:18px;}
+.btn{flex:1;background:#F2B640;color:#111C33;border:none;border-radius:999px;padding:14px 18px;font:inherit;font-weight:700;font-size:15px;cursor:pointer;}
+.btn.ghost{background:#fff;border:1px solid #D8D2C2;flex:none;color:#1C2B4A;font-weight:500;}
+.btn:disabled{opacity:.55;cursor:default;}
+.info{font-size:13.5px;margin-top:8px;color:#33415C;}
+.err{color:#9B2C2C;font-size:13.5px;margin-top:10px;min-height:18px;}
+.ctr{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #F0ECE2;font-size:14px;}
+.ctr button{width:32px;height:32px;border-radius:50%;border:1px solid #D8D2C2;background:#fff;font-size:17px;cursor:pointer;}
+.ctr .n{display:inline-block;width:28px;text-align:center;font-weight:700;}
+.price-line{display:flex;justify-content:space-between;padding:7px 0;font-size:14.5px;border-bottom:1px solid #F0ECE2;}
+.price-line.total{font-size:18px;font-weight:700;border-bottom:0;padding-top:12px;}
+.price-line.disc{color:#2F6B4F;}
+.note{background:#F7EFDD;border:1px solid #E6D3A8;border-radius:10px;padding:10px 12px;font-size:13.5px;margin-top:12px;}
+.okbox{background:#EAF2EC;border:1px solid #BFD6C7;border-radius:10px;padding:12px;font-size:14px;}
+.bundle{border:1.5px dashed #C9A84C;border-radius:12px;padding:12px;margin-top:14px;}
+.bundle label{display:flex;gap:10px;align-items:flex-start;margin:0;font-weight:600;cursor:pointer;}
+.bundle input{width:auto;margin-top:3px;}
+#card-element{padding:12px;border:1px solid #D8D2C2;border-radius:10px;background:#fff;}
+ul.next{margin:8px 0 0 18px;font-size:14px;} ul.next li{margin-bottom:5px;}
+.hidden{display:none;}
+a{color:#1E4080;}
+</style>
+</head>
+<body>
+<div class="hdr">
+  <p>RoofScan UK</p>
+  <h1>Thermal leak scan</h1>
+  <div class="hdr-sub">A drone thermal survey of your roof, flown after dark, to find patterns consistent with trapped moisture, missing insulation and heat loss. Instant price, book online.</div>
+</div>
+<main>
+  <div id="soon" class="card hidden"><h2>Coming soon</h2><p class="sub" style="margin:6px 0 0;">Thermal leak scans are launching shortly. For a roof condition report now, <a href="index.html#book">get a roof report quote</a>, or email <a href="mailto:info@roofscanuk.co.uk">info@roofscanuk.co.uk</a> to be told when thermal opens.</p></div>
+
+  <div id="flow">
+  <div class="steps" id="steps"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+
+  <!-- 1. Location -->
+  <div class="card step" data-step="1">
+    <h2>Where is the property?</h2>
+    <p class="sub">We check a qualified thermal pilot covers your area.</p>
+    <label for="pc">Postcode</label>
+    <input id="pc" autocomplete="postal-code" placeholder="e.g. GU1 1AA" oninput="onPostcode()">
+    <div class="info" id="pcInfo"></div>
+    <div id="addrWrap" class="hidden"><label for="addrSel">Your address</label><select id="addrSel" onchange="onAddress()"></select></div>
+    <div class="err" id="err1"></div>
+    <div class="row"><button class="btn" onclick="next(1)">Continue</button></div>
+  </div>
+
+  <!-- 2. Roof -->
+  <div class="card step hidden" data-step="2">
+    <h2>About the roof</h2>
+    <p class="sub">The price is based on the roof area, which we measure from Ordnance Survey maps.</p>
+    <label>Property type</label>
+    <div class="choices" id="propChoices"></div>
+    <label>Roof type</label>
+    <div class="choices" id="pitchChoices"></div>
+    <div class="info">Thermal scans work best on flat roofs, where trapped water shows clearly at night. On pitched roofs they mainly show heat escaping through missing or damp insulation.</div>
+    <div class="bundle">
+      <label><input type="checkbox" id="withRoof" onchange="onBundle()"> <span>Add a roof condition report <span style="font-weight:400;color:#6B7A8D;">(daylight photos of every part of the roof, written up with a RoofScore). Book both and save up to 10% on the two together.</span></span></label>
+      <div id="addonWrap" class="hidden" style="margin-top:10px;"><div class="sub" style="margin:0 0 4px;">Anything extra on the roof report:</div><div id="addons"></div></div>
+    </div>
+    <div class="err" id="err2"></div>
+    <div class="row"><button class="btn ghost" onclick="go(1)">Back</button><button class="btn" onclick="next(2)">Continue</button></div>
+  </div>
+
+  <!-- 3. Thermal questions -->
+  <div class="card step hidden" data-step="3">
+    <h2>A few thermal questions</h2>
+    <p class="sub">These help the pilot plan the evening and the thermographer read the images.</p>
+    <label for="why">Main reason for the scan</label>
+    <select id="why"><option value="">Choose…</option><option>Leak or damp patch showing inside</option><option>Flat roof I am worried about</option><option>Buying or selling the property</option><option>Insurance claim</option><option>Checking after a repair</option><option>Heat loss and insulation</option><option>Other</option></select>
+    <label for="heating">Can the heating be on inside for at least 3 hours before the visit?</label>
+    <select id="heating"><option value="">Choose…</option><option>Yes</option><option>No</option><option>Not sure</option></select>
+    <div class="note hidden" id="heatNote">Thermal imaging needs the inside of the building warmer than outside (about 10°C or more). Without heating on, heat-loss patterns may not show. Moisture patterns on flat roofs can still show, so you can still book.</div>
+    <label for="where">Where are the problems, if you know? (optional)</label>
+    <textarea id="where" placeholder="e.g. damp patch on the kitchen ceiling under the rear flat roof"></textarea>
+    <div class="err" id="err3"></div>
+    <div class="row"><button class="btn ghost" onclick="go(2)">Back</button><button class="btn" onclick="next(3)">Continue</button></div>
+  </div>
+
+  <!-- 4. Details -->
+  <div class="card step hidden" data-step="4">
+    <h2>Your details</h2>
+    <p class="sub">So we can confirm the evening and send your report.</p>
+    <label for="name">Full name</label><input id="name" autocomplete="name">
+    <label for="email">Email</label><input id="email" type="email" autocomplete="email" spellcheck="false">
+    <label for="phone">Phone</label><input id="phone" type="tel" autocomplete="tel">
+    <label for="address">Property address</label><input id="address" autocomplete="street-address" placeholder="House number, street, town, postcode">
+    <label style="display:flex;gap:8px;align-items:flex-start;font-weight:400;margin-top:12px;"><input type="checkbox" id="optout" style="width:auto;margin-top:3px;"> <span>Don't email me about offers or storm alerts</span></label>
+    <div class="err" id="err4"></div>
+    <div class="row"><button class="btn ghost" onclick="go(3)">Back</button><button class="btn" onclick="next(4)">See my price</button></div>
+  </div>
+
+  <!-- 5. Price -->
+  <div class="card step hidden" data-step="5">
+    <h2>Your price</h2>
+    <p class="sub" id="areaLine"></p>
+    <div id="priceBox">Working out your price…</div>
+    <div class="note" style="background:#fff;border-color:#E8E4D8;">
+      <b>What happens next</b>
+      <ul class="next">
+        <li>Thermal scans are flown after dark, on a dry evening. The pilot picks an evening in the next 5 working days and we email you the date at least 24 hours before.</li>
+        <li>Please have the heating on for a few hours before, if you can. You don't need to be home.</li>
+        <li id="nextBoth" class="hidden">The roof report photos are taken in daylight, either the same evening before dark or on a separate visit.</li>
+        <li>A qualified thermographer reviews the images. Your report shows each pattern found, what it is consistent with, and what to check next.</li>
+      </ul>
+    </div>
+    <div class="err" id="err5"></div>
+    <div class="row"><button class="btn ghost" onclick="go(4)">Back</button><button class="btn" id="toPay" onclick="next(5)">Book with a £50 deposit</button></div>
+  </div>
+
+  <!-- 6. Pay -->
+  <div class="card step hidden" data-step="6">
+    <div id="paySection">
+      <h2>Pay your £50 deposit</h2>
+      <p class="sub">The deposit comes off your balance. The rest is one payment once the work is done, by a link we email you.</p>
+      <div id="card-element"></div>
+      <div class="err" id="card-errors"></div>
+      <div class="info">By booking you agree to our <a href="terms.html" target="_blank">terms</a>, including section 7a on thermal scans. If we move the evening because of weather there is no charge; if you cancel with less than 48 hours' notice the deposit is kept.</div>
+      <div class="row"><button class="btn ghost" id="payBack" onclick="go(5)">Back</button><button class="btn" id="payBtn" onclick="pay()">Pay £50 deposit and book</button></div>
+    </div>
+    <div id="done" class="hidden">
+      <h2>Booking confirmed</h2>
+      <div class="okbox" id="doneText" style="margin-top:10px;"></div>
+      <p class="info" style="margin-top:12px;">A confirmation email is on its way. Questions: <a href="mailto:info@roofscanuk.co.uk">info@roofscanuk.co.uk</a>.</p>
+    </div>
+  </div>
+  </div>
+</main>
+
+<script>
+// Switch to true once at least one thermal pilot and one thermal report writer are approved. Until then the page
+// shows "coming soon" (add ?preview=1 to the address to test the full flow).
+var THERMAL_LIVE = false;
+var API = 'https://roofscan-api.tiny-voice-ac40.workers.dev';
+var STRIPE_PK = 'pk_live_51Trv87QcApNGjNdfmHcSoqHDYS69kmFe7bFzYTEluYIgGZE4GPqGRQDap8ZQeYvPpCgVxhZUmDGkDpcvCq0tTC1H00a56fU5sw';
+var PT = [
+  { id:'terrace', label:'Terraced', desc:'Mid or end terrace' },
+  { id:'semi', label:'Semi-detached', desc:'' },
+  { id:'detached', label:'Detached', desc:'' },
+  { id:'large_detached', label:'Large detached', desc:'5+ beds or large' }
+];
+var PITCH = [
+  { id:'flat', label:'Flat', desc:'Flat or near-flat' },
+  { id:'mixed', label:'Mixed', desc:'Pitched with flat parts' },
+  { id:'pitched', label:'Pitched', desc:'Sloped tiles or slate' }
+];
+var AD = [
+  { id:'chimneys', label:'Chimney stacks', unit:35, max:6 },
+  { id:'extensions', label:'Extensions / flat roofs', unit:30, max:5 },
+  { id:'dormers', label:'Dormer windows', unit:20, max:8 },
+  { id:'outbuildings', label:'Outbuildings / garages', unit:40, max:5 }
+];
+var st = { step:1, postcode:null, lat:null, lng:null, area:null, prop:null, pitch:'flat', counts:{chimneys:0,extensions:0,dormers:0,outbuildings:0}, price:null, addresses:[], areaReq:0 };
+var stripe = null, card = null, piSecret = null, piId = null, paid = false, measuring = null, pcTimer = null, leadId = null, town = '', leadChain = Promise.resolve();
+
+function $(id){ return document.getElementById(id); }
+function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function money(n){ return '£' + Number(n || 0).toLocaleString('en-GB'); }
+
+function init(){
+  if(!THERMAL_LIVE && !/[?&]preview=1/.test(location.search)){ $('soon').classList.remove('hidden'); $('flow').classList.add('hidden'); return; }
+  $('propChoices').innerHTML = PT.map(function(p){ return '<button type="button" class="choice" data-v="' + p.id + '" onclick="pick(\'prop\',this)"><b>' + p.label + '</b><small>' + p.desc + '</small></button>'; }).join('');
+  $('pitchChoices').innerHTML = PITCH.map(function(p){ return '<button type="button" class="choice' + (p.id === st.pitch ? ' on' : '') + '" data-v="' + p.id + '" onclick="pick(\'pitch\',this)"><b>' + p.label + '</b><small>' + p.desc + '</small></button>'; }).join('');
+  $('addons').innerHTML = AD.map(function(a){ return '<div class="ctr"><span>' + a.label + ' <small style="color:#6B7A8D;">+£' + a.unit + ' each</small></span><span><button type="button" onclick="count(\'' + a.id + '\',-1)">−</button><span class="n" id="n-' + a.id + '">0</span><button type="button" onclick="count(\'' + a.id + '\',1)">+</button></span></div>'; }).join('');
+  $('heating').addEventListener('change', function(){ $('heatNote').classList.toggle('hidden', this.value === 'Yes' || this.value === ''); });
+  go(1);
+}
+function go(n){
+  st.step = n;
+  document.querySelectorAll('.step').forEach(function(el){ el.classList.toggle('hidden', Number(el.dataset.step) !== n); });
+  document.querySelectorAll('#steps span').forEach(function(el, i){ el.classList.toggle('on', i < n); });
+  if(n === 5) loadPrice();
+  if(n === 6) initPay();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function err(n, msg){ $('err' + n).textContent = msg || ''; }
+function pick(kind, el){
+  el.parentElement.querySelectorAll('.choice').forEach(function(x){ x.classList.toggle('on', x === el); });
+  if(kind === 'prop') st.prop = el.dataset.v; else st.pitch = el.dataset.v;
+  err(2, '');
+}
+function count(id, d){ var a = AD.filter(function(x){ return x.id === id; })[0]; st.counts[id] = Math.max(0, Math.min(a.max, st.counts[id] + d)); $('n-' + id).textContent = st.counts[id]; }
+function onBundle(){ $('addonWrap').classList.toggle('hidden', !$('withRoof').checked); }
+
+// ── Postcode, coverage, address and roof area (same Worker lookups as the main quote page) ──
+function onPostcode(){
+  clearTimeout(pcTimer); st.postcode = null; st.area = null; $('addrWrap').classList.add('hidden'); err(1, '');
+  var v = $('pc').value.trim(); if(!v){ $('pcInfo').textContent = ''; return; }
+  $('pcInfo').textContent = 'Checking postcode…';
+  pcTimer = setTimeout(function(){ checkPostcode(v); }, 500);
+}
+async function checkPostcode(raw){
+  var c = raw.replace(/\s+/g, '').toUpperCase();
+  if(!/^[A-Z]{1,2}[0-9][A-Z0-9]?[0-9][A-Z]{2}$/.test(c)){ $('pcInfo').textContent = "That doesn't look like a valid postcode."; return; }
+  try {
+    var r = await fetch('https://api.postcodes.io/postcodes/' + encodeURIComponent(c)), d = await r.json();
+    if(d.status !== 200 || !d.result){ $('pcInfo').textContent = "We couldn't find that postcode."; return; }
+    var res = d.result, cov = null;
+    try { var cr = await fetch(API + '/coverage?postcode=' + encodeURIComponent(res.postcode)); cov = cr.ok ? await cr.json() : null; } catch(e) {}
+    if(!cov){ $('pcInfo').textContent = "Couldn't check that postcode right now. Please try again in a moment."; return; }
+    if(!cov.covered){ $('pcInfo').innerHTML = "We don't cover " + esc(res.postcode) + ' yet. Email <a href="mailto:info@roofscanuk.co.uk">info@roofscanuk.co.uk</a> and we\'ll tell you when we do.'; return; }
+    st.postcode = res.postcode; st.lat = res.latitude; st.lng = res.longitude; town = res.admin_district || '';
+    $('pcInfo').textContent = res.postcode + (cov.travel > 0 ? ' · +£' + cov.travel + ' mileage' : ' · no mileage charge');
+    measure(res.latitude, res.longitude);
+    loadAddresses(res.postcode, res.latitude, res.longitude);
+  } catch(e){ $('pcInfo').textContent = "Couldn't check that postcode right now. Please try again in a moment."; }
+}
+function measure(lat, lng){ measuring = doMeasure(lat, lng); return measuring; }
+async function doMeasure(lat, lng){
+  var req = ++st.areaReq; st.area = null;
+  try {
+    var r = await fetch(API + '/roof-area-lookup?lat=' + encodeURIComponent(lat) + '&lng=' + encodeURIComponent(lng));
+    var d = r.ok ? await r.json() : null;
+    if(req === st.areaReq && d && d.confidence === 'high' && typeof d.areaM2 === 'number') st.area = d.areaM2;
+  } catch(e) {}
+}
+async function loadAddresses(pc, lat, lng){
+  try {
+    var r = await fetch(API + '/address-lookup?postcode=' + encodeURIComponent(pc) + '&lat=' + lat + '&lng=' + lng);
+    var d = r.ok ? await r.json() : {}; st.addresses = d.addresses || [];
+    if(!st.addresses.length) return;
+    $('addrSel').innerHTML = '<option value="">Select your address (improves accuracy)</option>' + st.addresses.map(function(a, i){ return '<option value="' + i + '">' + esc(a.label) + '</option>'; }).join('') + '<option value="none">Not listed, use the postcode</option>';
+    $('addrWrap').classList.remove('hidden');
+  } catch(e) {}
+}
+function onAddress(){
+  var v = $('addrSel').value, a = st.addresses[Number(v)];
+  if(a){ measure(a.lat, a.lng); if(!$('address').value) $('address').value = a.label; }
+}
+
+function next(n){
+  if(n === 1){ if(!st.postcode) return err(1, 'Enter a postcode we cover to continue.'); }
+  if(n === 2){ if(!st.prop) return err(2, 'Choose the property type.'); }
+  if(n === 3){ if(!$('why').value) return err(3, 'Choose the main reason for the scan.'); if(!$('heating').value) return err(3, 'Let us know about the heating.'); }
+  if(n === 4){
+    var em = $('email').value.trim();
+    if($('name').value.trim().length < 2) return err(4, 'Enter your name.');
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) return err(4, 'Enter a valid email address.');
+    if($('phone').value.replace(/\D/g, '').length < 10) return err(4, 'Enter a phone number.');
+    if($('address').value.trim().length < 6) return err(4, 'Enter the property address.');
+  }
+  if(n === 5 && !st.price) return err(5, 'Your price is still loading.');
+  err(n, ''); if(n === 4) captureLead('details'); go(n + 1);
+}
+// Saves the enquiry (same Quotes table as the main quote page) so people who don't book can be followed up.
+function captureLead(stage, total){
+  var contact = { name: $('name').value.trim(), email: $('email').value.trim(), phone: $('phone').value.trim(), address: $('address').value.trim() };
+  if(!contact.email) return;
+  if(stage === 'details' && leadId) return;
+  // Calls run one after another, so the "quoted" update always lands on the row the "details" call created.
+  leadChain = leadChain.then(function(){
+    return fetch(API + '/capture-lead', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ stage: stage, propertyType: st.prop, town: town, quoteTotal: total,
+      contact: contact, marketingOptOut: $('optout').checked, existingId: leadId || undefined, service: $('withRoof').checked ? 'both' : 'thermal' }) })
+      .then(function(r){ return r.json(); }).then(function(d){ if(d && d.quoteId) leadId = d.quoteId; });
+  }).catch(function(){});
+}
+function thermalNotes(){
+  return ['Reason: ' + $('why').value, 'Heating on 3h before: ' + $('heating').value, $('where').value.trim() ? 'Problem areas: ' + $('where').value.trim() : ''].filter(Boolean).join('. ');
+}
+async function loadPrice(){
+  st.price = null; $('toPay').disabled = true; $('priceBox').textContent = 'Working out your price…';
+  var withRoof = $('withRoof').checked;
+  $('nextBoth').classList.toggle('hidden', !withRoof);
+  // The roof measurement runs in the background from step 1. Give it a few seconds to finish so the price uses it.
+  if(measuring) await Promise.race([measuring, new Promise(function(r){ setTimeout(r, 4000); })]);
+  try {
+    var r = await fetch(API + '/thermal-price', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ postcode: st.postcode, roofAreaM2: st.area, pitchType: st.pitch, propertyType: st.prop, withRoof: withRoof, addons: st.counts }) });
+    var p = await r.json(); if(!r.ok) throw new Error(p.error || r.status);
+    st.price = p;
+    $('areaLine').textContent = (st.area ? 'Measured roof area about ' + p.area + ' m².' : 'Roof area estimated at about ' + p.area + ' m² from the property type (we could not measure it from the map).');
+    var h = '';
+    if(withRoof){
+      h += '<div class="price-line"><span>Thermal leak scan</span><span>' + money(p.thermal) + '</span></div>';
+      h += '<div class="price-line"><span>Roof condition report' + (p.addons ? ' (incl. ' + money(p.addons) + ' extras)' : '') + '</span><span>' + money(p.roof) + '</span></div>';
+      h += '<div class="price-line disc"><span>Bundle discount</span><span>−' + money(p.bundle) + '</span></div>';
+      if(p.travel) h += '<div class="price-line"><span>Mileage (' + money(p.travel) + ' per visit, two visits)</span><span>' + money(p.travel * 2) + '</span></div>';
+    } else {
+      h += '<div class="price-line"><span>Thermal leak scan</span><span>' + money(p.thermal) + '</span></div>';
+      if(p.travel) h += '<div class="price-line"><span>Mileage</span><span>' + money(p.travel) + '</span></div>';
+    }
+    h += '<div class="price-line total"><span>Total</span><span>' + money(p.total) + '</span></div>';
+    h += '<div class="info">£50 deposit today. The rest is one payment after ' + (withRoof ? 'both scans are done' : 'the scan') + ', by a link we email you.</div>';
+    $('priceBox').innerHTML = h; $('toPay').disabled = false;
+    captureLead('quoted', p.total);
+  } catch(e){ $('priceBox').textContent = 'We could not work out your price just now. Please try again in a moment.'; }
+}
+
+// ── Deposit and booking ──
+async function initPay(){
+  if(stripe) return;
+  try { var r = await fetch(API + '/create-payment-intent', { method:'POST' }), d = await r.json(); piSecret = d.clientSecret; piId = d.paymentIntentId; }
+  catch(e){ $('card-errors').textContent = 'Could not start payment. Please refresh and try again.'; }
+  if(window.Stripe){
+    stripe = Stripe(STRIPE_PK); card = stripe.elements().create('card', { style: { base: { fontSize: '15px' } } });
+    card.mount('#card-element'); card.on('change', function(e){ $('card-errors').textContent = e.error ? e.error.message : ''; });
+  }
+}
+async function pay(){
+  if(!piSecret || !stripe){ $('card-errors').textContent = 'Payment is not ready yet. Wait a moment and try again.'; return; }
+  var btn = $('payBtn'); btn.disabled = true; btn.textContent = 'Processing…';
+  var contact = { name: $('name').value.trim(), email: $('email').value.trim(), phone: $('phone').value.trim(), address: $('address').value.trim() };
+  // If the card was already charged and only the booking step failed, a retry only re-sends the booking (never charges twice).
+  if(!paid){
+    var res = await stripe.confirmCardPayment(piSecret, { payment_method: { card: card, billing_details: { name: contact.name, email: contact.email } } });
+    if(res.error){ $('card-errors').textContent = res.error.message; btn.disabled = false; btn.textContent = 'Pay £50 deposit and book'; return; }
+    paid = true;
+  }
+  try {
+    var withRoof = $('withRoof').checked;
+    var r = await fetch(API + '/confirm-booking', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({
+      paymentIntentId: piId, flexible: true, surveyType: withRoof ? 'both' : 'thermal', propertyType: st.prop, addons: withRoof ? st.counts : {},
+      postcode: st.postcode, roofAreaM2: st.price ? st.price.area : st.area, pitchType: st.pitch, contact: contact, thermalNotes: thermalNotes(), areaFlagged: false }) });
+    var d = await r.json(); if(!r.ok) throw new Error(d.error || 'booking failed');
+    var dl = d.deadline ? new Date(d.deadline + 'T12:00:00Z').toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long' }) : 'the next 5 working days';
+    $('paySection').classList.add('hidden'); $('done').classList.remove('hidden');
+    $('doneText').textContent = 'Booked. Our thermal pilot will fly on an evening by ' + dl + ', after dark, and we will email you the exact date and time at least 24 hours before.'
+      + (withRoof ? ' Your roof condition report is booked too; the daylight photos are taken the same evening or on a separate visit, and you will get two reports.' : '');
+  } catch(e){
+    $('card-errors').textContent = 'Your deposit was paid, but the booking did not go through. Press the button to try again (you will not be charged again). If it keeps failing, email info@roofscanuk.co.uk with your payment reference: ' + piId;
+    btn.disabled = false; btn.textContent = 'Try the booking again'; $('payBack').classList.add('hidden');
+  }
+}
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#1C2B4A">
+<meta name="robots" content="noindex">
+<title>Thermal report | RoofScan UK</title>
+<script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
+<style>
+:root{--n:#1C2B4A;--g:#B8945F;--bg:#FBFAF7;--br:#DEDACE;--mu:#6B6F76;--gr:#2F6B4F;--gbg:#EAF2EC;--am:#9A6A1C;--abg:#F7EFDD;--rd:#9B2C2C;--rbg:#F6E6E4;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:#20262F;line-height:1.5;}
+.hdr{background:var(--n);color:#fff;padding:18px 20px;}
+.hdr h1{font-size:20px;font-weight:600;}
+.hdr p{color:var(--g);font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;}
+main{max-width:860px;margin:0 auto;padding:18px 16px 80px;}
+.banner{border:1px solid var(--br);background:#fff;padding:12px 14px;border-radius:6px;font-size:14px;margin-bottom:14px;}
+.banner.error{background:var(--rbg);border-color:#E3C4C0;}
+.banner.ok{background:var(--gbg);border-color:#BFD6C7;}
+.banner.warn{background:var(--abg);border-color:#E6D3A8;}
+.card{background:#fff;border:1px solid var(--br);border-radius:6px;margin-bottom:16px;}
+.card-h{padding:10px 14px;border-bottom:1px solid var(--br);font-weight:600;font-size:15px;display:flex;justify-content:space-between;align-items:center;gap:8px;}
+.card-b{padding:14px;}
+.hint{font-size:12.5px;color:var(--mu);margin-bottom:10px;}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px 14px;}
+label{display:block;font-size:12px;font-weight:600;color:#33415C;margin-bottom:3px;}
+input,select,textarea{width:100%;border:1px solid #CFCAB9;border-radius:4px;padding:8px 9px;font:inherit;font-size:14px;background:#fff;}
+input[readonly]{background:#F3F1EA;color:#555;}
+textarea{min-height:80px;resize:vertical;}
+.btn{background:var(--n);color:#fff;border:1px solid var(--n);border-radius:4px;padding:9px 14px;font:inherit;font-size:14px;font-weight:500;cursor:pointer;}
+.btn.ghost{background:#fff;color:var(--n);border-color:var(--br);}
+.btn.small{padding:5px 10px;font-size:12.5px;}
+.btn:disabled{opacity:.5;cursor:default;}
+.btn.big{width:100%;padding:14px;font-size:16px;}
+.photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px;max-height:360px;overflow:auto;}
+.ph{position:relative;border:2px solid transparent;border-radius:4px;cursor:pointer;background:#eee;aspect-ratio:4/3;overflow:hidden;}
+.ph img{width:100%;height:100%;object-fit:cover;display:block;}
+.ph .tag{position:absolute;left:2px;bottom:2px;background:rgba(0,0,0,.65);color:#fff;font-size:10px;padding:1px 4px;border-radius:3px;}
+.ph.sel{border-color:var(--g);}
+.tabs{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;}
+.tabs button{border:1px solid var(--br);background:#fff;border-radius:14px;padding:4px 10px;font-size:12.5px;cursor:pointer;}
+.tabs button.on{background:var(--n);color:#fff;border-color:var(--n);}
+.finding{border:1px solid var(--br);border-radius:6px;margin-bottom:12px;}
+.finding .fh{padding:8px 12px;background:#F5F3EC;display:flex;justify-content:space-between;align-items:center;font-weight:600;font-size:14px;}
+.finding .fb{padding:12px;}
+.pick{display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap;}
+.slot{width:170px;}
+.slot .box{border:1px dashed #BDB7A6;border-radius:4px;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--mu);text-align:center;cursor:pointer;overflow:hidden;background:#FAF9F5;}
+.slot .box img{width:100%;height:100%;object-fit:cover;}
+.checks{font-size:13px;margin-top:10px;}
+.checks div{padding:4px 0;}
+.pill{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:10px;}
+.pill.ok{background:var(--gbg);color:var(--gr);} .pill.warn{background:var(--abg);color:var(--am);} .pill.bad{background:var(--rbg);color:var(--rd);}
+.save{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--br);padding:8px 16px;font-size:12.5px;color:var(--mu);text-align:center;}
+.picker-ov{position:fixed;inset:0;background:rgba(20,25,35,.55);display:none;align-items:center;justify-content:center;z-index:50;padding:16px;}
+.picker{background:#fff;border-radius:8px;max-width:820px;width:100%;max-height:90vh;overflow:auto;padding:14px;}
+.missing{outline:2px solid var(--rd);}
+</style>
+</head>
+<body>
+<div class="hdr"><p>RoofScan UK</p><h1>Thermal leak scan report</h1></div>
+<main>
+  <div class="banner" id="banner">Loading your job…</div>
+
+  <div id="app" style="display:none;">
+  <div class="card">
+    <div class="card-h">1. Job details</div>
+    <div class="card-b">
+      <div class="grid">
+        <div><label>Client</label><input id="client" readonly></div>
+        <div><label>Report reference</label><input id="ref"></div>
+        <div style="grid-column:1/-1;"><label>Property address</label><input id="address" readonly></div>
+        <div><label>Survey date</label><input id="date" type="date"></div>
+        <div><label>Thermal images captured by</label><input id="flyer" readonly></div>
+        <div><label>Roof type</label><select id="roofType"><option value="">Choose…</option><option>Flat (felt / bitumen)</option><option>Flat (single-ply membrane)</option><option>Flat (EPDM rubber)</option><option>Flat (GRP fibreglass)</option><option>Flat (asphalt)</option><option>Pitched (tiles / slate)</option><option>Mixed</option><option>Other</option></select></div>
+        <div><label>Survey type</label><input id="surveyType" readonly></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h">2. Survey conditions</div>
+    <div class="card-b">
+      <div class="hint" id="condHint">Thermal results are only as good as the conditions. Take these from the flyer's notes and the weather record for the evening. They go in the report and decide whether it says the conditions were suitable.</div>
+      <div class="grid">
+        <div><label>Time images captured</label><input id="capTime" type="time"></div>
+        <div><label>Sunset that day</label><input id="sunset" type="time"></div>
+        <div><label>Outside air temp (°C)</label><input id="tOut" type="number" step="0.5" inputmode="decimal"></div>
+        <div><label>Heating on inside</label><select id="heating"><option value="">Choose…</option><option>Yes</option><option>No</option><option>Not known</option></select></div>
+        <div><label>Inside temp (°C, if known)</label><input id="tIn" type="number" step="0.5" inputmode="decimal" placeholder="e.g. 19"></div>
+        <div><label>Wind speed (mph)</label><input id="wind" type="number" step="1" inputmode="numeric"></div>
+        <div><label>Sky</label><select id="sky"><option value="">Choose…</option><option>Clear</option><option>Partly cloudy</option><option>Overcast</option></select></div>
+        <div><label>Rain in the 24 hours before</label><select id="rain"><option value="">Choose…</option><option>No</option><option>Yes</option></select></div>
+        <div><label>Roof surface at capture</label><select id="surface"><option value="">Choose…</option><option>Dry</option><option>Damp</option><option>Wet / standing water</option></select></div>
+        <div><label>Daytime before the survey</label><select id="sunDay"><option value="">Choose…</option><option>Sunny</option><option>Mixed</option><option>Dull</option></select></div>
+        <div><label>Thermal camera / drone</label><input id="camera" placeholder="e.g. DJI Mavic 3T"></div>
+        <div><label>Emissivity setting</label><input id="emis" type="number" step="0.01" placeholder="e.g. 0.95"></div>
+        <div><label>Colour palette used</label><input id="palette" placeholder="e.g. Iron / White hot"></div>
+      </div>
+      <div class="checks" id="condChecks"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h">3. Photos from the flyer <span id="phCount" style="font-weight:400;font-size:12.5px;color:var(--mu);"></span></div>
+    <div class="card-b">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px;"><button class="btn small" id="aiSortBtn" onclick="aiSort()">Sort thermal images with AI</button><span id="aiSortMsg" class="hint" style="margin:0;"></span></div>
+      <div class="hint">AI looks at each thermal image, flags the ones showing a pattern worth reporting, pairs it with the daylight photo taken at the same moment, and drafts a finding for you to check. Images it reads as normal are tagged "No anomaly". Thermal images are picked out by name where the drone marks them (for example DJI files ending _T). Click a photo to see it full size. Use "Pick" on a finding to attach photos.</div>
+      <div class="tabs" id="phTabs"><button data-f="thermal" class="on">Thermal</button><button data-f="visual">Visual</button><button data-f="all">All</button></div>
+      <div class="photos" id="phGrid"></div>
+      <div style="margin-top:12px;"><label>Whole-roof thermal overview (optional, shown at the start of the findings)</label>
+        <div class="pick"><div class="slot"><div class="box" id="ovBox" onclick="pickFor('overview')">Pick overview</div></div></div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h">4. Findings <button class="btn small" onclick="addFinding()">+ Add finding</button></div>
+    <div class="card-b">
+      <div class="hint">Add one finding for each temperature pattern worth reporting. Describe what the image shows, not what you think is underneath: thermal images show surface temperature, not water. Use "consistent with" wording.</div>
+      <div id="findings"></div>
+      <div id="noFind" class="hint" style="margin:0;">No findings yet. If the roof shows no significant patterns, leave this empty and choose "No significant anomalies" below.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h">5. Summary</div>
+    <div class="card-b">
+      <div class="grid">
+        <div><label>Overall result</label><select id="overall"><option value="">Choose…</option><option>No significant anomalies</option><option>Anomalies found that need checking</option><option>Patterns consistent with trapped moisture</option></select></div>
+      </div>
+      <div style="margin-top:10px;"><label>Summary for the client</label>
+        <textarea id="summary" style="min-height:120px;" placeholder="Plain English: what was scanned, what was found, and what the client should do next."></textarea></div>
+      <div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><button class="btn ghost small" id="aiBtn" onclick="aiSummary()">Draft summary from my findings</button><span id="aiMsg" class="hint" style="margin:0;"></span></div>
+      <div style="margin-top:12px;"><label>Recommended next steps</label>
+        <textarea id="nextSteps" placeholder="e.g. Ask a roofing contractor to confirm the areas marked Investigate with a moisture meter or core sample before any repair is priced."></textarea></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h">6. Finish</div>
+    <div class="card-b">
+      <div id="finishChecks" class="checks" style="margin-top:0;margin-bottom:10px;"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn ghost" onclick="downloadPreview()">Download a preview (Word)</button>
+      </div>
+      <button class="btn big" id="sendBtn" style="margin-top:12px;" onclick="sendReport()">Finish and send thermal report to RoofScan</button>
+      <div id="sendMsg" class="hint" style="margin-top:8px;"></div>
+    </div>
+  </div>
+  </div>
+</main>
+<div class="save" id="saveNote">Your work saves automatically.</div>
+
+<div class="picker-ov" id="pickerOv" onclick="if(event.target===this)closePicker()">
+  <div class="picker">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><strong id="pickerTitle">Pick a photo</strong><button class="btn ghost small" onclick="closePicker()">Close</button></div>
+    <div class="tabs" id="pkTabs"><button data-f="thermal" class="on">Thermal</button><button data-f="visual">Visual</button><button data-f="all">All</button></div>
+    <div class="photos" id="pkGrid" style="max-height:none;"></div>
+    <div style="margin-top:10px;"><button class="btn ghost small" onclick="choose('')">Remove photo</button></div>
+  </div>
+</div>
+
+<script>
+var WORKER_BASE = 'https://roofscan-api.tiny-voice-ac40.workers.dev';
+var JOB = new URLSearchParams(location.search).get('job') || '';
+var TOKEN = ''; try { TOKEN = localStorage.getItem('rs_ct_token') || ''; } catch(e) {}
+var JOBINFO = null, PHOTOS = [], URLS = {}, BLOBS = {}, findings = [], overview = '', ready = false, saveTimer = null, fid = 0;
+
+var PATTERNS = ['Consistent with trapped moisture', 'Consistent with heat loss (insulation)', 'Consistent with thermal bridging', 'Consistent with air leakage', 'Inconclusive, needs checking on site'];
+var AI = {};   // AI read of each thermal image: { anomaly, pattern, priority, location, desc, why }
+var PRIORITIES = ['Investigate', 'Monitor', 'For information'];
+
+function $(id){ return document.getElementById(id); }
+function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function api(path, opts){ opts = opts || {}; opts.headers = Object.assign({ Authorization: 'Bearer ' + TOKEN }, opts.headers || {}); return fetch(WORKER_BASE + path, opts); }
+function banner(html, kind){ var b = $('banner'); b.className = 'banner' + (kind ? ' ' + kind : ''); b.innerHTML = html; b.style.display = html ? 'block' : 'none'; }
+function isThermalName(n){ return /(^|[_\-\s])(T|IR|THERMAL|R)(?=[_\-.\s])/i.test(n.replace(/\.[^.]+$/, '') + '.') || /thermal|_ir_|flir/i.test(n); }
+
+var FIELDS = ['ref','date','roofType','capTime','sunset','tOut','heating','tIn','wind','sky','rain','surface','sunDay','camera','emis','palette','overall','summary','nextSteps'];
+
+async function init(){
+  if(!JOB || !TOKEN){ banner('Open this page from your jobs page. <a href="jobs.html">Go to your jobs</a>', 'error'); return; }
+  var r, j;
+  try { r = await api('/contractor/job?jobId=' + encodeURIComponent(JOB)); j = await r.json(); }
+  catch(e){ banner('Could not reach RoofScan. Check your connection and reload.', 'error'); return; }
+  if(r.status === 401){ location.href = 'login.html?next=jobs.html'; return; }
+  if(!r.ok){ banner(esc(j.error || 'Could not load this job.') + ' <a href="jobs.html">Back to your jobs</a>', 'error'); return; }
+  if(!j.needsThermal){ banner('This job has no thermal report. Use the normal report generator. <a href="reports.html?job=' + encodeURIComponent(JOB) + '&as=writer">Open it</a>', 'error'); return; }
+  JOBINFO = j;
+  $('client').value = j.client || ''; $('address').value = j.address || ''; $('date').value = j.date || '';
+  $('flyer').value = j.flyer || ''; $('surveyType').value = j.surveyType || '';
+  var ref = j.jobRef || '';
+  if(!ref){ var ini = (j.client || '').split(' ').map(function(w){ return w[0] || ''; }).join('').toUpperCase().slice(0,2); ref = 'RSU-' + (j.date ? j.date.replace(/-/g,'').slice(2) : new Date().toISOString().slice(2,10).replace(/-/g,'')) + (ini || 'XX'); }
+  // Booked with a roof report: that report uses the same date-and-initials reference, so this one gets a -T on the end.
+  if(j.pairedId && !/-T$/.test(ref)) ref += '-T';
+  $('ref').value = ref;
+  $('app').style.display = 'block';
+  var dr = null;
+  try { var dres = await api('/contractor/draft?kind=thermal&jobId=' + encodeURIComponent(JOB)); if(dres.ok) dr = (await dres.json()).draft; } catch(e) {}
+  if(dr) restore(dr);
+  // Fill anything still empty from what the flyer recorded on site, and the sunset time for that evening.
+  var tc = j.thermalConditions || {}, filled = 0;
+  ['capTime','tOut','tIn','wind','sky','rain','surface','heating','camera','emis','palette'].forEach(function(k){ if(tc[k] != null && tc[k] !== '' && $(k) && !$(k).value){ $(k).value = tc[k]; filled++; if(k === 'capTime') $(k).dataset.fromFlyer = '1'; } });
+  if(j.sunset && !$('sunset').value){ $('sunset').value = new Date(j.sunset).toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit', timeZone:'Europe/London' }); filled++; }
+  if(filled) $('condHint').innerHTML = 'Filled in from what the flyer recorded on site' + (tc.weatherSource ? ', weather from ' + esc(tc.weatherSource) : '') + (tc.notes ? ' (flyer\'s note: <b>' + esc(tc.notes) + '</b>)' : '') + ' and the sunset time for that evening. Check them against the images before sending.';
+  renderFindings(); checkConditions(); checkFinish();
+  var fb = j.feedback ? '<div style="margin-top:8px;padding:8px 10px;background:#F7EFDD;border:1px solid #E6D3A8;white-space:pre-line;"><strong>RoofScan asked for changes:</strong> ' + esc(j.feedback) + '</div>' : '';
+  var both = j.needsRoof ? ' This job also needs the normal roof report, which is a separate document: <a href="reports.html?job=' + encodeURIComponent(JOB) + '&as=writer">open the roof report generator</a>.' + (j.roofSent ? ' (Roof report already sent.)' : '') : '';
+  banner('<strong>' + esc(j.client || 'Your job') + '</strong>: ' + (dr ? 'your saved thermal report is back.' : 'details filled in.') + ' Loading photos…' + both + fb);
+  await loadPhotos();
+  ready = true;
+  banner('<strong>' + esc(j.client || 'Your job') + '</strong>: ' + PHOTOS.length + ' photos loaded (' + PHOTOS.filter(function(p){ return p.thermal; }).length + ' look like thermal images). Fill in the conditions, add your findings, then send it.' + both + fb, PHOTOS.length ? 'ok' : 'warn');
+  document.addEventListener('input', onChange); document.addEventListener('change', onChange);
+}
+
+async function loadPhotos(){
+  try {
+    var r = await api('/contractor/photos?jobId=' + encodeURIComponent(JOB)); var d = await r.json();
+    PHOTOS = (d.photos || []).map(function(p){ return { name: p.name, thermal: isThermalName(p.name), t: (p.meta && p.meta.t) || '' }; }).sort(function(a,b){ return a.name < b.name ? -1 : 1; });
+    // The drone stamps each image with the time it was taken. Use the first thermal image's time as the capture time
+    // (more accurate than when the flyer pressed "done"), unless the writer has already changed it.
+    var times = PHOTOS.filter(function(p){ return p.thermal && p.t; }).map(function(p){ var m = String(p.t).match(/[T ](\d{2}):(\d{2})/) || String(p.t).match(/^(\d{2}):(\d{2})/); return m ? m[1] + ':' + m[2] : ''; }).filter(Boolean).sort();
+    if(times.length && (!$('capTime').value || $('capTime').dataset.fromFlyer === '1')){ $('capTime').value = times[0]; $('capTime').dataset.fromFlyer = ''; checkConditions(); }
+  } catch(e){ PHOTOS = []; }
+  $('phCount').textContent = PHOTOS.length ? '(' + PHOTOS.length + ')' : '(none uploaded)';
+  renderGrid('phGrid', currentTab('phTabs'), openPhoto);
+  // Thumbnails load in the background, 6 at a time.
+  var queue = PHOTOS.map(function(p){ return p.name; }), active = 0;
+  await new Promise(function(done){
+    if(!queue.length) return done();
+    function next(){
+      if(!queue.length){ if(!active) done(); return; }
+      var n = queue.shift(); active++;
+      fetchPhoto(n).then(function(){ active--; refreshImg(n); next(); });
+    }
+    for(var i = 0; i < 6; i++) next();
+  });
+}
+async function fetchPhoto(n){
+  if(BLOBS[n]) return BLOBS[n];
+  for(var a = 0; a < 2; a++){
+    try { var r = await api('/contractor/photo?jobId=' + encodeURIComponent(JOB) + '&name=' + encodeURIComponent(n)); if(r.ok){ var b = await r.blob(); BLOBS[n] = b; URLS[n] = URL.createObjectURL(b); return b; } } catch(e) {}
+  }
+  return null;
+}
+function openPhoto(n){ if(URLS[n]) window.open(URLS[n], '_blank'); }
+function refreshImg(n){ document.querySelectorAll('img[data-n="' + CSS.escape(n) + '"]').forEach(function(im){ if(URLS[n]) im.src = URLS[n]; }); }
+function currentTab(id){ var b = document.querySelector('#' + id + ' button.on'); return b ? b.dataset.f : 'all'; }
+function renderGrid(gridId, filter, onPick, selected){
+  var list = PHOTOS.filter(function(p){ return filter === 'all' || (filter === 'thermal' ? p.thermal : !p.thermal); });
+  $(gridId).innerHTML = list.length ? list.map(function(p){
+    return '<div class="ph' + (selected === p.name ? ' sel' : '') + '" data-name="' + esc(p.name) + '"><img data-n="' + esc(p.name) + '" src="' + (URLS[p.name] || '') + '" alt=""><span class="tag">' + (p.thermal ? (AI[p.name] ? (AI[p.name].anomaly ? 'AI: ' + esc(shortPattern(AI[p.name].pattern)) : 'No anomaly') : 'Thermal') : 'Visual') + '</span></div>';
+  }).join('') : '<div class="hint">No ' + (filter === 'all' ? '' : filter + ' ') + 'photos.</div>';
+  $(gridId).querySelectorAll('.ph').forEach(function(el){ el.onclick = function(){ onPick(el.dataset.name); }; });
+}
+['phTabs','pkTabs'].forEach(function(id){
+  document.getElementById(id).addEventListener('click', function(e){
+    var b = e.target.closest('button'); if(!b) return;
+    this.querySelectorAll('button').forEach(function(x){ x.classList.toggle('on', x === b); });
+    if(id === 'phTabs') renderGrid('phGrid', b.dataset.f, openPhoto);
+    else renderPicker();
+  });
+});
+
+// ── Photo picker ──
+var pickTarget = null;
+function pickFor(target){
+  pickTarget = target;
+  var title = target === 'overview' ? 'Whole-roof thermal overview' : (target.slot === 'thermal' ? 'Thermal image for this finding' : 'Visual photo of the same spot');
+  $('pickerTitle').textContent = title;
+  var want = (target === 'overview' || target.slot === 'thermal') ? 'thermal' : 'visual';
+  if(!PHOTOS.some(function(p){ return want === 'thermal' ? p.thermal : !p.thermal; })) want = 'all';
+  document.querySelectorAll('#pkTabs button').forEach(function(x){ x.classList.toggle('on', x.dataset.f === want); });
+  renderPicker();
+  $('pickerOv').style.display = 'flex';
+}
+function renderPicker(){
+  var cur = pickTarget === 'overview' ? overview : (pickTarget ? (findOne(pickTarget.id) || {})[pickTarget.slot] : '');
+  renderGrid('pkGrid', currentTab('pkTabs'), choose, cur);
+}
+function closePicker(){ $('pickerOv').style.display = 'none'; pickTarget = null; }
+function choose(name){
+  if(pickTarget === 'overview'){ overview = name; renderOverview(); }
+  else if(pickTarget){ var f = findOne(pickTarget.id); if(f){ f[pickTarget.slot] = name; renderFindings(); } }
+  closePicker(); saveSoon(); checkFinish();
+}
+function slotHtml(name, label, onclick){
+  return '<div class="box" onclick="' + onclick + '">' + (name ? '<img data-n="' + esc(name) + '" src="' + (URLS[name] || '') + '" alt="">' : label) + '</div>';
+}
+function renderOverview(){ $('ovBox').outerHTML = '<div class="box" id="ovBox" onclick="pickFor(\'overview\')">' + (overview ? '<img data-n="' + esc(overview) + '" src="' + (URLS[overview] || '') + '" alt="">' : 'Pick overview') + '</div>'; }
+
+// ── Findings ──
+function findOne(id){ for(var i = 0; i < findings.length; i++) if(findings[i].id === id) return findings[i]; return null; }
+function addFinding(){
+  findings.push({ id: ++fid, location: '', pattern: '', priority: '', deltaT: '', area: '', desc: '', action: '', thermal: '', visual: '' });
+  renderFindings(); saveSoon(); checkFinish();
+  var last = document.querySelector('.finding:last-child'); if(last) last.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+function aiChecked(id){ var f = findOne(id); if(f){ f.ai = false; renderFindings(); saveSoon(); checkFinish(); } }
+function removeFinding(id){
+  if(!confirm('Remove this finding?')) return;
+  // If it came from the AI sort, remember it was dismissed so sorting again doesn't add it back.
+  var gone = findOne(id); if(gone && gone.thermal && AI[gone.thermal]) AI[gone.thermal].dismissed = true;
+  findings = findings.filter(function(f){ return f.id !== id; }); renderFindings(); saveSoon(); checkFinish();
+}
+function moveFinding(id, dir){
+  var i = findings.findIndex(function(f){ return f.id === id; }), j = i + dir;
+  if(i < 0 || j < 0 || j >= findings.length) return;
+  var t = findings[i]; findings[i] = findings[j]; findings[j] = t; renderFindings(); saveSoon();
+}
+function opt(list, cur){ return '<option value="">Choose…</option>' + list.map(function(x){ return '<option' + (x === cur ? ' selected' : '') + '>' + esc(x) + '</option>'; }).join(''); }
+function renderFindings(){
+  $('noFind').style.display = findings.length ? 'none' : 'block';
+  $('findings').innerHTML = findings.map(function(f, i){
+    var k = f.id;
+    return '<div class="finding" data-id="' + k + '"><div class="fh"><span>T' + (i + 1) + (f.location ? ': ' + esc(f.location) : '') + '</span>' + (f.ai ? '<button class="pill warn" style="margin-left:auto;margin-right:6px;border:0;cursor:pointer;" title="Mark as checked" onclick="aiChecked(' + k + ')">AI draft: tap when checked</button>' : '') + '<span style="display:flex;gap:4px;">'
+      + '<button class="btn ghost small" onclick="moveFinding(' + k + ',-1)" title="Move up">↑</button><button class="btn ghost small" onclick="moveFinding(' + k + ',1)" title="Move down">↓</button><button class="btn ghost small" onclick="removeFinding(' + k + ')">Remove</button></span></div>'
+      + '<div class="fb"><div class="pick">'
+      + '<div class="slot"><label>Thermal image</label>' + slotHtml(f.thermal, 'Pick thermal image', 'pickFor({id:' + k + ',slot:\'thermal\'})') + '</div>'
+      + '<div class="slot"><label>Visual photo (optional)</label>' + slotHtml(f.visual, 'Pick visual photo', 'pickFor({id:' + k + ',slot:\'visual\'})') + '</div></div>'
+      + '<div class="grid">'
+      + '<div style="grid-column:1/-1;"><label>Location on the roof</label><input data-f="location" value="' + esc(f.location) + '" placeholder="e.g. Rear flat roof, near the rooflight"></div>'
+      + '<div><label>Pattern</label><select data-f="pattern">' + opt(PATTERNS, f.pattern) + '</select></div>'
+      + '<div><label>Priority</label><select data-f="priority">' + opt(PRIORITIES, f.priority) + '</select></div>'
+      + '<div><label>Temperature difference (°C)</label><input data-f="deltaT" type="number" step="0.1" value="' + esc(f.deltaT) + '" placeholder="vs surrounding roof"></div>'
+      + '<div><label>Approx. area (m²)</label><input data-f="area" type="number" step="0.5" value="' + esc(f.area) + '" placeholder="optional"></div>'
+      + '<div style="grid-column:1/-1;"><label>What the image shows</label><textarea data-f="desc" placeholder="e.g. A warmer irregular area about 2 m by 1.5 m, about 3°C above the surrounding membrane, with a soft edge that follows the fall towards the outlet. This pattern is consistent with moisture held in the insulation.">' + esc(f.desc) + '</textarea></div>'
+      + '<div style="grid-column:1/-1;"><label>Recommended next step</label><input data-f="action" value="' + esc(f.action) + '" placeholder="e.g. Confirm with a moisture meter before any repair is priced"></div>'
+      + '</div></div></div>';
+  }).join('');
+  $('findings').querySelectorAll('[data-f]').forEach(function(el){
+    el.addEventListener('input', function(){ var f = findOne(Number(el.closest('.finding').dataset.id)); if(f){ f[el.dataset.f] = el.value; if(el.dataset.f === 'desc' && f.ai){ f.ai = false; var pl = el.closest('.finding').querySelector('.fh .pill'); if(pl) pl.remove(); checkFinish(); } if(el.dataset.f === 'location') el.closest('.finding').querySelector('.fh span').textContent = 'T' + (findings.indexOf(f) + 1) + (el.value ? ': ' + el.value : ''); } });
+  });
+}
+
+// ── Conditions check (shown on the page and printed in the report) ──
+function num(id){ var v = $(id).value; return v === '' ? null : Number(v); }
+function minutes(t){ if(!t) return null; var p = t.split(':'); return Number(p[0]) * 60 + Number(p[1]); }
+function conditions(){
+  var out = [], tOut = num('tOut'), tIn = num('tIn'), wind = num('wind'), cap = minutes($('capTime').value), ss = minutes($('sunset').value);
+  var dT = (tIn != null && tOut != null) ? Math.round((tIn - tOut) * 10) / 10 : null;
+  var heat = $('heating').value;
+  if(heat === 'No') out.push(['warn', 'Heating was off inside. Heat-loss patterns may not show; moisture patterns on flat roofs can still show.']);
+  if(dT == null) out.push([heat === 'Yes' ? 'ok' : 'warn', heat === 'Yes' ? 'Heating was on inside (inside temperature not measured).' : 'Inside to outside temperature difference unknown. Heat-loss patterns need at least 10°C.']);
+  else if(dT < 10) out.push(['warn', 'Inside to outside difference was ' + dT + '°C, below the 10°C usually needed for reliable heat-loss readings.']);
+  else out.push(['ok', 'Inside to outside difference ' + dT + '°C (10°C or more is good).']);
+  if(wind == null) out.push(['warn', 'Wind speed not recorded.']);
+  else if(wind > 15) out.push(['bad', 'Wind ' + wind + ' mph. Above 15 mph the roof surface cools evenly and patterns can be hidden.']);
+  else out.push(['ok', 'Wind ' + wind + ' mph (15 mph or less).']);
+  var rain = $('rain').value, surf = $('surface').value;
+  if(rain === 'Yes') out.push(['bad', 'Rain in the 24 hours before. Surface water can mask or mimic moisture patterns.']);
+  else if(rain === 'No') out.push(['ok', 'No rain in the 24 hours before.']);
+  else out.push(['warn', 'Recent rain not recorded.']);
+  if(surf && surf !== 'Dry') out.push(['bad', 'Roof surface was ' + surf.toLowerCase() + ' at capture.']);
+  else if(surf === 'Dry') out.push(['ok', 'Roof surface dry.']);
+  else out.push(['warn', 'Roof surface condition not recorded.']);
+  if(cap != null && ss != null){
+    var after = cap - ss; if(after < -12 * 60) after += 24 * 60;
+    if(after < 30) out.push(['bad', 'Images captured ' + (after < 0 ? Math.abs(after) + ' minutes before' : after + ' minutes after') + ' sunset. Leftover sun warmth can hide or create patterns. 30 minutes or more after sunset is best.']);
+    else out.push(['ok', 'Images captured ' + after + ' minutes after sunset.']);
+  } else out.push(['warn', 'Capture time or sunset time not recorded.']);
+  if($('sky').value === 'Overcast') out.push(['warn', 'Overcast sky. Cloud cover reduces the night-time cooling that makes moisture patterns visible.']);
+  var bad = out.filter(function(x){ return x[0] === 'bad'; }).length, warn = out.filter(function(x){ return x[0] === 'warn'; }).length;
+  var verdict = bad ? 'Limited' : (warn ? 'Acceptable, with notes' : 'Suitable');
+  return { list: out, dT: dT, verdict: verdict };
+}
+function checkConditions(){
+  var c = conditions(), cls = c.verdict === 'Suitable' ? 'ok' : (c.verdict === 'Limited' ? 'bad' : 'warn');
+  $('condChecks').innerHTML = '<div><strong>Conditions: </strong><span class="pill ' + cls + '">' + c.verdict + '</span></div>' + c.list.map(function(x){ return '<div><span class="pill ' + x[0] + '">' + (x[0] === 'ok' ? 'OK' : (x[0] === 'bad' ? 'Problem' : 'Note')) + '</span> ' + esc(x[1]) + '</div>'; }).join('');
+}
+function problems(){
+  var p = [];
+  ['date','tOut','wind','rain','surface','capTime','sunset','overall'].forEach(function(id){ if($(id).value === '') p.push([id, { date:'Survey date', tOut:'Outside air temperature', wind:'Wind speed', rain:'Rain in the 24 hours before', surface:'Roof surface at capture', capTime:'Time images captured', sunset:'Sunset time', overall:'Overall result' }[id] + ' is missing.']); });
+  if($('summary').value.trim().length < 40) p.push(['summary', 'Write a summary for the client (a few sentences).']);
+  if(!findings.length && $('overall').value && $('overall').value !== 'No significant anomalies') p.push(['overall', 'The overall result says anomalies were found, but there are no findings.']);
+  if($('overall').value === 'No significant anomalies' && findings.some(function(f){ return f.priority === 'Investigate'; })) p.push(['overall', 'The overall result says "No significant anomalies", but a finding is marked Investigate. Change one of them.']);
+  findings.forEach(function(f, i){
+    var miss = [];
+    if(!f.thermal) miss.push('thermal image'); if(!f.location.trim()) miss.push('location'); if(!f.pattern) miss.push('pattern'); if(!f.priority) miss.push('priority'); if(f.desc.trim().length < 20) miss.push('description');
+    if(miss.length) p.push([null, 'Finding T' + (i + 1) + ' needs: ' + miss.join(', ') + '.']);
+    if(f.ai) p.push([null, 'Finding T' + (i + 1) + ' is an unchecked AI draft. Check it against the image, then edit it or tap "AI draft: tap when checked".']);
+  });
+  return p;
+}
+function wordingNote(){
+  return /\b(leak(s|ing)? (is|are) (present|confirmed)|definitely|certainly|confirmed (leak|moisture)|the insulation is wet|is saturated)\b/i.test($('summary').value + ' ' + findings.map(function(f){ return f.desc; }).join(' '))
+    ? '<div><span class="pill warn">Check</span> Some wording reads as if moisture or a leak is confirmed. Thermal images show temperature only, so say "consistent with" and recommend confirming on site.</div>' : '';
+}
+function checkFinish(){
+  var p = problems();
+  $('finishChecks').innerHTML = (p.length ? '<div style="font-weight:600;margin-bottom:4px;">Before you can send:</div>' + p.map(function(x){ return '<div><span class="pill warn">To do</span> ' + esc(x[1]) + '</div>'; }).join('') : '<div><span class="pill ok">Ready</span> Everything needed is filled in.</div>') + wordingNote();
+  return p;
+}
+
+// ── Saving ──
+function collect(){
+  var d = { v: 1, findings: findings, overview: overview, ai: AI, fields: {} };
+  FIELDS.forEach(function(id){ d.fields[id] = $(id).value; });
+  return d;
+}
+function restore(d){
+  if(!d) return;
+  Object.keys(d.fields || {}).forEach(function(id){ if($(id) && d.fields[id] != null && d.fields[id] !== '') $(id).value = d.fields[id]; });
+  findings = Array.isArray(d.findings) ? d.findings : [];
+  fid = findings.reduce(function(m, f){ return Math.max(m, f.id || 0); }, 0);
+  overview = d.overview || ''; renderOverview();
+  AI = (d.ai && typeof d.ai === 'object') ? d.ai : {};
+}
+function onChange(e){ if(e && e.target && e.target.closest && e.target.closest('#pickerOv')) return; checkConditions(); checkFinish(); saveSoon(); }
+function saveSoon(){ if(!ready) return; clearTimeout(saveTimer); $('saveNote').textContent = 'Saving…'; saveTimer = setTimeout(save, 1500); }
+async function save(){
+  try {
+    var r = await api('/contractor/draft?kind=thermal&jobId=' + encodeURIComponent(JOB), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(collect()) });
+    $('saveNote').textContent = r.ok ? 'Saved ' + new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) + '. Your work saves automatically.' : 'Could not save (' + r.status + '). Keep this page open and check your connection.';
+  } catch(e){ $('saveNote').textContent = 'Could not save. Keep this page open and check your connection.'; }
+}
+
+// ── AI summary ──
+async function aiSummary(){
+  if(!findings.length && !$('overall').value){ $('aiMsg').textContent = 'Add your findings or choose the overall result first.'; return; }
+  $('aiBtn').disabled = true; $('aiMsg').textContent = 'Writing…';
+  var c = conditions();
+  var facts = 'Overall result: ' + ($('overall').value || 'not chosen') + '\nRoof type: ' + ($('roofType').value || 'not given') + '\nConditions: ' + c.verdict + '. ' + c.list.filter(function(x){ return x[0] !== 'ok'; }).map(function(x){ return x[1]; }).join(' ')
+    + '\nFindings:\n' + (findings.length ? findings.map(function(f, i){ return 'T' + (i + 1) + ' | ' + f.location + ' | ' + f.pattern + ' | ' + f.priority + ' | ' + f.desc; }).join('\n') : 'None.');
+  var prompt = 'You write the client summary for a UK drone thermal roof survey report. Write 3 to 5 plain-English sentences for a homeowner. Say what was scanned, what was found and what to do next. Thermal images show surface temperature only: never say a leak or moisture is confirmed; use "consistent with" and recommend confirming on site with a moisture meter by a roofer. If conditions were limited, say so briefly. No dashes, no headings, no bullet points, British spelling. Use only these facts:\n\n' + facts;
+  try {
+    var r = await api('/ai-proxy', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'haiku', max_tokens: 500, messages: [{ role: 'user', content: prompt }] }) });
+    var j = await r.json();
+    if(!r.ok) throw new Error((j.error && (j.error.message || j.error)) || r.status);
+    var text = (j.content || []).map(function(b){ return b.text || ''; }).join('').trim().replace(/\s*[—–]\s*/g, ', ');
+    if(!text) throw new Error('empty reply');
+    if($('summary').value.trim() && !confirm('Replace your current summary with the draft?')){ $('aiMsg').textContent = ''; return; }
+    $('summary').value = text; $('aiMsg').textContent = 'Draft added. Read it and edit it before sending.'; checkFinish(); saveSoon();
+  } catch(e){ $('aiMsg').textContent = 'The AI helper is not available right now (' + e.message + '). Write the summary yourself.'; }
+  finally { $('aiBtn').disabled = false; }
+}
+
+// ── AI photo sorting ──
+// DJI (and most dual-sensor drones) save the thermal and daylight frames with the same number: DJI_0012_T.JPG and
+// DJI_0012_W.JPG (or _V / _Z). Strip the sensor letter to pair them.
+function frameKey(n){ return n.replace(/\.[^.]+$/, '').replace(/([_\-\s])(T|IR|THERMAL|R|W|V|Z|S|WIDE|VISUAL)$/i, '').toUpperCase(); }
+function visualFor(thermalName){
+  var k = frameKey(thermalName);
+  var m = PHOTOS.filter(function(p){ return !p.thermal && frameKey(p.name) === k; });
+  var w = m.filter(function(p){ return /[_\-\s](W|WIDE)\.[^.]+$/i.test(p.name); });
+  return (w[0] || m[0] || {}).name || '';
+}
+function shortPattern(p){ return String(p || '').replace(/^Consistent with /, '').replace(/, needs checking on site$/, '').replace(/ \(insulation\)$/, ''); }
+var THERMAL_PROMPT = 'You are helping a qualified thermographer review a drone thermal image of a UK roof, taken after dark. '
+  + 'Decide whether the image shows a temperature pattern worth reporting. Usual findings on roofs: '
+  + '(1) trapped moisture: warmer irregular patches with soft edges on a flat roof at night, often near outlets, upstands, laps, rooflights or low points; '
+  + '(2) heat loss from missing, slumped or wet insulation: warm areas on pitched roofs between rafters, or at eaves; '
+  + '(3) thermal bridging: regular warm lines following joists, rafters, steel or lintels; '
+  + '(4) air leakage: warm streaks or plumes at eaves, ridges, rooflights, loft hatches or service penetrations. '
+  + 'Things that are NOT defects: reflections of the sky or buildings, flues, vents, boiler terminals, extract fans, AC or plant, solar panels, '
+  + 'different materials or colours (emissivity), standing water seen on the surface, and the uniform cool sky-facing roof. '
+  + 'Reply with ONLY a JSON object, no other text: {"anomaly":true|false,"pattern":"moisture"|"heat loss"|"thermal bridging"|"air leakage"|"inconclusive"|"none",'
+  + '"priority":"Investigate"|"Monitor"|"For information","location":"short place on the roof, e.g. rear flat roof near the outlet","desc":"one or two plain sentences describing what the image shows, using consistent with wording, never stating a leak as fact","why":"if not a defect, what it is, e.g. flue"}';
+var PAT_MAP = { 'moisture': 'Consistent with trapped moisture', 'heat loss': 'Consistent with heat loss (insulation)', 'thermal bridging': 'Consistent with thermal bridging', 'air leakage': 'Consistent with air leakage', 'inconclusive': 'Inconclusive, needs checking on site' };
+async function smallB64(name){
+  var b = BLOBS[name] || await fetchPhoto(name); if(!b) return null;
+  var url = URL.createObjectURL(b);
+  try {
+    var im = await new Promise(function(ok, bad){ var i = new Image(); i.onload = function(){ ok(i); }; i.onerror = bad; i.src = url; });
+    var sc = Math.min(1, 768 / Math.max(im.naturalWidth, im.naturalHeight)), c = document.createElement('canvas');
+    c.width = Math.round(im.naturalWidth * sc); c.height = Math.round(im.naturalHeight * sc);
+    c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+    return c.toDataURL('image/jpeg', 0.8).split(',')[1];
+  } catch(e){ return null; } finally { URL.revokeObjectURL(url); }
+}
+async function aiRead(name){
+  var b64 = await smallB64(name); if(!b64) throw new Error('could not open ' + name);
+  var r = await api('/ai-proxy', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'haiku', max_tokens: 300,
+    messages: [{ role: 'user', content: [{ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: b64 } }, { type: 'text', text: THERMAL_PROMPT }] }] }) });
+  var j = await r.json().catch(function(){ return {}; });
+  if(!r.ok) throw new Error((j.error && (j.error.message || j.error)) || ('HTTP ' + r.status));
+  var text = (j.content || []).map(function(c){ return c.text || ''; }).join('');
+  var m = text.match(/\{[\s\S]*\}/); if(!m) throw new Error('no answer');
+  var o = JSON.parse(m[0]);
+  var pat = PAT_MAP[String(o.pattern || '').toLowerCase()] || '';
+  return { anomaly: !!o.anomaly && !!pat, pattern: pat, priority: PRIORITIES.indexOf(o.priority) >= 0 ? o.priority : 'Monitor',
+    location: String(o.location || '').slice(0, 120), desc: String(o.desc || '').replace(/\s*[—–]\s*/g, ', ').slice(0, 600), why: String(o.why || '').slice(0, 120) };
+}
+async function aiSort(){
+  if(!PHOTOS.some(function(p){ return p.thermal; })){ $('aiSortMsg').textContent = 'No thermal images found. If the flyer\'s files are not named _T, open them and attach by hand.'; return; }
+  var todo = PHOTOS.filter(function(p){ return p.thermal && !AI[p.name]; }).map(function(p){ return p.name; }).slice(0, 80);
+  $('aiSortBtn').disabled = true;
+  var done = 0, failed = 0, i = 0;
+  $('aiSortMsg').textContent = todo.length ? 'Reading 0 of ' + todo.length + '…' : 'Already sorted.';
+  async function worker(){
+    while(i < todo.length){
+      var n = todo[i++];
+      try { AI[n] = await aiRead(n); } catch(e){ failed++; }
+      done++; $('aiSortMsg').textContent = 'Reading ' + done + ' of ' + todo.length + '…';
+    }
+  }
+  await Promise.all([worker(), worker(), worker()]);
+  // Draft a finding for each flagged image not already used, most serious first.
+  var used = {}; findings.forEach(function(f){ if(f.thermal) used[f.thermal] = 1; });
+  var rank = { 'Investigate': 0, 'Monitor': 1, 'For information': 2 };
+  var flagged = Object.keys(AI).filter(function(n){ return AI[n].anomaly && !AI[n].dismissed && !used[n] && PHOTOS.some(function(p){ return p.name === n; }); })
+    .sort(function(a, b){ return (rank[AI[a].priority] - rank[AI[b].priority]) || (a < b ? -1 : 1); });
+  flagged.forEach(function(n){
+    var a = AI[n];
+    findings.push({ id: ++fid, location: a.location, pattern: a.pattern, priority: a.priority, deltaT: '', area: '', desc: a.desc,
+      action: a.priority === 'Investigate' ? 'Confirm on site with a moisture meter or inspection opening before any repair is priced.' : '',
+      thermal: n, visual: visualFor(n), ai: true });
+  });
+  renderFindings(); renderGrid('phGrid', currentTab('phTabs'), openPhoto); checkFinish(); saveSoon();
+  var normal = Object.keys(AI).filter(function(n){ return !AI[n].anomaly; }).length;
+  $('aiSortMsg').textContent = 'Done. ' + flagged.length + ' draft finding' + (flagged.length === 1 ? '' : 's') + ' added, ' + normal + ' image' + (normal === 1 ? '' : 's') + ' read as normal'
+    + (failed ? ', ' + failed + ' could not be read (attach those by hand)' : '') + '. Check every draft: you are the thermographer, the AI only sorts.';
+  $('aiSortBtn').disabled = false;
+}
+
+// ── Word document ──
+async function imgFor(name, maxW){
+  if(!name) return null;
+  var b = BLOBS[name] || await fetchPhoto(name); if(!b) return null;
+  var url = URL.createObjectURL(b);
+  try {
+    var im = await new Promise(function(ok, bad){ var i = new Image(); i.onload = function(){ ok(i); }; i.onerror = bad; i.src = url; });
+    var scale = Math.min(1, 1400 / im.naturalWidth), c = document.createElement('canvas');
+    c.width = Math.round(im.naturalWidth * scale); c.height = Math.round(im.naturalHeight * scale);
+    c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+    var blob = await new Promise(function(ok){ c.toBlob(ok, 'image/jpeg', 0.85); });
+    var data = new Uint8Array(await blob.arrayBuffer());
+    return { data: data, w: maxW, h: Math.round(maxW * c.height / c.width) };
+  } catch(e){ return null; } finally { URL.revokeObjectURL(url); }
+}
+async function buildDoc(){
+  var D = docx, NAVY = '1C2B4A', BLUE = '1B4F8A', MID = '2E75B6', LIGHT = 'D6E4F2', DARK = '1A1A2E', GREY = 'F5F7FA', RED = 'C0392B', AMBER = 'E67E22', GREEN = '27AE60';
+  var W = 11906 - 2268;
+  var NB = { style: D.BorderStyle.NONE, size: 0, color: 'FFFFFF' }, NBS = { top: NB, bottom: NB, left: NB, right: NB };
+  var CB = { style: D.BorderStyle.SINGLE, size: 3, color: LIGHT }, AB = { top: CB, bottom: CB, left: CB, right: CB };
+  function t(text, o){ return new D.TextRun(Object.assign({ text: String(text == null ? '' : text), font: 'Arial', size: 19, color: DARK }, o || {})); }
+  function p(text, o, po){ return new D.Paragraph(Object.assign({ spacing: { before: 60, after: 100 }, children: [t(text, o)] }, po || {})); }
+  function h1(text){ return new D.Paragraph({ spacing: { before: 320, after: 120 }, children: [t(text, { bold: true, size: 28, color: BLUE })] }); }
+  function h2(text){ return new D.Paragraph({ spacing: { before: 220, after: 80 }, children: [t(text, { bold: true, size: 22, color: MID })] }); }
+  function cell(children, w, fill){ return new D.TableCell({ borders: AB, width: { size: w, type: D.WidthType.DXA }, shading: fill ? { fill: fill, type: D.ShadingType.CLEAR } : undefined, margins: { top: 90, bottom: 90, left: 130, right: 130 }, children: children }); }
+  function kv(rows){
+    var a = 2800, b = W - a;
+    return new D.Table({ width: { size: W, type: D.WidthType.DXA }, columnWidths: [a, b], rows: rows.filter(function(r){ return r[1] !== '' && r[1] != null; }).map(function(r){
+      return new D.TableRow({ children: [cell([p(r[0], { bold: true, color: MID, size: 18 }, { spacing: { before: 0, after: 0 } })], a, GREY), cell([p(r[1], {}, { spacing: { before: 0, after: 0 } })], b)] }); }) });
+  }
+  function prColor(x){ return x === 'Investigate' ? RED : (x === 'Monitor' ? AMBER : MID); }
+  var c = conditions(), F = {}; FIELDS.forEach(function(id){ F[id] = $(id).value; });
+  var dateTxt = F.date ? new Date(F.date + 'T12:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
+  var logo = null; try { var lr = await fetch('icons/roofscanuk-logo.png'); if(lr.ok) logo = new Uint8Array(await lr.arrayBuffer()); } catch(e) {}
+
+  // Cover
+  var cover = [];
+  cover.push(new D.Table({ width: { size: W, type: D.WidthType.DXA }, columnWidths: [W], rows: [new D.TableRow({ height: { value: 6200, rule: 'atLeast' }, children: [new D.TableCell({ borders: NBS, shading: { fill: NAVY, type: D.ShadingType.CLEAR }, verticalAlign: D.VerticalAlign.CENTER, margins: { top: 500, bottom: 500, left: 700, right: 700 }, children: [
+    logo ? new D.Paragraph({ children: [new D.ImageRun({ data: logo, transformation: { width: 96, height: 96 }, type: 'png' })] }) : p(''),
+    new D.Paragraph({ spacing: { before: 300, after: 80 }, children: [t('ROOFSCAN UK', { bold: true, size: 20, color: 'C9A84C' })] }),
+    new D.Paragraph({ spacing: { before: 0, after: 120 }, children: [t('Thermal Leak Scan Report', { bold: true, size: 52, color: 'FFFFFF' })] }),
+    new D.Paragraph({ children: [t('Drone thermal imaging survey', { size: 22, color: 'B0C8E8', italics: true })] })
+  ] })] })] }));
+  cover.push(new D.Paragraph({ spacing: { before: 300, after: 0 }, children: [] }));
+  cover.push(kv([['Property', $('address').value], ['Client', $('client').value], ['Survey date', dateTxt], ['Reference', F.ref], ['Roof type', F.roofType], ['Thermal images captured by', $('flyer').value]]));
+  cover.push(new D.Paragraph({ pageBreakBefore: true, children: [] }));
+
+  // Summary
+  var body = [h1('Summary')];
+  var inv = findings.filter(function(f){ return f.priority === 'Investigate'; }).length, mon = findings.filter(function(f){ return f.priority === 'Monitor'; }).length, inf = findings.length - inv - mon;
+  var cw = Math.floor(W / 3);
+  function stat(n, l, fill){ return new D.TableCell({ borders: NBS, shading: { fill: fill, type: D.ShadingType.CLEAR }, width: { size: cw, type: D.WidthType.DXA }, margins: { top: 150, bottom: 150, left: 150, right: 150 }, children: [new D.Paragraph({ alignment: D.AlignmentType.CENTER, children: [t(n, { bold: true, size: 44, color: 'FFFFFF' })] }), new D.Paragraph({ alignment: D.AlignmentType.CENTER, children: [t(l, { bold: true, size: 18, color: 'FFFFFF' })] })] }); }
+  body.push(new D.Table({ width: { size: W, type: D.WidthType.DXA }, columnWidths: [cw, cw, W - 2 * cw], rows: [new D.TableRow({ children: [stat(inv, 'Investigate', RED), stat(mon, 'Monitor', AMBER), stat(inf, 'For information', MID)] })] }));
+  body.push(new D.Paragraph({ spacing: { before: 200, after: 60 }, children: [t('Overall result:  ', { bold: true, color: MID }), t(F.overall, { bold: true })] }));
+  body.push(new D.Paragraph({ spacing: { before: 0, after: 120 }, children: [t('Survey conditions:  ', { bold: true, color: MID }), t(c.verdict, { bold: true, color: c.verdict === 'Limited' ? RED : (c.verdict === 'Suitable' ? GREEN : AMBER) })] }));
+  F.summary.split(/\n+/).filter(Boolean).forEach(function(par){ body.push(p(par)); });
+  if(F.nextSteps.trim()){ body.push(h2('Recommended next steps')); F.nextSteps.split(/\n+/).filter(Boolean).forEach(function(par){ body.push(p(par)); }); }
+
+  // Conditions
+  body.push(h1('Survey conditions'));
+  body.push(p('Thermal imaging shows small differences in surface temperature. How clearly those differences appear depends on the weather before and during the survey, so the conditions are recorded here.'));
+  body.push(kv([
+    ['Time images captured', F.capTime], ['Sunset', F.sunset],
+    ['Outside air temperature', F.tOut !== '' ? F.tOut + '°C' : ''], ['Heating on inside', F.heating], ['Inside temperature', F.tIn !== '' ? F.tIn + '°C' : 'Not known'],
+    ['Inside to outside difference', c.dT != null ? c.dT + '°C' : ''], ['Wind speed', F.wind !== '' ? F.wind + ' mph' : ''],
+    ['Sky', F.sky], ['Rain in the previous 24 hours', F.rain], ['Roof surface at capture', F.surface], ['Daytime before the survey', F.sunDay],
+    ['Camera', F.camera], ['Emissivity setting', F.emis], ['Colour palette', F.palette]
+  ]));
+  body.push(new D.Paragraph({ spacing: { before: 160, after: 60 }, children: [t('Assessment: ' + c.verdict, { bold: true, color: MID })] }));
+  c.list.filter(function(x){ return x[0] !== 'ok'; }).forEach(function(x){ body.push(new D.Paragraph({ bullet: { level: 0 }, spacing: { before: 20, after: 40 }, children: [t(x[1])] })); });
+  if(c.list.every(function(x){ return x[0] === 'ok'; })) body.push(p('All recorded conditions were within the usual limits for a thermal roof survey.'));
+
+  // Findings
+  body.push(new D.Paragraph({ pageBreakBefore: true, children: [] }));
+  body.push(h1('Findings'));
+  var ov = await imgFor(overview, 560);
+  if(ov){ body.push(h2('Whole-roof thermal overview')); body.push(new D.Paragraph({ alignment: D.AlignmentType.CENTER, children: [new D.ImageRun({ data: ov.data, transformation: { width: ov.w, height: ov.h }, type: 'jpg' })] })); }
+  if(!findings.length) body.push(p('No significant thermal anomalies were seen on the areas scanned. This does not rule out a defect that was not showing a temperature difference at the time of the survey (see Limitations).'));
+  for(var i = 0; i < findings.length; i++){
+    var f = findings[i], ti = await imgFor(f.thermal, 290), vi = await imgFor(f.visual, 290);
+    body.push(new D.Paragraph({ keepNext: true, spacing: { before: 280, after: 100 }, border: { bottom: { style: D.BorderStyle.SINGLE, size: 6, color: prColor(f.priority), space: 2 } }, children: [t('T' + (i + 1) + '  ' + f.location, { bold: true, size: 23, color: BLUE }), t('    ' + f.priority, { bold: true, size: 19, color: prColor(f.priority) })] }));
+    var imgs = [ti, vi].filter(Boolean);
+    if(imgs.length){
+      var iw = Math.floor(W / 2);
+      body.push(new D.Table({ width: { size: W, type: D.WidthType.DXA }, columnWidths: [iw, W - iw], rows: [
+        new D.TableRow({ children: [ti, vi].map(function(im, k){ return new D.TableCell({ borders: NBS, width: { size: k ? W - iw : iw, type: D.WidthType.DXA }, margins: { top: 40, bottom: 40, left: 60, right: 60 }, children: [im ? new D.Paragraph({ alignment: D.AlignmentType.CENTER, children: [new D.ImageRun({ data: im.data, transformation: { width: im.w, height: im.h }, type: 'jpg' })] }) : p('')] }); }) }),
+        new D.TableRow({ children: ['Thermal image', vi ? 'Visual photo, same area' : ''].map(function(l, k){ return new D.TableCell({ borders: NBS, width: { size: k ? W - iw : iw, type: D.WidthType.DXA }, children: [new D.Paragraph({ alignment: D.AlignmentType.CENTER, children: [t(l, { size: 16, italics: true, color: '6B7A8D' })] })] }); }) })
+      ] }));
+    }
+    body.push(new D.Paragraph({ spacing: { before: 80, after: 0 }, children: [] }));
+    body.push(kv([['Pattern', f.pattern], ['Temperature difference', f.deltaT !== '' ? f.deltaT + '°C compared with the surrounding roof' : ''], ['Approximate area', f.area !== '' ? f.area + ' m²' : ''], ['What the image shows', f.desc], ['Recommended next step', f.action]]));
+  }
+
+  // Limitations
+  body.push(new D.Paragraph({ pageBreakBefore: true, children: [] }));
+  body.push(h1('How to read this report'));
+  [['Investigate', 'A pattern worth confirming on site soon, usually with a moisture meter or a small inspection opening by a roofing contractor.'],
+   ['Monitor', 'A pattern that may be minor or seasonal. Worth looking at again, or checking if you see signs inside.'],
+   ['For information', 'Noted for completeness. No action is suggested on its own.']].forEach(function(r){ body.push(new D.Paragraph({ spacing: { before: 40, after: 60 }, children: [t(r[0] + ':  ', { bold: true, color: prColor(r[0]) }), t(r[1])] })); });
+  body.push(h1('Limitations'));
+  ['This survey was carried out by drone from the air. No one accessed the roof, and no part of the roof or building was opened up or tested.',
+   'Thermal imaging records surface temperature only. It does not detect water directly. Warmer or cooler areas can be caused by moisture, missing or wet insulation, air leakage, changes in roof build-up, materials with different surface finishes, reflections, or equipment on or under the roof.',
+   'Every pattern described as "consistent with" a cause should be confirmed on site, for example with a moisture meter or core sample by a roofing contractor, before any repair is priced or carried out.',
+   'Results depend on the weather before and during the survey. A defect that was not producing a temperature difference at the time (for example after a dull day, in wind, or with no heating on inside) may not show.',
+   'Temperatures shown are approximate and depend on the emissivity setting and viewing angle.',
+   'This report is not a structural survey and does not confirm the age, remaining life or compliance of the roof.'].forEach(function(x){ body.push(new D.Paragraph({ bullet: { level: 0 }, spacing: { before: 20, after: 60 }, children: [t(x)] })); });
+  body.push(p('Report reference ' + F.ref + '. Prepared by RoofScan UK. Thermal images reviewed by a RoofScan thermographer.', { size: 17, italics: true, color: '6B7A8D' }, { spacing: { before: 240, after: 0 } }));
+
+  var doc = new D.Document({ styles: { default: { document: { run: { font: 'Arial' } } } }, sections: [{
+    properties: { page: { size: { width: 11906, height: 16838 }, margin: { top: 1134, bottom: 1134, left: 1134, right: 1134 } } },
+    footers: { default: new D.Footer({ children: [new D.Paragraph({ alignment: D.AlignmentType.CENTER, children: [t('RoofScan UK  |  Thermal Leak Scan Report  |  ' + F.ref + '  |  Page ', { size: 15, color: '8899AA' }), new D.TextRun({ children: [D.PageNumber.CURRENT], font: 'Arial', size: 15, color: '8899AA' })] })] }) },
+    children: cover.concat(body) }] });
+  return D.Packer.toBlob(doc);
+}
+async function downloadPreview(){
+  try {
+    $('sendMsg').textContent = 'Building preview…';
+    var blob = await buildDoc(), a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = 'Thermal_' + ($('ref').value || 'report') + '_PREVIEW.docx'; a.click();
+    $('sendMsg').textContent = 'Preview downloaded. It has not been sent.';
+  } catch(e){ $('sendMsg').textContent = 'Could not build the preview: ' + e.message; }
+}
+async function sendReport(){
+  var p = checkFinish();
+  if(p.length){ $('sendMsg').textContent = 'Some things still need filling in (listed above).'; if(p[0][0] && $(p[0][0])) { $(p[0][0]).focus(); } else $('finishChecks').scrollIntoView({ behavior: 'smooth' }); return; }
+  var btn = $('sendBtn'); btn.disabled = true; $('sendMsg').textContent = 'Building the report…';
+  try {
+    clearTimeout(saveTimer); await save();
+    var blob = await buildDoc();
+    $('sendMsg').textContent = 'Sending…';
+    var r = await api('/contractor/report-submit?kind=thermal&jobId=' + encodeURIComponent(JOB) + '&ref=' + encodeURIComponent($('ref').value), { method: 'POST', headers: { 'Content-Type': 'application/octet-stream' }, body: blob });
+    var j = await r.json().catch(function(){ return {}; });
+    if(!r.ok) throw new Error(j.error || ('HTTP ' + r.status));
+    ready = false;
+    if(j.waitingFor === 'roof'){
+      banner('Thermal report sent. This job also needs the normal roof report before it goes to RoofScan for checking. <a href="reports.html?job=' + encodeURIComponent(JOB) + '&as=writer">Open the roof report generator</a>', 'ok');
+      $('sendMsg').innerHTML = 'Thermal report saved. Now finish the roof report.';
+    } else {
+      banner('Thermal report sent to RoofScan for checking. If anything needs changing, the job comes back to your jobs page with a note. <a href="jobs.html">Back to your jobs</a>', 'ok');
+      $('sendMsg').innerHTML = 'Sent. <a href="jobs.html">Back to your jobs</a>';
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } catch(e){
+    $('sendMsg').textContent = 'Could not send (' + e.message + '). Your work is saved. Press the button again to retry.';
+    btn.disabled = false;
+  }
+}
+init();
+</script>
+</body>
+</html>

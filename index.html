@@ -2141,10 +2141,10 @@ function roofPriceForArea(areaM2){
   return Math.max(AREA_MIN_PRICE, Math.round(raw));
 }
 // Thermal leak scan is its own product, priced by the same roof area at the thermal rate. Mirrored in the Worker.
-const THERMAL_CALLOUT=200, THERMAL_RATE=3.0, THERMAL_MIN_PRICE=350;
+const THERMAL_CALLOUT=200, THERMAL_RATE=3.0, THERMAL_MIN_PRICE=350, THERMAL_MAX_PRICE=950;
 function thermalPriceForArea(areaM2){
   const mult = PITCH_MULT[pitchType] || 1.0;
-  return Math.max(THERMAL_MIN_PRICE, Math.round(THERMAL_CALLOUT + THERMAL_RATE*areaM2*mult));
+  return Math.min(THERMAL_MAX_PRICE, Math.max(THERMAL_MIN_PRICE, Math.round(THERMAL_CALLOUT + THERMAL_RATE*areaM2*mult)));
 }
 
 // Flags a *real, measured* footprint that falls outside the normal range for the property type
@@ -2290,7 +2290,7 @@ function captureLead(stage, total){
 
 // ═══ STEP 6 — date picker + Stripe deposit payment ═══════════════════
 const STRIPE_PK = 'pk_live_51Trv87QcApNGjNdfmHcSoqHDYS69kmFe7bFzYTEluYIgGZE4GPqGRQDap8ZQeYvPpCgVxhZUmDGkDpcvCq0tTC1H00a56fU5sw';
-let stripeClient = null, cardElement = null, selectedSlot = null, piClientSecret = null, piId = null, step6Inited = false;
+let depositPaid = false, stripeClient = null, cardElement = null, selectedSlot = null, piClientSecret = null, piId = null, step6Inited = false;
 let weekOffset = 0;
 let slotsByDay = {};
 
@@ -2299,8 +2299,14 @@ const ANYTIME_DISCOUNT = 20;
 const SURVEY_TYPES = ['visual','thermal','both'];
 // Switch to true once the thermal report template is built and a thermal pilot + writer are signed up.
 const THERMAL_LIVE = false;
-document.addEventListener('DOMContentLoaded', function(){ if(!THERMAL_LIVE){ const g = document.querySelector('.sv-grid'); if(g) g.style.display = 'none'; } });
-function surveyType(){ if(!THERMAL_LIVE) return 'visual'; const el = document.querySelector('input[name=survey]:checked'); return el && SURVEY_TYPES.includes(el.value) ? el.value : 'visual'; }
+// Thermal leak scans have their own quote page (thermal-quote.html), so this page only books roof reports.
+// Once thermal is live, a link to that page shows where the survey tiles used to be.
+document.addEventListener('DOMContentLoaded', function(){
+  const g = document.querySelector('.sv-grid'); if(!g) return;
+  g.style.display = 'none';
+  if(THERMAL_LIVE){ const a = document.createElement('div'); a.style.cssText = 'font-size:14px;margin:6px 0 12px;'; a.innerHTML = 'Want a thermal leak scan, or a roof report with one? <a href="thermal-quote.html">Get a thermal quote</a> (book both and save up to 10%).'; g.parentNode.insertBefore(a, g.nextSibling); }
+});
+function surveyType(){ return 'visual'; }
 function anytimeOn(){ const el = document.getElementById('anytime-opt'); return !!(el && el.checked); }
 // Thermal products are always flown on an evening the pilot picks, so there is no slot to choose.
 function flexOn(){ return anytimeOn() || surveyType() !== 'visual'; }
@@ -2473,15 +2479,18 @@ async function submitPayment(){
   payBtn.disabled = true;
   payBtn.textContent = 'Processing…';
 
-  const result = await stripeClient.confirmCardPayment(piClientSecret, {
-    payment_method: { card: cardElement, billing_details: { name: contact.name, email: contact.email } }
-  });
-
-  if(result.error){
-    document.getElementById('card-errors').textContent = result.error.message;
-    payBtn.disabled = false;
-    payBtn.textContent = 'Pay £50 deposit & book →';
-    return;
+  // If the card was already charged and only the booking step failed, a retry only re-sends the booking (never charges twice).
+  if(!depositPaid){
+    const result = await stripeClient.confirmCardPayment(piClientSecret, {
+      payment_method: { card: cardElement, billing_details: { name: contact.name, email: contact.email } }
+    });
+    if(result.error){
+      document.getElementById('card-errors').textContent = result.error.message;
+      payBtn.disabled = false;
+      payBtn.textContent = 'Pay £50 deposit & book →';
+      return;
+    }
+    depositPaid = true;
   }
 
   try{
@@ -2526,9 +2535,9 @@ async function submitPayment(){
     }
     document.getElementById('booking-confirmed').style.display = 'block';
   }catch(e){
-    document.getElementById('card-errors').textContent = 'Payment succeeded but booking could not be confirmed. Please contact us at info@roofscanuk.co.uk with your payment reference: ' + piId;
+    document.getElementById('card-errors').textContent = 'Your deposit was paid, but the booking did not go through. Press the button to try again (you will not be charged again). If it keeps failing, email info@roofscanuk.co.uk with your payment reference: ' + piId;
     payBtn.disabled = false;
-    payBtn.textContent = 'Pay £50 deposit & book →';
+    payBtn.textContent = 'Try the booking again →';
   }
 }
 
