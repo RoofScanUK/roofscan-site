@@ -79,6 +79,26 @@ footer{text-align:center;margin-top:40px;font-size:12.5px;color:var(--muted);}
   <h1>Apply to work with us</h1>
   <p class="lede">We are looking for drone flyers in London and the South East, and report writers anywhere in the UK (writing is done from home). You choose which jobs you take, and you are paid per job. Fill this in once, upload your documents here, and we will check everything and come back to you by email. It takes about ten minutes.</p>
 
+  <div class="card" id="edit-box" style="margin-bottom:18px;padding:20px 24px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+      <div><b style="color:var(--navy);">Already applied?</b> <span class="muted" style="font-size:14px;">Update your details or add documents.</span></div>
+      <button type="button" class="btn" id="edit-open-btn" style="width:auto;padding:9px 16px;font-size:14px;">Update your application</button>
+    </div>
+    <div id="edit-step1" class="hidden" style="margin-top:16px;">
+      <label class="l" for="e-email">The email address you applied with</label>
+      <input type="email" id="e-email" autocomplete="email">
+      <button type="button" class="btn" id="e-send" style="margin-top:10px;">Email me a code</button>
+    </div>
+    <div id="edit-step2" class="hidden" style="margin-top:16px;">
+      <p class="hint" style="font-size:14px;margin:0 0 8px;">If we have an application from that address, we have emailed it a 6-digit code. It lasts 10 minutes.</p>
+      <label class="l" for="e-code">Your code</label>
+      <input type="text" id="e-code" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="123456">
+      <button type="button" class="btn" id="e-verify" style="margin-top:10px;">Open my application</button>
+      <button type="button" id="e-resend" style="background:none;border:0;color:var(--navy);text-decoration:underline;margin-top:10px;cursor:pointer;font:inherit;font-size:14px;">Use a different email</button>
+    </div>
+    <div class="error" id="edit-error"></div>
+  </div>
+
   <div class="card">
     <form id="apply-form" novalidate>
 
@@ -293,7 +313,7 @@ footer{text-align:center;margin-top:40px;font-size:12.5px;color:var(--muted);}
         <label for="c-true">The information and documents I have given are accurate and current.</label>
       </div>
 
-      <p class="hint" style="margin:14px 0 4px;">We use your details and documents only to check your application and to work with you, and we keep them securely. See our <a href="privacy.html" target="_blank" style="color:var(--navy);">privacy policy</a>.</p>
+      <p class="hint" style="margin:14px 0 4px;">We use your details and documents only to check your application and to work with you, and we keep them securely. See our <a href="privacy.html#team" target="_blank" style="color:var(--navy);">privacy policy</a>.</p>
       <button type="submit" class="btn" id="submit-btn">Send my application</button>
       <div class="error" id="form-error"></div>
 
@@ -442,6 +462,55 @@ async function post(path, body){
   return data;
 }
 
+// ----- updating an application already sent -----
+let edit = null;   // { id, token, onFile } once the applicant has opened their application with an emailed code
+function editErr(m){ const e = $('edit-error'); e.textContent = m || ''; e.style.display = m ? 'block' : 'none'; }
+$('edit-open-btn').addEventListener('click', function(){ $('edit-step1').classList.remove('hidden'); $('edit-open-btn').classList.add('hidden'); $('e-email').focus(); });
+$('e-send').addEventListener('click', async function(){
+  editErr(''); const email = $('e-email').value.trim();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { editErr('Please enter a valid email address.'); return; }
+  this.disabled = true;
+  try { await post('/contractor-edit-code', { email: email }); $('edit-step1').classList.add('hidden'); $('edit-step2').classList.remove('hidden'); $('e-code').focus(); }
+  catch (err) { editErr(err.message); }
+  this.disabled = false;
+});
+$('e-resend').addEventListener('click', function(){ editErr(''); $('edit-step2').classList.add('hidden'); $('edit-step1').classList.remove('hidden'); });
+$('e-verify').addEventListener('click', async function(){
+  editErr(''); const code = $('e-code').value.trim();
+  if (!/^\d{6}$/.test(code)) { editErr('Please enter the 6-digit code from the email.'); return; }
+  this.disabled = true;
+  let d;
+  try { d = await post('/contractor-edit-open', { email: $('e-email').value.trim(), code: code }); }
+  catch (err) { editErr(err.message); this.disabled = false; return; }
+  edit = { id: d.id, token: d.token, onFile: d.app.onFile || {} };
+  fillFrom(d.app);
+  $('edit-box').innerHTML = '<b style="color:var(--navy);">You are updating your application.</b><p class="muted" style="font-size:14px;margin-top:6px;line-height:1.55;">Change anything below, then press Save my changes. Documents you sent before stay on file, so only add new or replacement ones. We will check the changes before you take any jobs that depend on them.</p>';
+  $('submit-btn').textContent = 'Save my changes';
+  window.scrollTo({ top: $('apply-form').getBoundingClientRect().top + window.scrollY - 30, behavior: 'smooth' });
+});
+function fillFrom(a){
+  const btn = document.querySelector('.role[data-role="' + a.role + '"]');
+  if (btn) btn.click();
+  else if (a.role === 'Both') {   // applied for both: show both sections
+    role = 'Both'; $('main-fields').classList.remove('hidden'); $('flyer-sec').classList.remove('hidden'); $('writer-sec').classList.remove('hidden');
+    document.querySelectorAll('.role').forEach(function(x){ x.classList.add('on'); });
+  }
+  const set = function(id, v){ if ($(id) && v != null && v !== '') $(id).value = v; };
+  set('f-name', a.name); set('f-email', a.email); set('f-phone', a.phone); set('f-payee', a.payeeName); set('f-emerg', a.emergencyContact);
+  set('f-basepc', a.basePostcode); set('f-drone', a.droneModel); set('f-serial', a.droneSerial); set('f-wind', a.droneWind);
+  set('f-opid', a.operatorId); set('f-opexp', a.operatorExpiry); set('f-flid', a.flyerId); set('f-flexp', a.flyerExpiry); set('f-other', a.otherQualifications);
+  if (a.travelRange && $('f-range').querySelector('option[value="' + a.travelRange + '"]')) $('f-range').value = String(a.travelRange);
+  if (a.thermal) { $('f-thermal').checked = true; $('thermal-sec').classList.remove('hidden'); set('f-tdrone', a.thermalDrone); set('f-ttrain', a.thermalTraining); }
+  set('f-exp', a.experience); $('f-pc').checked = !!a.privateComputer;
+  document.querySelectorAll('input[name=roofexp]').forEach(function(x){ x.checked = (a.roofExperience || []).indexOf(x.value) !== -1; });
+  if (a.thermography) { $('f-wtherm').checked = true; $('wtherm-sec').classList.remove('hidden'); set('f-wttrain', a.thermalTraining); }
+  set('f-insprov', a.insuranceProvider); set('f-insamt', a.insuranceAmount); set('f-insexp', a.insuranceExpiry); set('f-notes', a.notes);
+  const show = function(slot, names){ if (!names || !names.length || !$('files-' + slot)) return; const p = document.createElement('p'); p.className = 'hint'; p.textContent = 'Already on file: ' + names.join(', '); $('files-' + slot).parentNode.insertBefore(p, $('files-' + slot)); };
+  show('caa', a.onFile && a.onFile.caa); show('insurance', a.onFile && a.onFile.insurance); show('other', a.onFile && a.onFile.other);
+  show(a.role === 'Report Writer' ? 'wthermal' : 'thermal', a.onFile && a.onFile.thermal);
+}
+if (location.hash === '#update') setTimeout(function(){ $('edit-open-btn').click(); $('edit-box').scrollIntoView({ behavior: 'smooth' }); }, 50);
+
 // ----- submit -----
 $('apply-form').addEventListener('submit', async function(e){
   e.preventDefault();
@@ -455,15 +524,15 @@ $('apply-form').addEventListener('submit', async function(e){
     if (!/^[A-Z]{1,2}[0-9][A-Z0-9]?\s*[0-9][A-Z]{2}$/i.test(v('f-basepc'))) { showErr('Please enter your full home postcode, for example SW1A 1AA.'); return; }
     if (!v('f-drone') || !v('f-serial') || !v('f-wind')) { showErr('Please fill in your drone details.'); return; }
     if (!v('f-opid') || !v('f-opexp') || !v('f-flid') || !v('f-flexp')) { showErr('Please fill in your Operator ID and Flyer ID, with expiry dates.'); return; }
-    if (!files.caa.length) { showErr('Please upload your CAA certificates.'); return; }
+    if (!files.caa.length && !(edit && edit.onFile.caa && edit.onFile.caa.length)) { showErr('Please upload your CAA certificates.'); return; }
     if (!v('f-insprov') || !v('f-insamt') || !v('f-insexp')) { showErr('Please fill in your insurance details.'); return; }
-    if (!files.insurance.length) { showErr('Please upload your insurance certificate.'); return; }
+    if (!files.insurance.length && !(edit && edit.onFile.insurance && edit.onFile.insurance.length)) { showErr('Please upload your insurance certificate.'); return; }
     if ($('f-thermal').checked && (!v('f-tdrone') || !v('f-ttrain'))) { showErr('Please fill in your thermal drone and thermography training, or untick the thermal drone box.'); return; }
   }
   if (writer && !v('f-exp')) { showErr('Please tell us a little about your experience.'); return; }
   const roofExp = Array.prototype.map.call(document.querySelectorAll('input[name=roofexp]:checked'), function(x){ return x.value; });
   if (writer && !roofExp.length) { showErr('Please tick the roof types you have experience with.'); return; }
-  if (writer && $('f-wtherm').checked && (!v('f-wttrain') || !files.wthermal.length)) { showErr('Please give your thermography qualification and upload the certificate, or untick the thermal reports box.'); return; }
+  if (writer && $('f-wtherm').checked && (!v('f-wttrain') || !(files.wthermal.length || (edit && edit.onFile.thermal && edit.onFile.thermal.length)))) { showErr('Please give your thermography qualification and upload the certificate, or untick the thermal reports box.'); return; }
   if (!$('c-self').checked || !$('c-conf').checked || !$('c-true').checked) { showErr('Please tick all three confirmations at the bottom.'); return; }
 
   const btn = $('submit-btn'); btn.disabled = true; btn.textContent = 'Sending…';
@@ -475,11 +544,12 @@ $('apply-form').addEventListener('submit', async function(e){
   if (flyer) Object.assign(payload, { basePostcode: v('f-basepc'), travelRange: Number($('f-range').value), droneModel: v('f-drone'), droneSerial: v('f-serial'), droneWind: v('f-wind'),
     operatorId: v('f-opid'), operatorExpiry: $('f-opexp').value, flyerId: v('f-flid'), flyerExpiry: $('f-flexp').value, otherQualifications: v('f-other'),
     thermal: $('f-thermal').checked, thermalDrone: v('f-tdrone'), thermalTraining: v('f-ttrain') });
+  if (edit) Object.assign(payload, { id: edit.id, token: edit.token, newSafetyDocs: !!(files.caa.length || files.insurance.length) });
   if (writer) Object.assign(payload, { experience: v('f-exp'), privateComputer: $('f-pc').checked, roofExperience: roofExp, thermography: $('f-wtherm').checked, thermographyTraining: v('f-wttrain') });
 
   let app;
   try { app = await post('/contractor-apply', payload); }
-  catch (err) { showErr(err.message); btn.disabled = false; btn.textContent = 'Send my application'; return; }
+  catch (err) { showErr(err.message); btn.disabled = false; btn.textContent = edit ? 'Save my changes' : 'Send my application'; return; }
 
   // application saved: now upload the documents one by one
   $('apply-form').style.display = 'none';
@@ -514,6 +584,7 @@ $('apply-form').addEventListener('submit', async function(e){
 
   $('progress').style.display = 'none';
   $('success').style.display = 'block';
+  if (edit) { document.querySelector('#success h2').textContent = 'Changes saved'; $('success-msg').textContent = 'Thank you. Your application has been updated and we will check the changes.'; }
   if (failed.length) {
     $('success-msg').textContent = 'Your application is in, but ' + failed.length + ' file' + (failed.length > 1 ? 's' : '') + ' did not upload (' + failed.join(', ') + '). Please e-mail ' + (failed.length > 1 ? 'them' : 'it') + ' to info@roofscanuk.co.uk and say it is for your application.';
   }
