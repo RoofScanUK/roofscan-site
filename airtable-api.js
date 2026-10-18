@@ -136,7 +136,7 @@ const AT = (function() {
       if (/reports\.html$/.test(location.pathname) && new URLSearchParams(location.search).get('job') && localStorage.getItem('rs_ct_token')) return;
     } catch (e) {}
     // One front door: send the owner to the shared login page and bring them back here afterwards.
-    var here = (location.pathname.split('/').pop() || 'staff.html');
+    var here = (location.pathname.split('/').pop() || 'owner.html');
     location.href = 'login.html?next=' + encodeURIComponent(here);
     return;
     if (document.getElementById('rs-owner-login')) return;

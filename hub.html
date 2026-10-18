@@ -156,11 +156,11 @@ main{padding:14px;}
     </div>
     <div class="tp-arrow">›</div>
   </a>
-  <a class="tool-primary ops-card" href="ops.html">
+  <a class="tool-primary ops-card" href="owner.html">
     <div class="tp-icon">⚙️</div>
     <div>
-      <div class="tp-name">Operations</div>
-      <div class="tp-desc">Live jobs · update status · daily checklist</div>
+      <div class="tp-name">Owner dashboard</div>
+      <div class="tp-desc">Jobs · team · approvals · pay runs</div>
     </div>
     <div class="tp-arrow">›</div>
   </a>
@@ -211,7 +211,7 @@ function showAction(today,alerts,active){
     var c=active.find(function(j){var s=j.fields['fldhm3oLpNvtD8Thc'];return(s&&s.name?s.name:s)==='Complete';});
     card.style.display='flex';card.href='reports.html?job='+c.id;icon.textContent='📋';eyebrow.textContent='Ready to write';title.textContent='Write report — '+(c.fields['fld8R0gd2hcYSnmi5']||'Client');detail.textContent='Inspection complete · pre-fills automatically';
   }else if(today&&today.length>0){
-    card.style.display='flex';card.href='ops.html';icon.textContent='✈️';eyebrow.textContent='Job today';title.textContent='Check your daily flow';detail.textContent='Pre-flight checklist · on-site steps';
+    card.style.display='flex';card.href='owner.html';icon.textContent='✈️';eyebrow.textContent='Job today';title.textContent='Check today\'s jobs';detail.textContent='See who has claimed them on the owner dashboard';
   }else{
     // Nothing distinct to flag right now — Report Generator tile below covers this, so skip the duplicate.
     card.style.display='none';

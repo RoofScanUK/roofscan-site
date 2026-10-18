@@ -105,7 +105,7 @@ main{padding:16px;}
 var API_BASE = 'https://roofscan-api.tiny-voice-ac40.workers.dev';
 var _pendingEmail = '';
 var _pendingToken = '';
-// Where the owner should land after login (staff pages send people here with ?next=staff.html etc.)
+// Where the owner should land after login (owner pages send people here with ?next=owner.html etc.)
 var _next = (function(){
   var n = new URLSearchParams(location.search).get('next') || '';
   return /^[a-z0-9\-]+\.html$/i.test(n) ? n : '';

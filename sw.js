@@ -1,8 +1,8 @@
 // ═══ RoofScan UK Service Worker — Offline + Push ═══
-const CACHE_NAME = 'roofscan-v6'; // bumped so old caches (including any saved API responses) are deleted
+const CACHE_NAME = 'roofscan-v7'; // bumped so old caches (including any saved API responses) are deleted
 const APP_SHELL = [
   'hub.html',
-  'ops.html',
+  'owner.html',
   'reports.html',
   'airtable-api.js',
   'manifest.json',
