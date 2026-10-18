@@ -214,7 +214,7 @@ const queue = () => get(LS.queue, []);
 function enqueue(item){ const q = queue(); q.push(Object.assign({qid: Date.now()+'-'+Math.random().toString(36).slice(2,6)}, item)); put(LS.queue, q); }
 async function sendAction(a){
   const path = { claim:'/contractor/claim', complete:'/contractor/complete', standdown:'/contractor/standdown' }[a.type];
-  return api(path, 'POST', { jobId:a.jobId, kind:a.kind, both:!!a.both, reason:a.reason, reasonCode:a.reasonCode, link:a.link, conditions:a.conditions });
+  return api(path, 'POST', { jobId:a.jobId, kind:a.kind, both:!!a.both, reason:a.reason, reasonCode:a.reasonCode, link:a.link, conditions:a.conditions, extras:a.extras, extrasNote:a.extrasNote });
 }
 async function act(a){
   // apply to the cached board right away so the screen responds even with no signal
@@ -598,6 +598,7 @@ function scanPanel(j){
   </div>
   ${j.thermal ? thermalPanel(j, st) : shotList(j.id, st)}
   ${photoBox(j, st)}
+  ${extrasPanel(j, st)}
   <div class="acts">
     <button class="btn" id="scanbtn-${j.id}" ${ready?'':'disabled'} onclick="completeScan('${j.id}')">Mark scan done</button>
     ${blocked?`<button class="btn warn" onclick="standDown('${j.id}')">Unsafe to fly. Stand down</button>`:`<button class="btn ghost" onclick="standDown('${j.id}')">Stand down (unsafe)</button>`}
@@ -608,8 +609,37 @@ function setManual(id, k, v){ const c = get(LS.checks, {}); c[id] = c[id] || {};
 // A link must be a full https:// address (no spaces). The server checks it again.
 function okLink(v){ v = String(v||'').trim(); if (v.length < 12 || /\s/.test(v)) return false; try { const u = new URL(v); return u.protocol === 'https:' && u.hostname.indexOf('.') > 0; } catch(e){ return false; } }
 const MIN_PHOTOS = 10;
+// On-site extras check: the pilot confirms the chimneys, extensions, dormers and outbuildings the client booked.
+// A different count is sent to RoofScan, who checks the price before the client is billed. The pilot's pay is not affected.
+const EXTRA_ROWS = [['chimneys','Chimney stacks'],['extensions','Extensions, porches or bays with their own roof'],['dormers','Dormer windows'],['outbuildings','Outbuildings (garages, large sheds, garden rooms)']];
+const EXTRA_MAX = { chimneys:6, extensions:5, dormers:8, outbuildings:5 };
+function exCounts(j, st){ const ex = (st && st.ex) || {}, o = {}; EXTRA_ROWS.forEach(([k]) => o[k] = ex[k] != null ? ex[k] : ((j.extras || {})[k] || 0)); return o; }
+function extrasPanel(j, st){
+  if (!j.extras) return '';
+  const c = exCounts(j, st), changed = EXTRA_ROWS.some(([k]) => c[k] !== (j.extras[k] || 0));
+  const rows = EXTRA_ROWS.map(([k, label]) => `<div style="display:flex;align-items:center;gap:8px;margin:6px 0;font-size:13px;">
+      <span style="flex:1;">${label}<br><span class="muted" style="font-size:11.5px;">Client booked ${j.extras[k] || 0}</span></span>
+      <button class="btn ghost" style="padding:4px 12px;" aria-label="One fewer ${label}" onclick="setEx('${j.id}','${k}',-1)">&minus;</button>
+      <b style="min-width:22px;text-align:center;${c[k] !== (j.extras[k] || 0) ? 'color:var(--amber,#E67E22);' : ''}">${c[k]}</b>
+      <button class="btn ghost" style="padding:4px 12px;" aria-label="One more ${label}" onclick="setEx('${j.id}','${k}',1)">+</button></div>`).join('');
+  return `<div style="margin-top:12px;border-top:1px solid var(--br);padding-top:10px;"><div class="jt" style="font-size:13px;">Extras on site</div>
+    <div class="muted" style="font-size:12px;margin:4px 0;">Count what is really there. The client is charged for these, so a wrong booking gets corrected. It does not change your pay.</div>
+    ${rows}
+    ${changed ? `<div class="banner b-amber" style="margin:8px 0;">Different from the booking. RoofScan will check the price before the client is billed.</div>
+      <input class="inp" type="text" maxlength="300" placeholder="Optional note for RoofScan, e.g. second chimney at the back" value="${esc((st && st.exNote) || '')}" oninput="setExNote('${j.id}',this.value)" style="letter-spacing:0;width:100%;">` : ''}
+    <label class="chk" style="margin-top:6px;"><input type="checkbox" ${st && st.exOk ? 'checked' : ''} onchange="setExOk('${j.id}',this.checked)"> <span>I have counted these on site</span></label></div>`;
+}
+function setEx(id, k, d){
+  const j = (board && board.mine || []).find(x => x.id === id) || {}, c = get(LS.checks, {}); c[id] = c[id] || {};
+  const cur = exCounts(j, c[id]); c[id].ex = Object.assign({}, cur, { [k]: Math.max(0, Math.min(EXTRA_MAX[k], cur[k] + d)) }); c[id].exOk = false;
+  put(LS.checks, c); render();
+}
+function setExOk(id, v){ const c = get(LS.checks, {}); c[id] = c[id] || {}; c[id].exOk = !!v; put(LS.checks, c); render(); }
+function setExNote(id, v){ const c = get(LS.checks, {}); c[id] = c[id] || {}; c[id].exNote = String(v).slice(0, 300); put(LS.checks, c); }
 function canMarkScan(id){
   const st = get(LS.checks, {})[id] || {}, p = PH[id];
+  const jx = (board && board.mine || []).find(x => x.id === id);
+  if (jx && jx.extras && !st.exOk) return false;
   const fresh = st.checkedAt && (Date.now() - st.checkedAt) < 6*3600*1000;
   const haveMedia = (p && p.count >= MIN_PHOTOS && !p.busy) || okLink(st.link);
   return !!(fresh && st.weather==='ok' && st.airspace==='ok' && st.batteries && st.docs && st.site && board.me.scansAllowed && haveMedia);
@@ -801,7 +831,8 @@ function completeScan(id){
   }
   const missing = list.filter(x => !s[x[0]]).map(x => '• ' + x[1]);
   if (missing.length && !confirm('These are not ticked on your shot list:\n\n' + missing.join('\n') + '\n\nThe report can only cover what is in your photos. Mark the scan done anyway?')) return;
-  act({type:'complete', jobId:id, kind:'scan', link:st.link, conditions});
+  const extras = job.extras ? exCounts(job, st) : undefined;
+  act({type:'complete', jobId:id, kind:'scan', link:st.link, conditions, extras, extrasNote: st.exNote || ''});
 }
 function completeReport(id){ const st = get(LS.checks, {})[id] || {}; act({type:'complete', jobId:id, kind:'report', link:st.rlink}); }
 // The pre-departure check is due once the job is within 24 hours and there has been no check in the last 6 hours.

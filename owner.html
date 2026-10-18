@@ -108,6 +108,7 @@ tr:last-child td{border-bottom:none;}
     <div class="metrics" id="stats"></div>
     <div class="cols">
       <div>
+        <section><div class="lbl"><span>Extras to check before billing</span><span id="ex-n" class="small"></span></div><div class="box pad" id="extras"><span class="muted small">Loading…</span></div></section>
         <section><div class="lbl"><span>Pay run: who you owe</span><span id="pr-n" class="small"></span></div><div class="box pad" id="payrun"><span class="muted small">Loading…</span></div></section>
         <section><div class="lbl"><span>Trade accounts: monthly invoicing</span><span class="small"><input type="month" id="tm-month" class="dt" onchange="loadTradeMonth()" aria-label="Month to show"></span></div><div class="box pad" id="trade-month"><span class="muted small">Loading…</span></div></section>
         <section><div class="lbl"><span>System health</span><span id="health-n" class="small"></span></div><div class="box pad" id="health"><span class="muted small">Checking…</span></div></section>
@@ -180,7 +181,7 @@ async function load(){
   if(!localStorage.getItem(TK)){showLogin();return;}
   const r=await api('/owner/overview');if(!r.ok){if(r.status!==401)showLogin('Could not load. Try again.');return;}
   data=r.data;$('login').style.display='none';$('app').style.display='block';
-  loadCap();loadHome();loadPayRun();loadTradeMonth();loadCovMap();loadStorm();loadSched();loadHealth();loadSeats();loadReviews();loadSuggestions();loadCal();loadOoo();
+  loadExtras();loadCap();loadHome();loadPayRun();loadTradeMonth();loadCovMap();loadStorm();loadSched();loadHealth();loadSeats();loadReviews();loadSuggestions();loadCal();loadOoo();
   const c=data.counts;
   $('stats').innerHTML=[['Scans open',c.scansOpen],['Reports open',c.reportsOpen],['Scans claimed',c.scansClaimed],['Reports claimed',c.reportsClaimed]].map(x=>`<div class="metric"><div class="n">${x[1]}</div><div class="t">${x[0]}</div></div>`).join('');
   $('needs').innerHTML=data.needsYou.length?data.needsYou.map(n=>`<div class="attn"><b>${esc(n.name)}</b><ul>${n.needs.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`).join(''):'<div class="box empty">Nothing needs your attention.</div>';
@@ -442,6 +443,47 @@ async function loadSched(){
 }
 async function schedDone(id){ await api('/owner/schedule-done','POST',{id}); loadSched(); }
 async function connectCal(){ const r=await api('/owner/cal-webhook','POST'); if(!r.ok||r.data.ok===false){ alert((r.data&&r.data.error)||'Could not connect Cal.com.'); } else alert('Connected. Client reschedules and cancellations will now update the job automatically.'); loadSched(); }
+// On-site extras check: the pilot counted different extras from the booking, so the client's balance email is on hold
+// until you approve the new price (you can correct the counts first) or keep the original price.
+const EX_ROWS=[['chimneys','Chimneys'],['extensions','Extensions'],['dormers','Dormers'],['outbuildings','Outbuildings']];
+let EX_UNITS={};
+async function loadExtras(){
+  const el=$('extras'); const r=await api('/owner/extras');
+  if(!r.ok){ el.innerHTML='<span class="muted small">Could not load extras checks.</span>'; return; }
+  EX_UNITS=r.data.units||{}; const jobs=r.data.jobs||[];
+  $('ex-n').textContent=jobs.length?jobs.length+' waiting':'';
+  if(!jobs.length){ el.innerHTML='<div class="small muted">Nothing to check. Every finished scan matched its booking.</div>'; return; }
+  el.innerHTML=jobs.map(j=>{
+    const p=j.pilot||j.booked, ai=j.ai;
+    const rows=EX_ROWS.map(([k,l])=>{const diff=p[k]!==j.booked[k];return `<tr><td>${l}</td><td style="text-align:center;">${j.booked[k]}</td>
+      <td style="text-align:center;"><input type="number" min="0" max="8" value="${p[k]}" id="ex-${j.id}-${k}" oninput="exRecalc('${j.id}')" style="width:52px;${diff?'font-weight:700;':''}" aria-label="${l} to charge for"></td>
+      <td style="text-align:center;" class="muted">${ai?ai[k]:'–'}</td></tr>`;}).join('');
+    return `<div style="border-left:4px solid var(--bad);padding:8px 10px;margin:8px 0;background:#FAFBFC;" data-booked='${esc(JSON.stringify(j.booked))}' id="exj-${j.id}">
+      <div><b>${esc(j.client||'Client')}</b>${j.address?' · '+esc(j.address):''}${j.ref?' <span class="muted small">'+esc(j.ref)+'</span>':''}</div>
+      <table class="small" style="margin:6px 0;border-collapse:collapse;"><tr class="muted"><td style="padding-right:12px;"></td><td style="padding:0 10px;">Booked</td><td style="padding:0 10px;">Charge for</td><td style="padding:0 10px;">AI count</td></tr>${rows}</table>
+      ${j.pilotNote?`<div class="small">Pilot's note: ${esc(j.pilotNote)}</div>`:''}
+      ${ai?'':'<div class="small muted">No AI count (not enough overview photos).</div>'}
+      <div class="small" id="exd-${j.id}" style="margin:4px 0;"></div>
+      <div><button class="btn" onclick="exDecide('${j.id}','approve')">Approve new price</button> <button class="btn sec" onclick="exDecide('${j.id}','keep')">Keep original price</button></div>
+      <div class="small muted" style="margin-top:4px;">Either button releases the balance email to the client. If the price changes, the email explains why.</div></div>`;
+  }).join('');
+  jobs.forEach(j=>exRecalc(j.id));
+}
+function exCountsFor(id){ const o={}; EX_ROWS.forEach(([k])=>{ o[k]=Math.max(0,Math.round(Number(($('ex-'+id+'-'+k)||{}).value)||0)); }); return o; }
+function exRecalc(id){
+  const box=$('exj-'+id); if(!box) return; const booked=JSON.parse(box.dataset.booked||'{}'), c=exCountsFor(id);
+  const diff=EX_ROWS.reduce((t,[k])=>t+(c[k]-(booked[k]||0))*(EX_UNITS[k]||0),0);
+  $('exd-'+id).innerHTML=diff?`Price change if approved: <b>${diff>0?'+':'−'}£${Math.abs(diff)}</b>`:'No price change at these counts.';
+}
+async function exDecide(id, decision){
+  const counts=exCountsFor(id);
+  if(decision==='approve' && !confirm('Approve the new price and release the balance email to the client?')) return;
+  if(decision==='keep' && !confirm('Keep the original price and release the balance email to the client?')) return;
+  const r=await api('/owner/extras-decide','POST',{jobId:id,decision,counts});
+  if(!r.ok){ alert((r.data&&r.data.error)||'That did not go through.'); return; }
+  alert(r.data.billed?'Done. The balance email will go to the client shortly.':'Saved. The balance email goes out once the rest of the job (for example a paired thermal scan) is finished.');
+  loadExtras();
+}
 // Storm alerts: Met Office wind warnings in regions RoofScan covers, checked every hour. Send the storm email once it has passed.
 async function loadStorm(){
   const el=$('storm'); const r=await api('/owner/storm');
