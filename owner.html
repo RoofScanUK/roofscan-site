@@ -197,6 +197,9 @@ async function load(){
         ${flyer?`<div class="ctr-doc"><div class="ctr-lbl">Base postcode</div><input class="dt" id="bpc-${ct.id}" value="${esc(ct.basePostcode)}" placeholder="BN1 1AA" style="width:110px;text-transform:uppercase;" onchange="upd('${ct.id}',{basePostcode:this.value,travelRange:Number($('rng-${ct.id}').value)})" title="Where this flyer travels from"></div>
         <div class="ctr-doc"><div class="ctr-lbl">Travels up to</div><select class="dt" id="rng-${ct.id}" onchange="${ct.hasBase?`upd('${ct.id}',{travelRange:Number(this.value)})`:''}">${[10,15,20,25,30,35,40].map(m=>`<option value="${m}" ${(ct.travelRange||25)===m?'selected':''}>${m} miles</option>`).join('')}</select></div>`:''}
         <div class="ctr-acts">${flyer?`<button class="btn sec" onclick="upd('${ct.id}',{approved:${!ct.approved}})">${ct.approved?'Revoke drone':'Approve drone'}</button>`:''}${(flyer&&ct.thermal)||ct.thermalWriter?`<button class="btn sec" onclick="upd('${ct.id}',{thermalApproved:${!ct.thermalApproved}})" title="Check their thermography certificate (and for flyers, that their thermal drone records temperature data) first">${ct.thermalApproved?'Revoke thermal':'Approve thermal'}</button>`:''}<button class="btn text ${ct.active?'danger':''}" onclick="upd('${ct.id}',{active:${!ct.active}})">${ct.active?'Switch off':'Switch on'}</button></div></div>
+      ${ct.wantsBoth?`<div class="ctr-line"><span class="muted small" style="align-self:center;">Asked to do both flying and report writing (details added through their update link).</span><button class="btn sec" onclick="upd('${ct.id}',{role:'Both'})">Make both</button></div>`:''}
+      ${(()=>{const twins=ct.role==='Both'?[]:data.contractors.filter(o=>o.id!==ct.id&&o.role!==ct.role&&o.role!=='Both'&&!/^Combined into/.test(o.nextStep||'')&&o.name.trim().toLowerCase()===ct.name.trim().toLowerCase());
+        return twins.length?`<div class="ctr-line"><span class="muted small" style="align-self:center;">Also applied as ${esc(twins[0].role.toLowerCase())}.</span><select class="dt" onchange="mergeCtr('${ct.id}',this)"><option value="">Combine into this record&hellip;</option>${twins.map(o=>`<option value="${o.id}">${esc(o.name)} (${esc(o.role)}${o.email?', '+esc(o.email):''})</option>`).join('')}</select></div>`:'';})()}
     </div>`;
   }).join('');
   $('ctrs').innerHTML=rows||'<div class="empty">No contractors yet.</div>';
@@ -534,6 +537,16 @@ async function loadCap(){
 }
 async function saveCap(){const v=$('capIn').value.trim();if(v===''||!/^\d+$/.test(v)){alert('Enter a whole number, for example 10.');return;}const r=await api('/owner/capacity','POST',{override:Number(v)});if(!r.ok){alert(r.data.error||'Could not save.');return;}loadCap();}
 async function clearCap(){const r=await api('/owner/capacity','POST',{override:null});if(!r.ok){alert(r.data.error||'Could not save.');return;}loadCap();}
+// Combine two applications from the same person: this record is kept (its email stays the login) and becomes Both.
+async function mergeCtr(keepId,sel){
+  const fromId=sel.value; if(!fromId) return;
+  const k=data.contractors.find(c=>c.id===keepId), o=data.contractors.find(c=>c.id===fromId);
+  if(!confirm(`Combine ${o.name}'s ${o.role.toLowerCase()} application into ${k.name}'s record?\n\n${k.name} (${k.email||'no email'}) is kept and becomes Both. Their sign-in email stays the same. Missing details and documents are copied across from the other application, which is switched off and marked "Not right now". Nothing is deleted.`)){sel.value='';return;}
+  const r=await api('/owner/contractor-merge','POST',{keepId,fromId});
+  if(!r.ok){alert(r.data.error||'Could not combine.');sel.value='';return;}
+  alert(`Combined. ${k.name} is now ${r.data.role}.`+(r.data.role==='Both'?' Check the new side (drone or writing details) before they take jobs of that kind.':''));
+  load();
+}
 async function upd(id,change){const r=await api('/owner/contractor','POST',Object.assign({id},change));if(!r.ok){alert(r.data.error||'Could not save.');return;}
   if(r.data.seats&&r.data.seats.ok===false) alert('Saved, but Cal.com could not be updated with the number of flyers: '+r.data.seats.error);
   load();}

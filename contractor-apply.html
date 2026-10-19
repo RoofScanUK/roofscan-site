@@ -483,7 +483,7 @@ $('e-verify').addEventListener('click', async function(){
   let d;
   try { d = await post('/contractor-edit-open', { email: $('e-email').value.trim(), code: code }); }
   catch (err) { editErr(err.message); this.disabled = false; return; }
-  edit = { id: d.id, token: d.token, onFile: d.app.onFile || {} };
+  edit = { id: d.id, token: d.token, onFile: d.app.onFile || {}, role: d.app.role || '' };
   fillFrom(d.app);
   $('edit-box').innerHTML = '<b style="color:var(--navy);">You are updating your application.</b><p class="muted" style="font-size:14px;margin-top:6px;line-height:1.55;">Change anything below, then press Save my changes. Documents you sent before stay on file, so only add new or replacement ones. We will check the changes before you take any jobs that depend on them.</p>';
   $('submit-btn').textContent = 'Save my changes';
@@ -585,7 +585,7 @@ $('apply-form').addEventListener('submit', async function(e){
 
   $('progress').style.display = 'none';
   $('success').style.display = 'block';
-  if (edit) { document.querySelector('#success h2').textContent = 'Changes saved'; $('success-msg').textContent = 'Thank you. Your application has been updated and we will check the changes.'; }
+  if (edit) { document.querySelector('#success h2').textContent = 'Changes saved'; $('success-msg').textContent = 'Thank you. Your application has been updated and we will check the changes.' + (edit.role && edit.role !== role ? ' If you have added flying or report writing, we will check those details and let you know once you can take that kind of job.' : ''); }
   if (failed.length) {
     $('success-msg').textContent = 'Your application is in, but ' + failed.length + ' file' + (failed.length > 1 ? 's' : '') + ' did not upload (' + failed.join(', ') + '). Please e-mail ' + (failed.length > 1 ? 'them' : 'it') + ' to info@roofscanuk.co.uk and say it is for your application.';
   }

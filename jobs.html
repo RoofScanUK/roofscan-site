@@ -213,7 +213,7 @@ function logout(){ if(queue().length && !confirm('You have changes waiting to sy
 const queue = () => get(LS.queue, []);
 function enqueue(item){ const q = queue(); q.push(Object.assign({qid: Date.now()+'-'+Math.random().toString(36).slice(2,6)}, item)); put(LS.queue, q); }
 async function sendAction(a){
-  const path = { claim:'/contractor/claim', complete:'/contractor/complete', standdown:'/contractor/standdown' }[a.type];
+  const path = { claim:'/contractor/claim', complete:'/contractor/complete', standdown:'/contractor/standdown', reportPass:'/contractor/report-pass' }[a.type];
   return api(path, 'POST', { jobId:a.jobId, kind:a.kind, both:!!a.both, reason:a.reason, reasonCode:a.reasonCode, link:a.link, conditions:a.conditions, extras:a.extras, extrasNote:a.extrasNote });
 }
 async function act(a){
@@ -223,6 +223,8 @@ async function act(a){
   try {
     const r = await sendAction(a);
     if (!r.ok) { handleFail(a, r); }
+    else if (a.type === 'complete' && r.data && r.data.reportPriorityUntil) notice('Scan done. You flew it, so the report is yours first until ' + new Date(r.data.reportPriorityUntil).toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' }) + '. Write it yourself or pass it on from Reports available.', 'green');
+    else if (a.type === 'reportPass') notice('Passed on. The other writers can see the report now.', 'green');
   } catch(e){ if(e.message !== 'auth'){ enqueue(a); notice('Could not send (' + (e.message||'error') + '). Saved and will retry.', 'amber'); } }
   await refresh(false);
 }
@@ -250,6 +252,8 @@ function applyLocal(a){
     const j = take(a.kind === 'scan' ? board.scans : board.reports);
     if (j) { j.pending = true; board.mine.push(Object.assign(j, { scanMine: a.kind==='scan', reportMine: a.kind==='report', client:'(syncing…)', address:'Details appear once you are back online' })); }
     if (j && a.both && j.pairedId) { const i = board.scans.findIndex(x => x.id === j.pairedId); if (i >= 0) { const o = board.scans.splice(i,1)[0]; o.pending = true; board.mine.push(Object.assign(o, { scanMine:true, reportMine:false, client:'(syncing…)', address:'Details appear once you are back online' })); } }
+  } else if (a.type === 'reportPass') {
+    take(board.reports);
   } else if (a.type === 'complete' || a.type === 'standdown') {
     const j = board.mine.find(x => x.id === a.jobId);
     if (j) { if (a.kind === 'scan' || a.type === 'standdown') j.scanMine = false; if (a.kind === 'report') j.reportMine = false; }
@@ -404,11 +408,14 @@ function poolCard(j, kind){
   const pair = kind === 'scan' && j.pairedId ? (board.scans || []).find(x => x.id === j.pairedId) : null;
   const otherName = j.thermal ? 'roof photo scan (daylight)' : 'thermal scan (after dark)';
   const pairNote = kind === 'scan' && j.pairedId ? `<div class="jm" style="margin-top:4px;">Same booking also has a ${otherName}${pair ? ', listed here too. Take one, or both in one trip (arrive in daylight for the photos, fly thermal after dark). Mileage is paid once.' : ' for another flyer.'}</div>` : (kind === 'report' && j.pairedId ? `<div class="jm" style="margin-top:4px;">The ${j.thermal ? 'roof report' : 'thermal report'} for this property is a separate job.</div>` : '');
+  const prio = kind === 'report' && j.priorityUntil ? `<div class="banner b-green" style="margin-top:8px;">You flew this one, so it is yours first until ${new Date(j.priorityUntil).toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' })}. Write it yourself, or pass it on. After that it opens to every writer.</div>` : '';
   const bothSlide = pair && !locked ? `<div class="slide" data-id="${j.id}" data-kind="scan" data-both="1" tabindex="0" role="button" aria-label="Slide right to claim both scans for this booking" style="margin-top:8px;"><div class="slide-t">Slide to claim both (${money((pay||0) + (pair.scanPay||0) - Math.min(parts.mileage||0, (pair.scanParts||{}).mileage||0))})</div><div class="slide-h">&rarr;</div></div>` : '';
   return `<div class="card pool"><div class="row"><div><span class="tag ${kind==='scan'?'t-scan':'t-rep'}">${kind}</span>${exp}${tradeTags(j)}<div class="jt">${esc(j.area)} · ${esc(j.propertyType)||'Property'}</div><div class="jm">${esc(fmtWhen(j))}</div>${bits.length?`<div class="jm" style="color:var(--g);">${bits.join(' · ')}</div>`:''}${pairNote}</div><div class="pay">${money(pay)}</div></div>
-  <div class="acts"><div class="slide${locked?' dis':''}" data-id="${j.id}" data-kind="${kind}" tabindex="0" role="button" aria-label="Slide right to claim this ${kind}"><div class="slide-t">${locked?'Scans switched off':'Slide to claim '+(pair?'this one only':kind)}</div><div class="slide-h">&rarr;</div></div><button class="btn ghost" onclick="passJob('${j.id}')">Not for me</button></div>${bothSlide}</div>`;
+  ${prio}<div class="acts"><div class="slide${locked?' dis':''}" data-id="${j.id}" data-kind="${kind}" tabindex="0" role="button" aria-label="Slide right to claim this ${kind}"><div class="slide-t">${locked?'Scans switched off':(prio?'Slide to write it yourself':'Slide to claim '+(pair?'this one only':kind))}</div><div class="slide-h">&rarr;</div></div>${prio?`<button class="btn ghost" onclick="passReport('${j.id}')">Pass to another writer</button>`:`<button class="btn ghost" onclick="passJob('${j.id}')">Not for me</button>`}</div>${bothSlide}</div>`;
 }
 function passJob(id){ const p = get(LS.pass, {}); p[id] = 1; put(LS.pass, p); render(); }
+// You flew it: hand the report to the other writers now instead of waiting for your first refusal to run out.
+function passReport(id){ if (!confirm('Pass this report to the other writers? You will not be able to take it back unless nobody else claims it.')) return; act({ type:'reportPass', jobId:id }); }
 
 // ── Slide-to-claim: must be dragged most of the way across so it can't be tapped by accident ──
 let sliding = false;
