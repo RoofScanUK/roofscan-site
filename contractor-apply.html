@@ -35,8 +35,8 @@ textarea{min-height:96px;resize:vertical;}
 .section-label:first-of-type{margin-top:0;padding-top:0;border-top:none;}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
 @media(max-width:520px){.row2{grid-template-columns:1fr;gap:0;} .card{padding:22px;} .wrap{padding:36px 18px 60px;}}
-.roles{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:6px;}
-@media(max-width:520px){.roles{grid-template-columns:1fr;}}
+.roles{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:6px;}
+@media(max-width:640px){.roles{grid-template-columns:1fr;}}
 .role{border:1px solid var(--line);border-radius:6px;padding:14px;cursor:pointer;background:var(--paper);text-align:left;font-family:inherit;}
 .role b{display:block;color:var(--navy);font-size:15px;margin-bottom:2px;}
 .role span{font-size:12.5px;color:var(--muted);line-height:1.4;display:block;}
@@ -106,6 +106,7 @@ footer{text-align:center;margin-top:40px;font-size:12.5px;color:var(--muted);}
       <div class="roles" id="roles">
         <button type="button" class="role" data-role="Scanner"><b>Drone flyer</b><span>Fly and capture the roof scans</span></button>
         <button type="button" class="role" data-role="Report Writer"><b>Report writer</b><span>Turn the photos into the report</span></button>
+        <button type="button" class="role" data-role="Both"><b>Both</b><span>Fly the scans and write reports</span></button>
       </div>
 
       <div id="main-fields" class="hidden">

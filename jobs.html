@@ -398,7 +398,8 @@ function poolCard(j, kind){
   if (parts.boost) bits.push('+' + money(parts.boost) + ' boost');
   if (parts.express) bits.push('+' + money(parts.express) + ' express');
   if (parts.thermal) bits.push('+' + money(parts.thermal) + ' thermal');
-  const exp = j.express ? `<span class="tag" style="background:#FDEBD3;color:#8A4B00;margin-left:6px;">express${kind==='report'?': report within 24h':''}</span>` : '';
+  const exp = (j.express ? `<span class="tag" style="background:#FDEBD3;color:#8A4B00;margin-left:6px;">express${kind==='report'?': report within 24h':''}</span>` : '')
+    + (kind === 'scan' && j.outsideRange ? `<span class="tag" style="background:#E8EEF7;color:#1A3E6B;margin-left:6px;" title="Nobody nearer has claimed it, so it is open to you. The boost is included in the pay.">outside your area</span>` : '');
   // Roof report + thermal bookings are two jobs. If the flyer can see both, they can take one or both (one trip, mileage paid once).
   const pair = kind === 'scan' && j.pairedId ? (board.scans || []).find(x => x.id === j.pairedId) : null;
   const otherName = j.thermal ? 'roof photo scan (daylight)' : 'thermal scan (after dark)';
