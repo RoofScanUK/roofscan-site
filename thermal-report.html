@@ -546,6 +546,9 @@ async function buildDoc(){
   }
   function prColor(x){ return x === 'Investigate' ? RED : (x === 'Monitor' ? AMBER : MID); }
   var c = conditions(), F = {}; FIELDS.forEach(function(id){ F[id] = $(id).value; });
+  // The writer who holds the claim, with their qualification only once RoofScan has recorded it (Report Credential in Airtable).
+  var wj = (typeof JOBINFO !== 'undefined' && JOBINFO) || {};
+  var writerTxt = wj.writer ? (String(wj.writer).trim() + (wj.writerCredential ? ', ' + String(wj.writerCredential).trim() : '')) : '';
   var dateTxt = F.date ? new Date(F.date + 'T12:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
   var logo = null; try { var lr = await fetch('icons/roofscanuk-logo.png'); if(lr.ok) logo = new Uint8Array(await lr.arrayBuffer()); } catch(e) {}
 
@@ -558,7 +561,7 @@ async function buildDoc(){
     new D.Paragraph({ children: [t('Drone thermal imaging survey', { size: 22, color: 'B0C8E8', italics: true })] })
   ] })] })] }));
   cover.push(new D.Paragraph({ spacing: { before: 300, after: 0 }, children: [] }));
-  cover.push(kv([['Property', $('address').value], ['Client', $('client').value], ['Survey date', dateTxt], ['Reference', F.ref], ['Roof type', F.roofType], ['Thermal images captured by', $('flyer').value]]));
+  cover.push(kv([['Property', $('address').value], ['Client', $('client').value], ['Survey date', dateTxt], ['Reference', F.ref], ['Roof type', F.roofType], ['Thermal images captured by', $('flyer').value]].concat(writerTxt ? [['Report prepared by', writerTxt]] : [])));
   cover.push(new D.Paragraph({ pageBreakBefore: true, children: [] }));
 
   // Summary
@@ -620,7 +623,7 @@ async function buildDoc(){
    'Results depend on the weather before and during the survey. A defect that was not producing a temperature difference at the time (for example after a dull day, in wind, or with no heating on inside) may not show.',
    'Temperatures shown are approximate and depend on the emissivity setting and viewing angle.',
    'This report is not a structural survey and does not confirm the age, remaining life or compliance of the roof.'].forEach(function(x){ body.push(new D.Paragraph({ bullet: { level: 0 }, spacing: { before: 20, after: 60 }, children: [t(x)] })); });
-  body.push(p('Report reference ' + F.ref + '. Prepared by RoofScan UK. Thermal images reviewed by a RoofScan thermographer.', { size: 17, italics: true, color: '6B7A8D' }, { spacing: { before: 240, after: 0 } }));
+  body.push(p('Report reference ' + F.ref + '. Prepared by ' + (writerTxt ? writerTxt + ' for RoofScan UK' : 'RoofScan UK') + ' and checked by RoofScan UK before issue.', { size: 17, italics: true, color: '6B7A8D' }, { spacing: { before: 240, after: 0 } }));
 
   var doc = new D.Document({ styles: { default: { document: { run: { font: 'Arial' } } } }, sections: [{
     properties: { page: { size: { width: 11906, height: 16838 }, margin: { top: 1134, bottom: 1134, left: 1134, right: 1134 } } },

@@ -462,6 +462,8 @@ try{
   if(CT_FORCED && CT_JOB) sessionStorage.setItem('rs_as_writer', CT_JOB);
   else if(CT_JOB && sessionStorage.getItem('rs_as_writer') === CT_JOB) CT_FORCED = true;
 }catch(e){}
+// Report writer named on the report ("Report Prepared By"). Filled from the job in writer mode; empty when Tak writes the report himself.
+var CT_WRITER = { name: '', credential: '' };
 var CT_MODE = !!(CT_JOB && CT_TOKEN && (CT_FORCED || !(typeof AT !== 'undefined' && AT.hasToken())));
 if(CT_MODE) document.documentElement.classList.add('ct');
 // Home button: writers go back to their jobs page (their work is saved as they leave), owner/staff to the dashboard.
@@ -1080,6 +1082,7 @@ function collectReportData(){
     covering:document.getElementById("covering").value||"[Covering]",
     roofAge:document.getElementById("roofAge").value||"[Age]",
     inspector:document.getElementById("inspector").value||"[Inspector]",
+    writer:CT_WRITER.name, writerCredential:CT_WRITER.credential,
     condition:conds[conditionIdx],
     roofscore:_currentRoofScore,
     rsDesc:_currentRoofScore?scoreDesc(_currentRoofScore):"",
@@ -1382,6 +1385,13 @@ function buildDoc(d,obs){
   // numbered sections with no divider page of its own; numbering then runs 1.0 About This Report,
   // 2.0 Observations & Recommendations, 3.0 Terms & Disclaimer, 4.0 Schedule of Works (last).
   var preparedByLine = d.whiteLabel ? (d.inspector+" - RoofScan UK, on behalf of "+BRAND) : (d.inspector+" - RoofScan UK");
+  // When a contractor writer prepared the report, the flyer is the inspector and the writer gets their own line,
+  // with their qualification only if RoofScan has recorded one (Report Credential, filled in after seeing the certificate).
+  var writerLine = d.writer ? (d.writer + (d.writerCredential ? ", " + d.writerCredential : "") + " - RoofScan UK") : "";
+  var byLine = function(label, text){ return new D.Paragraph({spacing:{before:60,after:60},children:[new D.TextRun({text:label+":  ",font:"Arial",size:19,bold:true,color:BLUE_MID}),new D.TextRun({text:text,font:"Arial",size:19,color:DARK})]}); };
+  var byLines = writerLine
+    ? [byLine("Inspected By", preparedByLine), byLine("Report Prepared By", writerLine), byLine("Checked By", "RoofScan UK")]
+    : [byLine("Prepared By", preparedByLine)];
   var children=[
     hBar,sp(300,200),infoT,sp(200,160),glT,sp(200,200),imgPh||sp(0,0),imgPh?sp(200,160):sp(0,0),cBar,pb(),
     new D.Paragraph({spacing:{before:0,after:80},children:[new D.TextRun({text:"Contents",font:"Arial",size:36,bold:true,color:BLUE})]}),
@@ -1409,7 +1419,7 @@ function buildDoc(d,obs){
     lv("Property",d.address+(d.postcode?" - "+d.postcode:"")),
     lv("Inspection Date",d.inspDate),
     lv("Client",d.client),
-    new D.Paragraph({spacing:{before:60,after:60},children:[new D.TextRun({text:"Prepared By:  ",font:"Arial",size:19,bold:true,color:BLUE_MID}),new D.TextRun({text:preparedByLine,font:"Arial",size:19,color:DARK})]}),
+    ...byLines,
     lv("Report Reference",d.reportRef),sp(160,80),
     h2("1.1  Scope"),
     bod("Instructions were received to attend the property and undertake a drone-based visual inspection. This report has been prepared based on drone imagery captured on-site. It does not constitute a full building survey."),
@@ -2935,6 +2945,7 @@ async function ctInit(){
     if(rt){ rt.dataset.roofTypeIsAssumed = 'true'; rt.addEventListener('input', function(){ this.dataset.roofTypeIsAssumed = 'false'; }, {once:true}); }
   }
   // The inspector is the flyer who did the scan. Writers can't change it. If no flyer is recorded it stays blank for RoofScan to fix.
+  CT_WRITER = { name: String(j.writer || '').trim(), credential: String(j.writerCredential || '').trim() };
   var insp = document.getElementById('inspector');
   if(insp){ insp.value = j.flyer || ''; insp.readOnly = true; insp.style.background = '#F3F1EA'; insp.title = 'This is the flyer who carried out the inspection.'; if(!j.flyer) insp.placeholder = 'No flyer recorded. Tell RoofScan.'; }
   var card = document.getElementById('client-info-card');
