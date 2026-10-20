@@ -229,7 +229,7 @@ async function checkPostcode(raw){
     var r = await fetch('https://api.postcodes.io/postcodes/' + encodeURIComponent(c)), d = await r.json();
     if(d.status !== 200 || !d.result){ $('pcInfo').textContent = "We couldn't find that postcode."; return; }
     var res = d.result, cov = null;
-    try { var cr = await fetch(API + '/coverage?postcode=' + encodeURIComponent(res.postcode)); cov = cr.ok ? await cr.json() : null; } catch(e) {}
+    try { var cr = await fetch(API + '/coverage?service=thermal&postcode=' + encodeURIComponent(res.postcode)); cov = cr.ok ? await cr.json() : null; } catch(e) {}
     if(!cov){ $('pcInfo').textContent = "Couldn't check that postcode right now. Please try again in a moment."; return; }
     if(!cov.covered){ $('pcInfo').innerHTML = "We don't cover " + esc(res.postcode) + ' yet. Email <a href="mailto:info@roofscanuk.co.uk">info@roofscanuk.co.uk</a> and we\'ll tell you when we do.'; return; }
     st.postcode = res.postcode; st.lat = res.latitude; st.lng = res.longitude; town = res.admin_district || '';
