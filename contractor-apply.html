@@ -149,11 +149,14 @@ footer{text-align:center;margin-top:40px;font-size:12.5px;color:var(--muted);}
           <div class="field">
             <label class="l" for="f-range">How far will you travel?</label>
             <select id="f-range">
-              <option value="10">Up to 10 miles</option><option value="15">Up to 15 miles</option><option value="20">Up to 20 miles</option>
-              <option value="25" selected>Up to 25 miles</option><option value="30">Up to 30 miles</option><option value="35">Up to 35 miles</option><option value="40">Up to 40 miles</option>
+              <option value="30" selected>Up to 30 miles</option><option value="35">Up to 35 miles</option><option value="40">Up to 40 miles</option><option value="45">Up to 45 miles</option><option value="50">Up to 50 miles</option>
             </select>
-            <div class="hint">Road miles from your home postcode. You can ask us to change it later.</div>
+            <div class="hint">Road miles from your home postcode. 30 miles is the minimum, so every area has cover. Travel is paid at 45p a mile.</div>
           </div>
+        </div>
+        <div class="check-row">
+          <input type="checkbox" id="f-range-ok">
+          <label for="f-range-ok">I'm happy to take jobs anywhere within the distance I've chosen. I still pick which jobs I claim.</label>
         </div>
         <div class="section-label">Your drone</div>
         <div class="row2">
@@ -523,6 +526,7 @@ $('apply-form').addEventListener('submit', async function(e){
   if (!v('f-name') || !v('f-email') || !v('f-phone') || !v('f-payee') || !v('f-emerg')) { showErr('Please fill in the "About you" section.'); return; }
   if (flyer) {
     if (!/^[A-Z]{1,2}[0-9][A-Z0-9]?\s*[0-9][A-Z]{2}$/i.test(v('f-basepc'))) { showErr('Please enter your full home postcode, for example SW1A 1AA.'); return; }
+    if (!$('f-range-ok').checked) { showErr('Please tick the box to agree to your travel distance.'); return; }
     if (!v('f-drone') || !v('f-serial') || !v('f-wind')) { showErr('Please fill in your drone details.'); return; }
     if (!v('f-opid') || !v('f-opexp') || !v('f-flid') || !v('f-flexp')) { showErr('Please fill in your Operator ID and Flyer ID, with expiry dates.'); return; }
     if (!files.caa.length && !(edit && edit.onFile.caa && edit.onFile.caa.length)) { showErr('Please upload your CAA certificates.'); return; }
@@ -542,7 +546,7 @@ $('apply-form').addEventListener('submit', async function(e){
     insuranceProvider: v('f-insprov'), insuranceAmount: v('f-insamt'), insuranceExpiry: $('f-insexp').value,
     selfEmployed: $('c-self').checked, confidentiality: $('c-conf').checked, notes: v('f-notes')
   };
-  if (flyer) Object.assign(payload, { basePostcode: v('f-basepc'), travelRange: Number($('f-range').value), droneModel: v('f-drone'), droneSerial: v('f-serial'), droneWind: v('f-wind'),
+  if (flyer) Object.assign(payload, { basePostcode: v('f-basepc'), travelRange: Number($('f-range').value), rangeAgreed: $('f-range-ok').checked, droneModel: v('f-drone'), droneSerial: v('f-serial'), droneWind: v('f-wind'),
     operatorId: v('f-opid'), operatorExpiry: $('f-opexp').value, flyerId: v('f-flid'), flyerExpiry: $('f-flexp').value, otherQualifications: v('f-other'),
     thermal: $('f-thermal').checked, thermalDrone: v('f-tdrone'), thermalTraining: v('f-ttrain') });
   if (edit) Object.assign(payload, { id: edit.id, token: edit.token, newSafetyDocs: !!(files.caa.length || files.insurance.length) });
