@@ -83,6 +83,36 @@ tr:last-child td{border-bottom:none;}
 .capin{width:80px;border:1px solid var(--line);border-radius:4px;padding:7px 9px;font-size:14px;font-family:inherit;}
 .inp{width:100%;border:1px solid var(--line);border-radius:4px;padding:11px 13px;font-size:15px;font-family:inherit;margin-bottom:10px;background:var(--paper);}
 #err{display:none;color:var(--bad);font-size:13px;margin-top:10px;}
+/* Layout: compact numbers, tabs, two-column panels, one-line contractor rows that open for detail. */
+.wrap{padding-top:18px;}
+.metrics{margin-bottom:14px;}
+.metric{padding:10px 18px;}
+.metric .n{font-size:24px;}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin:0 0 18px;position:sticky;top:0;z-index:20;background:var(--paper);overflow-x:auto;}
+.tabs button{border:none;background:none;font-family:inherit;font-size:14px;font-weight:600;color:var(--muted);padding:12px 14px;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;display:flex;align-items:center;gap:6px;}
+.tabs button:hover{color:var(--navy);}
+.tabs button.on{color:var(--navy);border-bottom-color:var(--sun,#F2B640);}
+.tb{display:none;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#B45309;color:#fff;font-size:11px;font-weight:700;line-height:18px;text-align:center;}
+.tb.on{display:inline-block;}
+.panel[hidden]{display:none;}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 28px;align-items:start;}
+.grid2 section,.cols section{margin-bottom:22px;}
+.cols{grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:28px;}
+details.ctr{padding:0;}
+details.ctr>summary{list-style:none;cursor:pointer;padding:10px 38px 10px 16px;position:relative;display:flex;align-items:center;gap:8px 14px;flex-wrap:wrap;}
+details.ctr>summary::-webkit-details-marker{display:none;}
+details.ctr>summary::after{content:"▸";color:var(--muted);font-size:12px;position:absolute;right:16px;top:13px;}
+details.ctr[open]>summary::after{content:"▾";}
+details.ctr>summary:hover{background:#FAF8F2;}
+.ctr-sum-name{font-weight:600;color:var(--navy);}
+.ctr-sum-meta{color:var(--muted);font-size:12.5px;}
+.ctr-sum-todo{flex-basis:100%;font-size:12.5px;line-height:1.45;margin-top:-2px;}
+.ctr-body{padding:4px 16px 14px;border-top:1px dashed var(--line);}
+.pill{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;white-space:nowrap;}
+.pill.ok{background:#EAF2EC;color:var(--ok);}.pill.warn{background:#F7EFDD;color:#7A5410;}.pill.bad{background:#F6E6E4;color:var(--bad);}.pill.mut{background:#EEF1F6;color:var(--navy);}
+.sysline{font-size:12px;opacity:.85;margin-top:4px;}
+@media(max-width:960px){.grid2{grid-template-columns:1fr;}}
+@media(min-width:520px){html .metrics{grid-template-columns:repeat(4,1fr) !important;}html .metric{border-right:1px solid var(--line) !important;border-bottom:none !important;}html .metric:last-child{border-right:none !important;}}
 @media(max-width:960px){.cols{grid-template-columns:1fr;gap:8px;}.metrics{grid-template-columns:repeat(2,1fr);}.metric:nth-child(2){border-right:none;}.metric:nth-child(-n+2){border-bottom:1px solid var(--line);}.wrap,.top-in{padding-left:16px;padding-right:16px;}.hide-m{display:none;}}
 </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
@@ -101,37 +131,68 @@ tr:last-child td{border-bottom:none;}
 
 <div id="app" style="display:none;">
   <div class="top"><div class="top-in">
-    <div><div class="eyebrow">RoofScan UK</div><h1>Owner dashboard</h1></div>
+    <div><div class="eyebrow">RoofScan UK</div><h1>Owner dashboard</h1><div class="sysline" id="sysline"></div></div>
     <div class="top-actions"><button class="btn sec" onclick="load()">Refresh</button><button class="btn sec" onclick="logout()">Log out</button></div>
   </div></div>
   <div class="wrap">
     <div class="metrics" id="stats"></div>
-    <div class="cols">
-      <div>
-        <section><div class="lbl"><span>Extras to check before billing</span><span id="ex-n" class="small"></span></div><div class="box pad" id="extras"><span class="muted small">Loading…</span></div></section>
-        <section><div class="lbl"><span>Pay run: who you owe</span><span id="pr-n" class="small"></span></div><div class="box pad" id="payrun"><span class="muted small">Loading…</span></div></section>
-        <section><div class="lbl"><span>Trade accounts: monthly invoicing</span><span class="small"><input type="month" id="tm-month" class="dt" onchange="loadTradeMonth()" aria-label="Month to show"></span></div><div class="box pad" id="trade-month"><span class="muted small">Loading…</span></div></section>
-        <section><div class="lbl"><span>System health</span><span id="health-n" class="small"></span></div><div class="box pad" id="health"><span class="muted small">Checking…</span></div></section>
-        <section><div class="lbl">Needs your attention</div><div id="needs"></div></section>
-        <section><div class="lbl"><span>Booking changes</span><span id="sched-n" class="small"></span></div><div class="box pad" id="sched"><span class="muted small">Loading…</span></div></section>
-        <section><div class="lbl"><span>Storm alerts</span><span id="storm-n" class="small"></span></div><div class="box pad" id="storm"><span class="muted small">Loading…</span></div></section>
-        <section><div class="lbl"><span>Contractors</span><span id="ctrs-n"></span></div><div class="box" id="ctrs"></div></section>
-        <section><div class="lbl"><span>Booking hours (Cal.com)</span><span id="cal-name" class="small"></span></div><div class="box pad" id="cal"><span class="muted small">Loading…</span></div></section>
-        <section><div class="lbl">Time off (Cal.com out of office)</div><div class="box pad" id="ooo"><span class="muted small">Loading…</span></div></section>
+    <!-- Tabs: Today holds only things that need you; everything else lives in its own tab. Badges show where action is waiting. -->
+    <nav class="tabs" id="tabs" role="tablist">
+      <button role="tab" data-tab="today">Today<span class="tb" id="tb-today"></span></button>
+      <button role="tab" data-tab="team">Team<span class="tb" id="tb-team"></span></button>
+      <button role="tab" data-tab="jobs">Jobs<span class="tb" id="tb-jobs"></span></button>
+      <button role="tab" data-tab="money">Money<span class="tb" id="tb-money"></span></button>
+      <button role="tab" data-tab="settings">Settings<span class="tb" id="tb-settings"></span></button>
+    </nav>
+
+    <div class="panel" data-panel="today">
+      <div id="allclear" class="box pad" style="display:none;"><b style="color:var(--navy);">All clear.</b> <span class="muted">Nothing is waiting for you right now.</span></div>
+      <div class="grid2">
+        <section data-today="reviews"><div class="lbl"><span>Reports waiting for approval</span><span id="rev-n"></span></div><div class="box" id="reviews"><div class="empty">Loading…</div></div></section>
+        <section data-today="extras"><div class="lbl"><span>Extras to check before billing</span><span id="ex-n" class="small"></span></div><div class="box pad" id="extras"><span class="muted small">Loading…</span></div></section>
+        <section data-today="sched"><div class="lbl"><span>Booking changes</span><span id="sched-n" class="small"></span></div><div class="box pad" id="sched"><span class="muted small">Loading…</span></div></section>
+        <section data-today="team"><div class="lbl"><span>Team: waiting on you</span><span id="teamact-n" class="small"></span></div><div class="box" id="teamact"></div></section>
+        <section data-today="needs"><div class="lbl"><span>Contractor documents</span><span id="needs-n" class="small"></span></div><div id="needs"></div></section>
+        <section data-today="storm"><div class="lbl"><span>Storm alerts</span><span id="storm-n" class="small"></span></div><div class="box pad" id="storm"><span class="muted small">Loading…</span></div></section>
+        <section data-today="suggest"><div class="lbl"><span>Suggestions from contractors</span><span id="sug-n"></span></div><div class="box" id="suggest"><div class="empty">Loading…</div></div></section>
+        <section data-today="health"><div class="lbl"><span>System health</span><span id="health-n" class="small"></span></div><div class="box pad" id="health"><span class="muted small">Checking…</span></div></section>
       </div>
-      <div>
-        <section><div class="lbl">Weekly booking capacity</div><div class="box pad" id="cap"><span class="muted small">Loading…</span></div></section>
-        <section><div class="lbl">Area covered</div><div class="box pad" id="homearea"><span class="muted small">Loading…</span></div></section>
-        <section><div class="lbl">Coverage map</div><div class="box pad">
-          <div id="covmap" style="height:380px;border-radius:6px;overflow:hidden;background:#EEF1F4;"></div>
-          <div class="muted small" id="covkey" style="margin-top:8px;line-height:1.7;"></div>
-          <div class="muted small" id="seatsline" style="margin-top:6px;line-height:1.7;"></div>
-        </div></section>
-        <section><div class="lbl"><span>Reports waiting for approval</span><span id="rev-n"></span></div><div class="box" id="reviews"><div class="empty">Loading…</div></div></section>
-        <section><div class="lbl"><span>Suggestions from contractors</span><span id="sug-n"></span></div><div class="box" id="suggest"><div class="empty">Loading…</div></div></section>
+    </div>
+
+    <div class="panel" data-panel="team" hidden>
+      <div class="cols">
+        <section><div class="lbl"><span>Contractors</span><span id="ctrs-n"></span></div><div class="box" id="ctrs"></div></section>
+        <div>
+          <section><div class="lbl">Coverage map</div><div class="box pad">
+            <div id="covmap" style="height:340px;border-radius:12px;overflow:hidden;background:#EEF1F4;"></div>
+            <div class="muted small" id="covkey" style="margin-top:8px;line-height:1.7;"></div>
+            <div class="muted small" id="seatsline" style="margin-top:6px;line-height:1.7;"></div>
+          </div></section>
+          <section><div class="lbl">Area covered</div><div class="box pad" id="homearea"><span class="muted small">Loading…</span></div></section>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" data-panel="jobs" hidden>
+      <div class="grid2">
         <section><div class="lbl">Claimed right now</div><div class="box" id="claimed"></div></section>
         <section><div class="lbl">Stand-downs (unsafe to fly, no penalty)</div><div class="box" id="stood"></div></section>
         <section><div class="lbl">Missed jobs</div><div class="box" id="missed"></div></section>
+      </div>
+    </div>
+
+    <div class="panel" data-panel="money" hidden>
+      <div class="grid2">
+        <section><div class="lbl"><span>Pay run: who you owe</span><span id="pr-n" class="small"></span></div><div class="box pad" id="payrun"><span class="muted small">Loading…</span></div></section>
+        <section><div class="lbl"><span>Trade accounts: monthly invoicing</span><span class="small"><input type="month" id="tm-month" class="dt" onchange="loadTradeMonth()" aria-label="Month to show"></span></div><div class="box pad" id="trade-month"><span class="muted small">Loading…</span></div></section>
+      </div>
+    </div>
+
+    <div class="panel" data-panel="settings" hidden>
+      <div class="grid2">
+        <section><div class="lbl">Weekly booking capacity</div><div class="box pad" id="cap"><span class="muted small">Loading…</span></div></section>
+        <section><div class="lbl"><span>Booking hours (Cal.com)</span><span id="cal-name" class="small"></span></div><div class="box pad" id="cal"><span class="muted small">Loading…</span></div></section>
+        <section><div class="lbl">Time off (Cal.com out of office)</div><div class="box pad" id="ooo"><span class="muted small">Loading…</span></div></section>
       </div>
     </div>
   </div>
@@ -184,6 +245,7 @@ async function load(){
   loadExtras();loadCap();loadHome();loadPayRun();loadTradeMonth();loadCovMap();loadStorm();loadSched();loadHealth();loadSeats();loadReviews();loadSuggestions();loadCal();loadOoo();
   const c=data.counts;
   $('stats').innerHTML=[['Scans open',c.scansOpen],['Reports open',c.reportsOpen],['Scans claimed',c.scansClaimed],['Reports claimed',c.reportsClaimed]].map(x=>`<div class="metric"><div class="n">${x[1]}</div><div class="t">${x[0]}</div></div>`).join('');
+  $('needs-n').textContent=data.needsYou.length?data.needsYou.length+' to sort':'';
   $('needs').innerHTML=data.needsYou.length?data.needsYou.map(n=>`<div class="attn"><b>${esc(n.name)}</b><ul>${n.needs.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`).join(''):'<div class="box empty">Nothing needs your attention.</div>';
   // The team (people we've taken on: switched on, or approved and setting up) is shown, most urgent first.
   // Everyone else (applied, waiting, reserve, on hold, not right now) sits in a folded list underneath.
@@ -197,6 +259,11 @@ async function load(){
     if(!ct.payoutsStarted) them.push('Set up Stripe payouts');
     return {you,them};};
   const rank=ct=>{const t=todo(ct); return t.you.length?0:(t.them.length?1:2);};
+  const teamYou=data.contractors.filter(isTeam).filter(c=>todo(c).you.length);
+  window._teamYou=teamYou.length;
+  $('teamact-n').textContent=teamYou.length?teamYou.length+' to do':'';
+  $('teamact').innerHTML=teamYou.map(c=>`<div class="item" style="cursor:pointer;" onclick="openCtr('${c.id}')"><b style="color:var(--navy);">${esc(c.name)}</b> <span class="muted small">${esc(c.role)}</span><div class="small" style="margin-top:2px;">${todo(c).you.map(esc).join(' · ')}</div></div>`).join('');
+  window._missed=(data.misses||[]).length;
   const team=data.contractors.filter(isTeam).sort((a,b)=>rank(a)-rank(b)||a.name.localeCompare(b.name));
   const STAGE_ORDER=['4. Call booked','3. Waiting on them','2. Contacted','1. Applied','On hold (needs commercial insurance)','Reserve list','Not right now'];
   const others=data.contractors.filter(c=>!isTeam(c)).sort((a,b)=>{const ia=STAGE_ORDER.indexOf(a.stage),ib=STAGE_ORDER.indexOf(b.stage);return ((ia<0?99:ia)-(ib<0?99:ib))||a.name.localeCompare(b.name);});
@@ -206,10 +273,17 @@ async function load(){
     const flyer=ct.role!=='Report Writer';
     const doc=(label,val,key)=>`<div class="ctr-doc"><div class="ctr-lbl">${label}</div>${flyer?`${dateState(val)}<input class="dt" type="date" value="${esc(val)}" onchange="upd('${ct.id}',{${key}:this.value})" title="${label} expiry">`:'<span class="muted small">Not needed</span>'}</div>`;
     const t=todo(ct), inTeam=isTeam(ct);
-    const todoLine=inTeam&&(t.you.length||t.them.length)?`<div class="ctr-line" style="font-size:13px;line-height:1.5;">${t.you.length?`<div><b style="color:#9A3412;">You:</b> ${t.you.map(esc).join(' · ')}</div>`:''}${t.them.length?`<div><b style="color:#6B5A1E;">Them:</b> ${t.them.map(esc).join(' · ')}</div>`:''}</div>`:'';
-    return `<div class="ctr">
-      <div class="ctr-line"><div class="ctr-main"><div class="name">${esc(ct.name)}${!inTeam&&ct.stage?` <span class="muted small">· ${esc(ct.stage.replace(/^\d\.\s*/,''))}</span>`:''}</div><div class="muted small">${esc(ct.role)}${ct.basePostcode?' &middot; '+esc(ct.basePostcode):''}${flyer&&ct.droneModel?' &middot; '+esc(ct.droneModel)+', '+(ct.ratedWind||'?')+' m/s':''}${flyer&&ct.thermal?' &middot; thermal: '+esc(ct.thermalDrone||'model not given'):''}</div></div>
-        <div class="ctr-status">${ct.active?st('Active','ok'):st('Switched off','bad')}${flyer?(ct.approved?st('Drone approved','ok'):st('Drone not approved','warn')):''}${(flyer&&ct.thermal)||ct.thermalWriter?(ct.thermalApproved?st('Thermal approved','ok'):st(ct.thermalWriter&&!(flyer&&ct.thermal)?'Thermal writer: check certificate':'Thermal: check','warn')):''}</div></div>
+    // One line per person (name, role, base, status pills, what's outstanding). Click to open the details and controls.
+    const pills=[ct.active?'<span class="pill ok">Active</span>':'<span class="pill mut">Off</span>'];
+    if(flyer) pills.push(ct.approved?'<span class="pill ok">Drone OK</span>':'<span class="pill warn">Drone not approved</span>');
+    if((flyer&&ct.thermal)||ct.thermalWriter) pills.push(ct.thermalApproved?'<span class="pill ok">Thermal</span>':'<span class="pill warn">Thermal: check</span>');
+    if(!inTeam&&ct.stage) pills.push(`<span class="pill mut">${esc(ct.stage.replace(/^\d\.\s*/,''))}</span>`);
+    const meta=[ct.role, ct.basePostcode?(ct.basePostcode+(ct.travelRange?' · '+ct.travelRange+' mi':'')):'', flyer&&ct.droneModel?ct.droneModel:''].filter(Boolean).map(esc).join(' · ');
+    const sumTodo=inTeam&&(t.you.length||t.them.length)?`<div class="ctr-sum-todo">${t.you.length?`<b style="color:#9A3412;">You:</b> ${t.you.map(esc).join(' · ')}`:''}${t.you.length&&t.them.length?' &nbsp; ':''}${t.them.length?`<b style="color:#6B5A1E;">Them:</b> ${t.them.map(esc).join(' · ')}`:''}</div>`:'';
+    const isOpen=(window._ctrOpen||{})[ct.id];
+    return `<details class="ctr" data-id="${ct.id}"${isOpen?' open':''} ontoggle="(window._ctrOpen=window._ctrOpen||{})['${ct.id}']=this.open">
+      <summary><span class="ctr-sum-name">${esc(ct.name)}</span><span class="ctr-sum-meta">${meta}</span><span>${pills.join(' ')}</span>${sumTodo}</summary>
+      <div class="ctr-body">
       <div class="ctr-line">${flyer?doc('Insurance',ct.insuranceExpiry,'insuranceExpiry')+doc('Operator ID',ct.operatorIdExpiry,'operatorIdExpiry'):'<span class="muted small" style="align-self:center;">No drone documents needed</span>'}
         ${flyer?`<div class="ctr-doc"><div class="ctr-lbl">Base postcode</div><input class="dt" id="bpc-${ct.id}" value="${esc(ct.basePostcode)}" placeholder="BN1 1AA" style="width:110px;text-transform:uppercase;" onchange="upd('${ct.id}',{basePostcode:this.value,travelRange:Number($('rng-${ct.id}').value)})" title="Where this flyer travels from"></div>
         <div class="ctr-doc"><div class="ctr-lbl">Travels up to</div><select class="dt" id="rng-${ct.id}" onchange="${ct.hasBase?`upd('${ct.id}',{travelRange:Number(this.value)})`:''}">${[10,15,20,25,30,35,40].map(m=>`<option value="${m}" ${(ct.travelRange||25)===m?'selected':''}>${m} miles</option>`).join('')}</select></div>`:''}
@@ -217,8 +291,8 @@ async function load(){
       ${ct.wantsBoth?`<div class="ctr-line"><span class="muted small" style="align-self:center;">Asked to do both flying and report writing (details added through their update link).</span><button class="btn sec" onclick="upd('${ct.id}',{role:'Both'})">Make both</button></div>`:''}
       ${(()=>{const twins=ct.role==='Both'?[]:data.contractors.filter(o=>o.id!==ct.id&&o.role!==ct.role&&o.role!=='Both'&&!/^Combined into/.test(o.nextStep||'')&&o.name.trim().toLowerCase()===ct.name.trim().toLowerCase());
         return twins.length?`<div class="ctr-line"><span class="muted small" style="align-self:center;">Also applied as ${esc(twins[0].role.toLowerCase())}.</span><select class="dt" onchange="mergeCtr('${ct.id}',this)"><option value="">Combine into this record&hellip;</option>${twins.map(o=>`<option value="${o.id}">${esc(o.name)} (${esc(o.role)}${o.email?', '+esc(o.email):''})</option>`).join('')}</select></div>`:'';})()}
-      ${todoLine}
-    </div>`;
+      </div>
+    </details>`;
   };
   const othersHtml=others.length?`<details id="ctrs-others"${window._ctrsOpen?' open':''} ontoggle="window._ctrsOpen=this.open" style="border-top:1px solid var(--line);"><summary class="small muted" style="cursor:pointer;padding:12px 16px;">Everyone else: applied, waiting, reserve and not right now (${others.length})</summary>${others.map(card).join('')}</details>`:'';
   $('ctrs').innerHTML=(team.length?team.map(card).join(''):'<div class="empty">Nobody on the team yet.</div>')+othersHtml;
@@ -643,6 +717,37 @@ function tmCsv(i){
   const blob=new Blob([rows.map(r=>r.map(q).join(',')).join('\n')],{type:'text/csv'});
   const link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download=`RoofScan-${a.company.replace(/[^a-z0-9]+/gi,'-')}-${tmData.month}.csv`;link.click();
 }
+
+// ═══ Tabs, badges and the Today view ═══
+// Today only shows sections that have something waiting; the badges on each tab say where action is needed.
+const TABS=['today','team','jobs','money','settings'];
+function showTab(name){
+  if(!TABS.includes(name)) name='today';
+  document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab===name));
+  document.querySelectorAll('.panel').forEach(p=>p.hidden=p.dataset.panel!==name);
+  try{ history.replaceState(null,'','#'+name); }catch(e){}
+  if(name==='team'&&typeof covMap!=='undefined'&&covMap) setTimeout(()=>covMap.invalidateSize(),60);
+}
+document.querySelectorAll('#tabs button').forEach(b=>b.addEventListener('click',()=>showTab(b.dataset.tab)));
+showTab((location.hash||'').slice(1));
+function openCtr(id){showTab('team');window._ctrOpen=window._ctrOpen||{};window._ctrOpen[id]=true;const d=document.querySelector('details.ctr[data-id="'+id+'"]');if(d){d.open=true;setTimeout(()=>d.scrollIntoView({behavior:'smooth',block:'center'}),80);}}
+const numIn=id=>{const el=$(id);if(!el)return 0;const m=(el.textContent||'').match(/\d+/);return m?Number(m[0]):((el.textContent||'').trim()?1:0);};
+function setBadge(id,n){const el=$(id);if(!el)return;el.textContent=n>0?String(n):'';el.classList.toggle('on',n>0);}
+let _badgeT=null;
+function refreshBadges(){
+  const healthTxt=($('health-n')&&$('health-n').textContent||'').trim();
+  const healthBad=healthTxt&&!/All good/i.test(healthTxt)?1:0;
+  const counts={team:numIn('teamact-n'),reviews:numIn('rev-n'),extras:numIn('ex-n'),sched:numIn('sched-n'),needs:numIn('needs-n'),storm:numIn('storm-n'),suggest:numIn('sug-n'),health:healthBad};
+  let total=0;
+  document.querySelectorAll('[data-today]').forEach(sec=>{const n=counts[sec.dataset.today]||0; sec.style.display=n?'':'none'; total+=n;});
+  $('allclear').style.display=total?'none':'';
+  setBadge('tb-today',total);
+  setBadge('tb-team',window._teamYou||0);
+  setBadge('tb-jobs',window._missed||0);
+  setBadge('tb-money',($('pr-n')&&$('pr-n').textContent.trim())?1:0);
+  $('sysline').textContent=healthTxt?('System: '+healthTxt):'';
+}
+new MutationObserver(()=>{clearTimeout(_badgeT);_badgeT=setTimeout(refreshBadges,120);}).observe($('app'),{subtree:true,childList:true,characterData:true});
 </script>
 </body>
 </html>
