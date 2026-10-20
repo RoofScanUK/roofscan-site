@@ -110,6 +110,8 @@ details.ctr>summary:hover{background:#FAF8F2;}
 .ctr-body{padding:4px 16px 14px;border-top:1px dashed var(--line);}
 .pill{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;white-space:nowrap;}
 .pill.ok{background:#EAF2EC;color:var(--ok);}.pill.warn{background:#F7EFDD;color:#7A5410;}.pill.bad{background:#F6E6E4;color:var(--bad);}.pill.mut{background:#EEF1F6;color:var(--navy);}
+.flash{animation:flashbg 1.6s ease;}@keyframes flashbg{0%,40%{background:#FFF4D6;}100%{background:transparent;}}
+.attn:hover{background:#FFFBF0;}
 .sysline{font-size:12px;opacity:.85;margin-top:4px;}
 .covcard{position:absolute;top:10px;right:10px;z-index:500;width:250px;max-height:calc(100% - 20px);overflow:auto;background:var(--white);border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 30px -12px rgba(17,28,51,.45);padding:12px 14px;font-size:12.5px;}
 .covcard[hidden]{display:none;}
@@ -258,7 +260,7 @@ async function load(){
   const c=data.counts;
   $('stats').innerHTML=[['Scans open',c.scansOpen],['Reports open',c.reportsOpen],['Scans claimed',c.scansClaimed],['Reports claimed',c.reportsClaimed]].map(x=>`<div class="metric"><div class="n">${x[1]}</div><div class="t">${x[0]}</div></div>`).join('');
   $('needs-n').textContent=data.needsYou.length?data.needsYou.length+' to sort':'';
-  $('needs').innerHTML=data.needsYou.length?data.needsYou.map(n=>`<div class="attn"><b>${esc(n.name)}</b><ul>${n.needs.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`).join(''):'<div class="box empty">Nothing needs your attention.</div>';
+  $('needs').innerHTML=data.needsYou.length?data.needsYou.map(n=>`<div class="attn" style="cursor:pointer;" onclick="openCtr('${n.id}')" title="Open ${esc(n.name)}"><b>${esc(n.name)}</b><ul>${n.needs.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`).join(''):'<div class="box empty">Nothing needs your attention.</div>';
   // The team (people we've taken on: switched on, or approved and setting up) is shown, most urgent first.
   // Everyone else (applied, waiting, reserve, on hold, not right now) sits in a folded list underneath.
   const TEAM_STAGES=['5. Approved, setting up','6. Live'];
@@ -296,6 +298,7 @@ async function load(){
     return `<details class="ctr" data-id="${ct.id}"${isOpen?' open':''} ontoggle="(window._ctrOpen=window._ctrOpen||{})['${ct.id}']=this.open">
       <summary><span class="ctr-sum-name">${esc(ct.name)}</span><span class="ctr-sum-meta">${meta}</span><span>${pills.join(' ')}</span>${sumTodo}</summary>
       <div class="ctr-body">
+      ${(ct.docs||[]).length?`<div class="ctr-line small" style="margin-bottom:6px;"><span class="ctr-lbl" style="align-self:center;margin:0;">Documents</span>${ct.docs.map(d=>`<a href="${esc(d.url)}" target="_blank" rel="noopener" style="color:var(--navy);">${esc(d.label)}: ${esc(d.name)}</a>`).join(' · ')}</div>`:(flyer?'<div class="small" style="color:var(--bad);margin-bottom:6px;">No documents uploaded.</div>':'')}
       <div class="ctr-line">${flyer?doc('Insurance',ct.insuranceExpiry,'insuranceExpiry')+doc('Operator ID',ct.operatorIdExpiry,'operatorIdExpiry'):'<span class="muted small" style="align-self:center;">No drone documents needed</span>'}
         ${flyer?`<div class="ctr-doc"><div class="ctr-lbl">Base postcode</div><input class="dt" id="bpc-${ct.id}" value="${esc(ct.basePostcode)}" placeholder="BN1 1AA" style="width:110px;text-transform:uppercase;" onchange="upd('${ct.id}',{basePostcode:this.value,travelRange:Number($('rng-${ct.id}').value)})" title="Where this flyer travels from"></div>
         <div class="ctr-doc"><div class="ctr-lbl">Travels up to</div><select class="dt" id="rng-${ct.id}" onchange="${ct.hasBase?`upd('${ct.id}',{travelRange:Number(this.value)})`:''}">${[10,15,20,25,30,35,40].map(m=>`<option value="${m}" ${(ct.travelRange||25)===m?'selected':''}>${m} miles</option>`).join('')}</select></div>`:''}
@@ -659,9 +662,9 @@ async function stormSend(id,n){
 async function loadSeats(){
   const r=await api('/owner/cal-seats'); const el=$('seatsline'); if(!el) return;
   if(!r.ok){ el.textContent=''; return; }
-  el.innerHTML=`Inspections that can be booked at the same time: <b>${r.data.seats}</b> (one per flyer taking jobs${r.data.flyers!==r.data.seats&&r.data.flyers>1?', Cal.com not yet updated':''}). <button class="btn text" onclick="syncSeats()">Sync with Cal.com</button>`;
+  el.innerHTML=(window._seatsBlocked?'<span style="color:var(--warn);">Cal.com is only taking one booking per time slot: its location setting (In Person, Attendee\'s Address) blocks shared slots.</span> ':'')+`Inspections that can be booked at the same time: <b>${r.data.seats}</b> (one per flyer taking jobs${r.data.flyers!==r.data.seats&&r.data.flyers>1?', Cal.com not yet updated':''}). <button class="btn text" onclick="syncSeats()">Sync with Cal.com</button>`;
 }
-async function syncSeats(){ const r=await api('/owner/cal-seats','POST'); if(!r.ok||r.data.ok===false){ alert((r.data&&r.data.error)||'Could not update Cal.com.'); } loadSeats(); }
+async function syncSeats(){ const r=await api('/owner/cal-seats','POST'); if(!r.ok||r.data.ok===false){ const e=(r.data&&r.data.error)||'Could not update Cal.com.'; if(/does not support/i.test(e)) window._seatsBlocked=true; else alert(e); } loadSeats(); }
 async function saveHome(){const v=Number($('homeIn').value);const r=await api('/owner/home-area','POST',{range:v});if(!r.ok){alert(r.data.error||'Could not save.');return;}loadHome();loadCovMap();}
 async function loadCap(){
   const r=await api('/owner/capacity');
@@ -685,7 +688,9 @@ async function mergeCtr(keepId,sel){
   load();
 }
 async function upd(id,change){const r=await api('/owner/contractor','POST',Object.assign({id},change));if(!r.ok){alert(r.data.error||'Could not save.');return;}
-  if(r.data.seats&&r.data.seats.ok===false) alert('Saved, but Cal.com could not be updated with the number of flyers: '+r.data.seats.error);
+  // Cal.com refuses "seats" (several bookings in one slot) while the event's location is "In Person (Attendee's Address)".
+  // That's a known setting clash, not a failed save, so it's shown once as a note under the coverage map instead of a popup.
+  if(r.data.seats&&r.data.seats.ok===false){ const e=String(r.data.seats.error||''); if(/does not support/i.test(e)) window._seatsBlocked=true; else alert('Saved, but Cal.com could not be updated with the number of flyers: '+e); }
   load();}
 $('email').addEventListener('keydown',e=>{if(e.key==='Enter')sendCode();});
 $('otp').addEventListener('keydown',e=>{if(e.key==='Enter')verifyCode();});
@@ -774,7 +779,7 @@ function showTab(name){
 }
 document.querySelectorAll('#tabs button').forEach(b=>b.addEventListener('click',()=>showTab(b.dataset.tab)));
 showTab((location.hash||'').slice(1));
-function openCtr(id){showTab('team');window._ctrOpen=window._ctrOpen||{};window._ctrOpen[id]=true;const d=document.querySelector('details.ctr[data-id="'+id+'"]');if(d){d.open=true;setTimeout(()=>d.scrollIntoView({behavior:'smooth',block:'center'}),80);}}
+function openCtr(id){showTab('team');window._ctrOpen=window._ctrOpen||{};window._ctrOpen[id]=true;const d=document.querySelector('details.ctr[data-id="'+id+'"]');if(d){d.open=true;setTimeout(()=>{d.scrollIntoView({behavior:'smooth',block:'center'});d.classList.add('flash');setTimeout(()=>d.classList.remove('flash'),1600);},80);}}
 const numIn=id=>{const el=$(id);if(!el)return 0;const m=(el.textContent||'').match(/\d+/);return m?Number(m[0]):((el.textContent||'').trim()?1:0);};
 function setBadge(id,n){const el=$(id);if(!el)return;el.textContent=n>0?String(n):'';el.classList.toggle('on',n>0);}
 let _badgeT=null;
