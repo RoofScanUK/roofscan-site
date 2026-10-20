@@ -111,6 +111,15 @@ details.ctr>summary:hover{background:#FAF8F2;}
 .pill{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;white-space:nowrap;}
 .pill.ok{background:#EAF2EC;color:var(--ok);}.pill.warn{background:#F7EFDD;color:#7A5410;}.pill.bad{background:#F6E6E4;color:var(--bad);}.pill.mut{background:#EEF1F6;color:var(--navy);}
 .sysline{font-size:12px;opacity:.85;margin-top:4px;}
+.covcard{position:absolute;top:10px;right:10px;z-index:500;width:250px;max-height:calc(100% - 20px);overflow:auto;background:var(--white);border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 30px -12px rgba(17,28,51,.45);padding:12px 14px;font-size:12.5px;}
+.covcard[hidden]{display:none;}
+.cc-x{position:absolute;top:4px;right:8px;border:none;background:none;font-size:20px;line-height:1;color:var(--muted);cursor:pointer;}
+.cc-name{font-weight:700;color:var(--navy);font-size:14px;padding-right:18px;}
+.cc-sub{color:var(--muted);}
+.cc-r{display:flex;justify-content:space-between;gap:10px;padding:3px 0;border-top:1px solid #F0EDE5;}
+.cc-r span{color:var(--muted);}
+.cc-r b{font-weight:600;text-align:right;}
+@media(max-width:600px){.covcard{position:static;width:auto;margin-top:8px;}}
 @media(max-width:960px){.grid2{grid-template-columns:1fr;}}
 @media(min-width:520px){html .metrics{grid-template-columns:repeat(4,1fr) !important;}html .metric{border-right:1px solid var(--line) !important;border-bottom:none !important;}html .metric:last-child{border-right:none !important;}}
 @media(max-width:960px){.cols{grid-template-columns:1fr;gap:8px;}.metrics{grid-template-columns:repeat(2,1fr);}.metric:nth-child(2){border-right:none;}.metric:nth-child(-n+2){border-bottom:1px solid var(--line);}.wrap,.top-in{padding-left:16px;padding-right:16px;}.hide-m{display:none;}}
@@ -164,7 +173,10 @@ details.ctr>summary:hover{background:#FAF8F2;}
         <section><div class="lbl"><span>Contractors</span><span id="ctrs-n"></span></div><div class="box" id="ctrs"></div></section>
         <div>
           <section><div class="lbl">Coverage map</div><div class="box pad">
-            <div id="covmap" style="height:340px;border-radius:12px;overflow:hidden;background:#EEF1F4;"></div>
+            <div style="position:relative;">
+              <div id="covmap" style="height:340px;border-radius:12px;overflow:hidden;background:#EEF1F4;"></div>
+              <div id="covcard" class="covcard" hidden></div>
+            </div>
             <div class="muted small" id="covkey" style="margin-top:8px;line-height:1.7;"></div>
             <div class="muted small" id="seatsline" style="margin-top:6px;line-height:1.7;"></div>
           </div></section>
@@ -498,17 +510,49 @@ async function loadCovMap(){
   if(covLayer) covLayer.remove();
   covLayer=L.featureGroup().addTo(covMap);
   if(d.home.range>0) L.circle([d.home.lat,d.home.lon],{radius:toCircle(d.home.range),color:'#1B4F8A',weight:2,dashArray:'6 6',fillOpacity:.05}).bindPopup('RoofScan home area: '+d.home.range+' road miles around Brighton').addTo(covLayer);
+  // Clicking a pilot's circle (or their dot) opens a details card on the map and highlights their area.
+  let picked=null;
   d.flyers.forEach(f=>{
     const col=f.live?'#1B7F4B':'#8A94A0';
-    L.circle([f.lat,f.lon],{radius:toCircle(f.range),color:col,weight:2,fillOpacity:f.live?.10:.04}).bindPopup(esc(f.name)+': '+f.range+' road miles'+(f.live?'':' (not taking jobs right now)')).addTo(covLayer);
-    L.circleMarker([f.lat,f.lon],{radius:5,color:col,fillColor:col,fillOpacity:1}).bindTooltip(esc(f.name)).addTo(covLayer);
+    const circ=L.circle([f.lat,f.lon],{radius:toCircle(f.range),color:col,weight:2,fillOpacity:f.live?.10:.04}).addTo(covLayer);
+    const dot=L.circleMarker([f.lat,f.lon],{radius:5,color:col,fillColor:col,fillOpacity:1}).bindTooltip(esc(f.name)).addTo(covLayer);
+    const pick=e=>{ if(e&&e.originalEvent) L.DomEvent.stopPropagation(e);
+      if(picked) picked.setStyle({weight:2,fillOpacity:picked._live?.10:.04});
+      circ._live=f.live; circ.setStyle({weight:4,fillOpacity:.22}); picked=circ; showCovCard(f); };
+    circ.on('click',pick); dot.on('click',pick);
   });
+  covMap.off('click'); covMap.on('click',()=>{ if(picked) picked.setStyle({weight:2,fillOpacity:picked._live?.10:.04}); picked=null; $('covcard').hidden=true; });
   d.demand.forEach(x=>L.circleMarker([x.lat,x.lon],{radius:Math.min(12,4+x.checks),color:'#C86B00',fillColor:'#F29A2E',fillOpacity:.85,weight:1})
     .bindPopup(esc(x.postcode)+': '+x.checks+' quote attempt'+(x.checks===1?'':'s')+(x.emails?', '+x.emails+' left an email':'')).addTo(covLayer));
   const b=covLayer.getBounds(); if(b.isValid()) covMap.fitBounds(b,{padding:[20,20],maxZoom:10}); else covMap.setView([50.8225,-0.1372],9);
   setTimeout(()=>covMap.invalidateSize(),50);
   const live=d.flyers.filter(f=>f.live).length, wanted=d.demand.reduce((n,x)=>n+x.checks,0);
   $('covkey').innerHTML=`<span style="color:#1B7F4B;">&#9679;</span> ${live} flyer${live===1?'':'s'} taking jobs &nbsp; <span style="color:#8A94A0;">&#9679;</span> not taking jobs &nbsp; <span style="color:#1B4F8A;">- - -</span> home area &nbsp; <span style="color:#F29A2E;">&#9679;</span> ${wanted} out-of-area quote attempt${wanted===1?'':'s'}. Flyers with no base postcode are not shown.`;
+}
+// Details card for the pilot clicked on the coverage map.
+function showCovCard(f){
+  const today=new Date().toISOString().slice(0,10), in30=new Date(Date.now()+30*864e5).toISOString().slice(0,10);
+  const dt=v=>v?new Date(v+'T12:00:00Z').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'not on file';
+  const dcls=v=>!v?'warn':(v<today?'bad':(v<=in30?'warn':'ok'));
+  const cover=String(f.cover||'').replace(/[^\d.,]/g,'');
+  const cov=cover?('£'+(Number(cover.replace(/,/g,''))>=1e6?(Number(cover.replace(/,/g,''))/1e6)+'m':cover)):'';
+  const row=(k,v)=>v?`<div class="cc-r"><span>${k}</span><b>${v}</b></div>`:'';
+  const stage=(f.stage||'').replace(/^\d\.\s*/,'');
+  $('covcard').innerHTML=`<button class="cc-x" onclick="$('covcard').hidden=true" aria-label="Close">&times;</button>
+    <div class="cc-name">${esc(f.name)}</div>
+    <div class="cc-sub">${esc(f.role)}${stage?' · '+esc(stage):''}</div>
+    <div style="margin:6px 0 8px;">${f.live?'<span class="pill ok">Taking jobs</span>':`<span class="pill warn">${esc(f.notLiveWhy||'Not taking jobs')}</span>`}</div>
+    ${row('Base',esc(f.basePostcode)+' · '+f.range+' road mi')}
+    ${row('Drone',esc(f.drone))}
+    ${row('Thermal',f.thermalDrone?esc(f.thermalDrone)+(f.thermalOk?' (approved)':' (not approved)'):'')}
+    ${row('Qualifications',esc(f.quals))}
+    ${row('Insurance',esc([f.insurer,cov].filter(Boolean).join(', ')))}
+    <div class="cc-r"><span>Insurance expires</span><b class="t-${dcls(f.insExp)}">${dt(f.insExp)}</b></div>
+    <div class="cc-r"><span>Operator ID expires</span><b class="t-${dcls(f.opExp)}">${dt(f.opExp)}</b></div>
+    <div class="cc-r"><span>Set up</span><b>${f.agreed?'Agreement ✓':'No agreement'} · ${f.payouts?'Payouts ✓':'No payouts'}</b></div>
+    ${row('Phone',f.phone?`<a href="tel:${esc(f.phone)}">${esc(f.phone)}</a>`:'')}
+    <button class="btn sec" style="margin-top:10px;width:100%;" onclick="openCtr('${f.id}')">Open their row</button>`;
+  $('covcard').hidden=false;
 }
 // System health: green, amber or red for each part the business depends on. Red ones also email info@ once a day.
 async function loadHealth(){
