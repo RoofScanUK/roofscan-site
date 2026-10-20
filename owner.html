@@ -185,13 +185,30 @@ async function load(){
   const c=data.counts;
   $('stats').innerHTML=[['Scans open',c.scansOpen],['Reports open',c.reportsOpen],['Scans claimed',c.scansClaimed],['Reports claimed',c.reportsClaimed]].map(x=>`<div class="metric"><div class="n">${x[1]}</div><div class="t">${x[0]}</div></div>`).join('');
   $('needs').innerHTML=data.needsYou.length?data.needsYou.map(n=>`<div class="attn"><b>${esc(n.name)}</b><ul>${n.needs.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`).join(''):'<div class="box empty">Nothing needs your attention.</div>';
-  $('ctrs-n').textContent=data.contractors.length+(data.contractors.length===1?' person':' people');
+  // The team (people we've taken on: switched on, or approved and setting up) is shown, most urgent first.
+  // Everyone else (applied, waiting, reserve, on hold, not right now) sits in a folded list underneath.
+  const TEAM_STAGES=['5. Approved, setting up','6. Live'];
+  const isTeam=ct=>ct.active||TEAM_STAGES.includes(ct.stage);
+  const todo=ct=>{const flyer=ct.role!=='Report Writer', you=[], them=[];
+    if(flyer&&!ct.approved) you.push('Check their documents and approve the drone');
+    if(ct.wantsBoth) you.push('Asked to do both: check and press Make both');
+    (ct.needs||[]).filter(n=>!/Drone not approved/.test(n)).forEach(n=>you.push(n));
+    if(!ct.agreed) them.push('Sign in and accept the agreement');
+    if(!ct.payoutsStarted) them.push('Set up Stripe payouts');
+    return {you,them};};
+  const rank=ct=>{const t=todo(ct); return t.you.length?0:(t.them.length?1:2);};
+  const team=data.contractors.filter(isTeam).sort((a,b)=>rank(a)-rank(b)||a.name.localeCompare(b.name));
+  const STAGE_ORDER=['4. Call booked','3. Waiting on them','2. Contacted','1. Applied','On hold (needs commercial insurance)','Reserve list','Not right now'];
+  const others=data.contractors.filter(c=>!isTeam(c)).sort((a,b)=>{const ia=STAGE_ORDER.indexOf(a.stage),ib=STAGE_ORDER.indexOf(b.stage);return ((ia<0?99:ia)-(ib<0?99:ib))||a.name.localeCompare(b.name);});
+  $('ctrs-n').textContent=team.length+' on the team'+(others.length?' · '+others.length+' others':'');
   // Contractors as wrapping rows (not a fixed table) so nothing spills out of the box at any screen width.
-  const rows=data.contractors.map(ct=>{
+  const card=ct=>{
     const flyer=ct.role!=='Report Writer';
     const doc=(label,val,key)=>`<div class="ctr-doc"><div class="ctr-lbl">${label}</div>${flyer?`${dateState(val)}<input class="dt" type="date" value="${esc(val)}" onchange="upd('${ct.id}',{${key}:this.value})" title="${label} expiry">`:'<span class="muted small">Not needed</span>'}</div>`;
+    const t=todo(ct), inTeam=isTeam(ct);
+    const todoLine=inTeam&&(t.you.length||t.them.length)?`<div class="ctr-line" style="font-size:13px;line-height:1.5;">${t.you.length?`<div><b style="color:#9A3412;">You:</b> ${t.you.map(esc).join(' · ')}</div>`:''}${t.them.length?`<div><b style="color:#6B5A1E;">Them:</b> ${t.them.map(esc).join(' · ')}</div>`:''}</div>`:'';
     return `<div class="ctr">
-      <div class="ctr-line"><div class="ctr-main"><div class="name">${esc(ct.name)}</div><div class="muted small">${esc(ct.role)}${flyer&&ct.droneModel?' &middot; '+esc(ct.droneModel)+', '+(ct.ratedWind||'?')+' m/s':''}${flyer&&ct.thermal?' &middot; thermal: '+esc(ct.thermalDrone||'model not given'):''}</div></div>
+      <div class="ctr-line"><div class="ctr-main"><div class="name">${esc(ct.name)}${!inTeam&&ct.stage?` <span class="muted small">· ${esc(ct.stage.replace(/^\d\.\s*/,''))}</span>`:''}</div><div class="muted small">${esc(ct.role)}${ct.basePostcode?' &middot; '+esc(ct.basePostcode):''}${flyer&&ct.droneModel?' &middot; '+esc(ct.droneModel)+', '+(ct.ratedWind||'?')+' m/s':''}${flyer&&ct.thermal?' &middot; thermal: '+esc(ct.thermalDrone||'model not given'):''}</div></div>
         <div class="ctr-status">${ct.active?st('Active','ok'):st('Switched off','bad')}${flyer?(ct.approved?st('Drone approved','ok'):st('Drone not approved','warn')):''}${(flyer&&ct.thermal)||ct.thermalWriter?(ct.thermalApproved?st('Thermal approved','ok'):st(ct.thermalWriter&&!(flyer&&ct.thermal)?'Thermal writer: check certificate':'Thermal: check','warn')):''}</div></div>
       <div class="ctr-line">${flyer?doc('Insurance',ct.insuranceExpiry,'insuranceExpiry')+doc('Operator ID',ct.operatorIdExpiry,'operatorIdExpiry'):'<span class="muted small" style="align-self:center;">No drone documents needed</span>'}
         ${flyer?`<div class="ctr-doc"><div class="ctr-lbl">Base postcode</div><input class="dt" id="bpc-${ct.id}" value="${esc(ct.basePostcode)}" placeholder="BN1 1AA" style="width:110px;text-transform:uppercase;" onchange="upd('${ct.id}',{basePostcode:this.value,travelRange:Number($('rng-${ct.id}').value)})" title="Where this flyer travels from"></div>
@@ -200,9 +217,11 @@ async function load(){
       ${ct.wantsBoth?`<div class="ctr-line"><span class="muted small" style="align-self:center;">Asked to do both flying and report writing (details added through their update link).</span><button class="btn sec" onclick="upd('${ct.id}',{role:'Both'})">Make both</button></div>`:''}
       ${(()=>{const twins=ct.role==='Both'?[]:data.contractors.filter(o=>o.id!==ct.id&&o.role!==ct.role&&o.role!=='Both'&&!/^Combined into/.test(o.nextStep||'')&&o.name.trim().toLowerCase()===ct.name.trim().toLowerCase());
         return twins.length?`<div class="ctr-line"><span class="muted small" style="align-self:center;">Also applied as ${esc(twins[0].role.toLowerCase())}.</span><select class="dt" onchange="mergeCtr('${ct.id}',this)"><option value="">Combine into this record&hellip;</option>${twins.map(o=>`<option value="${o.id}">${esc(o.name)} (${esc(o.role)}${o.email?', '+esc(o.email):''})</option>`).join('')}</select></div>`:'';})()}
+      ${todoLine}
     </div>`;
-  }).join('');
-  $('ctrs').innerHTML=rows||'<div class="empty">No contractors yet.</div>';
+  };
+  const othersHtml=others.length?`<details id="ctrs-others"${window._ctrsOpen?' open':''} ontoggle="window._ctrsOpen=this.open" style="border-top:1px solid var(--line);"><summary class="small muted" style="cursor:pointer;padding:12px 16px;">Everyone else: applied, waiting, reserve and not right now (${others.length})</summary>${others.map(card).join('')}</details>`:'';
+  $('ctrs').innerHTML=(team.length?team.map(card).join(''):'<div class="empty">Nobody on the team yet.</div>')+othersHtml;
   const jl=(arr,f)=>arr.length?arr.map(f).join(''):'<div class="empty">None.</div>';
   const kv=rows=>'<dl class="kv">'+rows.filter(x=>x[1]).map(x=>`<dt>${x[0]}</dt><dd>${x[1]}</dd>`).join('')+'</dl>';
   const jobName=j=>esc(j.client||j.address||'Job with no client name');
