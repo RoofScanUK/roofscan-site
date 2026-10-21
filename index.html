@@ -1412,7 +1412,7 @@ section[id],#how-it-works{scroll-margin-top:88px;}
     <div class="x-wrap x-band-in">
       
       <h1 class="x-band-h" data-x="up" style="--d:.08s">Get in touch</h1>
-      <p class="x-band-p" data-x="up" style="--d:.16s">Questions about a booking or a referral partnership? We reply within 2 hours during business hours.</p>
+      <p class="x-band-p" data-x="up" style="--d:.16s">Questions about a booking or a referral partnership? We reply the same working day.</p>
     </div>
   </section>
 
@@ -1420,7 +1420,7 @@ section[id],#how-it-works{scroll-margin-top:88px;}
     <div class="x-wrap x-contact">
       <div class="x-cards-c">
         <a class="x-cc" href="tel:07498364197" data-x="up"><span class="x-cc-i"><svg viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 005 5L15 13l5 2v4a2 2 0 01-2 2A16 16 0 013 6a2 2 0 012-2"/></svg></span><span><small>Call or text</small><b>07498 364197</b><em>Mon to Fri 8am to 6pm, Sat 8am to 2pm</em></span></a>
-        <a class="x-cc" href="mailto:info@roofscanuk.co.uk" data-x="up" style="--d:.06s"><span class="x-cc-i"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg></span><span><small>Email</small><b>info@roofscanuk.co.uk</b><em>Reply within 2 hours in business hours</em></span></a>
+        <a class="x-cc" href="mailto:info@roofscanuk.co.uk" data-x="up" style="--d:.06s"><span class="x-cc-i"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg></span><span><small>Email</small><b>info@roofscanuk.co.uk</b><em>Same-day reply on working days</em></span></a>
         <a class="x-cc" href="https://wa.me/447498364197" target="_blank" rel="noopener" data-x="up" style="--d:.12s"><span class="x-cc-i"><svg viewBox="0 0 24 24"><path d="M4 20l1.3-4A8 8 0 1112 20a8 8 0 01-4-1z"/><path d="M9 9.5c.5 2 2 3.5 4 4l1-1.2 2 .8"/></svg></span><span><small>WhatsApp</small><b>07498 364197</b><em>Message us for a quick reply</em></span></a>
         <div class="x-cc x-cc-biz" data-x="up" style="--d:.18s"><span><small>For businesses</small><b>Agent, block manager or solicitor?</b><em>Your branch receives £50 for every referred report paid in full. No contract, no minimum.</em></span><a class="x-btn" href="agency-signup.html">Set up a partnership <span class="x-btn-i">&rarr;</span></a></div>
       </div>
@@ -1432,7 +1432,7 @@ section[id],#how-it-works{scroll-margin-top:88px;}
         <label>How can we help?<textarea name="msg" rows="4" required></textarea></label>
         <button class="x-btn" type="submit">Send message <span class="x-btn-i">&rarr;</span></button>
         <input type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;">
-        <p class="x-form-note">We reply within 2 hours during business hours.</p>
+        <p class="x-form-note">We reply the same working day.</p>
       </form>
     </div>
   </section>
@@ -2688,7 +2688,7 @@ async function xContactSend(f){
     const r = await fetch('https://roofscan-api.tiny-voice-ac40.workers.dev/contact-message', { method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ name:v('name'), email:v('email'), phone:v('phone'), msg:v('msg'), website:v('website'), page:'contact' }) });
     const d = await r.json().catch(() => ({}));
-    if (r.ok && d.ok) { f.innerHTML = '<h2 class="x-h2 x-h2-sm">Thanks, ' + (v('name').split(' ')[0] || 'we got it').replace(/[<>&]/g,'') + '</h2><p class="x-p">Your message is with us. We reply within 2 hours during business hours, usually by email.</p>'; return; }
+    if (r.ok && d.ok) { f.innerHTML = '<h2 class="x-h2 x-h2-sm">Thanks, ' + (v('name').split(' ')[0] || 'we got it').replace(/[<>&]/g,'') + '</h2><p class="x-p">Your message is with us. We reply the same working day, usually by email.</p>'; return; }
     if (r.status === 400 || r.status === 429) { if (note) { note.textContent = d.error || 'Please check the form.'; note.style.color = '#C2341F'; } if (btn) { btn.disabled = false; btn.firstChild.textContent = 'Send message '; } return; }
     mailto();
   } catch (e) { mailto(); }
