@@ -85,9 +85,10 @@ main{padding:20px 18px;}
   </div>
 
   <div class="cta-card">
+    <div id="sc-offer" style="display:none;background:var(--g);color:var(--n);border-radius:10px;padding:10px 12px;font-size:14px;font-weight:700;margin-bottom:14px;line-height:1.45;"></div>
     <div class="cta-title">Check your roof after the storm</div>
     <div class="cta-sub">Enter your postcode for your price and the next available times.</div>
-    <a href="index.html?from=storm#book" class="cta-btn">Get your price</a>
+    <a href="index.html?from=storm#book" class="cta-btn" id="sc-cta">Get your price</a>
   </div>
 
   <p style="font-size:12px;color:var(--mu);text-align:center;margin-top:16px;line-height:1.6;">We inspect and report. We don't carry out repairs, so our report has no reason to find work that isn't there. This is a visual drone inspection, not a structural survey.</p>
@@ -98,6 +99,23 @@ main{padding:20px 18px;}
   <a href="tel:07498364197">07498 364197</a> · <a href="mailto:info@roofscanuk.co.uk">info@roofscanuk.co.uk</a><br>
   <a href="https://roofscanuk.co.uk">roofscanuk.co.uk</a>
 </div>
+
+<script>
+// Storm Check: only people arriving from a Storm Check ad link (?sc=CODE) see free Express.
+(function(){
+  var sc=''; try{ sc=(new URLSearchParams(location.search).get('sc')||'').trim(); }catch(e){}
+  if(!sc) return;
+  fetch('https://roofscan-api.tiny-voice-ac40.workers.dev/storm-offer?code='+encodeURIComponent(sc)).then(function(r){return r.json();}).then(function(d){
+    if(!(d&&d.valid)) return;
+    try{ sessionStorage.setItem('rs_sc', sc); }catch(e){}
+    var until=new Date(d.until).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
+    var o=document.getElementById('sc-offer');
+    o.textContent='Storm Check: free Express, save £99. Inspection from 48 hours’ notice and your report within 24 hours of the flight. Offer ends '+until+'.';
+    o.style.display='block';
+    var a=document.getElementById('sc-cta'); a.href='index.html?from=storm&sc='+encodeURIComponent(sc)+'#book'; a.textContent='Get your price with free Express';
+  }).catch(function(){});
+})();
+</script>
 
 </body>
 </html>

@@ -1530,7 +1530,7 @@ section[id],#how-it-works{scroll-margin-top:88px;}
           </div>
           <label style="display:flex;gap:12px;align-items:flex-start;margin-top:14px;padding:14px 16px;border:1px solid var(--line);border-radius:10px;background:var(--paper);cursor:pointer;">
             <input type="checkbox" id="express-opt" onchange="selectedSlot=null;renderPrice();if(step6Inited)loadSlots();" style="width:20px;height:20px;margin-top:2px;flex:none;">
-            <span style="font-size:14px;line-height:1.5;"><strong>Express, +£99</strong><br><span class="muted" style="font-size:13px;">Book from 48 hours ahead instead of 72, and get your report within 24 hours of the inspection instead of 5 working days. Handy for house sales and insurance deadlines.</span></span>
+            <span style="font-size:14px;line-height:1.5;"><strong id="express-title">Express, +£99</strong><br><span class="muted" style="font-size:13px;">Book from 48 hours ahead instead of 72, and get your report within 24 hours of the inspection instead of 5 working days. Handy for house sales and insurance deadlines.</span></span>
           </label>
           <label id="anytime-wrap" style="display:flex;gap:12px;align-items:flex-start;margin-top:10px;padding:14px 16px;border:1px solid var(--line);border-radius:10px;background:var(--paper);cursor:pointer;">
             <input type="checkbox" id="anytime-opt" onchange="selectedSlot=null;renderPrice();applyAnytime();" style="width:20px;height:20px;margin-top:2px;flex:none;">
@@ -1756,6 +1756,21 @@ const AD=[
 ];
 const SL=["Location","Property","Features","Details","Your price","Book"];
 const EXPRESS_FEE=99;   // flat express fee, mirrored in the Worker
+// Storm Check: arriving from a Storm Check ad link (?sc=CODE) makes Express free while the code is live.
+// The Worker checks the code again at booking, so this only changes what the page shows.
+let STORM_OFFER=null;
+function expressFee(){ return STORM_OFFER ? 0 : EXPRESS_FEE; }
+(function(){
+  var sc=''; try{ sc=(new URLSearchParams(location.search).get('sc')||sessionStorage.getItem('rs_sc')||'').trim(); }catch(e){}
+  if(!sc) return;
+  fetch('https://roofscan-api.tiny-voice-ac40.workers.dev/storm-offer?code='+encodeURIComponent(sc)).then(function(r){return r.json();}).then(function(d){
+    if(!(d&&d.valid)){ try{sessionStorage.removeItem('rs_sc');}catch(e){} return; }
+    STORM_OFFER={code:sc,until:d.until}; try{sessionStorage.setItem('rs_sc',sc);}catch(e){}
+    var t=document.getElementById('express-title'); if(t) t.innerHTML='Express: <s>£99</s> FREE with Storm Check';
+    var x=document.getElementById('express-opt'); if(x) x.checked=true;
+    try{ renderPrice(); }catch(e){}
+  }).catch(function(){});
+})();
 
 // Mileage and coverage are worked out by the Worker (/coverage) from the nearest approved flyer.
 
@@ -2203,7 +2218,7 @@ function renderPrice(){
   const thermalPart = sv === 'visual' ? 0 : thPrice;
   const roofPart = sv === 'thermal' ? 0 : roofPrice + addonTotal;   // thermal only has no roof report or roof add-ons
   const anyOn = anytimeOn() && sv === 'visual';
-  const total = roofPart + thermalPart + travCharge + (expressOn ? EXPRESS_FEE : 0) - (anyOn ? ANYTIME_DISCOUNT : 0);
+  const total = roofPart + thermalPart + travCharge + (expressOn ? expressFee() : 0) - (anyOn ? ANYTIME_DISCOUNT : 0);
   const thEl = document.getElementById('sv-th-price'), bothEl = document.getElementById('sv-both-price');
   if(thEl) thEl.textContent = fmt(thPrice);
   if(bothEl) bothEl.textContent = '+' + fmt(thPrice);
@@ -2215,7 +2230,7 @@ function renderPrice(){
   if(sv!=='visual') lines.push(['Thermal leak scan'+areaTxt+', flown after dark', thPrice]);
   if(travCharge>0) lines.push(['Mileage'+(postcodeInfo?', '+postcodeInfo.postcode:''), travCharge]);
   if(sv!=='thermal') AD.forEach(a=>{ if(counts[a.id]>0) lines.push([a.label+' ×'+counts[a.id], counts[a.id]*a.unit]); });
-  if(expressOn) lines.push(['Express: report within 24 hours of the inspection', EXPRESS_FEE]);
+  if(expressOn) lines.push([STORM_OFFER ? 'Express (free with Storm Check, £99 saved): report within 24 hours' : 'Express: report within 24 hours of the inspection', expressFee()]);
   if(anyOn) lines.push(['Any time booking: pilot picks the time', -ANYTIME_DISCOUNT]);
   const ctaBtn = document.getElementById('book-cta-link'); if(ctaBtn) ctaBtn.textContent = flexOn() ? 'Pay £50 deposit & book →' : 'Pick your date & pay £50 deposit →';
   const inc = document.getElementById('sv-includes');
@@ -2506,6 +2521,7 @@ async function submitPayment(){
         addons: counts,
         postcode: postcodeInfo ? postcodeInfo.postcode : '',
         express: !!(document.getElementById('express-opt') && document.getElementById('express-opt').checked),
+        stormCode: STORM_OFFER ? STORM_OFFER.code : undefined,
         roofAreaM2: resolvedRoofArea().area,
         pitchType: pitchType,
         contact,

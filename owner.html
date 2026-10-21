@@ -647,8 +647,27 @@ async function loadStorm(){
       <button class="btn text" onclick="stormDismiss('${a.id}')">Dismiss</button></div></div>`;}).join('');
   el.innerHTML=promo+(items||'<div class="small muted">No wind warnings in your areas.</div>')+
     `<div class="small muted" style="margin-top:8px;">${last} <button class="btn text" onclick="stormScan()">Check now</button></div>`+
-    `<div class="small muted">Send once the storm has passed, so the email lands when people are checking their roofs.${d.emailReady?'':' The client email Zap is not connected yet.'}</div>`;
+    `<div class="small muted">Send once the storm has passed, so the email lands when people are checking their roofs.${d.emailReady?'':' The client email Zap is not connected yet.'}</div>`+
+    `<div id="sc-links" style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line,#E5E7EB);"><span class="small muted">Loading Storm Check links…</span></div>`;
+  loadStormOffers();
 }
+// Storm Check ad links: free Express only for people who arrive through one of these links. Each lasts 14 days.
+async function loadStormOffers(){
+  const el=$('sc-links'); if(!el) return;
+  const r=await api('/owner/storm-offers');
+  const list=(r.ok&&r.data.offers)||[];
+  el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;"><b class="small">Storm Check ad links (free Express)</b><button class="btn" onclick="stormOfferNew()">Make a new ad link</button></div>`+
+    (list.length?list.map(o=>`<div class="small" style="margin-top:6px;"><code style="user-select:all;">${esc(o.link)}</code><br><span class="muted">${esc(o.label||'No label')} · ends ${new Date(o.until).toLocaleDateString('en-GB',{day:'numeric',month:'short'})}</span> <button class="btn text" onclick="navigator.clipboard.writeText('${esc(o.link)}').then(()=>alert('Link copied'))">Copy</button> <button class="btn text" onclick="stormOfferEnd('${esc(o.code)}')">End now</button></div>`).join(''):'<div class="small muted" style="margin-top:6px;">No live links. Make one when a storm hits an area with live pilots, and put it in the Facebook ad.</div>');
+}
+async function stormOfferNew(){
+  const label=prompt('Label for this link (e.g. "Storm Ciara, Sussex"):',''); if(label===null) return;
+  const r=await api('/owner/storm-offer','POST',{label,days:14});
+  if(!r.ok){ alert('Could not make the link.'); return; }
+  try{ await navigator.clipboard.writeText(r.data.link); }catch(e){}
+  alert('Link made and copied. It gives free Express for 14 days:\n\n'+r.data.link);
+  loadStormOffers();
+}
+async function stormOfferEnd(code){ if(!confirm('End this Storm Check link now? People using it will pay for Express again.')) return; await api('/owner/storm-offer-end','POST',{code}); loadStormOffers(); }
 async function stormScan(){ const r=await api('/owner/storm-scan','POST'); if(!r.ok) alert('Could not check the Met Office feed.'); else if(r.data.errors&&r.data.errors.length) alert('Feed problem: '+r.data.errors.join(', ')); loadStorm(); }
 async function stormDismiss(id){ await api('/owner/storm-dismiss','POST',{id}); loadStorm(); }
 async function stormSend(id,n){
