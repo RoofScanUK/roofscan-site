@@ -513,16 +513,31 @@ async function loadCovMap(){
   if(covLayer) covLayer.remove();
   covLayer=L.featureGroup().addTo(covMap);
   if(d.home.range>0) L.circle([d.home.lat,d.home.lon],{radius:toCircle(d.home.range),color:'#1B4F8A',weight:2,dashArray:'6 6',fillOpacity:.05}).bindPopup('RoofScan home area: '+d.home.range+' road miles around Brighton').addTo(covLayer);
-  // Clicking a pilot's circle (or their dot) opens a details card on the map and highlights their area.
-  let picked=null;
+  // Every pilot's base dot sits on its own top layer, so it can always be clicked even inside someone else's circle.
+  // Clicking a dot opens that pilot's card. Clicking inside circles lists every pilot covering that spot to pick from.
+  if(!covMap.getPane('pilotDots')){ covMap.createPane('pilotDots'); covMap.getPane('pilotDots').style.zIndex=650; }
+  let picked=null; const rows=[];
+  const unpick=()=>{ if(picked) picked.setStyle({weight:2,fillOpacity:picked._live?.10:.04}); picked=null; };
+  const choose=r=>{ unpick(); r.circ._live=r.f.live; r.circ.setStyle({weight:4,fillOpacity:.22}); picked=r.circ; showCovCard(r.f); };
   d.flyers.forEach(f=>{
     const col=f.live?'#1B7F4B':'#8A94A0';
     const circ=L.circle([f.lat,f.lon],{radius:toCircle(f.range),color:col,weight:2,fillOpacity:f.live?.10:.04}).addTo(covLayer);
-    const dot=L.circleMarker([f.lat,f.lon],{radius:5,color:col,fillColor:col,fillOpacity:1}).bindTooltip(esc(f.name)).addTo(covLayer);
-    const pick=e=>{ if(e&&e.originalEvent) L.DomEvent.stopPropagation(e);
-      if(picked) picked.setStyle({weight:2,fillOpacity:picked._live?.10:.04});
-      circ._live=f.live; circ.setStyle({weight:4,fillOpacity:.22}); picked=circ; showCovCard(f); };
-    circ.on('click',pick); dot.on('click',pick);
+    rows.push({f,circ});
+  });
+  rows.forEach(r=>{
+    const col=r.f.live?'#1B7F4B':'#8A94A0';
+    const dot=L.circleMarker([r.f.lat,r.f.lon],{pane:'pilotDots',radius:7,color:'#fff',weight:2,fillColor:col,fillOpacity:1}).bindTooltip(esc(r.f.name)).addTo(covLayer);
+    dot.on('click',e=>{ L.DomEvent.stopPropagation(e); choose(r); });
+    r.circ.on('click',e=>{ L.DomEvent.stopPropagation(e);
+      const here=rows.filter(x=>covMap.distance(e.latlng,[x.f.lat,x.f.lon])<=x.circ.getRadius());
+      if(here.length<=1){ choose(here[0]||r); return; }
+      unpick();
+      $('covcard').innerHTML=`<button class="cc-x" onclick="$('covcard').hidden=true" aria-label="Close">&times;</button>
+        <div class="cc-name">${here.length} pilots cover this spot</div><div class="cc-sub">Pick one to see their details</div>
+        ${here.map((x,i)=>`<button class="btn sec" style="display:block;width:100%;text-align:left;margin-top:6px;" data-i="${i}">${esc(x.f.name)} <span class="muted small">· ${x.f.live?'taking jobs':'not live'}</span></button>`).join('')}`;
+      $('covcard').hidden=false;
+      $('covcard').querySelectorAll('button[data-i]').forEach(b=>b.onclick=ev=>{ ev.stopPropagation(); choose(here[+b.dataset.i]); });
+    });
   });
   covMap.off('click'); covMap.on('click',()=>{ if(picked) picked.setStyle({weight:2,fillOpacity:picked._live?.10:.04}); picked=null; $('covcard').hidden=true; });
   d.demand.forEach(x=>L.circleMarker([x.lat,x.lon],{radius:Math.min(12,4+x.checks),color:'#C86B00',fillColor:'#F29A2E',fillOpacity:.85,weight:1})
