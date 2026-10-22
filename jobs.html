@@ -214,7 +214,7 @@ const queue = () => get(LS.queue, []);
 function enqueue(item){ const q = queue(); q.push(Object.assign({qid: Date.now()+'-'+Math.random().toString(36).slice(2,6)}, item)); put(LS.queue, q); }
 async function sendAction(a){
   const path = { claim:'/contractor/claim', complete:'/contractor/complete', standdown:'/contractor/standdown', reportPass:'/contractor/report-pass' }[a.type];
-  return api(path, 'POST', { jobId:a.jobId, kind:a.kind, both:!!a.both, reason:a.reason, reasonCode:a.reasonCode, link:a.link, conditions:a.conditions, extras:a.extras, extrasNote:a.extrasNote });
+  return api(path, 'POST', { jobId:a.jobId, kind:a.kind, both:!!a.both, reason:a.reason, reasonCode:a.reasonCode, link:a.link, conditions:a.conditions, extras:a.extras, extrasNote:a.extrasNote, droneId:a.droneId });
 }
 async function act(a){
   // apply to the cached board right away so the screen responds even with no signal
@@ -324,7 +324,22 @@ if (/[?&]payouts=done/.test(location.search)) setTimeout(() => notice('Thanks. I
 function windLine(){
   const m = board.me;
   if (m.role === 'Report Writer') return '';
+  const ds = m.drones || [];
+  if (ds.length > 1) return 'Your drones: ' + ds.map(d => `${esc(d.model)}${d.thermal?' (thermal)':''} ${d.windLimit} m/s`).join(' · ') + '. Pick the one you are flying on each job.';
   return m.droneModel ? `Your drone: ${esc(m.droneModel)} · your wind limit ${m.windLimit} m/s (80% of the rated ${m.ratedWind} m/s)` : 'No drone on file yet.';
+}
+// Which drone is flying this job: the pilot's pick, else a thermal drone for thermal jobs, else their first approved drone.
+function jobDrone(j){
+  const ds = (board.me.drones || []); if (!ds.length) return null;
+  const st = get(LS.checks, {})[j.id] || {};
+  return ds.find(d => d.id === st.droneId) || (j.thermal ? ds.find(d => d.thermal) : null) || ds[0];
+}
+function setJobDrone(id, droneId){ const c = get(LS.checks, {}); c[id] = c[id] || {}; c[id].droneId = droneId; delete c[id].weather; delete c[id].weatherMsg; delete c[id].checkedAt; put(LS.checks, c); render(); }
+function dronePicker(j){
+  const ds = board.me.drones || []; if (ds.length < 2) return '';
+  const cur = jobDrone(j);
+  const warn = j.thermal && cur && !cur.thermal ? '<div class="banner b-amber" style="margin:6px 0;">This is a thermal job. Pick a drone with a thermal camera.</div>' : '';
+  return `<div style="margin:8px 0;"><label class="muted" style="font-size:12px;">Drone for this job</label><br><select onchange="setJobDrone('${j.id}', this.value)" style="padding:6px;border-radius:4px;border:1px solid var(--br);font-family:inherit;">${ds.map(d => `<option value="${esc(d.id)}" ${cur && cur.id===d.id?'selected':''}>${esc(d.model)}${d.serial?' ('+esc(d.serial)+')':''}${d.thermal?' · thermal':''} · limit ${d.windLimit} m/s</option>`).join('')}</select>${warn}</div>`;
 }
 function render(){
   if (!board || sliding) return;
@@ -598,6 +613,7 @@ function scanPanel(j){
   const blocked = st.weather==='red' || st.airspace==='red';
   return `<div style="margin-top:12px;border-top:1px solid var(--br);padding-top:10px;"><div class="jt" style="font-size:13px;">Scan checklist <a href="photo-guide.html" target="_blank" rel="noopener" style="font-weight:400;font-size:12px;margin-left:8px;color:var(--muted);">What to photograph</a></div>
   ${needsCheck(j, st) ? `<div class="banner b-amber" style="margin:8px 0;"><b>Check the weather before you leave home.</b> If the check says no-go, stand down from home. Standing down pays nothing for the job, including mileage, so do not travel without checking.</div>` : ''}
+  ${dronePicker(j)}
   <div class="acts" style="margin-top:6px;"><button class="btn ${needsCheck(j, st)?'':'ghost'}" onclick="runChecks('${j.id}')">Check weather before you leave</button>${st.checkedAt?`<span class="muted" style="font-size:12px;align-self:center;">Last checked ${new Date(st.checkedAt).toLocaleString('en-GB',{weekday:'short',hour:'2-digit',minute:'2-digit'})}</span>`:''}</div>
   ${w}${a}${locked('weather')}${locked('airspace')}${manual}
   <div class="acts" style="margin-top:8px;align-items:center;">
@@ -840,7 +856,8 @@ function completeScan(id){
   const missing = list.filter(x => !s[x[0]]).map(x => '• ' + x[1]);
   if (missing.length && !confirm('These are not ticked on your shot list:\n\n' + missing.join('\n') + '\n\nThe report can only cover what is in your photos. Mark the scan done anyway?')) return;
   const extras = job.extras ? exCounts(job, st) : undefined;
-  act({type:'complete', jobId:id, kind:'scan', link:st.link, conditions, extras, extrasNote: st.exNote || ''});
+  const dr = jobDrone(job);
+  act({type:'complete', jobId:id, kind:'scan', link:st.link, conditions, extras, extrasNote: st.exNote || '', droneId: dr ? dr.id : ''});
 }
 function completeReport(id){ const st = get(LS.checks, {})[id] || {}; act({type:'complete', jobId:id, kind:'report', link:st.rlink}); }
 // The pre-departure check is due once the job is within 24 hours and there has been no check in the last 6 hours.
@@ -933,7 +950,8 @@ async function runChecks(id){
     h.time.forEach((t,i) => { if (String(t).slice(0,10) !== date) return; const hr = Number(String(t).slice(11,13)); if (hr < lo || hr > hi) return; if (date === todayStr && hr < nowH && !hasStart) return; n++;
       worst.wind = Math.max(worst.wind, h.wind_speed_10m[i]/3.6); worst.gust = Math.max(worst.gust, h.wind_gusts_10m[i]/3.6); worst.rain = Math.max(worst.rain, h.precipitation_probability[i]); worst.vis = Math.min(worst.vis, h.visibility[i]); });
     // Thermal: above about 15 mph (6.7 m/s) the wind cools the roof evenly and hides patterns, whatever the drone can fly in.
-    const limit = j.thermal ? Math.min(board.me.windLimit || 10, 6.7) : (board.me.windLimit || 10); // falls back to 10 m/s if no drone rating on file
+    const dr = jobDrone(j), dLimit = (dr && dr.windLimit) || board.me.windLimit || 10;   // the drone picked for this job; 10 m/s if no rating on file
+    const limit = j.thermal ? Math.min(dLimit, 6.7) : dLimit;
     const ws = Math.round(worst.wind*10)/10, gs = Math.round(worst.gust*10)/10;
     const when = hasStart ? `around your ${String(sh).padStart(2,'0')}:00 start` : (j.thermal ? 'in the evening after sunset' : 'during the day');
     if (!n) { c[id].weather='amber'; c[id].weatherMsg='No forecast hours left for this job. Check again on the day.'; }

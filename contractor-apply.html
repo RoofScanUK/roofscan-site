@@ -46,6 +46,7 @@ textarea{min-height:96px;resize:vertical;}
 .check-row label{font-weight:500;margin:0;font-size:14px;line-height:1.5;}
 .btn{display:block;width:100%;background:var(--navy);color:var(--paper);border:1px solid var(--navy);border-radius:4px;padding:14px 26px;font-size:15px;font-weight:600;letter-spacing:.01em;cursor:pointer;font-family:inherit;margin-top:8px;}
 .btn:disabled{opacity:.5;cursor:default;}
+.btn-sec{background:var(--paper);color:var(--navy);border:1px solid var(--navy);border-radius:4px;padding:8px 14px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;}
 .error{color:var(--red);font-size:14px;margin-top:14px;display:none;line-height:1.5;}
 .notice{background:#FFF7E8;border:1px solid #EBD9B0;border-radius:6px;padding:14px 16px;font-size:14px;color:#6A5314;margin:0 0 22px;line-height:1.55;}
 .hidden{display:none !important;}
@@ -173,6 +174,12 @@ footer{text-align:center;margin-top:40px;font-size:12.5px;color:var(--muted);}
           <label class="l" for="f-wind">Maximum wind speed the manufacturer rates it for (m/s)</label>
           <input type="number" id="f-wind" min="3" max="25" step="0.1" inputmode="decimal" placeholder="e.g. 12">
           <div class="hint">Find this in the drone's specifications. Our app applies a safety margin below this number, so a stronger drone gets a higher limit.</div>
+        </div>
+        <div class="field">
+          <label class="l">Other drones you fly (optional)</label>
+          <div class="hint" style="margin-top:0;">Add any other drones you may use for jobs. Each one is checked before you can pick it in the app, and your insurance must cover it. On the day you choose which drone you're flying, so the right wind limit is used.</div>
+          <div id="xdrones"></div>
+          <button type="button" class="btn-sec" id="xd-add" style="margin-top:8px;">+ Add another drone</button>
         </div>
 
         <div class="section-label">Your CAA details</div>
@@ -504,6 +511,7 @@ function fillFrom(a){
   set('f-basepc', a.basePostcode); set('f-drone', a.droneModel); set('f-serial', a.droneSerial); set('f-wind', a.droneWind);
   set('f-opid', a.operatorId); set('f-opexp', a.operatorExpiry); set('f-flid', a.flyerId); set('f-flexp', a.flyerExpiry); set('f-other', a.otherQualifications);
   if (a.travelRange && $('f-range').querySelector('option[value="' + a.travelRange + '"]')) $('f-range').value = String(a.travelRange);
+  $('xdrones').innerHTML=''; (a.otherDrones||[]).forEach(d => addXDrone(d));
   if (a.thermal) { $('f-thermal').checked = true; $('thermal-sec').classList.remove('hidden'); set('f-tdrone', a.thermalDrone); set('f-ttrain', a.thermalTraining); }
   set('f-exp', a.experience); $('f-pc').checked = !!a.privateComputer;
   document.querySelectorAll('input[name=roofexp]').forEach(function(x){ x.checked = (a.roofExperience || []).indexOf(x.value) !== -1; });
@@ -528,6 +536,7 @@ $('apply-form').addEventListener('submit', async function(e){
     if (!/^[A-Z]{1,2}[0-9][A-Z0-9]?\s*[0-9][A-Z]{2}$/i.test(v('f-basepc'))) { showErr('Please enter your full home postcode, for example SW1A 1AA.'); return; }
     if (!$('f-range-ok').checked) { showErr('Please tick the box to agree to your travel distance.'); return; }
     if (!v('f-drone') || !v('f-serial') || !v('f-wind')) { showErr('Please fill in your drone details.'); return; }
+    { const bad = readXDrones().find(d => !d.serial || !(Number(d.wind) >= 3 && Number(d.wind) <= 25)); if (bad) { showErr('Please add the serial number and wind rating (3 to 25 m/s) for your ' + bad.model + ', or remove it.'); return; } }
     if (!v('f-opid') || !v('f-opexp') || !v('f-flid') || !v('f-flexp')) { showErr('Please fill in your Operator ID and Flyer ID, with expiry dates.'); return; }
     if (!files.caa.length && !(edit && edit.onFile.caa && edit.onFile.caa.length)) { showErr('Please upload your CAA certificates.'); return; }
     if (!v('f-insprov') || !v('f-insamt') || !v('f-insexp')) { showErr('Please fill in your insurance details.'); return; }
@@ -548,7 +557,7 @@ $('apply-form').addEventListener('submit', async function(e){
   };
   if (flyer) Object.assign(payload, { basePostcode: v('f-basepc'), travelRange: Number($('f-range').value), rangeAgreed: $('f-range-ok').checked, droneModel: v('f-drone'), droneSerial: v('f-serial'), droneWind: v('f-wind'),
     operatorId: v('f-opid'), operatorExpiry: $('f-opexp').value, flyerId: v('f-flid'), flyerExpiry: $('f-flexp').value, otherQualifications: v('f-other'),
-    thermal: $('f-thermal').checked, thermalDrone: v('f-tdrone'), thermalTraining: v('f-ttrain') });
+    thermal: $('f-thermal').checked, thermalDrone: v('f-tdrone'), thermalTraining: v('f-ttrain'), otherDrones: readXDrones() });
   if (edit) Object.assign(payload, { id: edit.id, token: edit.token, newSafetyDocs: !!(files.caa.length || files.insurance.length) });
   if (writer) Object.assign(payload, { experience: v('f-exp'), privateComputer: $('f-pc').checked, roofExperience: roofExp, thermography: $('f-wtherm').checked, thermographyTraining: v('f-wttrain') });
 
@@ -595,6 +604,26 @@ $('apply-form').addEventListener('submit', async function(e){
   }
   window.scrollTo({ top: 0, behavior: 'smooth' });
 });
+
+// Other drones: a small repeatable row (model, serial, wind rating, thermal camera).
+function addXDrone(d){
+  d = d || {};
+  const row = document.createElement('div'); row.className = 'xd'; row.style.cssText = 'border:1px solid #D8DEE6;border-radius:6px;padding:10px;margin-top:8px;';
+  const esc2 = x => String(x == null ? '' : x).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  row.innerHTML = '<div class="row2"><div class="field"><label class="l">Make and model</label><input type="text" class="xd-model" placeholder="e.g. DJI Matrice 4T" value="'+esc2(d.model)+'"></div>'
+    + '<div class="field"><label class="l">Serial number</label><input type="text" class="xd-serial" value="'+esc2(d.serial)+'"></div></div>'
+    + '<div class="row2"><div class="field"><label class="l">Max wind rating (m/s)</label><input type="number" class="xd-wind" min="3" max="25" step="0.1" inputmode="decimal" value="'+esc2(d.wind)+'"></div>'
+    + '<div class="field" style="display:flex;align-items:center;gap:8px;margin-top:22px;"><input type="checkbox" class="xd-thermal"'+(d.thermal?' checked':'')+'><label>Has a thermal camera</label></div></div>'
+    + (d.approved ? '<div class="hint" style="color:#1B7F4B;">Approved. Changing these details means it is checked again.</div>' : '')
+    + '<button type="button" class="btn-sec xd-del" style="margin-top:6px;">Remove this drone</button>';
+  row.querySelector('.xd-del').onclick = () => row.remove();
+  $('xdrones').appendChild(row);
+}
+function readXDrones(){
+  return Array.from(document.querySelectorAll('#xdrones .xd')).map(r => ({ model: r.querySelector('.xd-model').value.trim(), serial: r.querySelector('.xd-serial').value.trim(),
+    wind: Number(r.querySelector('.xd-wind').value), thermal: r.querySelector('.xd-thermal').checked })).filter(d => d.model);
+}
+document.getElementById('xd-add').onclick = () => addXDrone();
 </script>
 </body>
 </html>
