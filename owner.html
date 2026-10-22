@@ -672,7 +672,9 @@ async function loadStormOffers(){
   const r=await api('/owner/storm-offers');
   const list=(r.ok&&r.data.offers)||[];
   el.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;"><b class="small">Storm Check ad links (free Express)</b><button class="btn" onclick="stormOfferNew()">Make a new ad link</button></div>`+
-    (list.length?list.map(o=>`<div class="small" style="margin-top:6px;"><code style="user-select:all;">${esc(o.link)}</code><br><span class="muted">${esc(o.label||'No label')} · ends ${new Date(o.until).toLocaleDateString('en-GB',{day:'numeric',month:'short'})}</span> <button class="btn text" onclick="navigator.clipboard.writeText('${esc(o.link)}').then(()=>alert('Link copied'))">Copy</button> <button class="btn text" onclick="stormOfferEnd('${esc(o.code)}')">End now</button></div>`).join(''):'<div class="small muted" style="margin-top:6px;">No live links. Make one when a storm hits an area with live pilots, and put it in the Facebook ad.</div>');
+    (list.length?list.map(o=>o.permanent
+      ?`<div class="small" style="margin-top:6px;"><code style="user-select:all;">${esc(o.link)}</code><br><span class="muted">Built into the Facebook/Instagram ads · </span>${o.off?'<b style="color:#B3261E;">Off: ad clicks pay for Express</b>':'<b style="color:#1B7F4B;">On: ad clicks get free Express</b>'} <button class="btn text" onclick="stormMetaToggle(${o.off?'true':'false'})">${o.off?'Turn on':'Turn off'}</button></div>`
+      :`<div class="small" style="margin-top:6px;"><code style="user-select:all;">${esc(o.link)}</code><br><span class="muted">${esc(o.label||'No label')} · ends ${new Date(o.until).toLocaleDateString('en-GB',{day:'numeric',month:'short'})}</span> <button class="btn text" onclick="navigator.clipboard.writeText('${esc(o.link)}').then(()=>alert('Link copied'))">Copy</button> <button class="btn text" onclick="stormOfferEnd('${esc(o.code)}')">End now</button></div>`).join(''):'<div class="small muted" style="margin-top:6px;">No live links. Make one when a storm hits an area with live pilots, and put it in the Facebook ad.</div>');
 }
 async function stormOfferNew(){
   const label=prompt('Label for this link (e.g. "Storm Ciara, Sussex"):',''); if(label===null) return;
@@ -682,6 +684,7 @@ async function stormOfferNew(){
   alert('Link made and copied. It gives free Express for 14 days:\n\n'+r.data.link);
   loadStormOffers();
 }
+async function stormMetaToggle(on){ if(!confirm(on?'Turn free Express back on for people clicking the Facebook/Instagram ads?':'Turn off free Express for the Facebook/Instagram ads? Ad clicks will pay £99 for Express until you turn it back on.')) return; await api('/owner/storm-offer-end','POST',{code:'SCMETA',on}); loadStormOffers(); }
 async function stormOfferEnd(code){ if(!confirm('End this Storm Check link now? People using it will pay for Express again.')) return; await api('/owner/storm-offer-end','POST',{code}); loadStormOffers(); }
 async function stormScan(){ const r=await api('/owner/storm-scan','POST'); if(!r.ok) alert('Could not check the Met Office feed.'); else if(r.data.errors&&r.data.errors.length) alert('Feed problem: '+r.data.errors.join(', ')); loadStorm(); }
 async function stormDismiss(id){ await api('/owner/storm-dismiss','POST',{id}); loadStorm(); }

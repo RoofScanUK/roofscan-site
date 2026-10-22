@@ -108,9 +108,9 @@ main{padding:20px 18px;}
   fetch('https://roofscan-api.tiny-voice-ac40.workers.dev/storm-offer?code='+encodeURIComponent(sc)).then(function(r){return r.json();}).then(function(d){
     if(!(d&&d.valid)) return;
     try{ sessionStorage.setItem('rs_sc', sc); }catch(e){}
-    var until=new Date(d.until).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
+    var ends=d.until?' Offer ends '+new Date(d.until).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'})+'.':'';
     var o=document.getElementById('sc-offer');
-    o.textContent='Storm Check: free Express, save £99. Inspection from 48 hours’ notice and your report within 24 hours of the flight. Offer ends '+until+'.';
+    o.textContent='Storm Check: free Express, save £99. Inspection from 48 hours’ notice and your report within 24 hours of the flight.'+ends;
     o.style.display='block';
     var a=document.getElementById('sc-cta'); a.href='index.html?from=storm&sc='+encodeURIComponent(sc)+'#book'; a.textContent='Get your price with free Express';
   }).catch(function(){});
