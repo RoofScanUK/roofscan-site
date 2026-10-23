@@ -120,8 +120,15 @@ footer{text-align:center;margin-top:40px;font-size:12.5px;color:var(--muted);}
       <div class="row2">
         <div class="field">
           <label class="l" for="f-email">Email</label>
-          <input type="email" id="f-email" autocomplete="email">
+          <input type="email" id="f-email" autocomplete="email" autocapitalize="off" spellcheck="false">
+          <p class="hint" style="font-size:13px;margin:4px 0 0;">Use one you check daily. Your sign-in codes, job alerts and our reply all go here.</p>
         </div>
+        <div class="field">
+          <label class="l" for="f-email2">Type your email again</label>
+          <input type="email" id="f-email2" autocomplete="off" autocapitalize="off" spellcheck="false" onpaste="return false">
+        </div>
+      </div>
+      <div class="row2">
         <div class="field">
           <label class="l" for="f-phone">Mobile number</label>
           <input type="tel" id="f-phone" autocomplete="tel">
@@ -507,7 +514,7 @@ function fillFrom(a){
     document.querySelectorAll('.role').forEach(function(x){ x.classList.add('on'); });
   }
   const set = function(id, v){ if ($(id) && v != null && v !== '') $(id).value = v; };
-  set('f-name', a.name); set('f-email', a.email); set('f-phone', a.phone); set('f-payee', a.payeeName); set('f-emerg', a.emergencyContact);
+  set('f-name', a.name); set('f-email', a.email); set('f-email2', a.email); set('f-phone', a.phone); set('f-payee', a.payeeName); set('f-emerg', a.emergencyContact);
   set('f-basepc', a.basePostcode); set('f-drone', a.droneModel); set('f-serial', a.droneSerial); set('f-wind', a.droneWind);
   set('f-opid', a.operatorId); set('f-opexp', a.operatorExpiry); set('f-flid', a.flyerId); set('f-flexp', a.flyerExpiry); set('f-other', a.otherQualifications);
   if (a.travelRange && $('f-range').querySelector('option[value="' + a.travelRange + '"]')) $('f-range').value = String(a.travelRange);
@@ -532,6 +539,18 @@ $('apply-form').addEventListener('submit', async function(e){
   const flyer = role === 'Scanner' || role === 'Both';
   const writer = role === 'Report Writer' || role === 'Both';
   if (!v('f-name') || !v('f-email') || !v('f-phone') || !v('f-payee') || !v('f-emerg')) { showErr('Please fill in the "About you" section.'); return; }
+  {
+    const em = v('f-email').toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/.test(em)) { showErr('Please check your email address. It does not look complete.'); $('f-email').focus(); return; }
+    if (em !== v('f-email2').toLowerCase()) { showErr('The two email addresses do not match. Please type it again carefully.'); $('f-email2').focus(); return; }
+    const dom = em.split('@')[1];
+    const typos = { 'gmial.com':'gmail.com','gmai.com':'gmail.com','gmail.co':'gmail.com','gmail.con':'gmail.com','gmal.com':'gmail.com','gamil.com':'gmail.com','gnail.com':'gmail.com','googlemail.co':'googlemail.com',
+      'hotmial.com':'hotmail.com','hotmail.con':'hotmail.com','hotmai.com':'hotmail.com','hotmail.co':'hotmail.co.uk','hotmail.co.k':'hotmail.co.uk','hotmail.couk':'hotmail.co.uk',
+      'outlook.con':'outlook.com','outlok.com':'outlook.com','yahoo.con':'yahoo.com','yahoo.co':'yahoo.co.uk','yahoo.couk':'yahoo.co.uk','icloud.con':'icloud.com','iclod.com':'icloud.com',
+      'btinternet.co':'btinternet.com','btinternet.con':'btinternet.com','sky.con':'sky.com','live.co':'live.co.uk','live.con':'live.com' };
+    if (typos[dom] && !confirm('Did you mean ' + em.split('@')[0] + '@' + typos[dom] + '?\n\nPress OK to go back and fix it, or Cancel to keep ' + em + '.')) { /* keep as typed */ }
+    else if (typos[dom]) { $('f-email').value = em.split('@')[0] + '@' + typos[dom]; $('f-email2').value = ''; showErr('We have corrected your email to ' + $('f-email').value + '. Please type it again in the second box to confirm.'); $('f-email2').focus(); return; }
+  }
   if (flyer) {
     if (!/^[A-Z]{1,2}[0-9][A-Z0-9]?\s*[0-9][A-Z]{2}$/i.test(v('f-basepc'))) { showErr('Please enter your full home postcode, for example SW1A 1AA.'); return; }
     if (!$('f-range-ok').checked) { showErr('Please tick the box to agree to your travel distance.'); return; }
