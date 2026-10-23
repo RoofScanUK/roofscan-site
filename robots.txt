@@ -1,0 +1,7 @@
+User-agent: *
+Disallow: /owner.html
+Disallow: /jobs.html
+Disallow: /staff.html
+Disallow: /reports.html
+Disallow: /login.html
+Sitemap: https://roofscanuk.co.uk/sitemap.xml
