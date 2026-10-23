@@ -359,6 +359,20 @@ textarea{resize:vertical;}
 .x-btn-dark .x-btn-i{background:var(--sun);color:var(--deep);}
 .x-ghost{color:rgba(255,255,255,.85);font-size:15px;font-weight:600;padding:10px 4px;border-bottom:2px solid rgba(242,182,64,.6);transition:color .2s,border-color .2s;}
 .x-ghost:hover{color:#fff;border-color:var(--sun);}
+.x-pc{margin-bottom:34px;max-width:520px;}
+.x-pc-l{display:block;color:#fff;font-weight:700;font-size:15px;margin-bottom:10px;}
+.x-pc-row{display:flex;gap:8px;background:#fff;border-radius:999px;padding:6px;box-shadow:0 14px 40px -16px rgba(0,0,0,.45);}
+.x-pc-row input{flex:1;min-width:0;border:none;outline:none;background:transparent;font:inherit;font-size:16px;font-weight:600;color:var(--deep);padding:0 8px 0 18px;text-transform:uppercase;letter-spacing:.04em;}
+.x-pc-row input::placeholder{text-transform:none;letter-spacing:0;font-weight:500;color:#8A94A6;}
+.x-pc-row .x-btn{box-shadow:none;white-space:nowrap;}
+.x-pc-out{min-height:0;margin-top:12px;color:rgba(255,255,255,.9);font-size:14.5px;line-height:1.55;}
+.x-pc-out:empty{margin-top:0;}
+.x-pc-ok{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:rgba(47,179,107,.16);border:1px solid rgba(47,179,107,.55);border-radius:14px;padding:12px 14px;color:#fff;}
+.x-pc-ok b{color:#7EE2A8;}
+.x-pc-no{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.25);border-radius:14px;padding:12px 14px;}
+.x-pc-no input{flex:1;min-width:0;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.95);border-radius:999px;padding:9px 14px;font:inherit;font-size:14px;color:var(--deep);}
+.x-pc-how{display:inline-block;margin-top:16px;}
+@media (max-width:520px){ .x-pc-row{border-radius:18px;flex-direction:column;padding:8px;} .x-pc-row input{padding:10px 12px;text-align:center;} .x-pc-row .x-btn{justify-content:center;} }
 
 /* HERO */
 .x-hero{position:relative;overflow:hidden;background:var(--deep);color:#fff;padding:96px 0 120px;min-height:calc(100vh - 76px);display:flex;align-items:center;}
@@ -1054,10 +1068,16 @@ section[id],#how-it-works{scroll-margin-top:88px;}
         <div class="x-pill" data-x="up"><span class="x-dot"></span>CAA-registered, insured pilots · UK-wide</div>
         <h1 class="x-h1" data-split>See every inch of your roof. <em>Without a ladder.</em></h1>
         <p class="x-lead" data-x="up" style="--d:.5s">Drone roof inspections with a written report you can hand to a roofer, a solicitor or your insurer. Get your price online in about a minute.</p>
-        <div class="x-ctas" data-x="up" style="--d:.65s">
-          <button class="x-btn" onclick="go('book')">Get your instant price <span class="x-btn-i">&rarr;</span></button>
-          <a class="x-ghost" href="#how-it-works" onclick="event.preventDefault();document.getElementById('how-it-works').scrollIntoView({behavior:'smooth'});">See how it works</a>
-        </div>
+        <!-- One small first step: check the postcode, then carry it straight into the price form. -->
+        <form class="x-pc" data-x="up" style="--d:.65s" onsubmit="event.preventDefault();heroCheck();" novalidate>
+          <label for="hero-pc" class="x-pc-l">Do we cover your area?</label>
+          <div class="x-pc-row">
+            <input id="hero-pc" name="postcode" placeholder="Enter your postcode" autocomplete="postal-code" autocapitalize="characters" spellcheck="false" aria-describedby="hero-pc-out">
+            <button class="x-btn" type="submit" id="hero-pc-btn">Check my area <span class="x-btn-i">&rarr;</span></button>
+          </div>
+          <div id="hero-pc-out" class="x-pc-out" aria-live="polite"></div>
+          <a class="x-ghost x-pc-how" href="#how-it-works" onclick="event.preventDefault();document.getElementById('how-it-works').scrollIntoView({behavior:'smooth'});">See how it works</a>
+        </form>
         <ul class="x-ticks" data-x="up" style="--d:.8s">
           <li>Prices from £232</li><li>Report in 5 working days</li><li>No scaffolding or ladders</li><li>Nobody needs to be home</li>
         </ul>
@@ -1509,6 +1529,10 @@ section[id],#how-it-works{scroll-margin-top:88px;}
             <input type="checkbox" id="c-optout" style="margin-top:3px;width:16px;height:16px;flex-shrink:0;">
             <span class="muted" style="font-size:12.5px;line-height:1.6;">We may follow up by email about your quote. Tick here if you'd rather we didn't. You can unsubscribe at any time either way.</span>
           </label>
+          <label style="display:flex;align-items:flex-start;gap:10px;margin:8px 0 4px;cursor:pointer;">
+            <input type="checkbox" id="c-photos" style="margin-top:3px;width:16px;height:16px;flex-shrink:0;">
+            <span class="muted" style="font-size:12.5px;line-height:1.6;">Optional: happy for us to use photos of your roof in our marketing, with your address removed. It makes no difference to your inspection or price.</span>
+          </label>
           <div class="row-btns">
             <button class="back-btn" onclick="goStep(3)">← Back</button>
             <button class="btn" style="flex:2;" id="step4-next" onclick="nextFromStep(4)">See your price →</button>
@@ -1642,6 +1666,42 @@ function renderPage(page){
   document.getElementById('page-'+page).classList.add('active');
   window.scrollTo(0,0);
   setTimeout(checkReveals, 30);
+}
+// Hero postcode check: one small ask ("do we cover you?") before the full price form. Uses the same coverage
+// check as step 1, then carries the postcode straight into the form so they don't type it twice.
+async function heroCheck(){
+  const inp = document.getElementById('hero-pc'), out = document.getElementById('hero-pc-out'), btn = document.getElementById('hero-pc-btn');
+  const cleaned = (inp.value||'').replace(/\s+/g,'').toUpperCase();
+  if(!/^[A-Z]{1,2}[0-9][A-Z0-9]?[0-9][A-Z]{2}$/.test(cleaned)){ out.textContent = "Please enter a full postcode, for example BN1 4QE."; inp.focus(); return; }
+  out.textContent = 'Checking ' + cleaned.replace(/(.{3})$/,' $1') + '…'; btn.disabled = true;
+  try{
+    const pr = await fetch('https://api.postcodes.io/postcodes/'+encodeURIComponent(cleaned)); const pd = await pr.json();
+    if(pd.status!==200 || !pd.result){ out.textContent = "We couldn't find that postcode. Please check it and try again."; return; }
+    const pc = pd.result.postcode, town = pd.result.admin_district || '';
+    const cr = await fetch(LM_API_BASE+'/coverage?postcode='+encodeURIComponent(pc)); const cov = cr.ok ? await cr.json() : null;
+    if(!cov){ out.textContent = "We couldn't check that just now. Please try again in a moment."; return; }
+    if(cov.covered){
+      out.innerHTML = '<div class="x-pc-ok"><span>Good news, we cover <b>'+pc+'</b>'+(town?' in '+town.replace(/[<>&]/g,''):'')+'.</span>'
+        + '<button type="button" class="x-btn" onclick="startFromHero(\''+pc+'\')">Get your price <span class="x-btn-i">&rarr;</span></button></div>';
+    } else {
+      out.innerHTML = '<div class="x-pc-no">We don\'t cover '+pc+' yet, but we\'re growing. Leave your email and we\'ll tell you when we do.'
+        + '<div style="display:flex;gap:8px;margin-top:10px;"><input id="hero-wait" type="email" autocomplete="email" placeholder="you@email.com" aria-label="Email for coverage updates">'
+        + '<button type="button" class="x-btn" style="padding:6px 6px 6px 16px;font-size:14px;" onclick="heroWait(\''+pc+'\',\''+town.replace(/[^A-Za-z \-]/g,'')+'\')">Notify me <span class="x-btn-i" style="width:32px;height:32px;">&rarr;</span></button></div></div>';
+    }
+  }catch(e){ out.textContent = "We couldn't check that just now. Please try again in a moment."; }
+  finally{ btn.disabled = false; }
+}
+function startFromHero(pc){
+  go('book');
+  setTimeout(()=>{ const i = document.getElementById('postcode-input'); if(i){ i.value = pc; onPostcodeInput(); } }, 60);
+}
+async function heroWait(pc, town){
+  const el = document.getElementById('hero-wait'), out = document.getElementById('hero-pc-out');
+  const email = el ? el.value.trim() : '';
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ el && el.focus(); return; }
+  try{ const r = await fetch(LM_API_BASE+'/area-waitlist', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email, postcode: pc, town }) });
+    out.innerHTML = r.ok ? '<div class="x-pc-no">Thanks. We\'ll email you as soon as we cover '+pc+'.</div>' : '<div class="x-pc-no">Please check your email address and try again.</div>';
+  }catch(e){ out.innerHTML = '<div class="x-pc-no">We couldn\'t save that just now. Please try again in a moment.</div>'; }
 }
 function go(page){
   renderPage(page);
@@ -2527,7 +2587,8 @@ async function submitPayment(){
         pitchType: pitchType,
         contact,
         areaFlagged: lastAreaFlagged,
-        agentCode: referralAgentCode || undefined
+        agentCode: referralAgentCode || undefined,
+        photoConsent: !!(document.getElementById('c-photos') && document.getElementById('c-photos').checked)
       })
     });
     const data = await res.json();
