@@ -380,7 +380,9 @@ function render(){
   const taken = (list, kind) => { const l = (list || []).slice().sort((x,y) => String(x.date||'').localeCompare(String(y.date||'')));
     if (!l.length) return '';
     return `<div class="jm" style="margin:14px 2px 6px;font-weight:600;">Already claimed (${l.length})</div>` + l.map(j => takenCard(j, kind)).join(''); };
-  $('scans').innerHTML = pool(board.scans, 'scan') + taken(board.takenScans, 'scan');
+  const locked = (board.coverLocked || []);
+  const lockedHtml = locked.length ? `<div class="jm" style="margin:14px 2px 6px;font-weight:600;">Needs higher insurance cover (${locked.length})</div>` + locked.map(coverCard).join('') : '';
+  $('scans').innerHTML = pool(board.scans, 'scan') + lockedHtml + taken(board.takenScans, 'scan');
   $('reports').innerHTML = pool(board.reports, 'report') + taken(board.takenReports, 'report');
   $('scans-n').textContent = vis(board.scans).length; $('reports-n').textContent = vis(board.reports).length; $('mine-n').textContent = board.mine.length;
   const nextJob = mineSorted.find(j => j.date && new Date(j.date) >= new Date(new Date().toDateString()));
@@ -431,6 +433,10 @@ function poolCard(j, kind){
   const bothSlide = pair && !locked ? `<div class="slide" data-id="${j.id}" data-kind="scan" data-both="1" tabindex="0" role="button" aria-label="Slide right to claim both scans for this booking" style="margin-top:8px;"><div class="slide-t">Slide to claim both (${money((pay||0) + (pair.scanPay||0) - Math.min(parts.mileage||0, (pair.scanParts||{}).mileage||0))})</div><div class="slide-h">&rarr;</div></div>` : '';
   return `<div class="card pool"><div class="row"><div><span class="tag ${kind==='scan'?'t-scan':'t-rep'}">${kind}</span>${exp}${tradeTags(j)}<div class="jt">${esc(j.area)} · ${esc(j.propertyType)||'Property'}</div><div class="jm">${esc(fmtWhen(j))}</div>${bits.length?`<div class="jm" style="color:var(--g);">${bits.join(' · ')}</div>`:''}${pairNote}</div><div class="pay">${money(pay)}</div></div>
   ${prio}<div class="acts"><div class="slide${locked?' dis':''}" data-id="${j.id}" data-kind="${kind}" tabindex="0" role="button" aria-label="Slide right to claim this ${kind}"><div class="slide-t">${locked?'Scans switched off':(prio?'Slide to write it yourself':'Slide to claim '+(pair?'this one only':kind))}</div><div class="slide-h">&rarr;</div></div>${prio?`<button class="btn ghost" onclick="passReport('${j.id}')">Pass to another writer</button>`:`<button class="btn ghost" onclick="passJob('${j.id}')">Not for me</button>`}</div>${bothSlide}</div>`;
+}
+function coverCard(j){
+  const m = n => '£' + (n >= 1000000 ? (Math.round(n/100000)/10) + 'm' : Number(n||0).toLocaleString('en-GB'));
+  return `<div class="card pool" style="opacity:.6;filter:grayscale(1);"><div class="row"><div><span class="tag t-scan">scan</span><span class="tag" style="background:#E5E7EB;color:#374151;margin-left:6px;">needs ${m(j.coverNeeded)} cover</span>${tradeTags(j)}<div class="jt">${esc(j.area)} · ${esc(j.propertyType)||'Property'}</div><div class="jm">${esc(fmtWhen(j))}</div><div class="jm">This client needs pilots with ${m(j.coverNeeded)} public liability cover. Yours is ${m(j.coverHave)}. Send us a certificate with higher cover to unlock jobs like this.</div></div><div class="pay">${money(j.scanPay)}</div></div></div>`;
 }
 function takenCard(j, kind){
   const who = kind === 'scan' ? 'another pilot' : 'another writer';
