@@ -376,8 +376,12 @@ function render(){
   $('reports-wrap').style.display = canRep ? 'block' : 'none';
   const vis = list => list.filter(j => !pass[j.id]);
   const pool = (list, kind) => { const l = vis(list); return l.length ? l.map(j => poolCard(j, kind)).join('') : '<div class="card"><div class="empty">Nothing available right now.</div></div>'; };
-  $('scans').innerHTML = pool(board.scans, 'scan');
-  $('reports').innerHTML = pool(board.reports, 'report');
+  // Jobs another contractor has claimed in your area: shown greyed out underneath, so you know they have gone.
+  const taken = (list, kind) => { const l = (list || []).slice().sort((x,y) => String(x.date||'').localeCompare(String(y.date||'')));
+    if (!l.length) return '';
+    return `<div class="jm" style="margin:14px 2px 6px;font-weight:600;">Already claimed (${l.length})</div>` + l.map(j => takenCard(j, kind)).join(''); };
+  $('scans').innerHTML = pool(board.scans, 'scan') + taken(board.takenScans, 'scan');
+  $('reports').innerHTML = pool(board.reports, 'report') + taken(board.takenReports, 'report');
   $('scans-n').textContent = vis(board.scans).length; $('reports-n').textContent = vis(board.reports).length; $('mine-n').textContent = board.mine.length;
   const nextJob = mineSorted.find(j => j.date && new Date(j.date) >= new Date(new Date().toDateString()));
   // Writers only see report tiles; the calendar and "next job" are about days on site, so they are flyers-only.
@@ -427,6 +431,10 @@ function poolCard(j, kind){
   const bothSlide = pair && !locked ? `<div class="slide" data-id="${j.id}" data-kind="scan" data-both="1" tabindex="0" role="button" aria-label="Slide right to claim both scans for this booking" style="margin-top:8px;"><div class="slide-t">Slide to claim both (${money((pay||0) + (pair.scanPay||0) - Math.min(parts.mileage||0, (pair.scanParts||{}).mileage||0))})</div><div class="slide-h">&rarr;</div></div>` : '';
   return `<div class="card pool"><div class="row"><div><span class="tag ${kind==='scan'?'t-scan':'t-rep'}">${kind}</span>${exp}${tradeTags(j)}<div class="jt">${esc(j.area)} · ${esc(j.propertyType)||'Property'}</div><div class="jm">${esc(fmtWhen(j))}</div>${bits.length?`<div class="jm" style="color:var(--g);">${bits.join(' · ')}</div>`:''}${pairNote}</div><div class="pay">${money(pay)}</div></div>
   ${prio}<div class="acts"><div class="slide${locked?' dis':''}" data-id="${j.id}" data-kind="${kind}" tabindex="0" role="button" aria-label="Slide right to claim this ${kind}"><div class="slide-t">${locked?'Scans switched off':(prio?'Slide to write it yourself':'Slide to claim '+(pair?'this one only':kind))}</div><div class="slide-h">&rarr;</div></div>${prio?`<button class="btn ghost" onclick="passReport('${j.id}')">Pass to another writer</button>`:`<button class="btn ghost" onclick="passJob('${j.id}')">Not for me</button>`}</div>${bothSlide}</div>`;
+}
+function takenCard(j, kind){
+  const who = kind === 'scan' ? 'another pilot' : 'another writer';
+  return `<div class="card pool" style="opacity:.55;filter:grayscale(1);"><div class="row"><div><span class="tag ${kind==='scan'?'t-scan':'t-rep'}">${kind}</span><span class="tag" style="background:#E5E7EB;color:#374151;margin-left:6px;">claimed</span>${j.express?'<span class="tag" style="background:#FDEBD3;color:#8A4B00;margin-left:6px;">express</span>':''}<div class="jt">${esc(j.area)} · ${esc(j.propertyType)||'Property'}</div><div class="jm">${esc(fmtWhen(j))}</div><div class="jm">Claimed by ${who}. It comes back here if they let it go.</div></div></div></div>`;
 }
 function passJob(id){ const p = get(LS.pass, {}); p[id] = 1; put(LS.pass, p); render(); }
 // You flew it: hand the report to the other writers now instead of waiting for your first refusal to run out.
