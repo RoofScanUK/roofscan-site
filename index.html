@@ -1634,6 +1634,7 @@ section[id],#how-it-works{scroll-margin-top:88px;}
         <div class="footer-link" role="link" tabindex="0" onclick="go('services')">Referral Partnerships</div>
         <div class="footer-link" role="link" tabindex="0" onclick="go('services')">Surveyor & Lender Support</div>
         <a class="footer-link" href="storm.html" style="display:block;">Storm damage checks</a>
+        <a class="footer-link" href="areas.html" style="display:block;">Areas we cover</a>
       </div>
       <div>
         <div class="footer-title">Company</div>
@@ -1760,6 +1761,9 @@ window.addEventListener('DOMContentLoaded', ()=>{
   initBooking();
   initReferral();
   checkReveals();
+  // Region pages link here with ?pc=POSTCODE so the quote starts with it filled in.
+  try{ const pc=(new URLSearchParams(location.search).get('pc')||'').trim().toUpperCase();
+    if(/^[A-Z]{1,2}[0-9][A-Z0-9]?\s*[0-9][A-Z]{2}$/.test(pc)) startFromHero(pc); }catch(e){}
 });
 
 // Gentle scroll-reveal — rewards continued scrolling with a soft fade-in.
