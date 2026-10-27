@@ -16,6 +16,7 @@
 <script src="https://unpkg.com/file-saver@2.0.5/dist/FileSaver.min.js"></script>
 <script src="airtable-api.js"></script>
 <script src="photo-sort.js"></script>
+<script src="rs-annotate.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#FBFAF7;color:#1A1A2E;min-height:100vh;}
@@ -54,6 +55,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .photo-area{border:2px dashed #DEDACE;border-radius:4px;background:#F8FAFC;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:160px;cursor:pointer;position:relative;overflow:hidden;}
 .photo-area:hover{border-color:#2E75B6;background:#EBF4FF;}
 .photo-area.has-photo{border-style:solid;border-color:#2F6B4F;}
+.mark-btn{display:none;width:100%;margin-top:6px;background:#fff;color:#C0392B;border:1px solid #E6B0AA;border-radius:6px;padding:6px 8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;}
+.mark-btn.on{display:block;}
+.mark-btn.ai{background:#FDF2E9;border-color:#E67E22;color:#A04000;}
 .photo-area img.preview{width:100%;height:160px;object-fit:cover;display:block;}
 .photo-area input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
 .upload-hint{display:flex;flex-direction:column;align-items:center;padding:1rem;pointer-events:none;}
@@ -348,6 +352,16 @@ html.ct #ct-suggest{display:block!important;}
       <div class="field" style="margin-bottom:10px;"><label>Summary of findings</label><textarea id="summary" placeholder="Fill in observations below then click Generate summaries…"></textarea></div>
       <div class="field" style="margin-bottom:10px;"><label>Key risks</label><textarea id="keyRisks" placeholder="Auto-generated as bullet points. One point per line."></textarea></div>
       <div class="field" style="margin-bottom:12px;"><label>Maintenance overview</label><textarea id="maintenance" placeholder="Auto-generated as bullet points. One point per line."></textarea></div>
+      <div style="margin:0 0 12px;padding:10px 12px;border:1px solid #D6E4F2;border-radius:8px;background:#F8FAFC;">
+        <label style="display:flex;gap:8px;align-items:center;font-size:13px;font-weight:700;color:#1C2B4A;cursor:pointer;"><input type="checkbox" id="rsStormOn" onchange="rsStormTouched=true;rsStormToggle();autoSaveReport()"> Add a storm damage summary page for the client's insurer</label>
+        <div style="font-size:11.5px;color:#6B7A8D;margin-top:4px;line-height:1.4;">For Storm Check jobs. One page near the front with the photo times from the drone, the weather event and a table of what was seen. It never says what caused the damage.</div>
+        <div id="rsStormFields" style="display:none;margin-top:8px;">
+          <div id="rsStormFound" style="font-size:12px;color:#1B5E3B;margin-bottom:6px;line-height:1.4;"></div>
+          <div class="field" style="margin-bottom:8px;"><label>Date of the storm (if known)</label><input type="date" id="rsStormDate" onchange="autoSaveReport()"></div>
+          <div class="field"><label>Weather event</label><textarea id="rsStormEvent" oninput="autoSaveReport()" placeholder="e.g. Met Office yellow warning of wind, 24 October 2026. Client reports tiles found in the garden the next morning."></textarea></div>
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:12px;"><label>Areas not visible (optional)</label><textarea id="notSeen" placeholder="Anything the drone could not see, e.g. rear slope behind the neighbour's tree, area under the solar panels, valley hidden by scaffolding."></textarea></div>
       <div class="ai-row">
         <button class="ai-btn" id="aiBtn" onclick="generateSummaries()">Generate summaries</button>
         <span class="ai-status" id="aiStatus"></span>
@@ -388,6 +402,19 @@ html.ct #ct-suggest{display:block!important;}
     </div>
   </div>
   <div id="sectionsContainer"></div>
+  <div class="card" id="rsMarkCard">
+    <div class="card-header">Circles and roof map</div>
+    <div class="card-body">
+      <div style="font-size:12.5px;color:#44546A;line-height:1.5;margin-bottom:10px;">Each photo has a "Circle the defect" button: drag on the photo to draw a circle, tap a circle to remove it. The AI can do a first pass on every Repair required and Monitor photo; check each one it circled (orange button) and adjust if needed. The roof map puts a numbered pin for each finding on the cover photo.</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <button type="button" class="ai-btn" id="rsMarkAllBtn" onclick="rsAiCircleAll()">Circle defects with AI</button>
+        <button type="button" class="ai-btn" onclick="rsOpenRoofMap()">Roof map</button>
+        <span id="rsMarkCount" style="font-size:12px;color:#6B7A8D;"></span>
+      </div>
+      <div id="rsMarkStatus" style="font-size:12px;color:#6B7A8D;margin-top:8px;line-height:1.4;"></div>
+      <div id="rsMapStatus" style="font-size:12px;color:#6B7A8D;margin-top:4px;line-height:1.4;"></div>
+    </div>
+  </div>
   <button class="gen-btn" id="reviewBtn" onclick="openReview()">Review &amp; Polish Descriptions</button>
   <div class="status-msg" id="statusMsg"></div>
   <div class="card" id="ct-suggest" style="display:none;margin-top:18px;">
@@ -565,15 +592,20 @@ var SECTIONS=[
     {ref:"2.2.1",title:"Ridge tiles & pointing"},
     {ref:"2.2.2",title:"Slates / tiles - general condition"},
     {ref:"2.2.3",title:"Verge detail"},
-    {ref:"2.2.4",title:"Pipe penetrations & soil vents"}
+    {ref:"2.2.4",title:"Pipe penetrations & soil vents"},
+    {ref:"2.2.5",title:"Valleys & wall abutments"},
+    {ref:"2.2.6",title:"Flat roof areas (covering, laps & edges)"},
+    {ref:"2.2.7",title:"Rooflights, dormers & glazing"}
   ]},
   {id:"rainwater",title:"2.3 - Rainwater goods",obs:[
     {ref:"2.3.1",title:"Guttering condition & fixings"},
     {ref:"2.3.2",title:"Fascias & soffits"},
-    {ref:"2.3.3",title:"Downpipes & drainage"}
+    {ref:"2.3.3",title:"Downpipes & drainage"},
+    {ref:"2.3.4",title:"Outlets, leaf guards & debris"}
   ]},
   {id:"ancillary",title:"2.4 - Ancillary elements",obs:[
-    {ref:"2.4.1",title:"Aerial / satellite fixings"}
+    {ref:"2.4.1",title:"Aerial / satellite fixings"},
+    {ref:"2.4.2",title:"Solar panels & roof-mounted equipment"}
   ]}
 ];
 var PRIORITIES=["Immediate","Within 3 months","Within 12 months","Medium-term (1-5 years)","Long-term (post 5 years)","Record & monitor","N/A"];
@@ -625,7 +657,7 @@ function collectDraftFields(){
     covering: _draftFieldVal('covering'), roofAge: _draftFieldVal('roofAge'),
     inspector: _draftFieldVal('inspector'), atRecordId: _draftFieldVal('atRecordId'),
     summary: _draftFieldVal('summary'), keyRisks: _draftFieldVal('keyRisks'),
-    maintenance: _draftFieldVal('maintenance'), conditionIdx: conditionIdx,
+    maintenance: _draftFieldVal('maintenance'), notSeen: _draftFieldVal('notSeen'), conditionIdx: conditionIdx, storm: rsStormCollect(),
     state: slimState, obsText: obsText
   };
 }
@@ -677,11 +709,12 @@ function checkForDraft(){
 function resumeReport(){
   var draft = _pendingDraft;
   if(!draft) return;
-  ['address','postcode','client','inspDate','reportRef','roofType','covering','roofAge','inspector','atRecordId','summary','keyRisks','maintenance'].forEach(function(id){
+  ['address','postcode','client','inspDate','reportRef','roofType','covering','roofAge','inspector','atRecordId','summary','keyRisks','maintenance','notSeen'].forEach(function(id){
     var el = document.getElementById(id);
     if(el && draft[id] !== undefined) el.value = draft[id];
   });
   if(draft.conditionIdx !== undefined) setCondition(draft.conditionIdx);
+  if(draft.storm) rsStormRestore(draft.storm);
   // Restore observation statuses/priorities into state, then reflect each onto its badge —
   // renderSections() is deliberately NOT called again here, since it appends fresh cards without
   // clearing the container first and would duplicate every section.
@@ -732,7 +765,7 @@ function clearSavedReport(){
 document.addEventListener('input', function(e){
   var id = e.target && e.target.id;
   if(!id) return;
-  var watched = ['address','postcode','client','inspDate','reportRef','roofType','covering','roofAge','inspector','atRecordId','summary','keyRisks','maintenance'];
+  var watched = ['address','postcode','client','inspDate','reportRef','roofType','covering','roofAge','inspector','atRecordId','summary','keyRisks','maintenance','notSeen'];
   if(watched.indexOf(id) >= 0 || id.indexOf('obstext_') === 0){
     autoSaveReport();
   }
@@ -786,7 +819,8 @@ function handlePhoto(key,input){
   compressImage(file, function(b64){
     var mime="image/jpeg";
     if(!state[key])state[key]={};
-    state[key].photoB64=b64;state[key].photoMime=mime;delete state[key].photoName;delete state[key].photoFile;delete state[key].photoHiB64;
+    state[key].photoB64=b64;state[key].photoMime=mime;delete state[key].photoName;delete state[key].photoFile;delete state[key].photoHiB64;delete state[key].marks;delete state[key].takenAt;
+    if(typeof rsReadDroneMeta==='function') rsReadDroneMeta(file).then(function(m){ if(m && m.t && state[key]) state[key].takenAt = m.t; });
     _applyPhotoUI(key);
     autoSaveReport && autoSaveReport();
   });
@@ -824,11 +858,12 @@ function _applyPhotoUI(key){
   img.src="data:"+mime+";base64,"+b64;
   var hint=area.querySelector(".upload-hint");
   if(hint)hint.style.display="none";
+  rsShowMarks(key);
 }
 
 function removePhoto(key,e){
   e.stopPropagation();
-  if(state[key]){delete state[key].photoB64;delete state[key].photoMime;delete state[key].photoName;delete state[key].photoFile;delete state[key].photoHiB64;}
+  if(state[key]){delete state[key].photoB64;delete state[key].photoMime;delete state[key].photoName;delete state[key].photoFile;delete state[key].photoHiB64;delete state[key].marks;delete state[key].takenAt;}
   if(state[key] && state[key].more && state[key].more.length){
     // Promote the next photo of this item to be the main one.
     var nx = state[key].more.shift(); bpRenderMore(key);
@@ -840,6 +875,7 @@ function removePhoto(key,e){
   area.classList.remove("has-photo");
   var img=area.querySelector("img.preview");if(img)img.remove();
   var hint=area.querySelector(".upload-hint");if(hint)hint.style.display="flex";
+  rsShowMarks(key);
   var fi=area.querySelector("input[type=file]");if(fi)fi.value="";
 }
 
@@ -871,6 +907,7 @@ function makeObsEl(secId,idx,ref,title,removable){
     +'</div>'
     +'<button class="photo-remove" onclick="removePhoto(\''+key+'\',event)">&times;</button>'
     +'</div>'
+    +'<button type="button" class="mark-btn" id="markbtn_'+key+'" onclick="rsMarkPhoto(\''+key+'\')">Circle the defect</button>'
     +'</div>'
     +'<div class="obs-fields">'
     +'<div class="obs-selects">'
@@ -925,7 +962,7 @@ function collectObs(){
     var photoMime=state[key]?state[key].photoMime||"image/jpeg":"image/jpeg";
     var zone=state[key]?state[key].zone||"":"";
     var more=state[key]&&state[key].more?state[key].more.map(function(m){ return m.hi || (m.proc && m.proc.base64); }).filter(Boolean):[];
-    if(status||(txt&&txt.value)){obs.push({ref:ref,title:title,status:status,priority:pri?pri.value||"":"",observation:txt?txt.value||"":"",photoB64:photoB64,photoMime:photoMime,zone:zone,more:more});}
+    if(status||(txt&&txt.value)){obs.push({ref:ref,title:title,status:status,priority:pri?pri.value||"":"",observation:txt?txt.value||"":"",photoB64:photoB64,photoMime:photoMime,zone:zone,more:more,marks:state[key]&&state[key].marks||null,takenAt:state[key]&&state[key].takenAt||''});}
   });
   return obs;
 }
@@ -1093,6 +1130,7 @@ function collectReportData(){
     summary:document.getElementById("summary").value||"[Summary not provided]",
     keyRisks:document.getElementById("keyRisks").value||"[Key risks not provided]",
     maintenance:document.getElementById("maintenance").value||"[Maintenance not provided]",
+    notSeen:(document.getElementById("notSeen")?document.getElementById("notSeen").value:"").trim(),
     redCount:document.getElementById("countRed").textContent,
     amberCount:document.getElementById("countAmber").textContent,
     greenCount:document.getElementById("countGreen").textContent,
@@ -1152,6 +1190,10 @@ async function generateReport(){
   if(unresolvedAiFlags>0){
     gateLines.push('','⚠️ '+unresolvedAiFlags+' observation(s) still marked "AI-placed: check before sending". These will go into the report as-is if you continue.');
   }
+  var mk=rsMarksStatus();
+  if(mk.ai>0) gateLines.push('','⚠️ '+mk.ai+' photo(s) were circled by the AI and not checked yet (orange buttons). The circles go into the report as they are.');
+  var stormNow=rsStormCollect();
+  gateLines.push('', 'Roof map: '+(rsRoofMap.pins.length?rsRoofMap.pins.length+' pin(s)':'none')+'. Storm summary page: '+(stormNow.on?'included':'not included')+'.');
   gateLines.push('', CT_MODE ? 'Click OK to build the report and send it to RoofScan. Nothing is downloaded to your computer.' : 'Click OK to build and download the Word document.');
   if(!window.confirm(gateLines.join('\n'))) return;
 
@@ -1163,6 +1205,14 @@ async function generateReport(){
     msg.textContent="Building your Word document…";
     var d=collectReportData();
     d.cover=bpCoverHi;
+    msg.textContent="Adding the circles and roof map…";
+    for(var oi=0;oi<obs.length;oi++){
+      var ob=obs[oi];
+      if(ob.photoB64 && rsHasMarks(ob.marks)){ try{ var bk=await RSAnnot.bake(ob.photoB64,ob.marks,ob.photoMime); if(bk){ ob.photoB64=bk.b64; ob.photoMime='image/jpeg'; } }catch(e){ console.warn('Could not draw circles', e); } }
+    }
+    try{ d.roofMap=await rsRoofMapForDoc(obs,d.cover); }catch(e){ d.roofMap=null; console.warn('Roof map skipped', e); }
+    d.storm=rsStormCollect();
+    msg.textContent="Building your Word document…";
     var doc=buildDoc(d,obs);
     var blob=await docx.Packer.toBlob(doc);
     // Kept flat (no subfolder trick): the "/" in the filename only created a real subfolder in
@@ -1384,6 +1434,7 @@ function buildDoc(d,obs){
   // Drive, which turned out to be a stale/different document. Executive Summary sits before the
   // numbered sections with no divider page of its own; numbering then runs 1.0 About This Report,
   // 2.0 Observations & Recommendations, 3.0 Terms & Disclaimer, 4.0 Schedule of Works (last).
+  var RSX = rsExtraDoc(D, { CONTENT_W:CONTENT_W, AB:AB, BLUE:BLUE, BLUE_MID:BLUE_MID, DARK:DARK, GREY_BG:GREY_BG, h1:h1, h2:h2, bod:bod, bl:bl, sp:sp, pb:pb, lv:lv, b64u:b64u }, d, obs);
   var preparedByLine = d.whiteLabel ? (d.inspector+" - RoofScan UK, on behalf of "+BRAND) : (d.inspector+" - RoofScan UK");
   // When a contractor writer prepared the report, the flyer is the inspector and the writer gets their own line,
   // with their qualification only if RoofScan has recorded one (Report Credential, filled in after seeing the certificate).
@@ -1398,9 +1449,9 @@ function buildDoc(d,obs){
     bl(),sp(100,100),
     // A fixed contents list: the client gets a PDF, and a Word "table of contents" field stays blank in a PDF
     // (only Word fills it in, when the file is opened). Every section below always appears in the report.
-    ...[["Executive Summary",0],["1.0  About This Report",0],["1.1  Scope",1],["1.2  Limitations",1],["1.3  Traffic-Light System",1],
-      ["2.0  Observations & Recommendations",0],["2.1  Chimneys & Leadwork",1],["2.2  Roof Coverings",1],["2.3  Rainwater Goods",1],["2.4  Ancillary Elements",1],
-      ["3.0  Terms, Limitations & Disclaimer",0],["4.0  Schedule of Works",0]].map(function(c){
+    ...[["Executive Summary",0]].concat(RSX.storm?[["Storm Damage Summary for Insurers",0]]:[]).concat([["1.0  About This Report",0],["1.1  Scope",1],["1.2  Limitations",1],["1.3  Traffic-Light System",1],
+      ["2.0  Observations & Recommendations",0]]).concat(RSX.map?[["Roof Map",1]]:[]).concat([["2.1  Chimneys & Leadwork",1],["2.2  Roof Coverings",1],["2.3  Rainwater Goods",1],["2.4  Ancillary Elements",1],
+      ["3.0  Terms, Limitations & Disclaimer",0],["4.0  Schedule of Works",0]]).concat(RSX.glossary?[["5.0  Glossary",0]]:[]).map(function(c){
         return new D.Paragraph({spacing:{before:c[1]?20:140,after:c[1]?20:40},indent:{left:c[1]?480:0},children:[new D.TextRun({text:c[0],font:"Arial",size:c[1]?19:22,bold:!c[1],color:c[1]?DARK:BLUE})]});
       }),pb(),
     h1("Executive Summary"),bl(),sp(120,80),
@@ -1414,6 +1465,7 @@ function buildDoc(d,obs){
     h2("Key Risks"),...bulletList(d.keyRisks),sp(80,80),
     h2("Maintenance Overview"),...bulletList(d.maintenance),pb()
   ].concat(
+    RSX.storm || [],
     strans("1.0","Report Details","Scope, limitations & rating system"),
     [h1("1.0  About This Report"),bl(),sp(100,80),
     lv("Property",d.address+(d.postcode?" - "+d.postcode:"")),
@@ -1425,6 +1477,7 @@ function buildDoc(d,obs){
     bod("Instructions were received to attend the property and undertake a drone-based visual inspection. This report has been prepared based on drone imagery captured on-site. It does not constitute a full building survey."),
     sp(80,80),h2("1.2  Limitations"),
     bod("The inspection was carried out using an unmanned aerial vehicle (drone). All observations are based on visual imagery only - no physical contact with roof surfaces was made."),
+    ...(d.notSeen?[sp(60,40),bod("Areas not visible: "+d.notSeen+" These areas were not inspected and no comment is made on their condition.")]:[]),
     sp(80,80),h2("1.3  Traffic-Light System"),
     new D.Paragraph({spacing:{before:80,after:40},children:[new D.TextRun({text:"Repair Required  -  ",font:"Arial",size:19,bold:true,color:RED}),new D.TextRun({text:"A defect requiring remedial action.",font:"Arial",size:19,color:DARK})]}),
     new D.Paragraph({spacing:{before:40,after:40},children:[new D.TextRun({text:"Monitor  -  ",font:"Arial",size:19,bold:true,color:AMBER}),new D.TextRun({text:"Warrants attention but not immediately critical.",font:"Arial",size:19,color:DARK})]}),
@@ -1432,7 +1485,7 @@ function buildDoc(d,obs){
     pb()],
     strans("2.0","Observations & Recommendations","Drone inspection findings by element"),
     [h1("2.0  Observations & Recommendations"),bl(),sp(80,40),
-    bod("Observations are made as if standing at the front of the property."),sp(120,80)],
+    bod("Observations are made as if standing at the front of the property."),sp(120,80)].concat(RSX.map || []),
     secB("2.1","Chimneys & Leadwork","The chimney stacks are the most exposed elements and common sources of water ingress.","Chimney elements inspected by drone only. No physical access to the stack was undertaken.",ch),
     secB("2.2","Roof Coverings","The observations below relate to the primary roof covering.",null,cv),
     secB("2.3","Rainwater Goods","The rainwater goods are critical to managing surface water away from the building fabric.","Rainwater goods were not observed under live rainfall. Observe gutters during heavy rainfall.",rw2),
@@ -1448,7 +1501,7 @@ function buildDoc(d,obs){
     [h1("4.0  Schedule of Works"),bl(),sp(80,60),
     bod("The table below summarises all observations. Obtain written quotations from suitably qualified contractors before any works commence."),
     sp(120,80),sT,sp(160,80),tl(),sp(80,80),
-    new D.Paragraph({alignment:D.AlignmentType.CENTER,children:[new D.TextRun({text: d.whiteLabel ? ("End of Schedule of Works  -  "+BRAND+" - produced by RoofScan UK") : "End of Schedule of Works  -  RoofScan UK",font:"Arial",size:17,color:"6B7A8D",italics:true})]})]
+    new D.Paragraph({alignment:D.AlignmentType.CENTER,children:[new D.TextRun({text: d.whiteLabel ? ("End of Schedule of Works  -  "+BRAND+" - produced by RoofScan UK") : "End of Schedule of Works  -  RoofScan UK",font:"Arial",size:17,color:"6B7A8D",italics:true})]})].concat(RSX.glossary || [])
   ));
 
 
@@ -1563,7 +1616,7 @@ async function polishSingleObs(key, originalText, statusBadgeId, textareaId) {
     var title = titleEl ? titleEl.textContent : "";
     var obsStatus = state[key] ? state[key].status || "" : "";
     
-    var prompt = "You are editing a UK drone roof inspection report. Rewrite the following observation note in formal British English suitable for a professional property inspection report. Keep it factual and specific. Do not add information that wasn't there. Do not use bullet points. Write 1-3 clear sentences maximum. Return ONLY the rewritten text, nothing else.\n\nElement: " + ref + " " + title + "\nStatus: " + obsStatus + "\nOriginal note: " + originalText;
+    var prompt = "You are editing a UK drone roof inspection report. Rewrite the following observation note in formal British English suitable for a professional property inspection report. Keep it factual and specific. Do not add information that wasn't there. Where the note gives a number of defects, keep it and write it as words and figures, e.g. 'Two (2) slipped tiles'. Do not use bullet points. Write 1-3 clear sentences maximum. Return ONLY the rewritten text, nothing else.\n\nElement: " + ref + " " + title + "\nStatus: " + obsStatus + "\nOriginal note: " + originalText;
     
     var res = await callClaude("claude-sonnet-5-5", 500, [{ role: "user", content: prompt }]);
 
@@ -1695,13 +1748,19 @@ var BP_CATS = [
   {ref:"2.3.3", secId:"rainwater"},
   {ref:"2.4.1", secId:"ancillary"},
   {ref:null, label:"Overview / general shot"},
-  {ref:null, label:"Unsure: needs review"}
+  {ref:null, label:"Unsure: needs review"},
+  // 14+ were added after 13, so photo sorts saved before them keep their numbers.
+  {ref:"2.2.5", secId:"coverings"},
+  {ref:"2.2.6", secId:"coverings"},
+  {ref:"2.2.7", secId:"coverings"},
+  {ref:"2.3.4", secId:"rainwater"},
+  {ref:"2.4.2", secId:"ancillary"}
 ];
 // Asks for both the category AND a short draft observation note in one call, so Takhy is
 // editing text instead of writing it from scratch: the actual bottleneck per the council review.
 // Format: "<number>||<draft note, or NONE if nothing notable>"
 var BP_CLASSIFY_PROMPT = "You are triaging a photo from a UK drone roof inspection. Reply in EXACTLY this format, nothing else: <number>||<note>\n" +
-  "Where <number> is the single best-matching category (1-13):\n" +
+  "Where <number> is the single best-matching category (1-18):\n" +
   "1. Chimney pots & flaunching (mortar joint at chimney base)\n" +
   "2. Flashings & saddle pieces (lead/metal weatherproofing around chimney or joins)\n" +
   "3. Stack pointing & stonework (brick/stone mortar joints on the chimney stack itself)\n" +
@@ -1715,7 +1774,12 @@ var BP_CLASSIFY_PROMPT = "You are triaging a photo from a UK drone roof inspecti
   "11. Aerial or satellite dish fixings\n" +
   "12. Overview / general shot (a wide-angle photo of the whole roof or property, not a specific defect)\n" +
   "13. Unsure - none of the above clearly fit\n" +
-  "And <note> is ONE short factual sentence describing exactly what's visible (e.g. \"Cracked flaunching at the base of the chimney pot, mortar eroding.\"). If nothing notable is visible, use the word NONE instead of a sentence. Do not guess at severity or invent detail you can't see. This note is a DRAFT for a human to check and edit before it goes in a client report: it is never sent as-is.";
+  "14. Valleys & wall abutments (the lined channel where two slopes meet, or where the roof meets a wall)\n" +
+  "15. Flat roof areas (felt, single-ply, EPDM, GRP or asphalt covering, laps and edges)\n" +
+  "16. Rooflights, dormers & glazing\n" +
+  "17. Gutter outlets, leaf guards & debris (blocked outlets, moss or leaves collecting)\n" +
+  "18. Solar panels & other roof-mounted equipment\n" +
+  "And <note> is ONE short factual sentence describing exactly what's visible (e.g. \"Cracked flaunching at the base of the chimney pot, mortar eroding.\"). If you can count the defects, give the number in words and figures (e.g. \"Two (2) slipped tiles on the lower courses.\"). If nothing notable is visible, use the word NONE instead of a sentence. Do not guess at severity or invent detail you can't see. This note is a DRAFT for a human to check and edit before it goes in a client report: it is never sent as-is.";
 var bpTotal = 0, bpDone = 0, bpExtraId = 1;
 var bpRefHashes = {}; // ref -> [aHash,...] already placed, for duplicate detection
 // ═══ ROOF ZONE TAGGING: Tak's idea: shoot in a fixed walk order (front, rear, sides, chimney,
@@ -2115,6 +2179,8 @@ function bpAttachPhotoToBlock(block, proc, note, zone, photoName, restoring){
   state[key].photoMime = 'image/jpeg';
   state[key].photoFile = proc.file || null;   // the full-size photo, re-drawn larger when the report is built
   delete state[key].photoHiB64;
+  if(!restoring) delete state[key].marks;   // a different photo: old circles no longer line up
+  state[key].takenAt = (proc.file && proc.file._meta && proc.file._meta.t) || '';
   if(photoName) state[key].photoName = photoName; else delete state[key].photoName;
   if(zone) state[key].zone = zone;
   if(typeof CT_MODE!=='undefined' && CT_MODE) openObsBlock(key);
@@ -2127,6 +2193,7 @@ function bpAttachPhotoToBlock(block, proc, note, zone, photoName, restoring){
       var rimg = rarea.querySelector('img.preview');
       if(!rimg){ rimg = document.createElement('img'); rimg.className = 'preview'; rarea.insertBefore(rimg, rarea.firstChild); }
       rimg.src = 'data:image/jpeg;base64,'+proc.base64;
+      rsShowMarks(key);
     }
     return;
   }
@@ -2144,6 +2211,7 @@ function bpAttachPhotoToBlock(block, proc, note, zone, photoName, restoring){
       area.insertBefore(img, area.firstChild);
     }
     img.src = 'data:image/jpeg;base64,'+proc.base64;
+    rsShowMarks(key);
   }
   var ta = document.getElementById('obstext_'+key);
   if(ta && !ta.value.trim()){
@@ -2961,12 +3029,16 @@ async function ctInit(){
     var row = document.getElementById('ci-addons-row');
     if(row){ if(addons.length){ row.style.display = 'flex'; row.innerHTML = '<span style="font-size:11px;font-weight:700;color:#1A5276;margin-right:4px;">Add-ons:</span>' + addons.map(function(a){ return '<span class="addon-badge">' + a + '</span>'; }).join(''); } else row.style.display = 'none'; }
   }
-  var fb = j.feedback ? '<div style="margin-top:8px;padding:8px 10px;background:#F7EFDD;border:1px solid #E6D3A8;white-space:pre-line;"><strong>RoofScan asked for changes:</strong> ' + ctEsc(j.feedback) + '</div>' : '';
+  var fb = (j.feedback ? '<div style="margin-top:8px;padding:8px 10px;background:#F7EFDD;border:1px solid #E6D3A8;white-space:pre-line;"><strong>RoofScan asked for changes:</strong> ' + ctEsc(j.feedback) + '</div>' : '') + siteNotesHtml(j.siteNotes, ctEsc);
   var draft = await ctFetchDraft(), placed = null;
   if(draft){
     placed = ctRestoreDraft(draft);
+    try{ rsMapStatus(); }catch(e){}
     dismissResume(); // the saved copy on RoofScan replaces any older local draft prompt
   }
+  // Areas the pilot could not photograph start the report's "Areas not visible" note (the writer can edit it).
+  if(j.storm) rsStormFromJob(j.storm);
+  if(j.siteNotes && j.siteNotes.notSeen){ var nsEl = document.getElementById('notSeen'); if(nsEl && !nsEl.value.trim()) nsEl.value = j.siteNotes.notSeen; }
   if(!j.photoCount){
     ctDraftReady = true;
     ctBanner('<strong>' + ctEsc(j.client || 'Your job') + '</strong>: details filled in. No photos were uploaded for this scan' + (j.photosLink ? ' (the flyer shared a link instead: <a href="' + ctEsc(j.photosLink) + '" target="_blank" rel="noopener">open it</a>, download the photos, then drag them into Bulk photo import below)' : '. Contact RoofScan before you start') + '.' + fb, j.photosLink ? '' : 'error');
@@ -3025,10 +3097,11 @@ function ctCollectDraft(){
     var s = state[key] || {};
     var pri = document.getElementById('pri_'+key), tx = document.getElementById('obstext_'+key);
     d.blocks.push({ sec: b.getAttribute('data-sec'), status: s.status || '', priority: pri ? pri.value : '', text: tx ? tx.value : '', zone: s.zone || '', photo: s.photoName || '',
-      more: (s.more || []).map(function(m){ return m.name; }).filter(Boolean) });
+      more: (s.more || []).map(function(m){ return m.name; }).filter(Boolean), marks: s.marks || null });
   });
   d.discarded = ctDiscarded.slice();
   if(bpCoverManual && bpCoverManual.file && bpCoverManual.file._ct) d.cover = bpCoverManual.file.name;
+  d.roofMap = rsRoofMap.pins.length ? rsRoofMap : null;
   return d;
 }
 function ctSetSaveNote(text, bad){
@@ -3065,14 +3138,26 @@ async function ctFetchDraft(){
   }catch(e){ return null; }
 }
 // Puts text, statuses and zones back. Returns { photoName: {key, zone} } so photos can be re-attached to the same boxes.
+function siteNotesHtml(sn, escf){
+  if(!sn) return '';
+  var L = { fragile:'roof looked fragile', wires:'wires, trees or obstacles near the roof', scaffold:'scaffolding or works on site', people:'people or vehicles below needed managing' };
+  var flags = Object.keys(L).filter(function(k){ return sn[k]; }).map(function(k){ return L[k]; });
+  var bits = [];
+  if(flags.length) bits.push('Site: ' + flags.join(', ') + '.');
+  if(sn.notSeen) bits.push('Could not photograph: ' + sn.notSeen + (/[.!?]$/.test(sn.notSeen) ? '' : '.'));
+  if(sn.other) bits.push('Note: ' + sn.other);
+  return bits.length ? '<div style="margin-top:8px;padding:8px 10px;background:#EEF4FA;border:1px solid #C9DAEC;"><strong>Pilot\'s site notes:</strong> ' + escf(bits.join(' ')) + '</div>' : '';
+}
 function ctRestoreDraft(draft){
-  ['address','postcode','client','inspDate','reportRef','roofType','covering','roofAge','summary','keyRisks','maintenance'].forEach(function(id){
+  ['address','postcode','client','inspDate','reportRef','roofType','covering','roofAge','summary','keyRisks','maintenance','notSeen'].forEach(function(id){
     var el = document.getElementById(id);
     if(el && draft[id]) el.value = draft[id];
   });
   if(draft.conditionIdx !== undefined) setCondition(draft.conditionIdx);
   ctDiscarded = (draft.discarded || []).slice();
   ctCoverName = draft.cover || '';
+  if(draft.roofMap && draft.roofMap.pins) rsRoofMap = { pins: draft.roofMap.pins.slice(), ai: !!draft.roofMap.ai };
+  if(draft.storm) rsStormRestore(draft.storm);
   var bySec = {}, placed = {};
   draft.blocks.forEach(function(b){ (bySec[b.sec] = bySec[b.sec] || []).push(b); });
   Object.keys(bySec).forEach(function(secId){
@@ -3091,6 +3176,7 @@ function ctRestoreDraft(draft){
       var pri = document.getElementById('pri_' + key); if(pri && b.priority) pri.value = b.priority;
       var tx = document.getElementById('obstext_' + key); if(tx && b.text) tx.value = b.text;
       if(b.zone){ state[key].zone = b.zone; renderZoneChip(key); }
+      if(b.marks) state[key].marks = b.marks;
       if(b.photo) placed[b.photo] = { key: key, zone: b.zone || '' };
       (b.more || []).forEach(function(n){ placed[n] = { key: key, zone: b.zone || '', more: true }; });
       if(b.status || b.text || b.photo) openObsBlock(key);
@@ -3195,8 +3281,266 @@ async function ctSubmit(blob, d, filename){
   }
 }
 
+
+// ═══ PHOTO MARKINGS, ROOF MAP, STORM SUMMARY, GLOSSARY ═══════════════════════════════
+// Red circles round each defect (drawn by the writer, or suggested by the AI and then checked), a roof map
+// with numbered pins on the overview photo, a one-page storm summary for insurers, and a glossary of roof terms.
+// Marks are stored as fractions of the photo, never drawn onto the stored photo; they are drawn onto a copy
+// only when the report is built, so the writer can change them at any time.
+async function rsAsk(messages, maxTokens){
+  var res = await callClaude('claude-sonnet-5-5', maxTokens, messages);
+  var data = await res.json();
+  return (data.content || []).map(function(i){ return i.text || ''; }).join('');
+}
+function rsHasMarks(m){ return !!(m && m.circles && m.circles.length); }
+// Shows the photo preview with its circles on (a marked copy for the preview only) and updates the button.
+function rsShowMarks(key){
+  var st = state[key] || {}, btn = document.getElementById('markbtn_' + key);
+  if(btn){
+    btn.classList.toggle('on', !!st.photoB64);
+    btn.classList.toggle('ai', !!(st.marks && st.marks.ai));
+    btn.textContent = rsHasMarks(st.marks) ? (st.marks.ai ? 'AI circled this: check it' : 'Edit circles (' + st.marks.circles.length + ')') : 'Circle the defect';
+  }
+  var area = document.getElementById('photo_' + key), img = area && area.querySelector('img.preview');
+  if(!img || !st.photoB64 || !window.RSAnnot) return;
+  var plain = 'data:' + (st.photoMime || 'image/jpeg') + ';base64,' + st.photoB64;
+  if(!rsHasMarks(st.marks)){ if(img.src !== plain) img.src = plain; return; }
+  var want = st.photoB64.length + ':' + JSON.stringify(st.marks.circles);
+  img.dataset.marked = want;
+  RSAnnot.bake(st.photoB64, st.marks, st.photoMime).then(function(bk){ if(bk && img.dataset.marked === want) img.src = 'data:image/jpeg;base64,' + bk.b64; }).catch(function(){});
+}
+function rsObsNote(key){ var t = document.getElementById('obstext_' + key); return t ? t.value : ''; }
+function rsMarkPhoto(key){
+  var st = state[key]; if(!st || !st.photoB64){ alert('Add a photo to this item first.'); return; }
+  var blk = document.getElementById('obsblock_' + key), title = blk && blk.querySelector('.obs-title-text') ? blk.querySelector('.obs-title-text').textContent : '';
+  RSAnnot.open({ b64: st.photoB64, mime: st.photoMime, mode: 'circles', marks: st.marks || {}, title: 'Circle the defect: ' + title,
+    onAi: function(){ return RSAnnot.aiCircles(rsAsk, st.photoB64, st.photoMime, title + '. ' + rsObsNote(key)).then(function(c){ return { circles: c }; }); },
+    onDone: function(m){ st.marks = m.circles.length ? { circles: m.circles } : null; rsShowMarks(key); rsMarksStatus(); if(typeof ctSaveSoon === 'function') ctSaveSoon(); autoSaveReport && autoSaveReport(); } });
+}
+// Asks the AI to circle the defect on every Repair required or Monitor photo that has no circles yet.
+async function rsAiCircleAll(){
+  var btn = document.getElementById('rsMarkAllBtn'), out = document.getElementById('rsMarkStatus');
+  var keys = Object.keys(state).filter(function(k){ var s = state[k]; return s && s.photoB64 && document.getElementById('obsblock_' + k) && (s.status === 'Repair required' || s.status === 'Monitor') && !rsHasMarks(s.marks); });
+  if(!keys.length){ out.textContent = 'Nothing to circle: every Repair required or Monitor photo already has circles (or none have a status yet).'; return; }
+  btn.disabled = true; var done = 0, none = 0, failed = 0;
+  out.textContent = 'Circling ' + keys.length + ' photo(s)…';
+  for(var i = 0; i < keys.length; i += 3){
+    await Promise.all(keys.slice(i, i + 3).map(async function(k){
+      var s = state[k], blk = document.getElementById('obsblock_' + k), title = blk.querySelector('.obs-title-text') ? blk.querySelector('.obs-title-text').textContent : '';
+      try{ var c = await RSAnnot.aiCircles(rsAsk, s.photoB64, s.photoMime, title + '. ' + rsObsNote(k));
+        if(c.length){ s.marks = { circles: c, ai: true }; done++; } else none++;
+        rsShowMarks(k);
+      }catch(e){ failed++; if(e && e.friendly){ out.textContent = e.message; } }
+    }));
+    out.textContent = 'Circling: ' + (done + none + failed) + ' of ' + keys.length + '…';
+  }
+  btn.disabled = false;
+  out.textContent = done + ' photo(s) circled by the AI' + (none ? ', ' + none + ' where it could not see the defect (circle those yourself)' : '') + (failed ? ', ' + failed + ' failed (try again)' : '') + '. Orange buttons mean "check this": open each one and press Done.';
+  if(typeof ctSaveSoon === 'function') ctSaveSoon();
+}
+function rsMarksStatus(){
+  var n = 0, ai = 0; Object.keys(state).forEach(function(k){ var s = state[k]; if(s && rsHasMarks(s.marks) && document.getElementById('obsblock_' + k)){ n++; if(s.marks.ai) ai++; } });
+  var el = document.getElementById('rsMarkCount'); if(el) el.textContent = n ? (n + ' photo(s) circled' + (ai ? ', ' + ai + ' still to check' : '')) : '';
+  return { n: n, ai: ai };
+}
+
+// ── Roof map ── numbered pins on the overview photo, one per finding (Repair required and Monitor items).
+var rsRoofMap = { pins: [], ai: false };   // pins: [{ ref, x, y }]
+function rsMapItems(obs){
+  return (obs || collectObsFinal()).filter(function(o){ return o.status === 'Repair required' || o.status === 'Monitor'; })
+    .map(function(o, i){ return { n: String(i + 1), ref: o.ref, label: 'Ref ' + o.ref + ' ' + o.title + (o.zone ? ' (' + o.zone + ')' : '') + ': ' + String(o.observation || '').slice(0, 120), o: o }; });
+}
+function rsMapPhoto(){
+  var c = (typeof bpCoverPick === 'function') ? bpCoverPick() : null;
+  return c && c.proc && c.proc.base64 ? { b64: c.proc.base64, mime: 'image/jpeg' } : null;
+}
+function rsOpenRoofMap(){
+  var ph = rsMapPhoto(), out = document.getElementById('rsMapStatus');
+  if(!ph){ out.textContent = 'The roof map uses the cover photo. Import the photos first (an overview shot becomes the cover), or pick one with "Use as cover photo".'; return; }
+  var items = rsMapItems();
+  if(!items.length){ out.textContent = 'Set at least one item to Repair required or Monitor first. Those are the ones that go on the map.'; return; }
+  var byRef = {}; items.forEach(function(it){ byRef[it.ref] = it.n; });
+  var pins = rsRoofMap.pins.filter(function(p){ return byRef[p.ref]; }).map(function(p){ return { n: byRef[p.ref], x: p.x, y: p.y }; });
+  var aiFn = function(){ return RSAnnot.aiPins(rsAsk, ph.b64, ph.mime, items.map(function(it){ return { n: it.n, label: it.label }; })).then(function(p){ return { pins: p }; }); };
+  RSAnnot.open({ b64: ph.b64, mime: ph.mime, mode: 'pins', marks: { pins: pins }, pinItems: items.map(function(it){ return { n: it.n, label: it.label }; }),
+    title: 'Roof map: one numbered pin per finding', onAi: aiFn,
+    onDone: function(m){
+      var refOf = {}; items.forEach(function(it){ refOf[it.n] = it.ref; });
+      rsRoofMap = { pins: m.pins.filter(function(p){ return refOf[p.n]; }).map(function(p){ return { ref: refOf[p.n], x: p.x, y: p.y }; }), ai: false };
+      rsMapStatus(); if(typeof ctSaveSoon === 'function') ctSaveSoon();
+    } });
+}
+function rsMapStatus(){
+  var el = document.getElementById('rsMapStatus'); if(!el) return;
+  var items = rsMapItems(), refs = {}; items.forEach(function(it){ refs[it.ref] = 1; });
+  var placed = rsRoofMap.pins.filter(function(p){ return refs[p.ref]; }).length;
+  el.textContent = placed ? ('Roof map: ' + placed + ' of ' + items.length + ' finding(s) pinned. It goes in the report before section 2.') : 'No roof map yet (optional). Press the button and let the AI place the pins, then drag any that are off.';
+}
+// Builds the pinned overview for the report: { b64, w, h, rows:[{n, o}] } or null.
+async function rsRoofMapForDoc(obs, cover){
+  var items = rsMapItems(obs), byRef = {}; items.forEach(function(it){ byRef[it.ref] = it; });
+  var pins = rsRoofMap.pins.filter(function(p){ return byRef[p.ref]; });
+  if(!pins.length) return null;
+  var src = (cover && cover.b64) ? cover : (rsMapPhoto() || null); if(!src) return null;
+  var bk = await RSAnnot.bake(src.b64, { pins: pins.map(function(p){ return { n: byRef[p.ref].n, x: p.x, y: p.y }; }) }, src.mime);
+  if(!bk) return null;
+  var pinned = {}; pins.forEach(function(p){ pinned[p.ref] = 1; });
+  return { b64: bk.b64, w: bk.w, h: bk.h, rows: items.filter(function(it){ return pinned[it.ref]; }).map(function(it){ return { n: it.n, o: it.o }; }) };
+}
+
+// ── Storm summary for insurers ──
+function rsStormCollect(){
+  var g = function(id){ var el = document.getElementById(id); return el ? el.value : ''; };
+  var on = document.getElementById('rsStormOn');
+  return { on: !!(on && on.checked), date: g('rsStormDate'), event: g('rsStormEvent'), warnings: rsStormWarnings };
+}
+var rsStormWarnings = [], rsStormTouched = false;
+function rsStormRestore(s){
+  if(!s) return; rsStormTouched = true;
+  var on = document.getElementById('rsStormOn'); if(on) on.checked = !!s.on;
+  var set = function(id, v){ var el = document.getElementById(id); if(el && v) el.value = v; };
+  set('rsStormDate', s.date); set('rsStormEvent', s.event);
+  if(s.warnings && s.warnings.length) rsStormWarnings = s.warnings;
+  rsStormToggle();
+}
+function rsStormToggle(){ var on = document.getElementById('rsStormOn'), box = document.getElementById('rsStormFields'); if(box) box.style.display = on && on.checked ? 'block' : 'none'; }
+function rsStormLine(w){
+  var d = new Date(w.issued), when = isNaN(d) ? '' : d.toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' });
+  return w.title + (when ? ' (issued ' + when + ')' : '') + (w.regionName ? ', ' + w.regionName : '');
+}
+// From the job details: Met Office wind warnings for this area in the 14 days before the inspection.
+function rsStormFromJob(st){
+  if(!st || !st.warnings || !st.warnings.length) return;
+  rsStormWarnings = st.warnings;
+  var on = document.getElementById('rsStormOn');
+  if(on && !rsStormTouched) on.checked = true;
+  var ev = document.getElementById('rsStormEvent');
+  if(ev && !ev.value.trim()) ev.value = 'Met Office ' + rsStormLine(st.warnings[0]) + '.';
+  var dt = document.getElementById('rsStormDate');
+  if(dt && !dt.value){ var d = new Date(st.warnings[0].issued); if(!isNaN(d)) dt.value = d.toISOString().slice(0, 10); }
+  var note = document.getElementById('rsStormFound');
+  if(note) note.textContent = st.warnings.length + ' Met Office wind warning(s) for this area in the 14 days before the inspection: ' + st.warnings.map(rsStormLine).join('; ') + '.';
+  rsStormToggle();
+}
+// "2026:10:26 10:14:03" (drone time) -> Date
+function rsExifDate(t){
+  var m = String(t || '').match(/^(\d{4}):(\d{2}):(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?/);
+  return m ? new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +(m[6] || 0)) : null;
+}
+function rsFmtWhen(d, withDate){
+  if(!d) return '';
+  var t = ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+  return withDate === false ? t : d.toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' }) + ', ' + t;
+}
+// Earliest and latest capture times across every photo the job has (placed, extra and set aside).
+function rsPhotoTimes(obs){
+  var ts = [];
+  (obs || []).forEach(function(o){ var d = rsExifDate(o.takenAt); if(d) ts.push(d); });
+  Object.keys(state).forEach(function(k){ var s = state[k]; (s && s.more || []).forEach(function(m){ var d = m.proc && m.proc.file && m.proc.file._meta && rsExifDate(m.proc.file._meta.t); if(d) ts.push(d); }); });
+  if(!ts.length) return '';
+  ts.sort(function(a, b){ return a - b; });
+  var a = ts[0], b = ts[ts.length - 1], same = a.toDateString() === b.toDateString();
+  return a.getTime() === b.getTime() ? rsFmtWhen(a) : (same ? rsFmtWhen(a) + ' to ' + rsFmtWhen(b, false) : rsFmtWhen(a) + ' to ' + rsFmtWhen(b));
+}
+
+// ── Glossary ── only the terms that appear somewhere in this report.
+var RS_GLOSSARY = [
+  ['Abutment', /abutment/i, 'Where a roof slope meets a wall that rises above it.'],
+  ['Bargeboard', /barge ?board/i, 'The board fixed along the sloping edge of a gable end, under the tiles.'],
+  ['Batten', /batten/i, 'Thin timber strips the tiles or slates are hung or nailed to.'],
+  ['Chimney pot', /\bpots?\b/i, 'The clay or terracotta pipe at the top of a chimney stack.'],
+  ['Chimney stack', /stack/i, 'The brick or stone part of a chimney that rises above the roof.'],
+  ['Coping', /coping/i, 'The capping stones or tiles along the top of a wall or parapet that shed rain.'],
+  ['Dormer', /dormer/i, 'A window structure built out from a sloping roof, with its own small roof.'],
+  ['Downpipe', /down ?pipe/i, 'The vertical pipe that carries rainwater from the gutter to the ground or a drain.'],
+  ['Dry ridge or dry verge', /dry (ridge|verge)/i, 'Ridge or verge tiles held with mechanical fixings and clips instead of mortar.'],
+  ['EPDM', /\bepdm\b|rubber (roof|membrane)/i, 'A synthetic rubber sheet used to cover flat roofs.'],
+  ['Eaves', /eaves/i, 'The lower edge of a roof slope, where it overhangs the wall and meets the gutter.'],
+  ['Fascia', /fascia/i, 'The board along the eaves that the gutter is usually fixed to.'],
+  ['Felt (roofing felt)', /\bfelt/i, 'A bitumen sheet used as the waterproof layer on many flat roofs, or as underlay on pitched roofs.'],
+  ['Flashing', /flashing/i, 'A strip of lead or other metal that seals the joint between the roof and a wall, chimney or other feature.'],
+  ['Flaunching', /flaunch/i, 'The sloped mortar around the base of chimney pots that holds them in place and sheds water.'],
+  ['GRP (fibreglass)', /\bgrp\b|fibreglass/i, 'Glass reinforced plastic, a resin and glass fibre covering used on flat roofs.'],
+  ['Gutter', /gutter/i, 'The channel along the eaves that collects rainwater from the roof.'],
+  ['Hip', /\bhips?\b/i, 'The sloping ridge where two roof slopes meet on an outside corner.'],
+  ['Lead apron', /apron/i, 'A strip of lead dressed over the tiles at the front of a chimney or at the bottom of a wall.'],
+  ['Leadwork', /\blead/i, 'Any lead used to weatherproof the roof, such as flashings, aprons and valley linings.'],
+  ['Lichen and moss', /lichen|moss/i, 'Plant growth on roof surfaces. Heavy growth holds water and can block gutters.'],
+  ['Mortar bedding', /mortar|bedding/i, 'The sand and cement mix that holds ridge, hip and verge tiles in place on traditional roofs.'],
+  ['Nail sickness', /nail sickness|nail fatigue/i, 'When the nails holding slates rust and fail, so slates start to slip.'],
+  ['Outlet', /outlet/i, 'The opening where water drains off a flat roof or out of a gutter into a downpipe.'],
+  ['Parapet', /parapet/i, 'A low wall that rises above the edge of a roof.'],
+  ['Pointing', /pointing|repoint/i, 'The mortar finish between bricks or stones. Worn pointing lets water in.'],
+  ['Ridge', /ridge/i, 'The top line of a roof, where two slopes meet.'],
+  ['Rooflight', /roof ?light|skylight|velux/i, 'A window set into the plane of the roof.'],
+  ['Slipped tile or slate', /slipped|slipping/i, 'A tile or slate that has moved down out of its proper position.'],
+  ['Soakers', /soaker/i, 'Small pieces of lead or metal tucked under the tiles where a slope meets a wall or chimney side.'],
+  ['Soffit', /soffit/i, 'The board on the underside of the eaves overhang.'],
+  ['Stepped flashing', /stepped/i, 'Lead flashing cut in steps up the side of a chimney or wall to follow the slope.'],
+  ['Underlay', /underlay|sarking/i, 'The membrane or felt under the tiles that acts as a second line of defence against water.'],
+  ['Upstand', /upstand/i, 'Where a flat roof covering is turned up a wall or kerb to stop water getting behind it.'],
+  ['Valley', /valley/i, 'The internal channel where two roof slopes meet and water runs down.'],
+  ['Verge', /verge/i, 'The edge of a roof at a gable end.']
+];
+function rsGlossaryTerms(d, obs){
+  var text = [d.summary, d.keyRisks, d.maintenance, d.notSeen, d.covering, d.roofType].concat((obs || []).map(function(o){ return o.title + ' ' + o.observation + ' ' + (o.zone || ''); })).join(' ');
+  return RS_GLOSSARY.filter(function(g){ return g[1].test(text); });
+}
+
+// Built inside buildDoc (gets the document helpers passed in).
+function rsExtraDoc(D, H, d, obs){
+  var CW = H.CONTENT_W, cell = function(t, w, opts){ opts = opts || {};
+    return new D.TableCell({ borders: H.AB, shading: { fill: opts.fill || 'FFFFFF', type: D.ShadingType.CLEAR }, width: { size: w, type: D.WidthType.DXA }, margins: { top: 80, bottom: 80, left: 120, right: 100 },
+      children: [new D.Paragraph({ children: [new D.TextRun({ text: String(t == null ? '' : t), font: 'Arial', size: 17, bold: !!opts.bold, color: opts.color || H.DARK })] })] }); };
+  var head = function(t, w){ return cell(t, w, { fill: H.BLUE, bold: true, color: 'FFFFFF' }); };
+  var out = {};
+  // Storm summary page (only when ticked)
+  if(d.storm && d.storm.on){
+    var found = obs.filter(function(o){ return o.status === 'Repair required' || o.status === 'Monitor'; });
+    var c1 = Math.floor(CW * .09), c2 = Math.floor(CW * .2), c4 = Math.floor(CW * .17), c5 = Math.floor(CW * .14), c3 = CW - c1 - c2 - c4 - c5;
+    var rows = [new D.TableRow({ children: [head('Ref', c1), head('Element', c2), head('What was seen', c3), head('Photo taken', c4), head('Rating', c5)] })]
+      .concat(found.map(function(o, i){ var bg = i % 2 ? 'FFFFFF' : H.GREY_BG, dt = rsExifDate(o.takenAt);
+        return new D.TableRow({ children: [cell(o.ref, c1, { fill: bg, bold: true, color: H.BLUE_MID }), cell(o.title + (o.zone ? ' (' + o.zone + ')' : ''), c2, { fill: bg }), cell(o.observation || '', c3, { fill: bg }), cell(dt ? rsFmtWhen(dt) : 'Not recorded', c4, { fill: bg }), cell(o.status, c5, { fill: bg, bold: true, color: statusColor(o.status) })] }); }));
+    var times = rsPhotoTimes(obs), sd = d.storm.date ? formatDate(d.storm.date) : '';
+    out.storm = [H.h1('Storm Damage Summary for Insurers'), H.bl(), H.sp(80, 60),
+      H.bod('This page is for your insurer or loss adjuster. It records what the drone photographed at the property and when. It does not say what caused any damage or whether it is covered by your policy. That is for your insurer to decide.'),
+      H.sp(60, 40), H.lv('Property', d.address + (d.postcode ? ' - ' + d.postcode : '')), H.lv('Inspection date', d.inspDate),
+      H.lv('Photos taken', times ? times + ' (the time saved by the drone in each photo)' : 'Capture times were not available from these photos'),
+      H.lv('Date of the storm', sd || 'Not given'), H.lv('Weather event', d.storm.event || 'Not given')]
+      .concat((d.storm.warnings || []).length > 1 ? [H.bod('Other Met Office wind warnings for this area in the 14 days before the inspection: ' + d.storm.warnings.slice(1).map(rsStormLine).join('; ') + '.', { size: 17, color: '44546A' })] : [])
+      .concat([H.sp(120, 60), H.h2('Damage observed')])
+      .concat(found.length ? [new D.Table({ width: { size: CW, type: D.WidthType.DXA }, columnWidths: [c1, c2, c3, c4, c5], rows: rows })]
+                           : [H.bod('No damage was observed on the parts of the roof the drone could see.')])
+      .concat([H.sp(120, 60), H.bod('Full photos and details of each item are in section 2. A drone inspection is visual only: no one went onto the roof, and areas the drone could not see are listed in section 1.2. Comparing these findings with earlier photos of the roof, if you have any, is the clearest way to show what changed after the storm.', { size: 17, color: '44546A' }),
+        H.bod('Prepared by RoofScan UK, an independent drone inspection company. We do not carry out roof repairs.', { size: 17, color: '44546A', italics: true }), H.pb()]);
+  }
+  // Roof map
+  if(d.roofMap){
+    var mw = Math.floor(CW / 15) - 20, ar = d.roofMap.w / d.roofMap.h, iw = mw, ih = Math.round(mw / ar);
+    if(ih > 420){ ih = 420; iw = Math.round(ih * ar); }
+    var m1 = Math.floor(CW * .08), m2 = Math.floor(CW * .1), m4 = Math.floor(CW * .18), m3 = CW - m1 - m2 - m4;
+    var mrows = [new D.TableRow({ children: [head('No.', m1), head('Ref', m2), head('Finding', m3), head('Rating', m4)] })]
+      .concat(d.roofMap.rows.map(function(r, i){ var bg = i % 2 ? 'FFFFFF' : H.GREY_BG;
+        return new D.TableRow({ children: [cell(r.n, m1, { fill: bg, bold: true }), cell(r.o.ref, m2, { fill: bg, color: H.BLUE_MID, bold: true }), cell(r.o.title + (r.o.zone ? ' (' + r.o.zone + ')' : ''), m3, { fill: bg }), cell(r.o.status, m4, { fill: bg, bold: true, color: statusColor(r.o.status) })] }); }));
+    out.map = [H.h2('Roof Map'), H.bod('Each number shows where a finding is on the roof. The table below matches each number to its reference in this section.'), H.sp(40, 60),
+      new D.Paragraph({ alignment: D.AlignmentType.CENTER, children: [new D.ImageRun({ data: H.b64u(d.roofMap.b64), transformation: { width: iw, height: ih }, type: 'jpg' })] }),
+      H.sp(80, 60), new D.Table({ width: { size: CW, type: D.WidthType.DXA }, columnWidths: [m1, m2, m3, m4], rows: mrows }), H.pb()];
+  }
+  // Glossary
+  var terms = rsGlossaryTerms(d, obs);
+  if(terms.length){
+    var g1 = Math.floor(CW * .26), g2 = CW - g1;
+    out.glossary = [H.pb(), H.h1('5.0  Glossary'), H.bl(), H.sp(80, 60), H.bod('Plain-English meanings of the roof terms used in this report.'), H.sp(60, 60),
+      new D.Table({ width: { size: CW, type: D.WidthType.DXA }, columnWidths: [g1, g2], rows: terms.map(function(t, i){ var bg = i % 2 ? 'FFFFFF' : H.GREY_BG;
+        return new D.TableRow({ children: [cell(t[0], g1, { fill: bg, bold: true, color: H.BLUE_MID }), cell(t[2], g2, { fill: bg })] }); }) })];
+  }
+  return out;
+}
+
 // Initialise
 document.addEventListener('DOMContentLoaded', function() {
+  setTimeout(function(){ try{ rsMapStatus(); rsMarksStatus(); }catch(e){} }, 0);
+  document.addEventListener('change', function(e){ if(e.target && e.target.closest && e.target.closest('.obs-selects')) { try{ rsMapStatus(); }catch(x){} } });
   initJobPicker();
   ctInit();
 });

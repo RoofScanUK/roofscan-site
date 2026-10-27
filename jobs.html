@@ -495,6 +495,8 @@ const SHOTS = [
   ['eaves','Verges and eaves: edge tiles, fascias, soffits'],
   ['gutter','Gutters and downpipes: joints, brackets, blockages'],
   ['vents','Vents, flues, soil pipes and roof lights', 1],
+  ['flat','Flat roofs: whole surface, laps, edges and outlets', 1],
+  ['solar','Solar panels or other roof equipment: edges and fixings', 1],
   ['aerial','Aerial or satellite dish fixings', 1]
 ];
 // ── Thermal scans: their own shot list, and the conditions the thermographer needs for the report ──
@@ -573,6 +575,26 @@ function shotList(id, st){
   </details>`;
 }
 // Updates in place (no full redraw), so the list doesn't jump while someone is ticking with a controller in the other hand.
+// ── Site notes: a few safety observations and anything the drone could not see. They go to the report writer,
+// so the report can say which areas were not inspected, and to RoofScan's records. Saved on this phone until sent.
+const SITE_FLAGS = [
+  ['fragile', 'Roof looked fragile (asbestos cement sheets, rooflights, sagging or rotten areas)'],
+  ['wires', 'Overhead wires, trees or other obstacles close to the roof'],
+  ['scaffold', 'Scaffolding or works on or around the property'],
+  ['people', 'People, vehicles or animals below during the flight that needed managing']
+];
+function siteNotesPanel(id, st){
+  const s = st.site || {};
+  return `<details class="shots" style="margin:10px 0 4px;border:1px solid var(--br);border-radius:8px;padding:8px 12px;background:#fff;">
+    <summary style="cursor:pointer;font-weight:600;font-size:13px;color:var(--n);">Site notes for the report <span class="muted" style="font-weight:400;">(tick any that apply)</span></summary>
+    ${SITE_FLAGS.map(x => `<label class="chk" style="padding:8px 0;font-size:14px;"><input type="checkbox" style="width:20px;height:20px;" ${s[x[0]]?'checked':''} onchange="setSite('${id}','${x[0]}',this.checked)"> <span>${esc(x[1])}</span></label>`).join('')}
+    <label style="display:block;font-size:12.5px;margin-top:6px;">Areas you could not photograph</label>
+    <input style="width:100%;" placeholder="e.g. rear slope hidden by a tall tree" value="${esc(s.notSeen||'')}" oninput="setSite('${id}','notSeen',this.value)">
+    <label style="display:block;font-size:12.5px;margin-top:6px;">Anything else the writer should know</label>
+    <input style="width:100%;" placeholder="optional" value="${esc(s.other||'')}" oninput="setSite('${id}','other',this.value)">
+  </details>`;
+}
+function setSite(id, k, v){ const c = get(LS.checks, {}); c[id] = c[id] || {}; c[id].site = c[id].site || {}; c[id].site[k] = v; put(LS.checks, c); }
 function setShot(id, k, v, thermal){
   const c = get(LS.checks, {}); c[id] = c[id] || {}; c[id].shots = c[id].shots || {}; c[id].shots[k] = !!v; put(LS.checks, c);
   const list = thermal ? THERMAL_SHOTS : SHOTS, done = list.filter(x => c[id].shots[x[0]]).length;
@@ -635,6 +657,7 @@ function scanPanel(j){
     <span class="muted" style="font-size:12px;">${st.checkin?esc(st.checkin.msg||'Checked in.')+' ('+new Date(st.checkin.at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})+')':'Press when you arrive. Your phone\'s location and the time are saved for RoofScan.'}</span>
   </div>
   ${j.thermal ? thermalPanel(j, st) : shotList(j.id, st)}
+  ${siteNotesPanel(j.id, st)}
   ${photoBox(j, st)}
   ${extrasPanel(j, st)}
   <div class="acts">
@@ -871,7 +894,7 @@ function completeScan(id){
   if (missing.length && !confirm('These are not ticked on your shot list:\n\n' + missing.join('\n') + '\n\nThe report can only cover what is in your photos. Mark the scan done anyway?')) return;
   const extras = job.extras ? exCounts(job, st) : undefined;
   const dr = jobDrone(job);
-  act({type:'complete', jobId:id, kind:'scan', link:st.link, conditions, extras, extrasNote: st.exNote || '', droneId: dr ? dr.id : ''});
+  act({type:'complete', jobId:id, kind:'scan', link:st.link, conditions, extras, extrasNote: st.exNote || '', droneId: dr ? dr.id : '', siteNotes: st.site || {}});
 }
 function completeReport(id){ const st = get(LS.checks, {})[id] || {}; act({type:'complete', jobId:id, kind:'report', link:st.rlink}); }
 // The pre-departure check is due once the job is within 24 hours and there has been no check in the last 6 hours.

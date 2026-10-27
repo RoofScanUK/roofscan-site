@@ -7,6 +7,7 @@
 <meta name="robots" content="noindex">
 <title>Thermal report | RoofScan UK</title>
 <script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
+<script src="rs-annotate.js"></script>
 <style>
 :root{--n:#1C2B4A;--g:#B8945F;--bg:#FBFAF7;--br:#DEDACE;--mu:#6B6F76;--gr:#2F6B4F;--gbg:#EAF2EC;--am:#9A6A1C;--abg:#F7EFDD;--rd:#9B2C2C;--rbg:#F6E6E4;}
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -96,6 +97,7 @@ textarea{min-height:80px;resize:vertical;}
         <div><label>Daytime before the survey</label><select id="sunDay"><option value="">Choose…</option><option>Sunny</option><option>Mixed</option><option>Dull</option></select></div>
         <div><label>Thermal camera / drone</label><input id="camera" placeholder="e.g. DJI Mavic 3T"></div>
         <div><label>Emissivity setting</label><input id="emis" type="number" step="0.01" placeholder="e.g. 0.95"></div>
+        <div><label>Reflected temperature (°C)</label><input id="tRefl" type="number" step="0.5" inputmode="decimal" placeholder="camera setting, e.g. -20 for clear sky"></div>
         <div><label>Colour palette used</label><input id="palette" placeholder="e.g. Iron / White hot"></div>
       </div>
       <div class="checks" id="condChecks"></div>
@@ -110,7 +112,8 @@ textarea{min-height:80px;resize:vertical;}
       <div class="tabs" id="phTabs"><button data-f="thermal" class="on">Thermal</button><button data-f="visual">Visual</button><button data-f="all">All</button></div>
       <div class="photos" id="phGrid"></div>
       <div style="margin-top:12px;"><label>Whole-roof thermal overview (optional, shown at the start of the findings)</label>
-        <div class="pick"><div class="slot"><div class="box" id="ovBox" onclick="pickFor('overview')">Pick overview</div></div></div></div>
+        <div class="pick"><div class="slot"><div class="box" id="ovBox" onclick="pickFor('overview')">Pick overview</div></div></div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px;"><button type="button" class="btn small" onclick="openThermalMap()">Roof map: pin each finding</button><span id="mapMsg" class="hint" style="margin:0;"></span></div></div>
     </div>
   </div>
 
@@ -132,6 +135,8 @@ textarea{min-height:80px;resize:vertical;}
       <div style="margin-top:10px;"><label>Summary for the client</label>
         <textarea id="summary" style="min-height:120px;" placeholder="Plain English: what was scanned, what was found, and what the client should do next."></textarea></div>
       <div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><button class="btn ghost small" id="aiBtn" onclick="aiSummary()">Draft summary from my findings</button><span id="aiMsg" class="hint" style="margin:0;"></span></div>
+      <div style="margin-top:12px;"><label>Areas not scanned or hidden (optional)</label>
+        <textarea id="notSeen" style="min-height:60px;" placeholder="e.g. Area under the solar panels and the neighbour's side of the party wall could not be seen."></textarea></div>
       <div style="margin-top:12px;"><label>Recommended next steps</label>
         <textarea id="nextSteps" placeholder="e.g. Ask a roofing contractor to confirm the areas marked Investigate with a moisture meter or core sample before any repair is priced."></textarea></div>
     </div>
@@ -166,18 +171,33 @@ var WORKER_BASE = 'https://roofscan-api.tiny-voice-ac40.workers.dev';
 var JOB = new URLSearchParams(location.search).get('job') || '';
 var TOKEN = ''; try { TOKEN = localStorage.getItem('rs_ct_token') || ''; } catch(e) {}
 var JOBINFO = null, PHOTOS = [], URLS = {}, BLOBS = {}, findings = [], overview = '', ready = false, saveTimer = null, fid = 0;
+var mapPins = [];   // roof map on the overview image: [{ id: finding id, x, y }]
 
 var PATTERNS = ['Consistent with trapped moisture', 'Consistent with heat loss (insulation)', 'Consistent with thermal bridging', 'Consistent with air leakage', 'Inconclusive, needs checking on site'];
 var AI = {};   // AI read of each thermal image: { anomaly, pattern, priority, location, desc, why }
 var PRIORITIES = ['Investigate', 'Monitor', 'For information'];
+// How certain each finding is. Almost every finding from the drone alone is level 1; level 2 or 3 only when someone has tested on site.
+var EVIDENCE = { '1': 'Level 1: thermal indication only', '2': 'Level 2: checked on site (moisture reading or test cut)', '3': 'Level 3: cause confirmed' };
+var HOLD_OFF = 'Hold off replacing the roof or redecorating inside until the cause has been confirmed.';
+function evOpt(cur){ cur = cur || '1'; return Object.keys(EVIDENCE).map(function(k){ return '<option value="' + k + '"' + (k === cur ? ' selected' : '') + '>' + esc(EVIDENCE[k]) + '</option>'; }).join(''); }
 
 function $(id){ return document.getElementById(id); }
+function siteNotesHtml(sn, escf){
+  if(!sn) return '';
+  var L = { fragile:'roof looked fragile', wires:'wires, trees or obstacles near the roof', scaffold:'scaffolding or works on site', people:'people or vehicles below needed managing' };
+  var flags = Object.keys(L).filter(function(k){ return sn[k]; }).map(function(k){ return L[k]; });
+  var bits = [];
+  if(flags.length) bits.push('Site: ' + flags.join(', ') + '.');
+  if(sn.notSeen) bits.push('Could not photograph: ' + sn.notSeen + (/[.!?]$/.test(sn.notSeen) ? '' : '.'));
+  if(sn.other) bits.push('Note: ' + sn.other);
+  return bits.length ? '<div style="margin-top:8px;padding:8px 10px;background:#EEF4FA;border:1px solid #C9DAEC;"><strong>Pilot\'s site notes:</strong> ' + escf(bits.join(' ')) + '</div>' : '';
+}
 function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
 function api(path, opts){ opts = opts || {}; opts.headers = Object.assign({ Authorization: 'Bearer ' + TOKEN }, opts.headers || {}); return fetch(WORKER_BASE + path, opts); }
 function banner(html, kind){ var b = $('banner'); b.className = 'banner' + (kind ? ' ' + kind : ''); b.innerHTML = html; b.style.display = html ? 'block' : 'none'; }
 function isThermalName(n){ return /(^|[_\-\s])(T|IR|THERMAL|R)(?=[_\-.\s])/i.test(n.replace(/\.[^.]+$/, '') + '.') || /thermal|_ir_|flir/i.test(n); }
 
-var FIELDS = ['ref','date','roofType','capTime','sunset','tOut','heating','tIn','wind','sky','rain','surface','sunDay','camera','emis','palette','overall','summary','nextSteps'];
+var FIELDS = ['ref','date','roofType','capTime','sunset','tOut','heating','tIn','wind','sky','rain','surface','sunDay','camera','emis','tRefl','palette','overall','summary','notSeen','nextSteps'];
 
 async function init(){
   if(!JOB || !TOKEN){ banner('Open this page from your jobs page. <a href="jobs.html">Go to your jobs</a>', 'error'); return; }
@@ -205,7 +225,8 @@ async function init(){
   if(j.sunset && !$('sunset').value){ $('sunset').value = new Date(j.sunset).toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit', timeZone:'Europe/London' }); filled++; }
   if(filled) $('condHint').innerHTML = 'Filled in from what the flyer recorded on site' + (tc.weatherSource ? ', weather from ' + esc(tc.weatherSource) : '') + (tc.notes ? ' (flyer\'s note: <b>' + esc(tc.notes) + '</b>)' : '') + ' and the sunset time for that evening. Check them against the images before sending.';
   renderFindings(); checkConditions(); checkFinish();
-  var fb = j.feedback ? '<div style="margin-top:8px;padding:8px 10px;background:#F7EFDD;border:1px solid #E6D3A8;white-space:pre-line;"><strong>RoofScan asked for changes:</strong> ' + esc(j.feedback) + '</div>' : '';
+  var fb = (j.feedback ? '<div style="margin-top:8px;padding:8px 10px;background:#F7EFDD;border:1px solid #E6D3A8;white-space:pre-line;"><strong>RoofScan asked for changes:</strong> ' + esc(j.feedback) + '</div>' : '') + siteNotesHtml(j.siteNotes, esc);
+  if(j.siteNotes && j.siteNotes.notSeen && !$('notSeen').value.trim()) $('notSeen').value = j.siteNotes.notSeen;
   var both = j.needsRoof ? ' This job also needs the normal roof report, which is a separate document: <a href="reports.html?job=' + encodeURIComponent(JOB) + '&as=writer">open the roof report generator</a>.' + (j.roofSent ? ' (Roof report already sent.)' : '') : '';
   banner('<strong>' + esc(j.client || 'Your job') + '</strong>: ' + (dr ? 'your saved thermal report is back.' : 'details filled in.') + ' Loading photos…' + both + fb);
   await loadPhotos();
@@ -281,8 +302,8 @@ function renderPicker(){
 }
 function closePicker(){ $('pickerOv').style.display = 'none'; pickTarget = null; }
 function choose(name){
-  if(pickTarget === 'overview'){ overview = name; renderOverview(); }
-  else if(pickTarget){ var f = findOne(pickTarget.id); if(f){ f[pickTarget.slot] = name; renderFindings(); } }
+  if(pickTarget === 'overview'){ if(overview !== name) mapPins = []; overview = name; renderOverview(); }
+  else if(pickTarget){ var f = findOne(pickTarget.id); if(f){ if(pickTarget.slot === 'thermal' && f.thermal !== name) delete f.marks; f[pickTarget.slot] = name; renderFindings(); } }
   closePicker(); saveSoon(); checkFinish();
 }
 function slotHtml(name, label, onclick){
@@ -293,7 +314,7 @@ function renderOverview(){ $('ovBox').outerHTML = '<div class="box" id="ovBox" o
 // ── Findings ──
 function findOne(id){ for(var i = 0; i < findings.length; i++) if(findings[i].id === id) return findings[i]; return null; }
 function addFinding(){
-  findings.push({ id: ++fid, location: '', pattern: '', priority: '', deltaT: '', area: '', desc: '', action: '', thermal: '', visual: '' });
+  findings.push({ id: ++fid, location: '', pattern: '', priority: '', deltaT: '', tRef: '', tMax: '', evidence: '1', verify: '', area: '', desc: '', action: '', thermal: '', visual: '' });
   renderFindings(); saveSoon(); checkFinish();
   var last = document.querySelector('.finding:last-child'); if(last) last.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
@@ -317,20 +338,28 @@ function renderFindings(){
     return '<div class="finding" data-id="' + k + '"><div class="fh"><span>T' + (i + 1) + (f.location ? ': ' + esc(f.location) : '') + '</span>' + (f.ai ? '<button class="pill warn" style="margin-left:auto;margin-right:6px;border:0;cursor:pointer;" title="Mark as checked" onclick="aiChecked(' + k + ')">AI draft: tap when checked</button>' : '') + '<span style="display:flex;gap:4px;">'
       + '<button class="btn ghost small" onclick="moveFinding(' + k + ',-1)" title="Move up">↑</button><button class="btn ghost small" onclick="moveFinding(' + k + ',1)" title="Move down">↓</button><button class="btn ghost small" onclick="removeFinding(' + k + ')">Remove</button></span></div>'
       + '<div class="fb"><div class="pick">'
-      + '<div class="slot"><label>Thermal image</label>' + slotHtml(f.thermal, 'Pick thermal image', 'pickFor({id:' + k + ',slot:\'thermal\'})') + '</div>'
+      + '<div class="slot"><label>Thermal image</label>' + slotHtml(f.thermal, 'Pick thermal image', 'pickFor({id:' + k + ',slot:\'thermal\'})')
+      + (f.thermal ? '<button type="button" class="btn ghost small" style="margin-top:6px;width:100%;' + (f.marks && f.marks.ai ? 'border-color:#E67E22;color:#A04000;' : '') + '" onclick="markFinding(' + k + ')">' + (f.marks && f.marks.circles && f.marks.circles.length ? (f.marks.ai ? 'AI circled this: check it' : 'Edit circles (' + f.marks.circles.length + ')') : 'Circle the area') + '</button>' : '') + '</div>'
       + '<div class="slot"><label>Visual photo (optional)</label>' + slotHtml(f.visual, 'Pick visual photo', 'pickFor({id:' + k + ',slot:\'visual\'})') + '</div></div>'
       + '<div class="grid">'
       + '<div style="grid-column:1/-1;"><label>Location on the roof</label><input data-f="location" value="' + esc(f.location) + '" placeholder="e.g. Rear flat roof, near the rooflight"></div>'
       + '<div><label>Pattern</label><select data-f="pattern">' + opt(PATTERNS, f.pattern) + '</select></div>'
       + '<div><label>Priority</label><select data-f="priority">' + opt(PRIORITIES, f.priority) + '</select></div>'
-      + '<div><label>Temperature difference (°C)</label><input data-f="deltaT" type="number" step="0.1" value="' + esc(f.deltaT) + '" placeholder="vs surrounding roof"></div>'
+      + '<div><label>Reference area temp (°C)</label><input data-f="tRef" type="number" step="0.1" value="' + esc(f.tRef || '') + '" placeholder="normal roof nearby"></div>'
+      + '<div><label>Warmest point (°C)</label><input data-f="tMax" type="number" step="0.1" value="' + esc(f.tMax || '') + '" placeholder="in the pattern"></div>'
+      + '<div><label>Temperature difference (°C)</label><input data-f="deltaT" type="number" step="0.1" value="' + esc(f.deltaT) + '" placeholder="worked out from the two above"></div>'
       + '<div><label>Approx. area (m²)</label><input data-f="area" type="number" step="0.5" value="' + esc(f.area) + '" placeholder="optional"></div>'
       + '<div style="grid-column:1/-1;"><label>What the image shows</label><textarea data-f="desc" placeholder="e.g. A warmer irregular area about 2 m by 1.5 m, about 3°C above the surrounding membrane, with a soft edge that follows the fall towards the outlet. This pattern is consistent with moisture held in the insulation.">' + esc(f.desc) + '</textarea></div>'
-      + '<div style="grid-column:1/-1;"><label>Recommended next step</label><input data-f="action" value="' + esc(f.action) + '" placeholder="e.g. Confirm with a moisture meter before any repair is priced"></div>'
+      + '<div style="grid-column:1/-1;"><label>Recommended next step</label><input data-f="action" value="' + esc(f.action) + '" placeholder="e.g. Confirm with a moisture meter or small test cut before any repair is priced"></div>'
+      + '<div><label>Evidence level</label><select data-f="evidence">' + evOpt(f.evidence) + '</select></div>'
+      + '<div style="' + ((f.evidence || '1') === '1' ? 'display:none;' : '') + '" data-verify><label>On-site check result</label><input data-f="verify" value="' + esc(f.verify || '') + '" placeholder="e.g. Moisture meter 38% at the marked area (dry roof reads under 15%)"></div>'
       + '</div></div></div>';
   }).join('');
+  $('findings').querySelectorAll('select[data-f]').forEach(function(el){ el.addEventListener('change', function(){ el.dispatchEvent(new Event('input')); }); });
   $('findings').querySelectorAll('[data-f]').forEach(function(el){
-    el.addEventListener('input', function(){ var f = findOne(Number(el.closest('.finding').dataset.id)); if(f){ f[el.dataset.f] = el.value; if(el.dataset.f === 'desc' && f.ai){ f.ai = false; var pl = el.closest('.finding').querySelector('.fh .pill'); if(pl) pl.remove(); checkFinish(); } if(el.dataset.f === 'location') el.closest('.finding').querySelector('.fh span').textContent = 'T' + (findings.indexOf(f) + 1) + (el.value ? ': ' + el.value : ''); } });
+    el.addEventListener('input', function(){ var f = findOne(Number(el.closest('.finding').dataset.id)); if(f){ f[el.dataset.f] = el.value;
+      if((el.dataset.f === 'tRef' || el.dataset.f === 'tMax') && f.tRef !== '' && f.tMax !== '' && f.tRef != null && f.tMax != null){ f.deltaT = String(Math.round((Number(f.tMax) - Number(f.tRef)) * 10) / 10); var dIn = el.closest('.finding').querySelector('[data-f="deltaT"]'); if(dIn) dIn.value = f.deltaT; }
+      if(el.dataset.f === 'evidence'){ var vb = el.closest('.finding').querySelector('[data-verify]'); if(vb) vb.style.display = el.value === '1' ? 'none' : ''; checkFinish(); } if(el.dataset.f === 'desc' && f.ai){ f.ai = false; var pl = el.closest('.finding').querySelector('.fh .pill'); if(pl) pl.remove(); checkFinish(); } if(el.dataset.f === 'location') el.closest('.finding').querySelector('.fh span').textContent = 'T' + (findings.indexOf(f) + 1) + (el.value ? ': ' + el.value : ''); } });
   });
 }
 
@@ -378,6 +407,7 @@ function problems(){
   findings.forEach(function(f, i){
     var miss = [];
     if(!f.thermal) miss.push('thermal image'); if(!f.location.trim()) miss.push('location'); if(!f.pattern) miss.push('pattern'); if(!f.priority) miss.push('priority'); if(f.desc.trim().length < 20) miss.push('description');
+    if((f.evidence || '1') !== '1' && !(f.verify || '').trim()) miss.push('on-site check result (or set the evidence level back to 1)');
     if(miss.length) p.push([null, 'Finding T' + (i + 1) + ' needs: ' + miss.join(', ') + '.']);
     if(f.ai) p.push([null, 'Finding T' + (i + 1) + ' is an unchecked AI draft. Check it against the image, then edit it or tap "AI draft: tap when checked".']);
   });
@@ -395,7 +425,7 @@ function checkFinish(){
 
 // ── Saving ──
 function collect(){
-  var d = { v: 1, findings: findings, overview: overview, ai: AI, fields: {} };
+  var d = { v: 1, findings: findings, overview: overview, mapPins: mapPins, ai: AI, fields: {} };
   FIELDS.forEach(function(id){ d.fields[id] = $(id).value; });
   return d;
 }
@@ -405,6 +435,7 @@ function restore(d){
   findings = Array.isArray(d.findings) ? d.findings : [];
   fid = findings.reduce(function(m, f){ return Math.max(m, f.id || 0); }, 0);
   overview = d.overview || ''; renderOverview();
+  mapPins = Array.isArray(d.mapPins) ? d.mapPins : [];
   AI = (d.ai && typeof d.ai === 'object') ? d.ai : {};
 }
 function onChange(e){ if(e && e.target && e.target.closest && e.target.closest('#pickerOv')) return; checkConditions(); checkFinish(); saveSoon(); }
@@ -458,12 +489,12 @@ var THERMAL_PROMPT = 'You are helping a qualified thermographer review a drone t
   + 'Reply with ONLY a JSON object, no other text: {"anomaly":true|false,"pattern":"moisture"|"heat loss"|"thermal bridging"|"air leakage"|"inconclusive"|"none",'
   + '"priority":"Investigate"|"Monitor"|"For information","location":"short place on the roof, e.g. rear flat roof near the outlet","desc":"one or two plain sentences describing what the image shows, using consistent with wording, never stating a leak as fact","why":"if not a defect, what it is, e.g. flue"}';
 var PAT_MAP = { 'moisture': 'Consistent with trapped moisture', 'heat loss': 'Consistent with heat loss (insulation)', 'thermal bridging': 'Consistent with thermal bridging', 'air leakage': 'Consistent with air leakage', 'inconclusive': 'Inconclusive, needs checking on site' };
-async function smallB64(name){
+async function smallB64(name, maxSide){
   var b = BLOBS[name] || await fetchPhoto(name); if(!b) return null;
   var url = URL.createObjectURL(b);
   try {
     var im = await new Promise(function(ok, bad){ var i = new Image(); i.onload = function(){ ok(i); }; i.onerror = bad; i.src = url; });
-    var sc = Math.min(1, 768 / Math.max(im.naturalWidth, im.naturalHeight)), c = document.createElement('canvas');
+    var sc = Math.min(1, (maxSide || 768) / Math.max(im.naturalWidth, im.naturalHeight)), c = document.createElement('canvas');
     c.width = Math.round(im.naturalWidth * sc); c.height = Math.round(im.naturalHeight * sc);
     c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
     return c.toDataURL('image/jpeg', 0.8).split(',')[1];
@@ -503,8 +534,8 @@ async function aiSort(){
     .sort(function(a, b){ return (rank[AI[a].priority] - rank[AI[b].priority]) || (a < b ? -1 : 1); });
   flagged.forEach(function(n){
     var a = AI[n];
-    findings.push({ id: ++fid, location: a.location, pattern: a.pattern, priority: a.priority, deltaT: '', area: '', desc: a.desc,
-      action: a.priority === 'Investigate' ? 'Confirm on site with a moisture meter or inspection opening before any repair is priced.' : '',
+    findings.push({ id: ++fid, location: a.location, pattern: a.pattern, priority: a.priority, deltaT: '', tRef: '', tMax: '', evidence: '1', verify: '', area: '', desc: a.desc,
+      action: a.priority === 'Investigate' ? 'Confirm on site with a moisture meter or small test cut before any repair is priced. ' + HOLD_OFF : '',
       thermal: n, visual: visualFor(n), ai: true });
   });
   renderFindings(); renderGrid('phGrid', currentTab('phTabs'), openPhoto); checkFinish(); saveSoon();
@@ -515,7 +546,7 @@ async function aiSort(){
 }
 
 // ── Word document ──
-async function imgFor(name, maxW){
+async function imgFor(name, maxW, marks){
   if(!name) return null;
   var b = BLOBS[name] || await fetchPhoto(name); if(!b) return null;
   var url = URL.createObjectURL(b);
@@ -524,10 +555,42 @@ async function imgFor(name, maxW){
     var scale = Math.min(1, 1400 / im.naturalWidth), c = document.createElement('canvas');
     c.width = Math.round(im.naturalWidth * scale); c.height = Math.round(im.naturalHeight * scale);
     c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
-    var blob = await new Promise(function(ok){ c.toBlob(ok, 'image/jpeg', 0.85); });
-    var data = new Uint8Array(await blob.arrayBuffer());
+    var data;
+    if(marks && window.RSAnnot && ((marks.circles && marks.circles.length) || (marks.pins && marks.pins.length))){
+      var bk = await RSAnnot.bake(c.toDataURL('image/jpeg', 0.9).split(',')[1], marks);
+      var bin = atob(bk.b64); data = new Uint8Array(bin.length); for(var q = 0; q < bin.length; q++) data[q] = bin.charCodeAt(q);
+    } else {
+      var blob = await new Promise(function(ok){ c.toBlob(ok, 'image/jpeg', 0.85); });
+      data = new Uint8Array(await blob.arrayBuffer());
+    }
     return { data: data, w: maxW, h: Math.round(maxW * c.height / c.width) };
   } catch(e){ return null; } finally { URL.revokeObjectURL(url); }
+}
+// ── Circles and roof map ── the writer draws, or lets the AI suggest and then checks.
+async function aiAsk(messages, maxTokens){
+  var r = await api('/ai-proxy', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'sonnet', max_tokens: maxTokens, messages: messages }) });
+  var j = await r.json().catch(function(){ return {}; });
+  if(!r.ok) throw new Error((j.error && (j.error.message || j.error)) || ('HTTP ' + r.status));
+  return (j.content || []).map(function(c){ return c.text || ''; }).join('');
+}
+async function markFinding(id){
+  var f = findOne(id); if(!f || !f.thermal) return;
+  var b64 = await smallB64(f.thermal, 1400); if(!b64){ alert('Could not open that image. Try again.'); return; }
+  RSAnnot.open({ b64: b64, mode: 'circles', marks: f.marks || {}, title: 'Circle the area: ' + (f.location || 'this finding'),
+    onAi: function(){ return RSAnnot.aiCircles(aiAsk, b64, 'image/jpeg', [f.location, f.pattern, f.desc].filter(Boolean).join('. '), true).then(function(c){ return { circles: c }; }); },
+    onDone: function(m){ f.marks = m.circles.length ? { circles: m.circles } : null; renderFindings(); saveSoon(); } });
+}
+async function openThermalMap(){
+  var msg = $('mapMsg');
+  if(!overview){ msg.textContent = 'Pick the whole-roof overview first. The pins go on that image.'; return; }
+  if(!findings.length){ msg.textContent = 'Add findings first.'; return; }
+  var b64 = await smallB64(overview, 1400); if(!b64){ msg.textContent = 'Could not open the overview image.'; return; }
+  var items = findings.map(function(f, i){ return { n: 'T' + (i + 1), id: f.id, label: 'T' + (i + 1) + ' ' + (f.location || '') + (f.pattern ? ': ' + f.pattern : '') }; });
+  var noOf = {}, idOf = {}; items.forEach(function(it){ noOf[it.id] = it.n; idOf[it.n] = it.id; });
+  RSAnnot.open({ b64: b64, mode: 'pins', title: 'Roof map: one pin per finding', marks: { pins: mapPins.filter(function(m){ return noOf[m.id]; }).map(function(m){ return { n: noOf[m.id], x: m.x, y: m.y }; }) },
+    pinItems: items.map(function(it){ return { n: it.n, label: it.label }; }),
+    onAi: function(){ return RSAnnot.aiPins(aiAsk, b64, 'image/jpeg', items.map(function(it){ return { n: it.n, label: it.label }; }), true).then(function(p){ return { pins: p }; }); },
+    onDone: function(m){ mapPins = m.pins.filter(function(p){ return idOf[p.n]; }).map(function(p){ return { id: idOf[p.n], x: p.x, y: p.y }; }); msg.textContent = mapPins.length + ' of ' + findings.length + ' finding(s) pinned. The map replaces the plain overview in the report.'; saveSoon(); } });
 }
 async function buildDoc(){
   var D = docx, NAVY = '1C2B4A', BLUE = '1B4F8A', MID = '2E75B6', LIGHT = 'D6E4F2', DARK = '1A1A2E', GREY = 'F5F7FA', RED = 'C0392B', AMBER = 'E67E22', GREEN = '27AE60';
@@ -573,7 +636,8 @@ async function buildDoc(){
   body.push(new D.Paragraph({ spacing: { before: 200, after: 60 }, children: [t('Overall result:  ', { bold: true, color: MID }), t(F.overall, { bold: true })] }));
   body.push(new D.Paragraph({ spacing: { before: 0, after: 120 }, children: [t('Survey conditions:  ', { bold: true, color: MID }), t(c.verdict, { bold: true, color: c.verdict === 'Limited' ? RED : (c.verdict === 'Suitable' ? GREEN : AMBER) })] }));
   F.summary.split(/\n+/).filter(Boolean).forEach(function(par){ body.push(p(par)); });
-  if(F.nextSteps.trim()){ body.push(h2('Recommended next steps')); F.nextSteps.split(/\n+/).filter(Boolean).forEach(function(par){ body.push(p(par)); }); }
+  if(F.nextSteps.trim() || inv){ body.push(h2('Recommended next steps')); F.nextSteps.split(/\n+/).filter(Boolean).forEach(function(par){ body.push(p(par)); });
+    if(inv && F.nextSteps.indexOf('Hold off') < 0) body.push(p('Before spending money: ' + HOLD_OFF.charAt(0).toLowerCase() + HOLD_OFF.slice(1), { bold: true })); }
 
   // Conditions
   body.push(h1('Survey conditions'));
@@ -583,7 +647,7 @@ async function buildDoc(){
     ['Outside air temperature', F.tOut !== '' ? F.tOut + '°C' : ''], ['Heating on inside', F.heating], ['Inside temperature', F.tIn !== '' ? F.tIn + '°C' : 'Not known'],
     ['Inside to outside difference', c.dT != null ? c.dT + '°C' : ''], ['Wind speed', F.wind !== '' ? F.wind + ' mph' : ''],
     ['Sky', F.sky], ['Rain in the previous 24 hours', F.rain], ['Roof surface at capture', F.surface], ['Daytime before the survey', F.sunDay],
-    ['Camera', F.camera], ['Emissivity setting', F.emis], ['Colour palette', F.palette]
+    ['Camera', F.camera], ['Emissivity setting', F.emis], ['Reflected temperature setting', F.tRefl !== '' ? F.tRefl + '°C' : ''], ['Colour palette', F.palette]
   ]));
   body.push(new D.Paragraph({ spacing: { before: 160, after: 60 }, children: [t('Assessment: ' + c.verdict, { bold: true, color: MID })] }));
   c.list.filter(function(x){ return x[0] !== 'ok'; }).forEach(function(x){ body.push(new D.Paragraph({ bullet: { level: 0 }, spacing: { before: 20, after: 40 }, children: [t(x[1])] })); });
@@ -592,11 +656,14 @@ async function buildDoc(){
   // Findings
   body.push(new D.Paragraph({ pageBreakBefore: true, children: [] }));
   body.push(h1('Findings'));
-  var ov = await imgFor(overview, 560);
-  if(ov){ body.push(h2('Whole-roof thermal overview')); body.push(new D.Paragraph({ alignment: D.AlignmentType.CENTER, children: [new D.ImageRun({ data: ov.data, transformation: { width: ov.w, height: ov.h }, type: 'jpg' })] })); }
+  var mapNo = {}; findings.forEach(function(f, i){ mapNo[f.id] = 'T' + (i + 1); });
+  var mp = mapPins.filter(function(m){ return mapNo[m.id]; });
+  var ov = await imgFor(overview, 560, mp.length ? { pins: mp.map(function(m){ return { n: mapNo[m.id], x: m.x, y: m.y }; }) } : null);
+  if(ov && mp.length){ body.push(h2('Roof map')); body.push(p('Each pin shows where a finding (T1, T2 and so on) is on the roof.')); }
+  else if(ov){ body.push(h2('Whole-roof thermal overview')); body.push(new D.Paragraph({ alignment: D.AlignmentType.CENTER, children: [new D.ImageRun({ data: ov.data, transformation: { width: ov.w, height: ov.h }, type: 'jpg' })] })); }
   if(!findings.length) body.push(p('No significant thermal anomalies were seen on the areas scanned. This does not rule out a defect that was not showing a temperature difference at the time of the survey (see Limitations).'));
   for(var i = 0; i < findings.length; i++){
-    var f = findings[i], ti = await imgFor(f.thermal, 290), vi = await imgFor(f.visual, 290);
+    var f = findings[i], ti = await imgFor(f.thermal, 290, f.marks), vi = await imgFor(f.visual, 290);
     body.push(new D.Paragraph({ keepNext: true, spacing: { before: 280, after: 100 }, border: { bottom: { style: D.BorderStyle.SINGLE, size: 6, color: prColor(f.priority), space: 2 } }, children: [t('T' + (i + 1) + '  ' + f.location, { bold: true, size: 23, color: BLUE }), t('    ' + f.priority, { bold: true, size: 19, color: prColor(f.priority) })] }));
     var imgs = [ti, vi].filter(Boolean);
     if(imgs.length){
@@ -607,7 +674,13 @@ async function buildDoc(){
       ] }));
     }
     body.push(new D.Paragraph({ spacing: { before: 80, after: 0 }, children: [] }));
-    body.push(kv([['Pattern', f.pattern], ['Temperature difference', f.deltaT !== '' ? f.deltaT + '°C compared with the surrounding roof' : ''], ['Approximate area', f.area !== '' ? f.area + ' m²' : ''], ['What the image shows', f.desc], ['Recommended next step', f.action]]));
+    var rd = [];
+    if(F.tOut !== '') rd.push('Outside air ' + F.tOut + '°C'); if(F.tRefl !== '') rd.push('Reflected ' + F.tRefl + '°C');
+    if(f.tRef) rd.push('Reference area ' + f.tRef + '°C'); if(f.tMax) rd.push('Warmest point ' + f.tMax + '°C');
+    if(f.deltaT !== '' && f.deltaT != null) rd.push('Difference ' + f.deltaT + '°C');
+    var ev = f.evidence || '1';
+    body.push(kv([['Pattern', f.pattern], ['Temperature readings', rd.join('  ·  ')], ['Approximate area', f.area !== '' ? f.area + ' m²' : ''], ['What the image shows', f.desc],
+      ['Evidence level', EVIDENCE[ev] + (ev === '1' ? '. Not yet confirmed on site.' : '')], ['On-site check', ev !== '1' ? (f.verify || '') : ''], ['Recommended next step', f.action]]));
   }
 
   // Limitations
@@ -616,10 +689,16 @@ async function buildDoc(){
   [['Investigate', 'A pattern worth confirming on site soon, usually with a moisture meter or a small inspection opening by a roofing contractor.'],
    ['Monitor', 'A pattern that may be minor or seasonal. Worth looking at again, or checking if you see signs inside.'],
    ['For information', 'Noted for completeness. No action is suggested on its own.']].forEach(function(r){ body.push(new D.Paragraph({ spacing: { before: 40, after: 60 }, children: [t(r[0] + ':  ', { bold: true, color: prColor(r[0]) }), t(r[1])] })); });
+  body.push(h2('Evidence levels'));
+  body.push(p('Each finding shows how certain it is. A thermal image on its own can only point to where to look.'));
+  [['Level 1', 'Thermal indication only. The pattern is seen in the thermal image but has not been tested on site.'],
+   ['Level 2', 'Checked on site, for example with a moisture meter reading or a small test cut, and the result is recorded with the finding.'],
+   ['Level 3', 'Cause confirmed, for example when the roof has been opened up and the source found.']].forEach(function(r){ body.push(new D.Paragraph({ spacing: { before: 40, after: 60 }, children: [t(r[0] + ':  ', { bold: true, color: MID }), t(r[1])] })); });
   body.push(h1('Limitations'));
+  if(F.notSeen && F.notSeen.trim()) body.push(new D.Paragraph({ bullet: { level: 0 }, spacing: { before: 20, after: 60 }, children: [t('Areas not scanned or hidden: ' + F.notSeen.trim())] }));
   ['This survey was carried out by drone from the air. No one accessed the roof, and no part of the roof or building was opened up or tested.',
    'Thermal imaging records surface temperature only. It does not detect water directly. Warmer or cooler areas can be caused by moisture, missing or wet insulation, air leakage, changes in roof build-up, materials with different surface finishes, reflections, or equipment on or under the roof.',
-   'Every pattern described as "consistent with" a cause should be confirmed on site, for example with a moisture meter or core sample by a roofing contractor, before any repair is priced or carried out.',
+   'Every pattern described as "consistent with" a cause should be confirmed on site, for example with a moisture meter or a small test cut by a roofing contractor, before any repair is priced or carried out.',
    'Results depend on the weather before and during the survey. A defect that was not producing a temperature difference at the time (for example after a dull day, in wind, or with no heating on inside) may not show.',
    'Temperatures shown are approximate and depend on the emissivity setting and viewing angle.',
    'This report is not a structural survey and does not confirm the age, remaining life or compliance of the roof.'].forEach(function(x){ body.push(new D.Paragraph({ bullet: { level: 0 }, spacing: { before: 20, after: 60 }, children: [t(x)] })); });
