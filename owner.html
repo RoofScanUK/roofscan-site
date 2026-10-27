@@ -180,6 +180,7 @@ details.ctr>summary:hover{background:#FAF8F2;}
               <div id="covcard" class="covcard" hidden></div>
             </div>
             <div class="muted small" id="covkey" style="margin-top:8px;line-height:1.7;"></div>
+            <div id="demandlist" style="margin-top:12px;"></div>
             <div class="muted small" id="seatsline" style="margin-top:6px;line-height:1.7;"></div>
           </div></section>
           <section><div class="lbl">Area covered</div><div class="box pad" id="homearea"><span class="muted small">Loading…</span></div></section>
@@ -546,6 +547,19 @@ async function loadCovMap(){
   const b=covLayer.getBounds(); if(b.isValid()) covMap.fitBounds(b,{padding:[20,20],maxZoom:10}); else covMap.setView([50.8225,-0.1372],9);
   setTimeout(()=>covMap.invalidateSize(),50);
   const live=d.flyers.filter(f=>f.live).length, wanted=d.demand.reduce((n,x)=>n+x.checks,0);
+  // Where to recruit next: out-of-area quote checks grouped by council area, most wanted first. Click one to zoom to it.
+  const da=d.demandAreas||[];
+  window._demandAreas=da;
+  $('demandlist').innerHTML=da.length?`<div class="small" style="font-weight:700;color:var(--navy);margin-bottom:6px;">Where people want us next</div>
+    <table style="width:100%;border-collapse:collapse;font-size:13px;">
+      <tr class="muted small"><td style="padding:4px 0;">Area</td><td style="text-align:right;">Quote checks</td><td style="text-align:right;">Left email</td><td style="text-align:right;">Last</td></tr>
+      ${da.map((a,i)=>`<tr style="border-top:1px solid var(--line);cursor:pointer;" onclick="covMap.setView([${a.lat},${a.lon}],10)" title="Show on map">
+        <td style="padding:6px 0;"><b>${esc(a.area)}</b>${a.region&&a.region!==a.area?` <span class="muted small">${esc(a.region)}</span>`:''}</td>
+        <td style="text-align:right;">${a.checks}</td><td style="text-align:right;">${a.emails}</td>
+        <td style="text-align:right;" class="muted small">${a.last?esc(new Date(a.last).toLocaleDateString('en-GB',{day:'numeric',month:'short'})):''}</td></tr>`).join('')}
+    </table>
+    <div class="muted small" style="margin-top:6px;">Ranked by quote checks, with people who left an email counting double. Recruit pilots in the top areas first.</div>`
+    :'<div class="muted small">No out-of-area quote checks yet. When someone outside our pilots\' areas checks a postcode, it shows up here.</div>';
   $('covkey').innerHTML=`<span style="color:#1B7F4B;">&#9679;</span> ${live} flyer${live===1?'':'s'} taking jobs &nbsp; <span style="color:#8A94A0;">&#9679;</span> not taking jobs &nbsp; <span style="color:#1B4F8A;">- - -</span> home area &nbsp; <span style="color:#F29A2E;">&#9679;</span> ${wanted} out-of-area quote attempt${wanted===1?'':'s'}. Flyers with no base postcode are not shown.`;
 }
 // Details card for the pilot clicked on the coverage map.

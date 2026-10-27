@@ -556,9 +556,15 @@ $('apply-form').addEventListener('submit', async function(e){
     if (!$('f-range-ok').checked) { showErr('Please tick the box to agree to your travel distance.'); return; }
     if (!v('f-drone') || !v('f-serial') || !v('f-wind')) { showErr('Please fill in your drone details.'); return; }
     { const bad = readXDrones().find(d => !d.serial || !(Number(d.wind) >= 3 && Number(d.wind) <= 25)); if (bad) { showErr('Please add the serial number and wind rating (3 to 25 m/s) for your ' + bad.model + ', or remove it.'); return; } }
-    if (!v('f-opid') || !v('f-opexp') || !v('f-flid') || !v('f-flexp')) { showErr('Please fill in your Operator ID and Flyer ID, with expiry dates.'); return; }
+    if (!v('f-opid')) { showErr('Please enter your Operator ID.'); $('f-opid').focus(); return; }
+    if (dateMissing('f-opexp', 'Operator ID expiry date')) return;
+    if (!v('f-flid')) { showErr('Please enter your Flyer ID.'); $('f-flid').focus(); return; }
+    if (dateMissing('f-flexp', 'Flyer ID expiry date')) return;
     if (!files.caa.length && !(edit && edit.onFile.caa && edit.onFile.caa.length)) { showErr('Please upload your CAA certificates.'); return; }
-    if (!v('f-insprov') || !v('f-insamt') || !v('f-insexp')) { showErr('Please fill in your insurance details.'); return; }
+    // One message per field, so nobody is stuck on a vague "fill in your insurance details" (Neil Marshall, 27 Oct).
+    if (!v('f-insprov')) { showErr('Please enter your insurance provider (for example Coverdrone or Moonrock).'); $('f-insprov').focus(); return; }
+    if (!v('f-insamt')) { showErr('Please enter your public liability cover amount, for example £1,000,000.'); $('f-insamt').focus(); return; }
+    if (dateMissing('f-insexp', 'insurance renewal date')) return;
     if (!files.insurance.length && !(edit && edit.onFile.insurance && edit.onFile.insurance.length)) { showErr('Please upload your insurance certificate.'); return; }
     if ($('f-thermal').checked && (!v('f-tdrone') || !v('f-ttrain'))) { showErr('Please fill in your thermal drone and thermography training, or untick the thermal drone box.'); return; }
   }
@@ -643,6 +649,17 @@ function readXDrones(){
     wind: Number(r.querySelector('.xd-wind').value), thermal: r.querySelector('.xd-thermal').checked })).filter(d => d.model);
 }
 document.getElementById('xd-add').onclick = () => addXDrone();
+
+// A date box can look filled in but be empty to the browser if the date was typed in a format it does not accept
+// (e.g. a 2-digit year). Say exactly which date is the problem and how to fix it.
+function dateMissing(id, label){
+  const el = $(id); if (!el) return false;
+  if (el.value) return false;
+  const typedBad = el.validity && el.validity.badInput;
+  showErr(typedBad ? 'The ' + label + ' is not a full date. Please pick it from the calendar, or type it as day, month and a 4-digit year.' : 'Please add your ' + label + '.');
+  el.focus(); return true;
+}
+
 </script>
 </body>
 </html>
