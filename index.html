@@ -959,6 +959,14 @@ section[id],#how-it-works{scroll-margin-top:88px;}
 @media (max-width:900px){ .x-shots-head{grid-template-columns:1fr;gap:12px;} .x-shot-a,.x-shot-b,.x-shot-c,.x-shot-d{grid-column:span 12;} .x-shot img{min-height:220px;max-height:300px;} .x-shots{padding-bottom:90px;} .x-shot figcaption{font-size:12.5px;padding:9px 12px;left:10px;right:10px;bottom:10px;} }
 @media (prefers-reduced-motion:reduce){ .x-shot img,.form-err{transition:none;animation:none;} .x-shot:hover img{transform:none;} }
   .sv-grid{display:grid;gap:8px;margin:0 0 14px;}
+  .tier-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 0 14px;}
+  .tier{position:relative;text-align:left;padding:14px 12px 12px;border:1.5px solid var(--line);border-radius:12px;background:var(--paper);cursor:pointer;font:inherit;color:inherit;display:flex;flex-direction:column;gap:4px;}
+  .tier.on{border-color:var(--sun,#F2B640);background:#FFF7E3;box-shadow:0 12px 30px -18px rgba(242,182,64,.9);}
+  .tier .t-name{font-weight:700;font-size:14px;}
+  .tier .t-price{font-size:20px;font-weight:700;}
+  .tier .t-sub{font-size:12px;line-height:1.45;color:var(--muted,#6b6b6b);}
+  .tier .t-tag{position:absolute;top:-9px;left:10px;background:#1C2B4A;color:#fff;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:999px;letter-spacing:.02em;}
+  @media (max-width:560px){ .tier-grid{grid-template-columns:1fr;} .tier{padding:12px 14px;} }
   .sv-opt{display:flex;gap:12px;align-items:flex-start;padding:13px 15px;border:1px solid var(--line);border-radius:10px;background:var(--paper);cursor:pointer;font-size:14px;line-height:1.45;}
   .sv-opt input{width:18px;height:18px;margin-top:2px;flex:none;accent-color:var(--ink,#1a1a1a);}
   .sv-opt:has(input:checked){border-color:var(--ink,#1a1a1a);box-shadow:0 0 0 1px var(--ink,#1a1a1a);}
@@ -1547,17 +1555,18 @@ section[id],#how-it-works{scroll-margin-top:88px;}
             <label class="sv-opt"><input type="radio" name="survey" value="thermal" onchange="onSurveyChange()"><span><strong>Thermal leak scan <em id="sv-th-price"></em></strong><span class="sv-sub">For a damp patch or leak you can't trace. Its own report: a heat map showing where water may be getting in. Flown after dark, priced by roof size.</span></span></label>
             <label class="sv-opt"><input type="radio" name="survey" value="both" onchange="onSurveyChange()"><span><strong>Report + thermal <em id="sv-both-price"></em></strong><span class="sv-sub">Both reports, in one evening visit: photos in the last daylight, thermal once it's dark. The thermal scan is added to your roof report price.</span></span></label>
           </div>
+          <div class="tier-grid" id="tier-grid" role="radiogroup" aria-label="How soon do you need it?"></div>
           <div class="total-card">
             <div class="label">Total</div>
             <div class="amt" id="total-amt">£0</div>
             <div id="total-lines"></div>
             <div id="sv-includes" style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(251,250,247,.12);color:rgba(251,250,247,.5);font-size:12px;line-height:1.7;">Drone survey · full written report · photos · condition ratings · Schedule of Works · <span id="delivery-line">5-day delivery</span> · insured pilots</div>
           </div>
-          <label style="display:flex;gap:12px;align-items:flex-start;margin-top:14px;padding:14px 16px;border:1px solid var(--line);border-radius:10px;background:var(--paper);cursor:pointer;">
+          <label id="express-wrap" style="display:none;gap:12px;align-items:flex-start;margin-top:14px;padding:14px 16px;border:1px solid var(--line);border-radius:10px;background:var(--paper);cursor:pointer;">
             <input type="checkbox" id="express-opt" onchange="selectedSlot=null;renderPrice();if(step6Inited)loadSlots();" style="width:20px;height:20px;margin-top:2px;flex:none;">
             <span style="font-size:14px;line-height:1.5;"><strong id="express-title">Express, +£99</strong><br><span class="muted" style="font-size:13px;">Book from 48 hours ahead instead of 72, and get your report within 24 hours of the inspection instead of 5 working days. Handy for house sales and insurance deadlines.</span></span>
           </label>
-          <label id="anytime-wrap" style="display:flex;gap:12px;align-items:flex-start;margin-top:10px;padding:14px 16px;border:1px solid var(--line);border-radius:10px;background:var(--paper);cursor:pointer;">
+          <label id="anytime-wrap" data-tiers="1" style="display:none;gap:12px;align-items:flex-start;margin-top:10px;padding:14px 16px;border:1px solid var(--line);border-radius:10px;background:var(--paper);cursor:pointer;">
             <input type="checkbox" id="anytime-opt" onchange="selectedSlot=null;renderPrice();applyAnytime();" style="width:20px;height:20px;margin-top:2px;flex:none;">
             <span style="font-size:14px;line-height:1.5;"><strong>Any time, save £20</strong><br><span class="muted" style="font-size:13px;">Let our pilot pick a time in the next 5 working days. We'll email you the exact date and time at least 24 hours before. Nobody needs to be home.</span></span>
           </label>
@@ -2023,6 +2032,7 @@ async function checkPostcode(raw){
     }
     const charge = cov.travel || 0;
     postcodeInfo = {postcode, charge, town: admin_district || ''};
+    if(window.rsTrack) rsTrack('PostcodeChecked', {covered: true});
     document.getElementById('postcode-clear').style.display='block';
     info.textContent = postcode+(charge>0?' · +£'+charge+' mileage':' · no mileage charge');
     info.style.display = 'block';
@@ -2143,6 +2153,7 @@ function formErr(stepId, msg, focusId){
 
 function goStep(n){
   bstep = n;
+  if(n === 6 && window.rsTrack) rsTrack('InitiateCheckout', {value: window._rsLastTotal || 0, currency: 'GBP'});
   for(let i=1;i<=6;i++){ const el=document.getElementById('book-step-'+i); if(el) el.style.display = (i===n?'block':'none'); }
   renderProgress();
   const titles = {
@@ -2319,8 +2330,32 @@ function renderPrice(){
   document.getElementById('exact-price-offer').style.display = (isEstimate || areaFlagged) ? 'block' : 'none';
 
   document.getElementById('balance-note').innerHTML = 'Balance of '+fmt(Math.max(0,total-50))+' due on completion · <a href="terms.html" class="muted">Terms &amp; Conditions</a>';
+  window._rsLastTotal = total;
+  if(!window._rsPriceTracked && window.rsTrack){ window._rsPriceTracked = true; rsTrack('ViewContent', {value: total, currency: 'GBP', content_name: 'Roof report price'}); }
+  renderTiers(roofPart + thermalPart + travCharge, expressOn, anyOn);
 
   captureLead('quoted', total);
+}
+
+// Three ways to book the same roof report, side by side, so the price difference is easy to see.
+// The cards just tick the existing Express / Any time boxes, so all the slot and payment logic stays the same.
+function renderTiers(base, expressOn, anyOn){
+  const g = document.getElementById('tier-grid'); if(!g) return;
+  const pick = expressOn ? 'express' : (anyOn ? 'anytime' : 'standard');
+  const T = [
+    ['anytime', 'Any time', base - ANYTIME_DISCOUNT, 'Our pilot picks a time in the next 5 working days. Nobody needs to be home. Report in 5 working days.', 'Most popular'],
+    ['standard', 'Standard', base, 'You pick the date (from 72 hours ahead). Report in 5 working days.', ''],
+    ['express', 'Express', base + expressFee(), (STORM_OFFER ? 'Free with Storm Check. ' : '') + 'Pick a date from 48 hours ahead. Report within 24 hours of the flight.', STORM_OFFER ? 'Free upgrade' : 'Fastest']
+  ];
+  g.innerHTML = T.map(t => '<button type="button" role="radio" aria-checked="' + (pick === t[0]) + '" class="tier' + (pick === t[0] ? ' on' : '') + '" onclick="chooseTier(\'' + t[0] + '\')">'
+    + (t[4] ? '<span class="t-tag">' + t[4] + '</span>' : '') + '<span class="t-name">' + t[1] + '</span><span class="t-price">' + fmt(t[2]) + '</span><span class="t-sub">' + t[3] + '</span></button>').join('');
+}
+function chooseTier(k){
+  const x = document.getElementById('express-opt'), a = document.getElementById('anytime-opt');
+  if(x) x.checked = (k === 'express');
+  if(a) a.checked = (k === 'anytime');
+  selectedSlot = null; renderPrice(); applyAnytime();
+  if(typeof step6Inited !== 'undefined' && step6Inited && k !== 'anytime') loadSlots();
 }
 
 function showExactAreaInput(){
@@ -2345,6 +2380,7 @@ let leadRecordId = null;
 function captureLead(stage, total){
   if(!(contact.name && contact.email && contact.phone && contact.address)) return;
   if(stage === 'details' && leadRecordId) return; // already captured this session
+  if(stage === 'details' && window.rsTrack) rsTrack('Lead', {content_name: 'Quote details entered'});
   fetch(LM_API_BASE + '/capture-lead', {
     method: 'POST',
     headers: {'Content-Type':'application/json'},
@@ -2392,7 +2428,7 @@ function anytimeOn(){ const el = document.getElementById('anytime-opt'); return 
 function flexOn(){ return anytimeOn() || surveyType() !== 'visual'; }
 function onSurveyChange(){
   const th = surveyType() !== 'visual', w = document.getElementById('anytime-wrap');
-  if(w) w.style.display = th ? 'none' : 'flex';
+  if(w && !w.dataset.tiers) w.style.display = th ? 'none' : 'flex';
   selectedSlot = null; renderPrice(); applyAnytime();
 }
 function applyAnytime(){
@@ -2597,6 +2633,7 @@ async function submitPayment(){
     });
     const data = await res.json();
     if(!res.ok) throw new Error(data.error || 'booking failed');
+    if(window.rsTrack) rsTrack('Purchase', {value: window._rsLastTotal || 0, currency: 'GBP'});
     document.getElementById('payment-section').style.display = 'none';
     document.getElementById('slot-nav').style.display = 'none';
     document.getElementById('slot-days').style.display = 'none';
