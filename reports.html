@@ -505,7 +505,7 @@ function rsParseJSON(text){
   var t = String(text||'').replace(/```json|```/g,'').trim();
   var a = t.indexOf('{'), b = t.lastIndexOf('}');
   if(a < 0 || b <= a) throw new Error('The AI reply was incomplete. Press the button again.');
-  return JSON.parse(t.slice(a, b+1));
+  try{ return JSON.parse(t.slice(a, b+1)); }catch(e){ throw new Error('The AI reply was incomplete. Press the button again.'); }
 }
 // Turns any AI failure into a plain-English message. Writers see what to do next, never raw error text.
 // When the problem is on RoofScan's side (no credit, retired model), the owner is told automatically once per page.
@@ -633,6 +633,11 @@ function removeObs(key){delete state[key];var el=document.getElementById("obsblo
 // data would blow past localStorage's ~5MB quota after a handful of photos: so a resumed
 // report keeps all text/status but photos need re-adding, which the resume detail text notes.
 var RS_DRAFT_KEY = CT_MODE ? 'rs_report_draft_' + CT_JOB : 'rs_report_draft'; // one draft per job for writers, so jobs never mix
+// Drafts saved before 27 Oct had fewer standard items per section (2.2.5-2.2.7, 2.3.4 and 2.4.2 came later), so an item the
+// writer added sat straight after the old ones and would now land in one of the new items. Those drafts have no "storm" entry.
+var RS_OLD_LAYOUT = { chimneys:3, coverings:4, rainwater:3, ancillary:1 };
+function rsIsOldDraft(d){ return !!d && !Object.prototype.hasOwnProperty.call(d, 'storm'); }
+function rsStdCount(secId){ var s = SECTIONS.filter(function(x){ return x.id === secId; })[0]; return s ? s.obs.length : 0; }
 var _autosaveTimer = null;
 var _pendingDraft = null;
 
@@ -709,6 +714,13 @@ function checkForDraft(){
 function resumeReport(){
   var draft = _pendingDraft;
   if(!draft) return;
+  if(rsIsOldDraft(draft)){
+    // Move added items past the new standard ones (they are only kept if that box exists, as before).
+    var mv = function(k){ var m = /^(chimneys|coverings|rainwater|ancillary)_(\d+)$/.exec(k); if(!m) return k; var old = RS_OLD_LAYOUT[m[1]], i = +m[2]; return i >= old ? m[1] + '_' + (i + rsStdCount(m[1]) - old) : k; };
+    var keep = function(k){ return mv(k) === k || !!document.getElementById('obsblock_' + mv(k)); };
+    var st2 = {}; Object.keys(draft.state || {}).forEach(function(k){ if(keep(k)) st2[mv(k)] = draft.state[k]; }); draft.state = st2;
+    var ot2 = {}; Object.keys(draft.obsText || {}).forEach(function(id){ var k = id.indexOf('obstext_') === 0 ? id.slice(8) : null; if(!k) ot2[id] = draft.obsText[id]; else if(keep(k)) ot2['obstext_' + mv(k)] = draft.obsText[id]; }); draft.obsText = ot2;
+  }
   ['address','postcode','client','inspDate','reportRef','roofType','covering','roofAge','inspector','atRecordId','summary','keyRisks','maintenance','notSeen'].forEach(function(id){
     var el = document.getElementById(id);
     if(el && draft[id] !== undefined) el.value = draft[id];
@@ -989,7 +1001,7 @@ async function generateSummaries(){
   try{
     var res=await callClaude("claude-sonnet-5-5",1200,[{role:"user",content:prompt}]);
     var data=await res.json();
-    var text=data.content.map(function(i){return i.text||"";}).join("").trim();
+    var text=(data.content||[]).map(function(i){return i.text||"";}).join("").trim();
     if(data.stop_reason==="max_tokens") throw new Error("The AI reply was cut short. Press Generate summaries again.");
     var parsed=rsParseJSON(text);
     document.getElementById("summary").value=parsed.summary||"";
@@ -998,7 +1010,7 @@ async function generateSummaries(){
     document.getElementById("maintenance").value=asBullets(parsed.maintenance);
     rsGrowAll();
     document.getElementById("aiStatus").textContent="Done - review and edit as needed.";
-  }catch(err){document.getElementById("aiStatus").textContent=(err&&err.friendly)?err.message:((err&&err.message?err.message:"Error")+". Please fill these in yourself.");console.error(err);}
+  }catch(err){document.getElementById("aiStatus").textContent=(err&&err.friendly)?err.message:((err&&err.message?err.message.replace(/\.\s*$/,""):"Error")+". Please fill these in yourself.");console.error(err);}
   finally{btn.disabled=false;}
 }
 
@@ -3160,6 +3172,12 @@ function ctRestoreDraft(draft){
   if(draft.storm) rsStormRestore(draft.storm);
   var bySec = {}, placed = {};
   draft.blocks.forEach(function(b){ (bySec[b.sec] = bySec[b.sec] || []).push(b); });
+  if(rsIsOldDraft(draft)) Object.keys(bySec).forEach(function(secId){
+    var list = bySec[secId], old = RS_OLD_LAYOUT[secId], now = rsStdCount(secId);
+    if(old == null || list.length <= old || now <= old) return;
+    var gap = []; for(var g = 0; g < now - old; g++) gap.push({ sec: secId });   // the new standard items, left empty
+    bySec[secId] = list.slice(0, old).concat(gap, list.slice(old));
+  });
   Object.keys(bySec).forEach(function(secId){
     var body = document.getElementById('secbody_' + secId); if(!body) return;
     var list = bySec[secId], sel = "[data-sec='" + secId + "']", existing = body.querySelectorAll(sel);
@@ -3464,7 +3482,7 @@ var RS_GLOSSARY = [
   ['Gutter', /gutter/i, 'The channel along the eaves that collects rainwater from the roof.'],
   ['Hip', /\bhips?\b/i, 'The sloping ridge where two roof slopes meet on an outside corner.'],
   ['Lead apron', /apron/i, 'A strip of lead dressed over the tiles at the front of a chimney or at the bottom of a wall.'],
-  ['Leadwork', /\blead/i, 'Any lead used to weatherproof the roof, such as flashings, aprons and valley linings.'],
+  ['Leadwork', /\bleadwork|\bleads?\b(?!\s+to\b)/i, 'Any lead used to weatherproof the roof, such as flashings, aprons and valley linings.'],   // not the verb, as in could lead to damage
   ['Lichen and moss', /lichen|moss/i, 'Plant growth on roof surfaces. Heavy growth holds water and can block gutters.'],
   ['Mortar bedding', /mortar|bedding/i, 'The sand and cement mix that holds ridge, hip and verge tiles in place on traditional roofs.'],
   ['Nail sickness', /nail sickness|nail fatigue/i, 'When the nails holding slates rust and fail, so slates start to slip.'],

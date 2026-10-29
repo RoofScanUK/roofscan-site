@@ -60,7 +60,7 @@
   function parseJSON(text){
     var t = String(text || '').replace(/```json|```/g, ''); var a = t.indexOf('{'), b = t.lastIndexOf('}');
     if(a < 0 || b <= a) throw new Error('The AI reply was incomplete. Try again, or mark it yourself.');
-    return JSON.parse(t.slice(a, b + 1));
+    try { return JSON.parse(t.slice(a, b + 1)); } catch(e){ throw new Error('The AI reply was incomplete. Try again, or mark it yourself.'); }
   }
 
   // ask(messages, maxTokens) must return the AI's reply text. Each page passes its own (it holds the login).

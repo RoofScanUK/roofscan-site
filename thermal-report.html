@@ -660,7 +660,8 @@ async function buildDoc(){
   var mp = mapPins.filter(function(m){ return mapNo[m.id]; });
   var ov = await imgFor(overview, 560, mp.length ? { pins: mp.map(function(m){ return { n: mapNo[m.id], x: m.x, y: m.y }; }) } : null);
   if(ov && mp.length){ body.push(h2('Roof map')); body.push(p('Each pin shows where a finding (T1, T2 and so on) is on the roof.')); }
-  else if(ov){ body.push(h2('Whole-roof thermal overview')); body.push(new D.Paragraph({ alignment: D.AlignmentType.CENTER, children: [new D.ImageRun({ data: ov.data, transformation: { width: ov.w, height: ov.h }, type: 'jpg' })] })); }
+  else if(ov){ body.push(h2('Whole-roof thermal overview')); }
+  if(ov) body.push(new D.Paragraph({ alignment: D.AlignmentType.CENTER, children: [new D.ImageRun({ data: ov.data, transformation: { width: ov.w, height: ov.h }, type: 'jpg' })] }));
   if(!findings.length) body.push(p('No significant thermal anomalies were seen on the areas scanned. This does not rule out a defect that was not showing a temperature difference at the time of the survey (see Limitations).'));
   for(var i = 0; i < findings.length; i++){
     var f = findings[i], ti = await imgFor(f.thermal, 290, f.marks), vi = await imgFor(f.visual, 290);

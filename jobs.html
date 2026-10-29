@@ -214,7 +214,7 @@ const queue = () => get(LS.queue, []);
 function enqueue(item){ const q = queue(); q.push(Object.assign({qid: Date.now()+'-'+Math.random().toString(36).slice(2,6)}, item)); put(LS.queue, q); }
 async function sendAction(a){
   const path = { claim:'/contractor/claim', complete:'/contractor/complete', standdown:'/contractor/standdown', reportPass:'/contractor/report-pass' }[a.type];
-  return api(path, 'POST', { jobId:a.jobId, kind:a.kind, both:!!a.both, reason:a.reason, reasonCode:a.reasonCode, link:a.link, conditions:a.conditions, extras:a.extras, extrasNote:a.extrasNote, droneId:a.droneId });
+  return api(path, 'POST', { jobId:a.jobId, kind:a.kind, both:!!a.both, reason:a.reason, reasonCode:a.reasonCode, link:a.link, conditions:a.conditions, extras:a.extras, extrasNote:a.extrasNote, droneId:a.droneId, siteNotes:a.siteNotes });
 }
 async function act(a){
   // apply to the cached board right away so the screen responds even with no signal
@@ -583,8 +583,13 @@ const SITE_FLAGS = [
   ['scaffold', 'Scaffolding or works on or around the property'],
   ['people', 'People, vehicles or animals below during the flight that needed managing']
 ];
+// Kept under "siteNotes": "site" is the "Site is safe and you have permission" tick in the checklist above.
+// Notes saved on a phone before this fix sit in "site" as an object: move them across once, and leave the tick unticked.
+(function(){ const c = get(LS.checks, {}); let moved = false;
+  Object.keys(c).forEach(id => { const s = c[id]; if (s && s.site && typeof s.site === 'object') { s.siteNotes = Object.assign({}, s.site, s.siteNotes || {}); s.site = false; moved = true; } });
+  if (moved) put(LS.checks, c); })();
 function siteNotesPanel(id, st){
-  const s = st.site || {};
+  const s = st.siteNotes || {};
   return `<details class="shots" style="margin:10px 0 4px;border:1px solid var(--br);border-radius:8px;padding:8px 12px;background:#fff;">
     <summary style="cursor:pointer;font-weight:600;font-size:13px;color:var(--n);">Site notes for the report <span class="muted" style="font-weight:400;">(tick any that apply)</span></summary>
     ${SITE_FLAGS.map(x => `<label class="chk" style="padding:8px 0;font-size:14px;"><input type="checkbox" style="width:20px;height:20px;" ${s[x[0]]?'checked':''} onchange="setSite('${id}','${x[0]}',this.checked)"> <span>${esc(x[1])}</span></label>`).join('')}
@@ -594,7 +599,7 @@ function siteNotesPanel(id, st){
     <input style="width:100%;" placeholder="optional" value="${esc(s.other||'')}" oninput="setSite('${id}','other',this.value)">
   </details>`;
 }
-function setSite(id, k, v){ const c = get(LS.checks, {}); c[id] = c[id] || {}; c[id].site = c[id].site || {}; c[id].site[k] = v; put(LS.checks, c); }
+function setSite(id, k, v){ const c = get(LS.checks, {}); c[id] = c[id] || {}; c[id].siteNotes = c[id].siteNotes || {}; c[id].siteNotes[k] = v; put(LS.checks, c); }
 function setShot(id, k, v, thermal){
   const c = get(LS.checks, {}); c[id] = c[id] || {}; c[id].shots = c[id].shots || {}; c[id].shots[k] = !!v; put(LS.checks, c);
   const list = thermal ? THERMAL_SHOTS : SHOTS, done = list.filter(x => c[id].shots[x[0]]).length;
@@ -894,7 +899,7 @@ function completeScan(id){
   if (missing.length && !confirm('These are not ticked on your shot list:\n\n' + missing.join('\n') + '\n\nThe report can only cover what is in your photos. Mark the scan done anyway?')) return;
   const extras = job.extras ? exCounts(job, st) : undefined;
   const dr = jobDrone(job);
-  act({type:'complete', jobId:id, kind:'scan', link:st.link, conditions, extras, extrasNote: st.exNote || '', droneId: dr ? dr.id : '', siteNotes: st.site || {}});
+  act({type:'complete', jobId:id, kind:'scan', link:st.link, conditions, extras, extrasNote: st.exNote || '', droneId: dr ? dr.id : '', siteNotes: st.siteNotes || {}});
 }
 function completeReport(id){ const st = get(LS.checks, {})[id] || {}; act({type:'complete', jobId:id, kind:'report', link:st.rlink}); }
 // The pre-departure check is due once the job is within 24 hours and there has been no check in the last 6 hours.
