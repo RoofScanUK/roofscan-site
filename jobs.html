@@ -117,8 +117,8 @@ h1{font-size:20px;font-weight:800;}
   <div class="wrap">
     <div id="agree-ov" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(17,28,51,.6);padding:16px;overflow:auto;">
       <div style="max-width:720px;margin:20px auto;background:#fff;border-radius:14px;padding:18px;box-shadow:0 10px 40px rgba(0,0,0,.25);">
-        <div style="font-size:18px;font-weight:700;margin-bottom:4px;">Please read and agree to the contractor agreement</div>
-        <div class="muted" style="font-size:13.5px;margin-bottom:10px;">You need to agree before you can claim jobs. It covers how you work with us, insurance, pay and confidentiality.</div>
+        <div id="agree-title" style="font-size:18px;font-weight:700;margin-bottom:4px;">Please read and agree to the contractor agreement</div>
+        <div id="agree-sub" class="muted" style="font-size:13.5px;margin-bottom:10px;">You need to agree before you can claim jobs. It covers how you work with us, insurance, pay and confidentiality.</div>
         <iframe src="contractor-agreement.html?embed=1" title="Contractor agreement" style="width:100%;height:55vh;border:1px solid #E8E4D8;border-radius:10px;"></iframe>
         <label style="display:flex;gap:10px;align-items:flex-start;margin:12px 0;font-size:14px;cursor:pointer;"><input type="checkbox" id="agree-tick" style="width:18px;height:18px;margin-top:2px;flex:none;"> <span>I have read the contractor agreement and I agree to it.</span></label>
         <div id="agree-err" class="banner b-red" style="display:none;"></div>
@@ -358,8 +358,17 @@ function render(){
   // Messages about your jobs (client moved or cancelled a booking). Dismissed ones are remembered on this phone.
   const seen = get('rs_seen_notices', {});
   const notes = (board.notices || []).filter(n => !seen[n.at]);
+  // Agreed to an older version: say it has changed, so they know why they are being asked again.
+  const agreeUpdated = m.agreementOk === false && !!m.agreementAcceptedVersion;
+  if (m.agreementOk === false) {
+    $('agree-title').textContent = agreeUpdated ? 'We have updated the contractor agreement' : 'Please read and agree to the contractor agreement';
+    // Load the agreement with its version in the address, so a phone never shows an older saved copy.
+    const ifr = document.querySelector('#agree-ov iframe'), want = 'contractor-agreement.html?embed=1&v=' + encodeURIComponent(m.agreementVersion || '');
+    if (ifr && m.agreementVersion && ifr.getAttribute('src') !== want) ifr.setAttribute('src', want);
+    $('agree-sub').textContent = agreeUpdated ? 'Please read the new version and agree to it before you claim any more jobs. Jobs you already have are not affected.' : 'You need to agree before you can claim jobs. It covers how you work with us, insurance, pay and confidentiality.';
+  }
   if (m.agreementOk === false && !agreeAsked) { agreeAsked = true; $('agree-ov').style.display = 'block'; }
-  const agreeBanner = m.agreementOk === false ? `<div class="banner b-red"><strong>Contractor agreement needed.</strong> You need to agree to it before you can claim jobs. <a href="#" onclick="event.preventDefault();$('agree-ov').style.display='block'">Read and agree</a></div>` : '';
+  const agreeBanner = m.agreementOk === false ? `<div class="banner b-red"><strong>${agreeUpdated ? 'Contractor agreement updated.' : 'Contractor agreement needed.'}</strong> You need to agree to ${agreeUpdated ? 'the new version' : 'it'} before you can claim jobs. <a href="#" onclick="event.preventDefault();$('agree-ov').style.display='block'">Read and agree</a></div>` : '';
   const bankBanner = m.payoutsReady === false ? `<div class="banner b-amber"><strong>${m.payoutsStarted ? 'Finish setting up your payouts.' : 'Set up your payouts so we can pay you.'}</strong> You add your bank details on Stripe's secure page (we never see them). You need to do this before claiming jobs. Pay goes into your bank on the 5th of each month.
     <div style="margin-top:8px;"><button class="btn" onclick="setupPayouts(this)">${m.payoutsStarted ? 'Continue payout setup' : 'Set up payouts'}</button></div></div>`
     : (m.payoutsReady ? `<div style="text-align:right;margin:-4px 0 8px;"><button class="btn ghost" style="padding:4px 10px;font-size:13px;" onclick="showMyPay()">My pay</button></div><div id="mypay"></div>` : '');
