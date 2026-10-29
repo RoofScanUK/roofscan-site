@@ -22,6 +22,11 @@ h1,h2,.serif{font-family:'Fraunces',Georgia,serif;font-weight:500;letter-spacing
 .wrap{max-width:1180px;margin:0 auto;padding:28px 32px 80px;}
 .muted{color:var(--muted);}
 .small{font-size:12.5px;}
+.dlgrid{display:grid;grid-template-columns:1fr;gap:8px;margin-top:10px;}
+.dlrow{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13px;}
+.dlrow em{font-style:normal;font-size:11.5px;}
+.dlin{width:92px;flex:none;font-size:14px;padding:6px 8px;}
+.dlprev{margin-top:4px;}
 .lbl{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0 0 10px;display:flex;justify-content:space-between;align-items:baseline;}
 .btn{border:1px solid var(--navy);background:var(--navy);color:var(--white);border-radius:4px;padding:8px 14px;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;}
 .btn:hover{background:#243759;}
@@ -206,6 +211,7 @@ details.ctr>summary:hover{background:#FAF8F2;}
     <div class="panel" data-panel="settings" hidden>
       <div class="grid2">
         <section><div class="lbl">Weekly booking capacity</div><div class="box pad" id="cap"><span class="muted small">Loading…</span></div></section>
+        <section><div class="lbl">Flight times (sunrise and sunset)</div><div class="box pad" id="dl"><span class="muted small">Loading…</span></div></section>
         <section><div class="lbl"><span>Booking hours (Cal.com)</span><span id="cal-name" class="small"></span></div><div class="box pad" id="cal"><span class="muted small">Loading…</span></div></section>
         <section><div class="lbl">Time off (Cal.com out of office)</div><div class="box pad" id="ooo"><span class="muted small">Loading…</span></div></section>
       </div>
@@ -257,7 +263,7 @@ async function load(){
   if(!localStorage.getItem(TK)){showLogin();return;}
   const r=await api('/owner/overview');if(!r.ok){if(r.status!==401)showLogin('Could not load. Try again.');return;}
   data=r.data;$('login').style.display='none';$('app').style.display='block';
-  loadExtras();loadCap();loadHome();loadPayRun();loadTradeMonth();loadCovMap();loadStorm();loadSched();loadHealth();loadSeats();loadReviews();loadSuggestions();loadCal();loadOoo();
+  loadExtras();loadCap();loadDaylight();loadHome();loadPayRun();loadTradeMonth();loadCovMap();loadStorm();loadSched();loadHealth();loadSeats();loadReviews();loadSuggestions();loadCal();loadOoo();
   const c=data.counts;
   $('stats').innerHTML=[['Scans open',c.scansOpen],['Reports open',c.reportsOpen],['Scans claimed',c.scansClaimed],['Reports claimed',c.reportsClaimed]].map(x=>`<div class="metric"><div class="n">${x[1]}</div><div class="t">${x[0]}</div></div>`).join('');
   $('needs-n').textContent=data.needsYou.length?data.needsYou.length+' to sort':'';
@@ -729,6 +735,36 @@ async function loadCap(){
 }
 async function saveCap(){const v=$('capIn').value.trim();if(v===''||!/^\d+$/.test(v)){alert('Enter a whole number, for example 10.');return;}const r=await api('/owner/capacity','POST',{override:Number(v)});if(!r.ok){alert(r.data.error||'Could not save.');return;}loadCap();}
 async function clearCap(){const r=await api('/owner/capacity','POST',{override:null});if(!r.ok){alert(r.data.error||'Could not save.');return;}loadCap();}
+// Flight times: minutes around sunrise and sunset that decide when flights may start (pilot app and booking calendar).
+const DL_KEYS=['visualAfterSunrise','visualEarliestClock','visualBeforeSunset','thermalAfterSunsetFrom','thermalAfterSunsetTo','thermalLatestClock','bothBeforeSunsetFrom','bothBeforeSunsetTo'];
+let dlInfo=null;
+async function loadDaylight(){
+  const r=await api('/owner/daylight-settings');
+  if(!r.ok){$('dl').innerHTML='<span class="muted small">Could not load flight times.</span>';return;}
+  dlInfo=r.data; const s=r.data.settings, L=r.data.labels, lim=r.data.limits, d=r.data.defaults;
+  const row=k=>{const clock=/Clock$/.test(k);return `<label class="dlrow"><span>${esc(L[k])}<em class="muted"> (default ${esc(d[k])})</em></span><input class="dt dlin" id="dl-${k}" ${clock?`type="time" min="${esc(lim[k][0])}" max="${esc(lim[k][1])}"`:`type="number" inputmode="numeric" min="${lim[k][0]}" max="${lim[k][1]}" step="1"`} value="${esc(s[k])}"></label>`;};
+  const prevDay=new Date(Date.now()+3*864e5).toISOString().slice(0,10);
+  $('dl').innerHTML=`<div class="muted small">${r.data.custom?'Your own settings are in use.':'The default settings are in use.'} All times are UK time and follow the clock changes.</div>
+    <div class="dlgrid">${DL_KEYS.map(row).join('')}</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;"><button class="btn" onclick="saveDaylight()">Save</button><button class="btn sec" onclick="resetDaylight()">Back to defaults</button></div>
+    <div id="dl-msg" class="small" style="margin-top:8px;"></div>
+    <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line);"><div style="font-weight:600;color:var(--navy);">Preview a day</div>
+      <div class="muted small" style="margin-top:2px;">Shows the times for the numbers above, saved or not. Nothing is saved.</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;"><input class="dt" type="date" id="dl-date" value="${prevDay}" style="flex:1;min-width:130px;"><input class="dt" id="dl-pc" value="BN1 1AA" placeholder="Postcode" autocomplete="postal-code" style="flex:1;min-width:100px;text-transform:uppercase;"><button class="btn sec" onclick="previewDaylight()">Show times</button></div>
+      <div id="dl-prev" class="small" style="margin-top:8px;"></div></div>`;
+}
+function dlRead(){const o={};for(const k of DL_KEYS){const v=$('dl-'+k).value.trim();o[k]=/Clock$/.test(k)?v:(/^\d+$/.test(v)?Number(v):v);}return o;}
+function dlMsg(t,bad){const m=$('dl-msg');if(m){m.textContent=t;m.style.color=bad?'#8A1C14':'';}}
+async function saveDaylight(){const r=await api('/owner/daylight-settings','POST',dlRead());if(!r.ok){dlMsg(r.data.error||'Could not save.',true);return;}await loadDaylight();dlMsg('Saved. New flight times apply straight away.');}
+async function resetDaylight(){if(!confirm('Go back to the default flight times?'))return;const r=await api('/owner/daylight-settings','POST',{reset:true});if(!r.ok){dlMsg(r.data.error||'Could not save.',true);return;}await loadDaylight();dlMsg('Back to the default flight times.');}
+async function previewDaylight(){
+  const box=$('dl-prev'); box.textContent='Working out the times…';
+  const r=await api('/owner/daylight-preview','POST',{date:$('dl-date').value,postcode:$('dl-pc').value,settings:dlRead()});
+  if(!r.ok){box.innerHTML=`<span style="color:#8A1C14;">${esc(r.data.error||'Could not work out the times.')}</span>`;return;}
+  const w=r.data.windows, any=w.visual.sunrise?`Sunrise ${esc(w.visual.sunrise)}, sunset ${esc(w.visual.sunset)} at ${esc(r.data.postcode)}.`:'';
+  const line=(n,x)=>`<div class="dlprev"><b>${n}</b> ${x.none?`<span style="color:#8A1C14;">${esc(x.text)}</span>`:`${esc(x.from)} to ${esc(x.to)}`}</div>`;
+  box.innerHTML=`<div class="muted">${any}</div>${line('Roof report: start',w.visual)}${line('Thermal: start',w.thermal)}${line('Report + thermal: arrive',w.both)}`;
+}
 // Combine two applications from the same person: this record is kept (its email stays the login) and becomes Both.
 async function mergeCtr(keepId,sel){
   const fromId=sel.value; if(!fromId) return;

@@ -2289,8 +2289,8 @@ function renderPrice(){
   const roofPrice = roofPriceForArea(area);
   const travCharge = postcodeInfo ? postcodeInfo.charge : 0;
   const addonTotal = AD.reduce((s,a)=>s+counts[a.id]*a.unit,0);
-  const expressOn = !!(document.getElementById('express-opt') && document.getElementById('express-opt').checked);
   const sv = surveyType(), thPrice = thermalPriceForArea(area);
+  const expressOn = !!(document.getElementById('express-opt') && document.getElementById('express-opt').checked) && sv !== 'thermal';   // express is a 24-hour roof report: none on thermal only (same in the Worker)
   const thermalPart = sv === 'visual' ? 0 : thPrice;
   const roofPart = sv === 'thermal' ? 0 : roofPrice + addonTotal;   // thermal only has no roof report or roof add-ons
   const anyOn = anytimeOn() && sv === 'visual';
@@ -2480,7 +2480,7 @@ async function loadSlots(){
   try{
     const exp = document.getElementById('express-opt') && document.getElementById('express-opt').checked;
     const pcq = postcodeInfo && postcodeInfo.postcode ? '&postcode='+encodeURIComponent(postcodeInfo.postcode) : '';   // only times a nearby flyer is free
-    const res = await fetch(`${LM_API_BASE}/available-slots?start=${encodeURIComponent(start.toISOString())}&end=${encodeURIComponent(end.toISOString())}${exp?'&express=1':''}${pcq}`);
+    const res = await fetch(`${LM_API_BASE}/available-slots?start=${encodeURIComponent(start.toISOString())}&end=${encodeURIComponent(end.toISOString())}${exp?'&express=1':''}${pcq}${pcq?'&survey='+surveyType():''}`);
     const data = await res.json();
     renderSlots(data.slots || {}, start, end);
   }catch(e){
@@ -2621,7 +2621,7 @@ async function submitPayment(){
         propertyType: prop,
         addons: counts,
         postcode: postcodeInfo ? postcodeInfo.postcode : '',
-        express: !!(document.getElementById('express-opt') && document.getElementById('express-opt').checked),
+        express: !!(document.getElementById('express-opt') && document.getElementById('express-opt').checked) && surveyType() !== 'thermal',
         stormCode: STORM_OFFER ? STORM_OFFER.code : undefined,
         roofAreaM2: resolvedRoofArea().area,
         pitchType: pitchType,

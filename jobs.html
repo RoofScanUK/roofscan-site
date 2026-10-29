@@ -40,6 +40,8 @@ h1{font-size:20px;font-weight:800;}
 .banner{border-radius:10px;padding:10px 12px;font-size:13px;margin-bottom:10px;}
 .b-red{background:var(--rbg);color:#8A1C14;border:1px solid #F3B6B1;}
 .b-amber{background:var(--abg);color:#7A4A07;border:1px solid #F0D3A0;}
+.ftw{font-size:12.5px;margin-top:8px;color:var(--muted);line-height:1.5;}
+.ftw.none{color:#8A1C14;font-weight:600;}
 .b-green{background:var(--gbg);color:#14663A;border:1px solid #B5E2C8;}
 .row{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;}
 .jt{font-weight:700;font-size:15px;}
@@ -214,7 +216,7 @@ const queue = () => get(LS.queue, []);
 function enqueue(item){ const q = queue(); q.push(Object.assign({qid: Date.now()+'-'+Math.random().toString(36).slice(2,6)}, item)); put(LS.queue, q); }
 async function sendAction(a){
   const path = { claim:'/contractor/claim', complete:'/contractor/complete', standdown:'/contractor/standdown', reportPass:'/contractor/report-pass' }[a.type];
-  return api(path, 'POST', { jobId:a.jobId, kind:a.kind, both:!!a.both, reason:a.reason, reasonCode:a.reasonCode, link:a.link, conditions:a.conditions, extras:a.extras, extrasNote:a.extrasNote, droneId:a.droneId, siteNotes:a.siteNotes });
+  return api(path, 'POST', { jobId:a.jobId, kind:a.kind, both:!!a.both, reason:a.reason, reasonCode:a.reasonCode, link:a.link, conditions:a.conditions, extras:a.extras, extrasNote:a.extrasNote, droneId:a.droneId, siteNotes:a.siteNotes, siteSafe: a.siteSafe === true });
 }
 async function act(a){
   // apply to the cached board right away so the screen responds even with no signal
@@ -629,14 +631,42 @@ function checkIn(id){
   }, () => { notice('Location was blocked. Allow location for this page in your phone settings, then press I\'m on site again.', 'amber'); render(); },
   { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
 }
-// "Any time" jobs: the flyer picks the flight time; the client is emailed it. Thermal surveys must be after dark.
+// "Any time" jobs: the flyer picks the flight time; the client is emailed it. Roof reports are flown in good daylight,
+// thermal surveys after dark: the allowed times for the chosen day (from sunrise and sunset there) show under the boxes.
+const ftState = {};   // jobId -> { date, time, text, none } so a refresh of the list keeps what the pilot picked
 function timePanel(j){
   const tomorrow = new Date(Date.now() + 24*3600e3).toISOString().slice(0,10);
-  const ssTxt = j.sunset ? new Date(j.sunset).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/London'}) : '';
-  const hint = j.thermal ? `Thermal survey: fly after dark, between 30 minutes and 3 hours after sunset${ssTxt ? ' (sunset is around ' + ssTxt + ')' : ''}.` : 'Daytime only, 08:00 to 19:00. At least 24 hours from now.';
+  const hint = j.thermal ? 'Thermal survey: flown after dark. At least 24 hours from now.' : 'Roof report: flown in good daylight. At least 24 hours from now.';
   const head = j.needsTime ? `<b>Pick your flight time</b> by ${esc(fmtDate(j.date))}. The client is emailed it straight away.` : `<b>Flight time: ${esc(fmtWhen(Object.assign({}, j, {flexible:false})))}</b>. You can change it until 24 hours before.`;
+  const st = ftState[j.id] || {};
+  const win = st.text ? `<div id="ft-w-${j.id}" class="ftw${st.none?' none':''}">${esc(st.text)}</div>` : `<div id="ft-w-${j.id}" class="ftw">Pick a date to see the allowed flight times for that day.</div>`;
   return `<div class="banner ${j.needsTime?'b-amber':'b-green'}" style="margin-top:8px;line-height:1.6;">${head}<div class="muted" style="font-size:12.5px;margin-top:4px;">${esc(hint)}</div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;"><input type="date" id="ft-d-${j.id}" min="${!j.flexible&&j.trade?esc(j.date):tomorrow}" ${j.needsTime||(!j.flexible&&j.trade)?`max="${esc(j.date)}"`:''} style="flex:1;min-width:140px;"><input type="time" id="ft-t-${j.id}" step="900" value="${j.thermal?'19:00':'10:00'}" style="flex:1;min-width:110px;"><button class="btn" onclick="setFlightTime('${j.id}')">${j.needsTime?'Set time':'Change time'}</button></div></div>`;
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;"><input type="date" id="ft-d-${j.id}" min="${!j.flexible&&j.trade?esc(j.date):tomorrow}" ${j.needsTime||(!j.flexible&&j.trade)?`max="${esc(j.date)}"`:''} value="${esc(st.date||'')}" onchange="loadFlightWindow('${j.id}')" style="flex:1;min-width:140px;"><input type="time" id="ft-t-${j.id}" step="900" value="${esc(st.time||(j.thermal?'19:00':'10:00'))}" onchange="(ftState['${j.id}']=ftState['${j.id}']||{}).time=this.value" style="flex:1;min-width:110px;"><button class="btn" onclick="setFlightTime('${j.id}')">${j.needsTime?'Set time':'Change time'}</button></div>${win}</div>`;
+}
+// Asks the Worker for the allowed start times on the chosen day and shows them. If the time box is outside them,
+// it is moved to the earliest allowed time (rounded up to the next quarter hour when that is still allowed).
+async function loadFlightWindow(id){
+  const d = $('ft-d-' + id).value, box = $('ft-w-' + id);
+  const st = ftState[id] = ftState[id] || {};
+  st.date = d; st.text = ''; st.none = false;
+  if (!box) return;
+  if (!d) { box.className = 'ftw'; box.textContent = 'Pick a date to see the allowed flight times for that day.'; return; }
+  box.className = 'ftw'; box.textContent = 'Checking the allowed times for that day…';
+  try {
+    const r = await api('/contractor/flight-window?jobId=' + encodeURIComponent(id) + '&date=' + encodeURIComponent(d), 'GET');
+    if ($('ft-d-' + id) && $('ft-d-' + id).value !== d) return;   // the pilot has picked another day since
+    if (!r.ok) { box.textContent = r.data.error || 'Could not check the allowed times. You can still pick a time.'; return; }
+    st.text = r.data.text || ''; st.none = !!r.data.none;
+    box.className = 'ftw' + (st.none ? ' none' : ''); box.textContent = st.text;
+    const ws = (r.data.windows || []).filter(w => w.from && w.to);
+    const tEl = $('ft-t-' + id), cur = tEl ? tEl.value : '';
+    if (tEl && ws.length && !ws.some(w => cur >= w.from && cur <= w.to)) {
+      const f = ws[0].from, [h, m] = f.split(':').map(Number), q = Math.ceil(m / 15) * 15;
+      const up = q === 60 ? String(h + 1).padStart(2, '0') + ':00' : String(h).padStart(2, '0') + ':' + String(q).padStart(2, '0');
+      tEl.value = (q < 60 || h < 23) && up <= ws[0].to ? up : f;
+      st.time = tEl.value;
+    }
+  } catch(e) { if (e.message !== 'auth') box.textContent = 'No connection, so the allowed times could not be checked. You can still pick a time.'; }
 }
 async function setFlightTime(id){
   const d = $('ft-d-' + id).value, t = $('ft-t-' + id).value;
@@ -649,6 +679,7 @@ async function setFlightTime(id){
   try {
     const r = await api('/contractor/set-time', 'POST', { jobId: id, start });
     if (!r.ok) { notice(r.data.error || 'Could not set the time.'); return; }
+    delete ftState[id];
     notice(r.data.notified ? 'Time set. The client has been emailed it.' : 'Time set. RoofScan will let the client know.', 'green');
     refresh(false);
   } catch(e) { if (e.message !== 'auth') notice('No connection. Try again when you have signal.'); }
@@ -908,7 +939,7 @@ function completeScan(id){
   if (missing.length && !confirm('These are not ticked on your shot list:\n\n' + missing.join('\n') + '\n\nThe report can only cover what is in your photos. Mark the scan done anyway?')) return;
   const extras = job.extras ? exCounts(job, st) : undefined;
   const dr = jobDrone(job);
-  act({type:'complete', jobId:id, kind:'scan', link:st.link, conditions, extras, extrasNote: st.exNote || '', droneId: dr ? dr.id : '', siteNotes: st.siteNotes || {}});
+  act({type:'complete', jobId:id, kind:'scan', link:st.link, conditions, extras, extrasNote: st.exNote || '', droneId: dr ? dr.id : '', siteNotes: st.siteNotes || {}, siteSafe: st.site === true});
 }
 function completeReport(id){ const st = get(LS.checks, {})[id] || {}; act({type:'complete', jobId:id, kind:'report', link:st.rlink}); }
 // The pre-departure check is due once the job is within 24 hours and there has been no check in the last 6 hours.

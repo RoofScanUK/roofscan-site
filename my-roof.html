@@ -560,7 +560,7 @@ async function loadPrebookSlots(slug){
   try{
     var start = new Date().toISOString();
     var endD = new Date(); endD.setDate(endD.getDate()+60);
-    var res = await fetch(API_BASE + '/available-slots?start=' + encodeURIComponent(start) + '&end=' + encodeURIComponent(endD.toISOString()) + (_addrBySlug[slug] ? '&postcode=' + encodeURIComponent(_addrBySlug[slug]) : ''));
+    var res = await fetch(API_BASE + '/available-slots?start=' + encodeURIComponent(start) + '&end=' + encodeURIComponent(endD.toISOString()) + (_addrBySlug[slug] ? '&postcode=' + encodeURIComponent(_addrBySlug[slug]) + '&survey=visual' : ''));
     var data = await res.json();
     if(!res.ok) throw new Error('no slots');
     var raw = data.slots || {};
