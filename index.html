@@ -2632,7 +2632,7 @@ async function submitPayment(){
       })
     });
     const data = await res.json();
-    if(!res.ok) throw new Error(data.error || 'booking failed');
+    if(!res.ok){ const err = new Error(data.error || 'booking failed'); err.outsideWindow = !!data.outsideWindow; throw err; }
     if(window.rsTrack) rsTrack('Purchase', {value: window._rsLastTotal || 0, currency: 'GBP'});
     document.getElementById('payment-section').style.display = 'none';
     document.getElementById('slot-nav').style.display = 'none';
@@ -2654,6 +2654,13 @@ async function submitPayment(){
     }
     document.getElementById('booking-confirmed').style.display = 'block';
   }catch(e){
+    // The time is outside the flight window (for example the calendar was open a long time): say why and let them pick again.
+    if(e && e.outsideWindow){
+      document.getElementById('card-errors').textContent = e.message + ' Your deposit is paid and safe. Pick another time above, then press the button again (you will not be charged again).';
+      payBtn.disabled = false;
+      payBtn.textContent = 'Book the new time →';
+      return;
+    }
     document.getElementById('card-errors').textContent = 'Your deposit was paid, but the booking did not go through. Press the button to try again (you will not be charged again). If it keeps failing, email info@roofscanuk.co.uk with your payment reference: ' + piId;
     payBtn.disabled = false;
     payBtn.textContent = 'Try the booking again →';
