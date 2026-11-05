@@ -311,6 +311,28 @@ html.ct #ct-suggest{display:block!important;}
       <div class="field-row cols-1">
         <div class="field" id="atrec-field"><label>Airtable Job Record ID <span style="font-weight:400;opacity:0.6;">(optional: auto-saves RoofScore)</span></label><input type="text" id="atRecordId" placeholder="recXXXXXXXXXXXXXXXX" style="font-family:monospace;font-size:13px;"></div>
       </div>
+      <!-- Measurements (report section 1.4). The booking estimate comes from the job; the writer may add a real measurement. -->
+      <div id="meas-wrap" style="margin:0 0 12px;padding:10px 12px;border:1px solid #D6E4F2;border-radius:8px;background:#F8FAFC;">
+        <div style="font-size:13px;font-weight:700;color:#1C2B4A;">Measurements</div>
+        <div id="measEstNote" style="font-size:11.5px;color:#6B7A8D;margin:4px 0 8px;line-height:1.4;">No booking estimate of the roof area on this job. Load the job to bring it in.</div>
+        <input type="hidden" id="measJob">
+        <div class="field-row cols-2" style="margin-bottom:0;">
+          <div class="field"><label>Measured roof area (m²) <span style="font-weight:400;opacity:0.6;">(optional)</span></label><input type="number" id="measArea" min="1" step="any" inputmode="decimal" placeholder="Only if you measured it"></div>
+          <div class="field"><label>How it was measured</label><input type="text" id="measMethod" maxlength="200" placeholder="e.g. Mapping software from this flight's photos"></div>
+        </div>
+        <div style="font-size:11.5px;color:#6B7A8D;margin-top:6px;line-height:1.4;">Leave both blank unless you measured the roof yourself. If you fill both, the report shows your figure and method instead of the booking estimate.</div>
+      </div>
+      <!-- Extent and conditions (report section 1.5). Blank optional fields are left out of the report. -->
+      <div id="cond-wrap" style="margin:0 0 12px;padding:10px 12px;border:1px solid #D6E4F2;border-radius:8px;background:#F8FAFC;">
+        <div style="font-size:13px;font-weight:700;color:#1C2B4A;">Extent and conditions of the inspection</div>
+        <div style="font-size:11.5px;color:#6B7A8D;margin:4px 0 8px;line-height:1.4;">Weather and drone are filled in from the pilot's records when the job loads. Check them before sending. Anything left blank is left out of the report.</div>
+        <div class="field-row cols-2" style="margin-bottom:8px;">
+          <div class="field"><label>Time of flight <span style="font-weight:400;opacity:0.6;">(optional)</span></label><input type="text" id="condTime" maxlength="60" placeholder="e.g. 10:30 to 11:00"></div>
+          <div class="field"><label>Drone used <span style="font-weight:400;opacity:0.6;">(optional)</span></label><input type="text" id="condDrone" maxlength="150" placeholder="e.g. DJI Mini 4 Pro"></div>
+        </div>
+        <div class="field" style="margin-bottom:8px;"><label>Weather and light at the time <span style="font-weight:400;opacity:0.6;">(optional)</span></label><textarea id="condWeather" maxlength="400" placeholder="e.g. Dry, light wind, bright overcast"></textarea></div>
+        <div class="field"><label>Extent covered</label><textarea id="condExtent" maxlength="600">All visible roof slopes of the main building, except any areas listed under Areas not visible in section 1.2.</textarea></div>
+      </div>
     </div>
   </div>
   <div class="card">
@@ -663,6 +685,8 @@ function collectDraftFields(){
     inspector: _draftFieldVal('inspector'), atRecordId: _draftFieldVal('atRecordId'),
     summary: _draftFieldVal('summary'), keyRisks: _draftFieldVal('keyRisks'),
     maintenance: _draftFieldVal('maintenance'), notSeen: _draftFieldVal('notSeen'), conditionIdx: conditionIdx, storm: rsStormCollect(),
+    measJob: _draftFieldVal('measJob'), measArea: _draftFieldVal('measArea'), measMethod: _draftFieldVal('measMethod'),
+    condTime: _draftFieldVal('condTime'), condWeather: _draftFieldVal('condWeather'), condDrone: _draftFieldVal('condDrone'), condExtent: _draftFieldVal('condExtent'),
     state: slimState, obsText: obsText
   };
 }
@@ -721,10 +745,11 @@ function resumeReport(){
     var st2 = {}; Object.keys(draft.state || {}).forEach(function(k){ if(keep(k)) st2[mv(k)] = draft.state[k]; }); draft.state = st2;
     var ot2 = {}; Object.keys(draft.obsText || {}).forEach(function(id){ var k = id.indexOf('obstext_') === 0 ? id.slice(8) : null; if(!k) ot2[id] = draft.obsText[id]; else if(keep(k)) ot2['obstext_' + mv(k)] = draft.obsText[id]; }); draft.obsText = ot2;
   }
-  ['address','postcode','client','inspDate','reportRef','roofType','covering','roofAge','inspector','atRecordId','summary','keyRisks','maintenance','notSeen'].forEach(function(id){
+  ['address','postcode','client','inspDate','reportRef','roofType','covering','roofAge','inspector','atRecordId','summary','keyRisks','maintenance','notSeen','measJob','measArea','measMethod','condTime','condWeather','condDrone','condExtent'].forEach(function(id){
     var el = document.getElementById(id);
     if(el && draft[id] !== undefined) el.value = draft[id];
   });
+  rsMeasNote();
   if(draft.conditionIdx !== undefined) setCondition(draft.conditionIdx);
   if(draft.storm) rsStormRestore(draft.storm);
   // Restore observation statuses/priorities into state, then reflect each onto its badge —
@@ -777,7 +802,7 @@ function clearSavedReport(){
 document.addEventListener('input', function(e){
   var id = e.target && e.target.id;
   if(!id) return;
-  var watched = ['address','postcode','client','inspDate','reportRef','roofType','covering','roofAge','inspector','atRecordId','summary','keyRisks','maintenance','notSeen'];
+  var watched = ['address','postcode','client','inspDate','reportRef','roofType','covering','roofAge','inspector','atRecordId','summary','keyRisks','maintenance','notSeen','measArea','measMethod','condTime','condWeather','condDrone','condExtent'];
   if(watched.indexOf(id) >= 0 || id.indexOf('obstext_') === 0){
     autoSaveReport();
   }
@@ -1149,8 +1174,128 @@ function collectReportData(){
     whiteLabel:wl.whiteLabel,
     brandName:wl.brandName,
     brandColor:wl.brandColor,
-    brandLogo:wl.brandLogo
+    brandLogo:wl.brandLogo,
+    meas:rsMeasData(),
+    cond:rsCondData()
   };
+}
+// ── Measurements (report section 1.4) ──
+// The only roof area we hold is the ESTIMATE made at booking (mapping data or the client's own figure, used for pricing).
+// It is never a measurement from the drone images, so it is always labelled as an estimate. A writer who really measured
+// the roof can enter a figure plus how it was measured, and that replaces the estimate.
+var RS_MEAS_MAX = 100000; // m², anything bigger is a typing error
+// Only real numbers or plain decimal text ("88", "123.5") count. Booleans, hex ("0x40"), "1,000" and the like do not.
+function rsMeasPlain(v){ return typeof v === 'number' ? v : (typeof v === 'string' && /^\s*\d+(\.\d+)?\s*$/.test(v) ? Number(v) : NaN); }
+function rsMeasNum(v, max){ var n = rsMeasPlain(v); return (isFinite(n) && n >= 1 && n <= max) ? n : null; }
+function rsMeasCount(v){ var n = rsMeasPlain(v); return (isFinite(n) && n >= 1) ? Math.min(99, Math.floor(n)) : 0; }
+// Called when a job loads (owner or writer). Stored in a hidden field so it travels with saved drafts.
+function rsMeasSetJob(est, src, ch, ex, dm, ob){
+  var el = document.getElementById('measJob'); if(!el) return;
+  var area = rsMeasNum(est, 400);   // the Worker only saves 25 to 400 m², anything else is not trusted
+  el.value = JSON.stringify({ est: area !== null && area >= 25 ? Math.round(area) : null, src: String(src || '').slice(0, 80),
+    ch: rsMeasCount(ch), ex: rsMeasCount(ex), dm: rsMeasCount(dm), ob: rsMeasCount(ob) });
+  rsMeasNote();
+}
+function rsMeasJob(){
+  var el = document.getElementById('measJob'), j = null;
+  try{ j = el && el.value ? JSON.parse(el.value) : null; }catch(e){ j = null; }
+  return (j && typeof j === 'object') ? j : {};
+}
+function rsMeasData(){
+  var j = rsMeasJob();
+  var areaEl = document.getElementById('measArea'), methEl = document.getElementById('measMethod');
+  var mArea = rsMeasNum(areaEl ? String(areaEl.value).trim() : '', RS_MEAS_MAX);
+  var mMethod = methEl ? String(methEl.value).replace(/\s+/g, ' ').trim().slice(0, 200) : '';
+  var est = rsMeasNum(j.est, 400); if(est !== null && est < 25) est = null;
+  var src = String(j.src || '');
+  return {
+    measured: (mArea !== null && mMethod) ? { area: Math.round(mArea), method: mMethod } : null,
+    measuredIncomplete: (mArea !== null) !== !!mMethod || (areaEl && String(areaEl.value).trim() !== '' && mArea === null),
+    est: est !== null ? { area: Math.round(est), mapping: /mapping|\bOS\b|ngd/i.test(src) } : null,
+    counts: { chimneys: rsMeasCount(j.ch), extensions: rsMeasCount(j.ex), dormers: rsMeasCount(j.dm), outbuildings: rsMeasCount(j.ob) }
+  };
+}
+function rsMeasFmt(n){ return Number(n).toLocaleString('en-GB', { maximumFractionDigits: 0 }); }
+function rsMeasNote(){
+  var el = document.getElementById('measEstNote'); if(!el) return;
+  var m = rsMeasData();
+  el.textContent = m.est
+    ? 'Booking estimate: about ' + rsMeasFmt(m.est.area) + ' m² (from the quote, not measured). The report shows it labelled as an estimate.'
+    : 'No booking estimate of the roof area on this job. The report will say the roof area was not measured, unless you enter a measurement below.';
+}
+// ── Extent and conditions (report section 1.5) ──
+// The job's Weather Check field is the pilot's log of checks before leaving, one line each:
+// "2026-11-04 09:12 UTC Pat Flyer: GO Wind 4 m/s, gusts 7 m/s". Only the weather part of the newest line is used, never
+// the pilot's name or the go/no-go verdict. A line in any other shape is ignored rather than printed.
+function rsCondWeatherFromLog(log){
+  var lines = String(log == null ? '' : log).split(/\r?\n/).map(function(l){ return l.trim(); }).filter(Boolean);
+  if(!lines.length) return '';
+  var m = lines[lines.length - 1].match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2} UTC .*?: [A-Z_-]{1,10}(?:\s+(.*))?$/);
+  return m && m[1] ? m[1].replace(/\s+/g, ' ').trim().slice(0, 400) : '';
+}
+// The report prints the drone model only, never its serial number (decision 5 Nov 2026). The job's Drone Used can be
+// "DJI Air 3 (1SD2)", and old drafts or hand-typed text can hold "(SN ...)", "S/N: ..." or "[...]". A trailing bracket or
+// S/N part is dropped when it looks like a serial (has a digit, 4+ characters, not a model code like M30T or V2.0), so a
+// model name with its own brackets, e.g. "DJI Mavic 3 (Enterprise)", is kept. A serial on its own (no model) prints nothing.
+function rsDroneModelOnly(s){
+  var t = String(s == null ? '' : s).replace(/\s+/g, ' ').trim(), prev;
+  var isSerial = function(x){
+    x = String(x).trim();
+    if(/^(?:s\/?n|serial(?:\s*(?:no\.?|number|#))?)\b[\s:.#-]*\S/i.test(x)) return true;
+    return /^[A-Z0-9][A-Z0-9\/.&<>_-]{3,}$/i.test(x) && /\d/.test(x) && !/^[A-Z]{0,3}\d{1,3}[A-Z]{0,3}$/i.test(x) && !/^v?\d+(?:\.\d+)+$/i.test(x);
+  };
+  do {
+    prev = t;
+    var m = t.match(/^(.*?)[\s,;:-]*[(\[]([^()\[\]]*)[)\]]$/);
+    if(m && isSerial(m[2])) t = m[1].trim();
+    var n = t.match(/^(.*?)(?:^|[\s,;(-]+)(?:s\/?n|serial(?:\s*(?:no\.?|number|#))?)\b[\s:.#-]*\S+\)?$/i);
+    if(n) t = n[1].trim();
+  } while(t !== prev);
+  // Nothing but a serial (no model at all): print nothing rather than the serial.
+  if(/^\S+$/.test(t) && isSerial(t) && (t.match(/\d/g) || []).length >= 2) t = '';
+  return t.replace(/[\s,;:-]+$/, '');
+}
+// Fills the weather and drone boxes from the job, only when they are still empty (a writer's own text is never replaced).
+function rsCondSetJob(weatherLog, drone){
+  var w = document.getElementById('condWeather'), dr = document.getElementById('condDrone');
+  var wt = rsCondWeatherFromLog(weatherLog), dt = rsDroneModelOnly(drone).slice(0, 150);
+  if(w && !w.value.trim() && wt) w.value = wt;
+  if(dr && !dr.value.trim() && dt) dr.value = dt;
+}
+function rsCondData(){
+  var v = function(id, n){ var el = document.getElementById(id); return el ? String(el.value).replace(/\s+/g, ' ').trim().slice(0, n) : ''; };
+  return { time: v('condTime', 60), weather: v('condWeather', 400), drone: rsDroneModelOnly(v('condDrone', 150)), extent: v('condExtent', 600) };
+}
+function rsCondLines(c, inspDate){
+  c = c || {}; var out = [];
+  if(inspDate && String(inspDate).charAt(0) !== '[') out.push(['Inspection date', inspDate]);   // never the "[Date not provided]" placeholder
+  if(c.time) out.push(['Time of flight', c.time]);
+  if(c.weather) out.push(['Weather and light', c.weather]);
+  var dm = rsDroneModelOnly(c.drone);
+  if(dm) out.push(['Drone used', dm]);
+  if(c.extent) out.push(['Extent covered', c.extent]);
+  return out;
+}
+// The report text for section 1.4. Returns plain lines so it can be tested without Word.
+function rsMeasLines(m, roofType){
+  m = m || {}; var out = [];
+  if(m.measured){
+    out.push(['Measured roof area', rsMeasFmt(m.measured.area) + ' m²']);
+    out.push(['How it was measured', m.measured.method]);
+  } else if(m.est){
+    out.push(['Estimated roof area', 'About ' + rsMeasFmt(m.est.area) + ' m²']);
+    out.push(['', m.est.mapping
+      ? 'Estimated from mapping data at booking. This is an estimate, not a measurement from the drone images.'
+      : 'Estimated at booking, from mapping data or the roof area given by the client. This is an estimate, not a measurement from the drone images.']);
+  } else {
+    out.push(['', 'Roof area was not measured on this job.']);
+  }
+  var rt = String(roofType || '').trim();
+  if(rt && rt !== '[Roof type]') out.push(['Roof type', rt]);
+  var c = m.counts || {}, L = [['chimneys','Chimney','Chimneys'],['extensions','Extension','Extensions'],['dormers','Dormer','Dormers'],['outbuildings','Outbuilding','Outbuildings']];
+  var parts = L.filter(function(x){ return c[x[0]] > 0; }).map(function(x){ return c[x[0]] + ' ' + (c[x[0]] === 1 ? x[1] : x[2]).toLowerCase(); });
+  if(parts.length) out.push(['Features recorded at booking', parts.join(', ')]);
+  return out;
 }
 // The sorter works on small 768px copies to keep the AI fast and cheap. Before the report is built, every photo that
 // went into an observation is re-drawn from its full-size file at up to 1600px so it stays sharp in print and on zoom.
@@ -1204,6 +1349,9 @@ async function generateReport(){
   }
   var mk=rsMarksStatus();
   if(mk.ai>0) gateLines.push('','⚠️ '+mk.ai+' photo(s) were circled by the AI and not checked yet (orange buttons). The circles go into the report as they are.');
+  var measNow=rsMeasData();
+  gateLines.push('', 'Measurements: '+(measNow.measured?'measured roof area '+rsMeasFmt(measNow.measured.area)+' m²':(measNow.est?'booking estimate about '+rsMeasFmt(measNow.est.area)+' m² (labelled as an estimate)':'no roof area (the report says it was not measured)'))+'.');
+  if(measNow.measuredIncomplete) gateLines.push('⚠️ The measured roof area needs both a number (in m²) and how it was measured. Until both are filled in, it is left out of the report.');
   var stormNow=rsStormCollect();
   gateLines.push('', 'Roof map: '+(rsRoofMap.pins.length?rsRoofMap.pins.length+' pin(s)':'none')+'. Storm summary page: '+(stormNow.on?'included':'not included')+'.');
   gateLines.push('', CT_MODE ? 'Click OK to build the report and send it to RoofScan. Nothing is downloaded to your computer.' : 'Click OK to build and download the Word document.');
@@ -1461,7 +1609,7 @@ function buildDoc(d,obs){
     bl(),sp(100,100),
     // A fixed contents list: the client gets a PDF, and a Word "table of contents" field stays blank in a PDF
     // (only Word fills it in, when the file is opened). Every section below always appears in the report.
-    ...[["Executive Summary",0]].concat(RSX.storm?[["Storm Damage Summary for Insurers",0]]:[]).concat([["1.0  About This Report",0],["1.1  Scope",1],["1.2  Limitations",1],["1.3  Traffic-Light System",1],
+    ...[["Executive Summary",0]].concat(RSX.storm?[["Storm Damage Summary for Insurers",0]]:[]).concat([["1.0  About This Report",0],["1.1  Scope",1],["1.2  Limitations",1],["1.3  Traffic-Light System",1],["1.4  Measurements",1],["1.5  Extent and conditions of the inspection",1],
       ["2.0  Observations & Recommendations",0]]).concat(RSX.map?[["Roof Map",1]]:[]).concat([["2.1  Chimneys & Leadwork",1],["2.2  Roof Coverings",1],["2.3  Rainwater Goods",1],["2.4  Ancillary Elements",1],
       ["3.0  Terms, Limitations & Disclaimer",0],["4.0  Schedule of Works",0]]).concat(RSX.glossary?[["5.0  Glossary",0]]:[]).map(function(c){
         return new D.Paragraph({spacing:{before:c[1]?20:140,after:c[1]?20:40},indent:{left:c[1]?480:0},children:[new D.TextRun({text:c[0],font:"Arial",size:c[1]?19:22,bold:!c[1],color:c[1]?DARK:BLUE})]});
@@ -1489,11 +1637,18 @@ function buildDoc(d,obs){
     bod("Instructions were received to attend the property and undertake a drone-based visual inspection. This report has been prepared based on drone imagery captured on-site. It does not constitute a full building survey."),
     sp(80,80),h2("1.2  Limitations"),
     bod("The inspection was carried out using an unmanned aerial vehicle (drone). All observations are based on visual imagery only - no physical contact with roof surfaces was made."),
+    bod("A drone survey records what can be seen from the air. It cannot show underlay, decking, insulation, fixings, loft spaces or the inside of the building, and it cannot confirm whether water is entering."),
+    bod("Materials are identified from imagery only. If any material may contain asbestos, a competent person should test it before work starts."),
+    bod("Very small defects may not be visible at drone distance. Weather, light and viewing angle affect what can be seen."),
     ...(d.notSeen?[sp(60,40),bod("Areas not visible: "+d.notSeen+" These areas were not inspected and no comment is made on their condition.")]:[]),
     sp(80,80),h2("1.3  Traffic-Light System"),
     new D.Paragraph({spacing:{before:80,after:40},children:[new D.TextRun({text:"Repair Required  -  ",font:"Arial",size:19,bold:true,color:RED}),new D.TextRun({text:"A defect requiring remedial action.",font:"Arial",size:19,color:DARK})]}),
     new D.Paragraph({spacing:{before:40,after:40},children:[new D.TextRun({text:"Monitor  -  ",font:"Arial",size:19,bold:true,color:AMBER}),new D.TextRun({text:"Warrants attention but not immediately critical.",font:"Arial",size:19,color:DARK})]}),
     new D.Paragraph({spacing:{before:40,after:40},children:[new D.TextRun({text:"Satisfactory  -  ",font:"Arial",size:19,bold:true,color:GREEN}),new D.TextRun({text:"No immediate action required.",font:"Arial",size:19,color:DARK})]}),
+    sp(80,80),h2("1.4  Measurements"),
+    ...rsMeasLines(d.meas, d.roofType).map(function(l){ return l[0] ? lv(l[0], l[1]) : bod(l[1]); }),
+    sp(80,80),h2("1.5  Extent and conditions of the inspection"),
+    ...rsCondLines(d.cond, d.inspDate).map(function(l){ return lv(l[0], l[1]); }),
     pb()],
     strans("2.0","Observations & Recommendations","Drone inspection findings by element"),
     [h1("2.0  Observations & Recommendations"),bl(),sp(80,40),
@@ -1505,7 +1660,8 @@ function buildDoc(d,obs){
     strans("3.0","Terms & Disclaimer","Limitations, liability & regulatory notes"),
     [h1("3.0  Terms, Limitations & Disclaimer"),bl(),sp(80,80),
     h2("3.1  Confidentiality"),bod("This report is prepared solely for the named client. No responsibility is accepted to any third party."),sp(80,80),
-    h2("3.2  Scope Limitations"),bod("This is a visual-only drone inspection and is not a full structural survey."),sp(80,80),
+    h2("3.2  Scope Limitations"),bod("This is a visual-only drone inspection and is not a full structural survey."),
+    bod("This report describes condition only. It contains no repair specification and no costs. The significance of any defect, and the right repair, should be judged by a suitably qualified person."),sp(80,80),
     h2("3.3  Drone Operations"),bod("All drone operations are conducted in compliance with UK CAA regulations."),
     sp(160,80),tl(),sp(80,80),
     new D.Paragraph({alignment:D.AlignmentType.CENTER,children:[new D.TextRun({text: d.whiteLabel ? (BRAND+"  |  Produced by RoofScan UK  |  www.roofscanuk.co.uk") : "RoofScan UK  |  www.roofscanuk.co.uk",font:"Arial",size:17,color:"6B7A8D"})]}),pb()],
@@ -2806,6 +2962,10 @@ async function _doLoadJob(recordId, fallbackData) {
   var EXTENSIONS= f['fldKwHXq4Gn2IT142'] || 0;
   var DORMERS   = f['fldmpLm2x4Qh5A69u'] || 0;
   var OUTBUILDS = f['fld0PJwhzOa7ubnRp'] || 0;
+  // Booking estimate of the roof area (Estimated Roof Area (m²) and Roof Area Source), for the Measurements section.
+  rsMeasSetJob(f['fldYnpJRfGBd10ky1'], f['fldmpfJX8MJTp61KK'], CHIMNEYS, EXTENSIONS, DORMERS, OUTBUILDS);
+  // Weather Check and Drone Used, for section 1.5.
+  rsCondSetJob(f['fldNWIT3mYQfW6NQZ'], f['fldradt01CDcKt3T8']);
   var COMPANY   = f['fldkibwZ0z68rPMAl'] || '';
   var STATUS    = f['fldhm3oLpNvtD8Thc'] ? (f['fldhm3oLpNvtD8Thc'].name || f['fldhm3oLpNvtD8Thc']) : '';
 
@@ -3026,6 +3186,8 @@ async function ctInit(){
   }
   // The inspector is the flyer who did the scan. Writers can't change it. If no flyer is recorded it stays blank for RoofScan to fix.
   CT_WRITER = { name: String(j.writer || '').trim(), credential: String(j.writerCredential || '').trim() };
+  rsMeasSetJob(j.estimatedAreaM2, j.areaSource, j.chimneys, j.extensions, j.dormers, j.outbuildings);
+  rsCondSetJob(j.weatherCheck, j.droneUsed);
   var insp = document.getElementById('inspector');
   if(insp){ insp.value = j.flyer || ''; insp.readOnly = true; insp.style.background = '#F3F1EA'; insp.title = 'This is the flyer who carried out the inspection.'; if(!j.flyer) insp.placeholder = 'No flyer recorded. Tell RoofScan.'; }
   var card = document.getElementById('client-info-card');
@@ -3161,10 +3323,11 @@ function siteNotesHtml(sn, escf){
   return bits.length ? '<div style="margin-top:8px;padding:8px 10px;background:#EEF4FA;border:1px solid #C9DAEC;"><strong>Pilot\'s site notes:</strong> ' + escf(bits.join(' ')) + '</div>' : '';
 }
 function ctRestoreDraft(draft){
-  ['address','postcode','client','inspDate','reportRef','roofType','covering','roofAge','summary','keyRisks','maintenance','notSeen'].forEach(function(id){
+  ['address','postcode','client','inspDate','reportRef','roofType','covering','roofAge','summary','keyRisks','maintenance','notSeen','measArea','measMethod','condTime','condWeather','condDrone','condExtent'].forEach(function(id){
     var el = document.getElementById(id);
     if(el && draft[id]) el.value = draft[id];
   });
+  rsMeasNote();
   if(draft.conditionIdx !== undefined) setCondition(draft.conditionIdx);
   ctDiscarded = (draft.discarded || []).slice();
   ctCoverName = draft.cover || '';
