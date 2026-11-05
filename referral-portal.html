@@ -193,7 +193,7 @@ async function requestCode(isResend){
     document.getElementById('login-code').focus();
     if(isResend){ document.getElementById('code-err').style.color='var(--gr)'; document.getElementById('code-err').textContent='Code resent.'; }
   }catch(e){
-    document.getElementById('login-err').innerHTML='We couldn\'t send your code. Check your connection and try again, or call/WhatsApp 07498 364197 and we\'ll get you in.';
+    document.getElementById('login-err').innerHTML='We couldn\'t send your code. Check your connection and try again, or call 07498 364197 or email info@roofscanuk.co.uk and we\'ll get you in.';
   }
   if(btn){ btn.disabled=false; btn.textContent='Send me a code →'; }
 }
@@ -247,7 +247,7 @@ async function loadPortal(email, token){
     } else if(e && e.status === 404){
       showLoginError('No referral account found for that email.<br><a href="agent-signup.html" style="color:var(--s);font-weight:600;">Sign up here</a> to get your link.');
     } else {
-      showLoginError('Something went wrong loading your account. Please log in again, or call/WhatsApp 07498 364197 if it keeps happening.');
+      showLoginError('Something went wrong loading your account. Please log in again, or call 07498 364197 or email info@roofscanuk.co.uk if it keeps happening.');
     }
   }
 }

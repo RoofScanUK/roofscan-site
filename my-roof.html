@@ -577,14 +577,14 @@ async function loadPrebookSlots(slug){
       });
     }
     _prebookSlotsByDay[slug] = byDay;
-    if(!Object.keys(byDay).length){ wrap.innerHTML = '<div style="font-size:12px;color:var(--mu);">No open dates in the next couple of months. Call or WhatsApp 07498 364197 and we\'ll sort a date directly.</div>'; btn.style.display='none'; return; }
+    if(!Object.keys(byDay).length){ wrap.innerHTML = '<div style="font-size:12px;color:var(--mu);">No open dates in the next couple of months. Call 07498 364197 or email info@roofscanuk.co.uk and we\'ll sort a date directly.</div>'; btn.style.display='none'; return; }
     var today = new Date();
     _rcCalState[slug] = { year: today.getFullYear(), month: today.getMonth() };
     wrap.innerHTML = '<div id="rc-cal-'+slug+'"></div><div id="rc-timepick-'+slug+'"></div>';
     renderPrebookCalendar(slug);
     btn.style.display = 'none';
   }catch(e){
-    wrap.innerHTML = '<div style="font-size:12px;color:var(--rd);">Couldn\'t load available dates. Call or WhatsApp 07498 364197 and we\'ll sort a date directly.</div>';
+    wrap.innerHTML = '<div style="font-size:12px;color:var(--rd);">Couldn\'t load available dates. Call 07498 364197 or email info@roofscanuk.co.uk and we\'ll sort a date directly.</div>';
     btn.disabled = false; btn.textContent = '📅 Pick your inspection date';
   }
 }
@@ -662,7 +662,7 @@ async function confirmPrebookDate(slug){
     if(el) el.innerHTML = '<div class="rc-title">✅ Inspection date confirmed</div>'
       +'<div class="rc-text">You\'re booked in for '+fmtDate(data.date)+'. We\'ll see you then. No further payment needed until after the inspection.</div>';
   }catch(e){
-    wrap.innerHTML = '<div style="font-size:12px;color:var(--rd);">'+(e.message||'Something went wrong')+'. Call or WhatsApp 07498 364197 and we\'ll sort your date directly.</div>';
+    wrap.innerHTML = '<div style="font-size:12px;color:var(--rd);">'+(e.message||'Something went wrong')+'. Call 07498 364197 or email info@roofscanuk.co.uk and we\'ll sort your date directly.</div>';
   }
 }
 
@@ -685,8 +685,8 @@ function startPrebook(slug){
       body: JSON.stringify({email:_currentEmail, address:addr})
     }).then(function(r){return r.json();}).then(function(d){
       if(d.clientSecret){ st.piSecret = d.clientSecret; st.piId = d.paymentIntentId; }
-      else document.getElementById('rc-errors-'+slug).textContent = (d.error || 'Could not start payment') + '. Refresh and try again, or call/WhatsApp 07498 364197.';
-    }).catch(function(){ document.getElementById('rc-errors-'+slug).textContent = 'Could not start payment. Refresh and try again, or call/WhatsApp 07498 364197.'; });
+      else document.getElementById('rc-errors-'+slug).textContent = (d.error || 'Could not start payment') + '. Refresh and try again, or call 07498 364197 or email info@roofscanuk.co.uk.';
+    }).catch(function(){ document.getElementById('rc-errors-'+slug).textContent = 'Could not start payment. Refresh and try again, or call 07498 364197 or email info@roofscanuk.co.uk.'; });
   }
 }
 
