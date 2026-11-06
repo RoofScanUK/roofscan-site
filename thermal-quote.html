@@ -38,6 +38,9 @@ textarea{min-height:80px;resize:vertical;}
 .btn:disabled{opacity:.55;cursor:default;}
 .info{font-size:13.5px;margin-top:8px;color:#33415C;}
 .err{color:#9B2C2C;font-size:13.5px;margin-top:10px;min-height:18px;}
+.terms-row{display:flex;gap:10px;align-items:flex-start;margin-top:14px;}
+.terms-row input{width:22px;height:22px;padding:0;margin:2px 0 0;flex:none;cursor:pointer;}
+.terms-row label{flex:1;min-width:0;display:block;font-size:14px;font-weight:400;line-height:1.55;margin:0;padding:2px 0 10px;cursor:pointer;overflow-wrap:break-word;}
 .ctr{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #F0ECE2;font-size:14px;}
 .ctr button{width:32px;height:32px;border-radius:50%;border:1px solid #D8D2C2;background:#fff;font-size:17px;cursor:pointer;}
 .ctr .n{display:inline-block;width:28px;text-align:center;font-weight:700;}
@@ -150,6 +153,8 @@ a{color:#1E4080;}
       <div id="card-element"></div>
       <div class="err" id="card-errors"></div>
       <div class="info">By booking you agree to our <a href="terms.html" target="_blank">terms</a>, including section 7a on thermal scans. If we move the evening because of weather there is no charge; if you cancel with less than 48 hours' notice the deposit is kept.</div>
+      <div class="terms-row"><input type="checkbox" id="termsOk" autocomplete="off" aria-describedby="termsErr" onchange="termsErr('')"><label for="termsOk">I have read and agree to the <a href="terms.html" target="_blank" rel="noopener">Terms &amp; Conditions</a></label></div>
+      <div class="err" id="termsErr" role="alert"></div>
       <div class="row"><button class="btn ghost" id="payBack" onclick="go(5)">Back</button><button class="btn" id="payBtn" onclick="pay()">Pay £50 deposit and book</button></div>
     </div>
     <div id="done" class="hidden">
@@ -322,14 +327,22 @@ async function loadPrice(){
 // ── Deposit and booking ──
 async function initPay(){
   if(stripe) return;
-  try { var r = await fetch(API + '/create-payment-intent', { method:'POST' }), d = await r.json(); piSecret = d.clientSecret; piId = d.paymentIntentId; }
+  try { var r = await fetch(API + '/create-payment-intent', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ termsBox: true }) }), d = await r.json(); piSecret = d.clientSecret; piId = d.paymentIntentId; }
   catch(e){ $('card-errors').textContent = 'Could not start payment. Please refresh and try again.'; }
   if(window.Stripe){
     stripe = Stripe(STRIPE_PK); card = stripe.elements().create('card', { style: { base: { fontSize: '15px' } } });
     card.mount('#card-element'); card.on('change', function(e){ $('card-errors').textContent = e.error ? e.error.message : ''; });
   }
 }
+// Required Terms & Conditions box above the pay button: nothing is charged or booked until it is ticked.
+function termsErr(msg){ $('termsErr').textContent = msg || ''; }
+function termsOk(){
+  if($('termsOk').checked){ termsErr(''); return true; }
+  termsErr('Please tick the box to agree to the Terms & Conditions'); $('termsOk').focus();
+  return false;
+}
 async function pay(){
+  if(!termsOk()) return;
   if(!piSecret || !stripe){ $('card-errors').textContent = 'Payment is not ready yet. Wait a moment and try again.'; return; }
   var btn = $('payBtn'); btn.disabled = true; btn.textContent = 'Processing…';
   var contact = { name: $('name').value.trim(), email: $('email').value.trim(), phone: $('phone').value.trim(), address: $('address').value.trim() };
@@ -343,13 +356,14 @@ async function pay(){
     var withRoof = $('withRoof').checked;
     var r = await fetch(API + '/confirm-booking', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({
       paymentIntentId: piId, flexible: true, surveyType: withRoof ? 'both' : 'thermal', propertyType: st.prop, addons: withRoof ? st.counts : {},
-      postcode: st.postcode, roofAreaM2: st.price ? st.price.area : st.area, pitchType: st.pitch, contact: contact, thermalNotes: thermalNotes(), areaFlagged: false }) });
-    var d = await r.json(); if(!r.ok) throw new Error(d.error || 'booking failed');
+      postcode: st.postcode, roofAreaM2: st.price ? st.price.area : st.area, pitchType: st.pitch, contact: contact, thermalNotes: thermalNotes(), areaFlagged: false, termsAccepted: $('termsOk').checked }) });
+    var d = await r.json(); if(!r.ok){ var be = new Error(d.error || 'booking failed'); be.termsRequired = !!d.termsRequired; throw be; }
     var dl = d.deadline ? new Date(d.deadline + 'T12:00:00Z').toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long' }) : 'the next 5 working days';
     $('paySection').classList.add('hidden'); $('done').classList.remove('hidden');
     $('doneText').textContent = 'Booked. Our thermal pilot will fly on an evening by ' + dl + ', after dark, and we will email you the exact date and time at least 24 hours before.'
       + (withRoof ? ' Your roof condition report is booked too; the daylight photos are taken the same evening or on a separate visit, and you will get two reports.' : '');
   } catch(e){
+    if(e && e.termsRequired){ termsErr('Please tick the box to agree to the Terms & Conditions, then press the button again (you will not be charged again).'); btn.disabled = false; btn.textContent = 'Try the booking again'; return; }
     $('card-errors').textContent = 'Your deposit was paid, but the booking did not go through. Press the button to try again (you will not be charged again). If it keeps failing, email info@roofscanuk.co.uk with your payment reference: ' + piId;
     btn.disabled = false; btn.textContent = 'Try the booking again'; $('payBack').classList.add('hidden');
   }

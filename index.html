@@ -844,6 +844,10 @@ section[id],#how-it-works{scroll-margin-top:88px;}
 #page-book .contact-fields input[aria-invalid=true],#page-book input[aria-invalid=true]{border-color:#E5533D !important;box-shadow:0 0 0 4px rgba(229,83,61,.15);}
 .form-err{display:flex;gap:10px;align-items:flex-start;margin:10px 0 4px;padding:12px 14px;border-radius:12px;background:#FDECE8;color:#8A2A1B;font-size:13.5px;font-weight:500;line-height:1.5;animation:fErr .25s cubic-bezier(.2,.8,.2,1);}
 .form-err::before{content:"";flex:none;width:8px;height:8px;margin-top:6px;border-radius:50%;background:#E5533D;}
+.terms-row{display:flex;align-items:flex-start;gap:10px;margin-top:14px;}
+.terms-row input{width:22px;height:22px;margin:2px 0 0;flex:none;cursor:pointer;accent-color:#1C2B4A;}
+.terms-row label{flex:1;min-width:0;font-size:14px;line-height:1.55;padding:2px 0 10px;cursor:pointer;overflow-wrap:break-word;}
+.terms-row a{color:inherit;text-decoration:underline;}
 @keyframes fErr{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:none;}}
 @media (pointer:coarse){ input:not([type=checkbox]):not([type=radio]),select,textarea{font-size:max(16px,1em) !important;} }
 .x-pin-l span{left:auto;right:14px;}
@@ -1610,6 +1614,11 @@ section[id],#how-it-works{scroll-margin-top:88px;}
             </div>
             <div id="card-element" style="padding:14px;border:1px solid rgba(0,0,0,.15);border-radius:6px;background:#fff;"></div>
             <div id="card-errors" style="color:#c0392b;font-size:13px;margin-top:8px;min-height:16px;"></div>
+            <div class="terms-row">
+              <input type="checkbox" id="terms-ok" autocomplete="off" aria-describedby="terms-err" onchange="termsErr('')">
+              <label for="terms-ok">I have read and agree to the <a href="terms.html" target="_blank" rel="noopener">Terms &amp; Conditions</a></label>
+            </div>
+            <div id="terms-err" role="alert" style="display:none;"></div>
             <button class="btn full" id="pay-btn" style="margin-top:16px;" onclick="submitPayment()">Pay £50 deposit &amp; book →</button>
           </div>
 
@@ -2582,7 +2591,8 @@ function selectSlot(iso, btn){
 
 async function createDepositIntent(){
   try{
-    const res = await fetch(`${LM_API_BASE}/create-payment-intent`, {method:'POST'});
+    // termsBox: this page shows the Terms & Conditions box (the Worker only starts a deposit for pages that do).
+    const res = await fetch(`${LM_API_BASE}/create-payment-intent`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({termsBox: true})});
     const data = await res.json();
     piClientSecret = data.clientSecret;
     piId = data.paymentIntentId;
@@ -2591,8 +2601,22 @@ async function createDepositIntent(){
   }
 }
 
+// Required Terms & Conditions box above the pay button: nothing is charged or booked until it is ticked.
+function termsErr(msg){
+  const box = document.getElementById('terms-err'); if(!box) return;
+  box.textContent = msg || ''; box.className = msg ? 'form-err' : ''; box.style.display = msg ? '' : 'none';
+}
+function termsOk(){
+  const t = document.getElementById('terms-ok');
+  if(t && t.checked){ termsErr(''); return true; }
+  termsErr('Please tick the box to agree to the Terms & Conditions');
+  if(t){ t.focus(); try{ t.scrollIntoView({block:'center', behavior:'smooth'}); }catch(e){} }
+  return false;
+}
+
 async function submitPayment(){
   if(!selectedSlot && !flexOn()){ formErr('book-step-6', 'Pick a date and time first.', 'slot-nav'); return; }
+  if(!termsOk()) return;
   if(!piClientSecret){ document.getElementById('card-errors').textContent = 'Payment not ready yet. Please wait a moment and try again.'; return; }
   const payBtn = document.getElementById('pay-btn');
   payBtn.disabled = true;
@@ -2631,11 +2655,12 @@ async function submitPayment(){
         contact,
         areaFlagged: lastAreaFlagged,
         agentCode: referralAgentCode || undefined,
-        photoConsent: !!(document.getElementById('c-photos') && document.getElementById('c-photos').checked)
+        photoConsent: !!(document.getElementById('c-photos') && document.getElementById('c-photos').checked),
+        termsAccepted: !!(document.getElementById('terms-ok') && document.getElementById('terms-ok').checked)
       })
     });
     const data = await res.json();
-    if(!res.ok){ const err = new Error(data.error || 'booking failed'); err.outsideWindow = !!data.outsideWindow; throw err; }
+    if(!res.ok){ const err = new Error(data.error || 'booking failed'); err.outsideWindow = !!data.outsideWindow; err.termsRequired = !!data.termsRequired; throw err; }
     if(window.rsTrack) rsTrack('Purchase', {value: window._rsLastTotal || 0, currency: 'GBP'});
     document.getElementById('payment-section').style.display = 'none';
     document.getElementById('slot-nav').style.display = 'none';
@@ -2662,6 +2687,12 @@ async function submitPayment(){
       document.getElementById('card-errors').textContent = e.message + ' Your deposit is paid and safe. Pick another time above, then press the button again (you will not be charged again).';
       payBtn.disabled = false;
       payBtn.textContent = 'Book the new time →';
+      return;
+    }
+    if(e && e.termsRequired){
+      termsErr('Please tick the box to agree to the Terms & Conditions, then press the button again (you will not be charged again).');
+      payBtn.disabled = false;
+      payBtn.textContent = 'Try the booking again →';
       return;
     }
     document.getElementById('card-errors').textContent = 'Your deposit was paid, but the booking did not go through. Press the button to try again (you will not be charged again). If it keeps failing, email info@roofscanuk.co.uk with your payment reference: ' + piId;
