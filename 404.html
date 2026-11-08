@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#111C33">
 <meta name="robots" content="noindex">
+<script>
+// Short partner links (8 Nov 2026): roofscanuk.co.uk/join, /join/surveyor, /join-surveyor go to join.html with that type.
+(function(){ try { var m = location.pathname.match(/^\/join(?:[\/-]([A-Za-z_-]{1,40}))?\/?$/i);
+  if (m) location.replace('/join.html' + (m[1] ? '?type=' + encodeURIComponent(m[1].toLowerCase()) : location.search)); } catch(e) {} })();
+</script>
 <title>Page not found: RoofScan UK</title>
 <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
 <link rel="preload" href="/fonts/geist-latin.woff2" as="font" type="font/woff2" crossorigin>

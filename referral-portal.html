@@ -98,7 +98,7 @@ main{padding:14px;}
       </div>
     </div>
   </div>
-  <div style="text-align:center;font-size:12px;color:var(--mu);">Not signed up yet? <a href="agent-signup.html" style="color:var(--s);">Get your referral link →</a></div>
+  <div style="text-align:center;font-size:12px;color:var(--mu);">Estate agent, letting agent, block manager, surveyor or solicitor and not signed up yet? <a href="join.html" style="color:var(--s);">Sign up your firm →</a></div>
 </div>
 
 <!-- PORTAL -->
@@ -111,7 +111,7 @@ main{padding:14px;}
     <div class="acct-stats">
       <div><div class="as-val" id="stat-referrals" style="color:var(--g);">0</div><div class="as-label">Referrals</div></div>
     </div>
-    <div style="font-size:11px;color:rgba(255,255,255,0.45);margin-top:10px;">Your agency receives the referral fee once your referral's inspection is complete and paid. Nothing is paid to individuals.</div>
+    <div style="font-size:11px;color:rgba(255,255,255,0.45);margin-top:10px;">Your firm receives the referral fee once your referral's inspection is complete and paid. Nothing is paid to individuals.</div>
   </div>
 
   <div class="link-card">
@@ -140,8 +140,8 @@ function statusCaption(s){
   var m = {
     'Booked': 'Inspection scheduled, nothing to do yet.',
     'Complete': 'Inspection done, report being prepared.',
-    'Report Sent': 'Report delivered to your client. Your agency\'s referral fee is being processed.',
-    'Paid': 'Referral fee paid to your agency.'
+    'Report Sent': 'Report delivered to your client. Your firm\'s referral fee is being processed.',
+    'Paid': 'Referral fee paid to your firm.'
   };
   return m[s] || 'Inspection scheduled, nothing to do yet.';
 }
@@ -235,7 +235,7 @@ async function loadPortal(email, token){
   try{
     var acct = await fetchAgentAccount(email, token);
     if(!acct || acct.error){
-      showLoginError('No referral account found for that email.<br><a href="agent-signup.html" style="color:var(--s);font-weight:600;">Sign up here</a> to get your link.');
+      showLoginError('No referral account found for that email.<br><a href="join.html" style="color:var(--s);font-weight:600;">Sign up your firm here</a>, or ask your firm for its staff signup link.');
       return;
     }
     showPortal(acct, email);
@@ -245,7 +245,7 @@ async function loadPortal(email, token){
     if(e && e.status === 401){
       showLoginError('Your session has expired. Please log back in below to keep viewing your referrals.');
     } else if(e && e.status === 404){
-      showLoginError('No referral account found for that email.<br><a href="agent-signup.html" style="color:var(--s);font-weight:600;">Sign up here</a> to get your link.');
+      showLoginError('No referral account found for that email.<br><a href="join.html" style="color:var(--s);font-weight:600;">Sign up your firm here</a>, or ask your firm for its staff signup link.');
     } else {
       showLoginError('Something went wrong loading your account. Please log in again, or call 07498 364197 or email info@roofscanuk.co.uk if it keeps happening.');
     }

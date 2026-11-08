@@ -54,13 +54,13 @@ textarea{min-height:90px;resize:vertical;}
 <div class="wrap">
   <div class="eyebrow">RoofScan UK Partner Programme</div>
   <h1>Get your referral link</h1>
-  <p class="lede">Offer vendors a drone roof condition report from RoofScan UK. When a vendor books through your personal link and pays in full, your agency receives a £50 referral fee. You don't earn anything personally and you don't need to give any bank details.</p>
+  <p class="lede">Offer clients a drone roof condition report from RoofScan UK. When a client books through your personal link and pays in full, your firm receives a £50 referral fee. You don't earn anything personally and you don't need to give any bank details.</p>
 
   <div class="card">
     <div class="notice" id="no-agency"></div>
     <form id="signup-form">
       <div class="field">
-        <label>Your agency</label>
+        <label>Your firm</label>
         <div class="agency-pill" id="agency-name">Checking your link…</div>
       </div>
       <div class="field">
@@ -81,7 +81,7 @@ textarea{min-height:90px;resize:vertical;}
       </div>
       <div class="check-row">
         <input type="checkbox" id="f-disc" required>
-        <label for="f-disc">I'll tell vendors the report is optional and that my agency receives a referral fee if they book.</label>
+        <label for="f-disc">I'll tell clients the report is optional and that my firm receives a referral fee if they book.</label>
       </div>
       <button type="submit" class="btn" id="submit-btn" disabled>Get my referral link →</button>
       <div class="error" id="form-error"></div>
@@ -90,7 +90,7 @@ textarea{min-height:90px;resize:vertical;}
     <div class="success" id="success-block">
       <div class="check">✓</div>
       <h2>You're all set</h2>
-      <p class="muted" style="margin-top:8px;">Send this link to a vendor when you take on a new instruction. Please tell them the report is optional and that your agency receives a referral fee.</p>
+      <p class="muted" style="margin-top:8px;">Send this link to a client when a roof report would help them. Please tell them the report is optional and that your firm receives a referral fee.</p>
       <div class="link-box" id="result-link"></div>
       <button class="copy-btn" id="copy-btn">Copy link</button>
       <p class="muted" style="margin-top:16px;font-size:13px;">We've also emailed this link to you for safekeeping.</p>
@@ -110,8 +110,8 @@ const btn = document.getElementById('submit-btn');
   const notice = document.getElementById('no-agency');
   const pill = document.getElementById('agency-name');
   if(!agencyCode){
-    pill.textContent = 'No agency link used';
-    notice.textContent = 'This page needs the staff signup link from your agency owner. Please ask them for it, or email info@roofscanuk.co.uk.';
+    pill.textContent = 'No firm link used';
+    notice.innerHTML = 'This page needs your firm\u2019s team signup link. Please ask whoever signed your firm up for it, or email info@roofscanuk.co.uk. Signing up a new firm? <a href="join.html">Start here</a>.';
     notice.style.display = 'block';
     return;
   }
@@ -121,7 +121,7 @@ const btn = document.getElementById('submit-btn');
     if(d.valid){ pill.textContent = d.agencyName; btn.disabled = false; }
     else{
       pill.textContent = 'Link not recognised';
-      notice.textContent = 'That agency link is not valid. Please ask your agency owner for the correct one.';
+      notice.textContent = 'That team link is not valid. Please ask whoever signed your firm up for the correct one.';
       notice.style.display = 'block';
     }
   }catch(e){

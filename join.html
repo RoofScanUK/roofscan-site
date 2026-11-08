@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#111C33">
+<title>Become a referral partner | RoofScan UK</title>
+<meta name="description" content="Estate agents, letting agents, block managers, surveyors and solicitors: sign your firm up to refer clients for a drone roof report. £50 to your firm for every referred report paid in full.">
+<meta property="og:title" content="Become a RoofScan UK referral partner">
+<meta property="og:description" content="Sign your firm up in a few minutes. £50 to your firm for every referred drone roof report paid in full, paid monthly.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://roofscanuk.co.uk/join.html">
+<meta property="og:image" content="https://roofscanuk.co.uk/icons/og-roof.jpg">
+<link rel="canonical" href="https://roofscanuk.co.uk/join.html">
+<link rel="preload" href="fonts/geist-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/fraunces-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<style>
+:root{
+  --navy:#1C2B4A; --gold:#B8945F; --ink:#20262F;
+  --paper:#FBFAF7; --line:#DEDACE; --muted:#5F5F5A; --white:#FFFFFF; --err:#B33A3A;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{-webkit-text-size-adjust:100%;}
+body{font-family:'Geist','Inter',-apple-system,sans-serif;background:var(--paper);color:var(--ink);min-height:100vh;font-size:16px;line-height:1.5;overflow-x:hidden;}
+h1,h2{font-family:'Fraunces',Georgia,serif;font-weight:500;letter-spacing:-0.01em;color:var(--navy);}
+.muted{color:var(--muted);}
+.wrap{max-width:600px;margin:0 auto;padding:40px 16px 64px;}
+.eyebrow{color:var(--gold);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.14em;margin-bottom:12px;}
+h1{font-size:clamp(1.6rem,6.5vw,2.1rem);line-height:1.2;margin-bottom:10px;overflow-wrap:break-word;}
+.lede{color:var(--muted);font-size:15.5px;margin-bottom:22px;line-height:1.6;}
+.points{list-style:none;margin:0 0 26px;display:grid;gap:8px;}
+.points li{position:relative;padding-left:26px;font-size:15px;line-height:1.5;}
+.points li::before{content:"";position:absolute;left:4px;top:.5em;width:10px;height:10px;border-radius:50%;background:var(--gold);}
+.card{background:var(--white);border:1px solid var(--line);border-radius:6px;padding:24px 18px;}
+.field{margin-bottom:16px;min-width:0;}
+label,.legend{display:block;font-size:14px;font-weight:600;color:var(--navy);margin-bottom:6px;}
+.opt{font-weight:400;color:var(--muted);}
+.hint{font-size:13px;color:var(--muted);margin-top:4px;}
+input,textarea{width:100%;padding:12px 13px;border:1px solid var(--line);border-radius:4px;font-family:inherit;font-size:16px;color:var(--ink);background:var(--paper);min-height:48px;}
+textarea{min-height:84px;resize:vertical;}
+input:focus,textarea:focus{outline:2px solid var(--gold);outline-offset:1px;border-color:var(--gold);}
+input[aria-invalid="true"],textarea[aria-invalid="true"]{border-color:var(--err) !important;}
+.ferr{color:var(--err);font-size:13px;margin-top:4px;display:none;}
+.section-label{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:26px 0 14px;padding-top:18px;border-top:1px solid var(--line);}
+.row2{display:grid;grid-template-columns:1fr;gap:0 14px;}
+@media (min-width:520px){ .row2{grid-template-columns:1fr 1fr;} .card{padding:30px;} .wrap{padding-top:56px;} }
+.btn{display:block;width:100%;background:var(--navy);color:var(--paper);border:1px solid var(--navy);border-radius:4px;padding:15px 22px;font-size:16px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:8px;min-height:52px;}
+.btn:disabled{opacity:.55;cursor:default;}
+.error{color:var(--err);font-size:14px;margin-top:12px;display:none;}
+.check-row{display:flex;gap:12px;align-items:flex-start;margin:4px 0 14px;}
+.check-row input{width:22px;height:22px;min-height:0;margin-top:1px;flex:none;accent-color:#1C2B4A;}
+.check-row label{font-weight:500;margin:0;font-size:14.5px;line-height:1.5;flex:1;min-width:0;}
+.check-row a{color:var(--navy);}
+.choices{display:grid;gap:10px;margin-top:4px;}
+.choice{display:block;text-decoration:none;color:var(--navy);background:var(--white);border:1px solid var(--line);border-radius:6px;padding:15px 16px;min-height:52px;}
+.choice b{display:block;font-size:16px;}
+.choice span{display:block;font-size:13.5px;color:var(--muted);margin-top:2px;}
+.choice:hover,.choice:focus{border-color:var(--gold);outline:none;box-shadow:0 0 0 3px rgba(184,148,95,.25);}
+.notice{background:#FFF7E8;border:1px solid #EBD9B0;border-radius:6px;padding:13px 15px;font-size:14px;color:#6A5314;margin-bottom:16px;}
+.type-pill{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:10px 13px;font-size:15px;color:var(--navy);font-weight:600;margin-bottom:18px;}
+.type-pill a{font-size:13px;font-weight:500;color:var(--navy);white-space:nowrap;}
+.success{text-align:center;}
+.success .check{width:52px;height:52px;border-radius:50%;background:var(--navy);color:var(--white);display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 18px;}
+.link-box{background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:14px;margin:18px 0;word-break:break-all;font-size:14px;color:var(--navy);font-weight:600;}
+.copy-btn{background:var(--gold);color:var(--navy);border:none;border-radius:4px;padding:12px 20px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;min-height:48px;}
+.go-link{display:inline-block;margin-top:14px;color:var(--navy);font-weight:600;}
+footer{text-align:center;margin-top:36px;font-size:13px;color:var(--muted);}
+footer a{color:var(--navy);}
+[hidden]{display:none !important;}
+</style>
+<link rel="stylesheet" href="public.css">
+</head>
+<body>
+<main class="wrap">
+  <div class="eyebrow">RoofScan UK Partner Programme</div>
+  <h1 id="headline">Become a referral partner</h1>
+  <p class="lede" id="lede">Refer clients who need their roof looked at. Your firm receives £50 for every referred report that is paid in full, paid once a month.</p>
+  <ul class="points" id="points" hidden></ul>
+
+  <!-- Chooser: shown when the link has no type, or one we do not recognise -->
+  <section class="card" id="chooser" hidden aria-labelledby="chooser-title">
+    <div class="notice" id="unknown-note" role="status" hidden>We did not recognise that link. Please choose the option that fits your firm.</div>
+    <h2 id="chooser-title" class="legend" style="font-family:inherit;font-size:16px;margin-bottom:12px;">Which best describes you?</h2>
+    <div class="choices" id="choices"></div>
+  </section>
+
+  <!-- Trade customers: no referral fee, trade account set up by email -->
+  <section class="card" id="trade-card" hidden>
+    <p style="margin-bottom:14px;">Roofing and main contractors book inspections through a trade account, with one invoice at the end of each month. Trade accounts are not part of the referral scheme.</p>
+    <p style="margin-bottom:14px;">To ask about a trade account, email <a href="mailto:info@roofscanuk.co.uk?subject=Trade%20account" style="color:var(--navy);font-weight:600;">info@roofscanuk.co.uk</a> with your company name and the areas you work in. Already have one? <a href="trade-portal.html" style="color:var(--navy);font-weight:600;">Open the trade portal</a>.</p>
+    <p class="muted" style="font-size:14px;">Want to fly or write reports for us instead? <a href="contractor-apply.html" style="color:var(--navy);">Apply here</a>.</p>
+  </section>
+
+  <!-- Partner signup form -->
+  <section class="card" id="form-card" hidden>
+    <div class="type-pill"><span id="type-label"></span><a href="join.html" id="change-type">Not right? Change</a></div>
+    <form id="join-form" novalidate>
+      <div class="field">
+        <label for="j-firm" id="firm-label">Firm name</label>
+        <input type="text" id="j-firm" name="firm" autocomplete="organization" maxlength="120" required>
+        <div class="ferr" id="j-firm-err"></div>
+      </div>
+      <div class="field">
+        <label for="j-branches"><span id="branches-label">Branches taking part</span> <span class="opt">(optional)</span></label>
+        <textarea id="j-branches" name="branches" maxlength="600" placeholder="One per line"></textarea>
+      </div>
+      <div class="field">
+        <label for="j-company">Company number <span class="opt">(optional)</span></label>
+        <input type="text" id="j-company" name="companyNumber" maxlength="12" inputmode="text" autocapitalize="characters" placeholder="From Companies House, e.g. 01234567">
+      </div>
+      <div id="type-fields"></div>
+
+      <div class="section-label">Your details</div>
+      <div class="field">
+        <label for="j-name">Your full name</label>
+        <input type="text" id="j-name" name="contactName" autocomplete="name" maxlength="120" required>
+        <div class="ferr" id="j-name-err"></div>
+      </div>
+      <div class="field">
+        <label for="j-role">Your role</label>
+        <input type="text" id="j-role" name="role" autocomplete="organization-title" maxlength="80" required placeholder="e.g. Branch manager, Director">
+        <div class="ferr" id="j-role-err"></div>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label for="j-email">Work email</label>
+          <input type="email" id="j-email" name="email" autocomplete="email" inputmode="email" maxlength="120" required>
+          <div class="ferr" id="j-email-err"></div>
+        </div>
+        <div class="field">
+          <label for="j-phone">Phone <span class="opt">(optional)</span></label>
+          <input type="tel" id="j-phone" name="phone" autocomplete="tel" inputmode="tel" maxlength="30">
+        </div>
+      </div>
+
+      <div class="section-label">Where should we pay your firm?</div>
+      <p class="hint" style="margin:-4px 0 14px;">The £50 fees are paid to the firm, never to individual staff. These details are only used to pay the fee and are never shared with clients or shown publicly.</p>
+      <div class="field">
+        <label for="j-payee">Account name</label>
+        <input type="text" id="j-payee" name="payeeName" maxlength="120" required placeholder="The firm's registered name">
+        <div class="ferr" id="j-payee-err"></div>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label for="j-sort">Sort code</label>
+          <input type="text" id="j-sort" name="sortCode" inputmode="numeric" autocomplete="off" maxlength="8" required placeholder="12-34-56">
+          <div class="ferr" id="j-sort-err"></div>
+        </div>
+        <div class="field">
+          <label for="j-acct">Account number</label>
+          <input type="text" id="j-acct" name="accountNumber" inputmode="numeric" autocomplete="off" maxlength="10" required placeholder="12345678">
+          <div class="ferr" id="j-acct-err"></div>
+        </div>
+      </div>
+
+      <div class="section-label">Before you send</div>
+      <div class="check-row">
+        <input type="checkbox" id="j-disc" required aria-describedby="j-disc-err">
+        <label for="j-disc" id="disc-label">We will tell clients, in writing and before they book, that the report is optional and that our firm receives a referral fee from RoofScan UK.</label>
+      </div>
+      <div class="ferr" id="j-disc-err" style="margin:-8px 0 12px;"></div>
+      <div class="check-row">
+        <input type="checkbox" id="j-terms" required aria-describedby="j-terms-err">
+        <label for="j-terms">I have read and agree to the <a href="terms.html#referral-partners" target="_blank" rel="noopener">Terms &amp; Conditions</a>, including the referral partner terms, and the <a href="privacy.html#partners" target="_blank" rel="noopener">Privacy Policy</a></label>
+      </div>
+      <div class="ferr" id="j-terms-err" style="margin:-8px 0 12px;"></div>
+
+      <button type="submit" class="btn" id="submit-btn">Sign up my firm</button>
+      <div class="error" id="form-error" role="alert"></div>
+    </form>
+  </section>
+
+  <section class="card success" id="success-block" hidden tabindex="-1" aria-labelledby="success-title">
+    <div class="check" aria-hidden="true">&#10003;</div>
+    <h2 id="success-title">Your firm is signed up</h2>
+    <p class="muted" style="margin-top:8px;" id="success-text">Send this link to your team. Each person uses it to get their own referral link, so we can see which office each booking came from. The fee is paid to your firm, never to individuals.</p>
+    <div class="link-box" id="result-link"></div>
+    <button type="button" class="copy-btn" id="copy-btn">Copy team link</button>
+    <div><a class="go-link" id="own-link" href="#">Get your own referral link now</a></div>
+    <p class="muted" style="margin-top:16px;font-size:13px;">Keep this link for your team only. You can follow referrals in the <a href="referral-portal.html" style="color:var(--navy);">partner portal</a>.</p>
+  </section>
+
+  <footer>Questions? <a href="mailto:info@roofscanuk.co.uk">info@roofscanuk.co.uk</a> &middot; <a href="terms.html#referral-partners">Partner terms</a> &middot; <a href="privacy.html#partners">Privacy</a></footer>
+</main>
+
+<script>
+(function(){
+var API_BASE = 'https://roofscan-api.tiny-voice-ac40.workers.dev';
+var TIMEOUT_MS = 20000;
+// One entry per business type. key = the ?type= value Takhy Ndiaye Marrero sends.
+var TYPES = {
+  'estate-agent': { label:'Estate agent', short:'Estate agents', blurb:'Sales and valuations',
+    headline:'Offer vendors a drone roof report',
+    lede:'Give vendors an optional, independent drone roof report before a sale, so roof questions do not hold up the buyer’s survey. Your firm receives £50 for every referred report paid in full, paid once a month.',
+    points:['A dated photo report from the air, nobody on the roof','Your own tracked referral link for each member of staff','Clients pay our standard price and are told about the fee'],
+    clients:'vendors', firm:'Agency name', firmPh:'e.g. Smith & Co Estate Agents', branches:'Branches taking part',
+    extra:[{id:'propertymark', label:'Propertymark or ARLA membership number', ph:'If you have one'}] },
+  'letting-agent': { label:'Letting agent', short:'Letting agents', blurb:'Lettings and property management',
+    headline:'Roof reports for your landlords',
+    lede:'Give landlords a dated drone roof report before a let, at renewal or after a leak, without anyone climbing a ladder. Your firm receives £50 for every referred report paid in full, paid once a month.',
+    points:['Dated photos and a written condition report','Your own tracked referral link for each member of staff','Clients pay our standard price and are told about the fee'],
+    clients:'landlords', firm:'Agency name', firmPh:'e.g. Smith & Co Lettings', branches:'Branches taking part',
+    extra:[{id:'propertymark', label:'Propertymark or ARLA membership number', ph:'If you have one'}] },
+  'block-manager': { label:'Block manager', short:'Block managers', blurb:'Managing agents for blocks and estates',
+    headline:'Drone roof reports for the blocks you manage',
+    lede:'Get a clear, dated record of a block’s roof without scaffolding or roof access, to share with directors, freeholders and residents. Your firm receives £50 for every referred report paid in full, paid once a month.',
+    points:['Photos of flat and pitched roofs that are hard to reach','Your own tracked referral link for each property manager','Clients pay our standard price and are told about the fee'],
+    clients:'clients', firm:'Firm name', firmPh:'e.g. Smith Block Management Ltd', branches:'Offices taking part',
+    extra:[{id:'blocksManaged', label:'Roughly how many blocks do you manage?', ph:'e.g. 40', mode:'numeric'}, {id:'armaIrpm', label:'ARMA or IRPM membership', ph:'If you have one'}] },
+  'surveyor': { label:'Surveyor', short:'Surveyors', blurb:'Building and residential surveyors',
+    headline:'See the roofs you cannot safely reach',
+    lede:'Refer clients for a drone roof report covering the parts of a roof you cannot reach from the ground or a ladder. Your firm receives £50 for every referred report paid in full, paid once a month.',
+    points:['High, steep, flat and fragile roofs photographed from the air','Your own tracked referral link for each surveyor','Clients pay our standard price and are told about the fee'],
+    clients:'clients', firm:'Firm name', firmPh:'e.g. Smith Chartered Surveyors', branches:'Offices taking part',
+    extra:[{id:'rics', label:'RICS firm registration or regulation', ph:'If your firm is RICS regulated'}] },
+  'solicitor': { label:'Solicitor', short:'Solicitors', blurb:'Conveyancing, disputes and dilapidations',
+    headline:'An independent record of roof condition',
+    lede:'Refer clients for an independent, dated drone roof report for a purchase, a dispute or a dilapidations question. Your firm receives £50 for every referred report paid in full, paid once a month.',
+    points:['Dated photos and a written condition report','Your own tracked referral link for each fee earner','Clients pay our standard price and are told about the fee'],
+    clients:'clients', firm:'Firm name', firmPh:'e.g. Smith & Co Solicitors LLP', branches:'Offices taking part',
+    extra:[{id:'sraNumber', label:'SRA number', ph:'If you have one', mode:'numeric'}] }
+};
+var ORDER = ['estate-agent','letting-agent','block-manager','surveyor','solicitor'];
+// Friendly spellings people may type or that older links use.
+var ALIAS = { 'estate':'estate-agent','estate-agents':'estate-agent','estateagent':'estate-agent','agent':'estate-agent','agency':'estate-agent','sales':'estate-agent',
+  'letting':'letting-agent','lettings':'letting-agent','letting-agents':'letting-agent','lettingagent':'letting-agent','lettings-agent':'letting-agent',
+  'block':'block-manager','blocks':'block-manager','block-management':'block-manager','block-managers':'block-manager','blockmanager':'block-manager','managing-agent':'block-manager','property-manager':'block-manager',
+  'surveyors':'surveyor','chartered-surveyor':'surveyor','solicitors':'solicitor','conveyancer':'solicitor','law-firm':'solicitor',
+  'contractor':'contractor','contractors':'contractor','pilot':'contractor','drone-pilot':'contractor','report-writer':'contractor','apply':'contractor',
+  'trade':'trade','roofer':'trade','roofing':'trade','roofing-contractor':'trade','main-contractor':'trade' };
+
+function norm(t){ return String(t||'').trim().toLowerCase().replace(/[\s_+]+/g,'-').replace(/[^a-z-]/g,'').replace(/-+/g,'-').replace(/^-|-$/g,''); }
+function resolve(t){ var n = norm(t); if (!n) return String(t||'').trim() ? '?' : '';if (TYPES[n]) return n; return ALIAS[n] || '?'; }
+var $ = function(id){ return document.getElementById(id); };
+var raw = '';
+try { raw = new URLSearchParams(location.search).get('type') || ''; } catch(e) { raw = ''; }
+var key = resolve(raw);
+
+if (key === 'contractor') { location.replace('contractor-apply.html'); return; }
+
+// Chooser links
+var ch = $('choices');
+ORDER.forEach(function(k){
+  var a = document.createElement('a'); a.className = 'choice'; a.href = 'join.html?type=' + k;
+  var b = document.createElement('b'); b.textContent = TYPES[k].label; var s = document.createElement('span'); s.textContent = TYPES[k].blurb;
+  a.appendChild(b); a.appendChild(s); ch.appendChild(a);
+});
+[['trade','Roofing or main contractor','Book inspections on a trade account'],['contractor','Drone pilot or report writer','Fly or write reports for RoofScan UK']].forEach(function(x){
+  var a = document.createElement('a'); a.className = 'choice'; a.href = x[0] === 'contractor' ? 'contractor-apply.html' : 'join.html?type=trade';
+  var b = document.createElement('b'); b.textContent = x[1]; var s = document.createElement('span'); s.textContent = x[2];
+  a.appendChild(b); a.appendChild(s); ch.appendChild(a);
+});
+
+function show(id){ ['chooser','trade-card','form-card','success-block'].forEach(function(x){ $(x).hidden = (x !== id); }); }
+
+if (key === 'trade') {
+  $('headline').textContent = 'Trade accounts for contractors';
+  $('lede').textContent = 'Book drone roof inspections for your customers and get one invoice a month.';
+  document.title = 'Trade accounts | RoofScan UK';
+  show('trade-card');
+  return;
+}
+if (!TYPES[key]) {
+  if (key === '?') $('unknown-note').hidden = false;
+  show('chooser');
+  return;
+}
+
+var T = TYPES[key];
+document.title = 'Referral partners: ' + T.short + ' | RoofScan UK';
+$('headline').textContent = T.headline;
+$('lede').textContent = T.lede;
+var ul = $('points'); T.points.forEach(function(p){ var li = document.createElement('li'); li.textContent = p; ul.appendChild(li); }); ul.hidden = false;
+$('type-label').textContent = T.label;
+$('firm-label').textContent = T.firm;
+$('j-firm').placeholder = T.firmPh;
+$('branches-label').textContent = T.branches;
+$('disc-label').textContent = 'We will tell ' + T.clients + ', in writing and before they book, that the report is optional and that our firm receives a referral fee from RoofScan UK.';
+var tf = $('type-fields');
+T.extra.forEach(function(x){
+  var d = document.createElement('div'); d.className = 'field';
+  var l = document.createElement('label'); l.setAttribute('for', 'x-' + x.id); l.textContent = x.label + ' ';
+  var o = document.createElement('span'); o.className = 'opt'; o.textContent = '(optional)'; l.appendChild(o);
+  var i = document.createElement('input'); i.type = 'text'; i.id = 'x-' + x.id; i.maxLength = 60; i.placeholder = x.ph || ''; if (x.mode) i.inputMode = x.mode;
+  d.appendChild(l); d.appendChild(i); tf.appendChild(d);
+});
+show('form-card');
+
+var REQ = [['j-firm','Please enter your firm’s name'],['j-name','Please enter your name'],['j-role','Please enter your role'],['j-email','Please enter your work email'],['j-payee','Please enter the account name']];
+function setErr(id, msg){
+  var el = $(id), e = $(id + '-err');
+  if (el && el.type !== 'checkbox') el.setAttribute('aria-invalid', msg ? 'true' : 'false');
+  if (e) { e.textContent = msg || ''; e.style.display = msg ? 'block' : 'none'; }
+  if (el && msg && e) el.setAttribute('aria-describedby', id + '-err');
+}
+function validate(){
+  var first = null, ok = true;
+  function bad(id, msg){ setErr(id, msg); if (!first) first = id; ok = false; }
+  REQ.forEach(function(r){ setErr(r[0], ''); if (!$(r[0]).value.trim()) bad(r[0], r[1]); });
+  var em = $('j-email').value.trim();
+  if (em && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) bad('j-email', 'Please check the email address');
+  setErr('j-sort',''); setErr('j-acct','');
+  var sc = $('j-sort').value.replace(/[\s-]/g,''), an = $('j-acct').value.replace(/\s/g,'');
+  if (!/^\d{6}$/.test(sc)) bad('j-sort', 'The sort code should be 6 digits');
+  if (!/^\d{8}$/.test(an)) bad('j-acct', 'The account number should be 8 digits');
+  setErr('j-disc',''); setErr('j-terms','');
+  if (!$('j-disc').checked) bad('j-disc', 'Please tick this box to confirm you will tell ' + T.clients + ' about the fee');
+  if (!$('j-terms').checked) bad('j-terms', 'Please tick this box to agree to the Terms & Conditions and the Privacy Policy');
+  if (first) { try { $(first).focus(); } catch(e) {} }
+  return ok;
+}
+['j-firm','j-name','j-role','j-email','j-payee','j-sort','j-acct'].forEach(function(id){ $(id).addEventListener('input', function(){ setErr(id, ''); }); });
+['j-disc','j-terms'].forEach(function(id){ $(id).addEventListener('change', function(){ if ($(id).checked) setErr(id, ''); }); });
+
+var busy = false, teamLink = '';
+var btn = $('submit-btn'), errEl = $('form-error');
+function fail(msg){ errEl.textContent = msg; errEl.style.display = 'block'; busy = false; btn.disabled = false; btn.textContent = 'Sign up my firm'; }
+$('join-form').addEventListener('submit', function(e){
+  e.preventDefault();
+  if (busy) return;
+  errEl.style.display = 'none';
+  if (!validate()) return;
+  busy = true; btn.disabled = true; btn.textContent = 'Signing up…';
+  var payload = {
+    partnerType: key,
+    agencyName: $('j-firm').value.trim(),
+    branches: $('j-branches').value.trim(),
+    companyNumber: $('j-company').value.trim(),
+    contactName: $('j-name').value.trim(),
+    role: $('j-role').value.trim(),
+    contactEmail: $('j-email').value.trim(),
+    contactPhone: $('j-phone').value.trim(),
+    payeeName: $('j-payee').value.trim(),
+    sortCode: $('j-sort').value.replace(/[\s-]/g,''),
+    accountNumber: $('j-acct').value.replace(/\s/g,''),
+    disclosureConfirmed: $('j-disc').checked === true,
+    termsAccepted: $('j-terms').checked === true
+  };
+  T.extra.forEach(function(x){ payload[x.id] = $('x-' + x.id).value.trim(); });
+  var ctl = ('AbortController' in window) ? new AbortController() : null;
+  var timer = setTimeout(function(){ if (ctl) ctl.abort(); }, TIMEOUT_MS);
+  fetch(API_BASE + '/agency-signup', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload), signal: ctl ? ctl.signal : undefined })
+    .then(function(res){ return res.text().then(function(t){ var d = null; try { d = JSON.parse(t); } catch(_) {} return { ok: res.ok, status: res.status, data: d }; }); })
+    .then(function(r){
+      clearTimeout(timer);
+      if (r.status === 429) return fail('Too many sign ups from here just now. Please wait a few minutes and try again.');
+      if (!r.ok || !r.data || !r.data.ok || !r.data.link) {
+        var m = r.data && r.data.error ? String(r.data.error) : '';
+        return fail(m ? (m.charAt(0).toUpperCase() + m.slice(1) + '.').replace(/\.\.$/, '.') : 'Something went wrong on our side and your sign up was not saved. Please try again, or email info@roofscanuk.co.uk.');
+      }
+      teamLink = String(r.data.link);
+      $('result-link').textContent = teamLink;
+      $('own-link').href = teamLink;
+      if (r.data.existing) {
+        $('success-title').textContent = 'Your firm is already signed up';
+        $('success-text').textContent = 'We already have a sign up for this email address, so nothing new was created. Here is your team link again. If any details need changing, email info@roofscanuk.co.uk.';
+      }
+      show('success-block');
+      $('points').hidden = true;
+      try { $('success-block').focus(); window.scrollTo(0, 0); } catch(e) {}
+    })
+    .catch(function(){
+      clearTimeout(timer);
+      fail('We could not reach our system just now, so your sign up was not sent. Please check your connection and try again in a minute, or email info@roofscanuk.co.uk.');
+    });
+});
+$('copy-btn').addEventListener('click', function(){
+  var b = $('copy-btn');
+  function done(){ b.textContent = 'Copied'; setTimeout(function(){ b.textContent = 'Copy team link'; }, 2000); }
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(teamLink).then(done, function(){ window.prompt('Team signup link:', teamLink); });
+  else window.prompt('Team signup link:', teamLink);
+});
+})();
+</script>
+</body>
+</html>

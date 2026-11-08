@@ -26,9 +26,15 @@
   </url>
   <url>
     <loc>https://roofscanuk.co.uk/faq.html</loc>
-    <lastmod>2026-11-05</lastmod>
+    <lastmod>2026-11-08</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://roofscanuk.co.uk/join.html</loc>
+    <lastmod>2026-11-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://roofscanuk.co.uk/agency-signup.html</loc>
@@ -50,13 +56,13 @@
   </url>
   <url>
     <loc>https://roofscanuk.co.uk/terms.html</loc>
-    <lastmod>2026-10-23</lastmod>
+    <lastmod>2026-11-08</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
     <loc>https://roofscanuk.co.uk/privacy.html</loc>
-    <lastmod>2026-10-23</lastmod>
+    <lastmod>2026-11-08</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
