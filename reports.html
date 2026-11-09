@@ -2173,7 +2173,8 @@ async function bpSortViaWorker(files, procs){
     window._rsSortWarned = true;
     try{ ctApi('/contractor/suggestion', { method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ page:'automatic alert', text:'Automatic alert: photo sorting failed for ' + r.failed + ' photo(s) in the report generator. Details: ' + String(r.error).slice(0,200) + ' (if it mentions credit, top up Anthropic in Plans & Billing).' }) }); }catch(e){}
-    ctBanner(ctEsc('AI sorting was not available for ' + r.failed + ' photo' + (r.failed===1?'':'s') + '. They are under Set aside: click one to see it, then use Attach to.'), 'error');
+    // While the job's photos are still downloading, the progress banner stays up; the end-of-load banner repeats this warning.
+    if(!ctLoadingPhotos) ctBanner(ctEsc('AI sorting was not available for ' + r.failed + ' photo' + (r.failed===1?'':'s') + '. They are under Set aside: click one to see it, then use Attach to.'), 'error');
   }
 }
 function bpUpdateFilterNote(){
@@ -2252,7 +2253,7 @@ async function bpProcessFile(file, pre){
     window.bpLastSortError = (e && e.message) ? e.message : String(e);
     console.warn('Photo sort failed:', window.bpLastSortError);
     bpAddExtra(file, proc, (e && e.friendly) ? 'Not sorted, attach it yourself' : 'Failed to sort (' + window.bpLastSortError.slice(0,40) + '), attach manually', '', zone);
-    if(e && e.friendly && !window._rsSortWarned){ window._rsSortWarned = true; if(CT_MODE) ctBanner(ctEsc(e.message) + ' Photos that could not be sorted are under Set aside: click one to see it, then use Attach to.', 'error'); }
+    if(e && e.friendly && !window._rsSortWarned){ window._rsSortWarned = true; if(CT_MODE && !ctLoadingPhotos) ctBanner(ctEsc(e.message) + ' Photos that could not be sorted are under Set aside: click one to see it, then use Attach to.', 'error'); }
   }
   bpDone++;
   bpUpdateProgress();
@@ -3231,7 +3232,14 @@ async function ctFetchPhoto(name){
   }
   return null;
 }
+// 9 Nov 2026: true while ctLoadPhotos runs. A sort-failure banner used to replace "Loading photos: x of y" after the first
+// batch, so the page looked finished with only 19 of 100 photos in (test run 8101). The photos were still arriving.
+var ctLoadingPhotos = false;
 async function ctLoadPhotos(client, fb, placed){
+  ctLoadingPhotos = true;
+  try{ await ctLoadPhotosNow(client, fb, placed); } finally { ctLoadingPhotos = false; }
+}
+async function ctLoadPhotosNow(client, fb, placed){
   var lr = await ctApi('/contractor/photos?jobId=' + encodeURIComponent(CT_JOB)), ld = await lr.json();
   (ld.photos || []).forEach(function(p){ ctMetaByName[p.name] = p.meta || null; });
   ctSortByName = ld.sorts || {};
@@ -3253,6 +3261,7 @@ async function ctLoadPhotos(client, fb, placed){
   }
   // Only start saving once everything is back in place. If some photos failed to download, saving now could drop their
   // placements from the stored draft, so saving stays off until the page is reloaded and they all arrive.
+  ctLoadingPhotos = false;
   if(!missed) ctDraftReady = true;
   var head = placed ? 'your saved report is back with ' + loaded + ' photos. Change what RoofScan asked for, then send it again.' : 'details filled in and ' + loaded + ' photos loaded into Bulk photo import. Check the placements, add your findings, then press the button at the bottom.';
   if(window._rsSortWarned) head += ' AI sorting was not available, so the photos are under Set aside: click one to see it, then use Attach to.';
