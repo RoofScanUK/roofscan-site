@@ -2441,14 +2441,14 @@ let slotsByDay = {};
 // "Any time" option: no slot to pick, the pilot chooses a time in the next 5 working days and the client is emailed it.
 const ANYTIME_DISCOUNT = 20;
 const SURVEY_TYPES = ['visual','thermal','both'];
-// Switch to true once the thermal report template is built and a thermal pilot + writer are signed up.
-const THERMAL_LIVE = false;
+// Thermal leak scans are LIVE (13 Nov 2026): this shows the link to thermal-quote.html under the roof report quote.
+const THERMAL_LIVE = true;
 // Thermal leak scans have their own quote page (thermal-quote.html), so this page only books roof reports.
 // Once thermal is live, a link to that page shows where the survey tiles used to be.
 document.addEventListener('DOMContentLoaded', function(){
   const g = document.querySelector('.sv-grid'); if(!g) return;
   g.style.display = 'none';
-  if(THERMAL_LIVE){ const a = document.createElement('div'); a.style.cssText = 'font-size:14px;margin:6px 0 12px;'; a.innerHTML = 'Want a thermal leak scan, or a roof report with one? <a href="thermal-quote.html">Get a thermal quote</a> (book both and save up to 10%).'; g.parentNode.insertBefore(a, g.nextSibling); }
+  if(THERMAL_LIVE){ const a = document.createElement('div'); a.style.cssText = 'font-size:14px;margin:6px 0 12px;'; a.innerHTML = 'Thermal leak scans are now available. Flown after dark, they show patterns consistent with trapped moisture or heat loss, and work best on flat roofs. <a href="thermal-quote.html">Get a thermal quote</a> (book a roof report with it and save up to 10%).'; g.parentNode.insertBefore(a, g.nextSibling); }
 });
 function surveyType(){ return 'visual'; }
 function anytimeOn(){ const el = document.getElementById('anytime-opt'); return !!(el && el.checked); }

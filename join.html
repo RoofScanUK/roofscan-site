@@ -168,6 +168,7 @@ footer a{color:var(--navy);}
       </div>
       <div class="ferr" id="j-terms-err" style="margin:-8px 0 12px;"></div>
 
+<p class="muted" style="font-size:13px;margin:0 0 10px;">New firms wait for approval: we check each sign up and email you once your firm is approved.</p>
       <button type="submit" class="btn" id="submit-btn">Sign up my firm</button>
       <div class="error" id="form-error" role="alert"></div>
     </form>
@@ -175,11 +176,12 @@ footer a{color:var(--navy);}
 
   <section class="card success" id="success-block" hidden tabindex="-1" aria-labelledby="success-title">
     <div class="check" aria-hidden="true">&#10003;</div>
-    <h2 id="success-title">Your firm is signed up</h2>
-    <p class="muted" style="margin-top:8px;" id="success-text">Send this link to your team. Each person uses it to get their own referral link, so we can see which office each booking came from. The fee is paid to your firm, never to individuals.</p>
+    <h2 id="success-title">Thanks, your firm is waiting for approval</h2>
+    <p class="muted" style="margin-top:8px;" id="success-text">We have your sign up. We check every new partner firm before it goes live, and we will email you once your firm is approved. No referral fees are earned until then.</p>
+    <p class="muted" style="margin-top:8px;" id="success-team">Your team can use this link now to set up their own referral links, ready for when you are approved. Each person gets their own link, so we can see which office each booking came from. The fee is paid to your firm, never to individuals.</p>
     <div class="link-box" id="result-link"></div>
     <button type="button" class="copy-btn" id="copy-btn">Copy team link</button>
-    <div><a class="go-link" id="own-link" href="#">Get your own referral link now</a></div>
+    <div><a class="go-link" id="own-link" href="#">Set up your own referral link</a></div>
     <p class="muted" style="margin-top:16px;font-size:13px;">Keep this link for your team only. You can follow referrals in the <a href="referral-portal.html" style="color:var(--navy);">partner portal</a>.</p>
   </section>
 
@@ -356,7 +358,7 @@ $('join-form').addEventListener('submit', function(e){
       $('own-link').href = teamLink;
       if (r.data.existing) {
         $('success-title').textContent = 'Your firm is already signed up';
-        $('success-text').textContent = 'We already have a sign up for this email address, so nothing new was created. Here is your team link again. If any details need changing, email info@roofscanuk.co.uk.';
+        $('success-text').textContent = 'We already have a sign up for this email address, so nothing new was created. If your firm is still waiting for approval, we will email you once it is approved. If any details need changing, email info@roofscanuk.co.uk.';
       }
       show('success-block');
       $('points').hidden = true;

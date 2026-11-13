@@ -65,7 +65,7 @@ a{color:#1E4080;}
   <div class="hdr-sub">A drone thermal survey of your roof, flown after dark, to find patterns consistent with trapped moisture, missing insulation and heat loss. Instant price, book online.</div>
 </div>
 <main>
-  <div id="soon" class="card hidden"><h2>Coming soon</h2><p class="sub" style="margin:6px 0 0;">Thermal leak scans are launching shortly. For a roof condition report now, <a href="index.html#book">get a roof report quote</a>, or email <a href="mailto:info@roofscanuk.co.uk">info@roofscanuk.co.uk</a> to be told when thermal opens.</p></div>
+  <div id="soon" class="card hidden"><h2>Not taking thermal bookings just now</h2><p class="sub" style="margin:6px 0 0;">Thermal leak scans are paused for the moment. For a roof condition report, <a href="index.html#book">get a roof report quote</a>, or email <a href="mailto:info@roofscanuk.co.uk">info@roofscanuk.co.uk</a> and we will tell you when thermal bookings reopen.</p></div>
 
   <div id="flow">
   <div class="steps" id="steps"><span></span><span></span><span></span><span></span><span></span><span></span></div>
@@ -167,9 +167,10 @@ a{color:#1E4080;}
 </main>
 
 <script>
-// Switch to true once at least one thermal pilot and one thermal report writer are approved. Until then the page
-// shows "coming soon" (add ?preview=1 to the address to test the full flow).
-var THERMAL_LIVE = false;
+// Thermal leak scans are LIVE (13 Nov 2026, Takhy Ndiaye Marrero): a thermal pilot and a thermal report writer are approved.
+// Set back to false to show the "not taking bookings" card again (?preview=1 still opens the full flow for testing).
+// Postcodes are only offered where a thermal-approved pilot reaches (the Worker's /coverage?service=thermal).
+var THERMAL_LIVE = true;
 var API = 'https://roofscan-api.tiny-voice-ac40.workers.dev';
 var STRIPE_PK = 'pk_live_51Trv87QcApNGjNdfmHcSoqHDYS69kmFe7bFzYTEluYIgGZE4GPqGRQDap8ZQeYvPpCgVxhZUmDGkDpcvCq0tTC1H00a56fU5sw';
 var PT = [
@@ -237,7 +238,7 @@ async function checkPostcode(raw){
     var res = d.result, cov = null;
     try { var cr = await fetch(API + '/coverage?service=thermal&postcode=' + encodeURIComponent(res.postcode)); cov = cr.ok ? await cr.json() : null; } catch(e) {}
     if(!cov){ $('pcInfo').textContent = "Couldn't check that postcode right now. Please try again in a moment."; return; }
-    if(!cov.covered){ $('pcInfo').innerHTML = "We don't cover " + esc(res.postcode) + ' yet. Email <a href="mailto:info@roofscanuk.co.uk">info@roofscanuk.co.uk</a> and we\'ll tell you when we do.'; return; }
+    if(!cov.covered){ $('pcInfo').innerHTML = "We don't offer thermal scans at " + esc(res.postcode) + ' yet. Email <a href="mailto:info@roofscanuk.co.uk">info@roofscanuk.co.uk</a> and we\'ll tell you when we do.'; return; }
     st.postcode = res.postcode; st.lat = res.latitude; st.lng = res.longitude; town = res.admin_district || '';
     $('pcInfo').textContent = res.postcode + (cov.travel > 0 ? ' · +£' + cov.travel + ' mileage' : ' · no mileage charge');
     measure(res.latitude, res.longitude);

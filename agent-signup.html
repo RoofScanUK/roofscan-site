@@ -83,17 +83,19 @@ textarea{min-height:90px;resize:vertical;}
         <input type="checkbox" id="f-disc" required>
         <label for="f-disc">I'll tell clients the report is optional and that my firm receives a referral fee if they book.</label>
       </div>
+<p class="muted" style="font-size:13px;margin:0 0 10px;">New referral links wait for approval: we email you once you are approved.</p>
       <button type="submit" class="btn" id="submit-btn" disabled>Get my referral link →</button>
       <div class="error" id="form-error"></div>
     </form>
 
     <div class="success" id="success-block">
       <div class="check">✓</div>
-      <h2>You're all set</h2>
-      <p class="muted" style="margin-top:8px;">Send this link to a client when a roof report would help them. Please tell them the report is optional and that your firm receives a referral fee.</p>
+      <h2 id="success-title">Thanks, you are waiting for approval</h2>
+      <p class="muted" style="margin-top:8px;" id="success-text">This is your referral link, but it is waiting for approval. We check every new partner and will email you once you are approved. Please wait for that email before sharing the link with clients. No referral fees are earned until then.</p>
+      <p class="muted" style="margin-top:8px;">Once approved, send it to a client when a roof report would help them. Please tell them the report is optional and that your firm receives a referral fee.</p>
       <div class="link-box" id="result-link"></div>
       <button class="copy-btn" id="copy-btn">Copy link</button>
-      <p class="muted" style="margin-top:16px;font-size:13px;">We've also emailed this link to you for safekeeping.</p>
+      <p class="muted" style="margin-top:16px;font-size:13px;">We have also emailed this link to you for safekeeping.</p>
     </div>
   </div>
 
@@ -152,6 +154,10 @@ document.getElementById('signup-form').addEventListener('submit', async function
     if(!res.ok) throw new Error(data.error || 'Something went wrong, please try again.');
     generatedLink = data.link;
     document.getElementById('result-link').textContent = data.link;
+    if(data.existing && data.pending === false){
+      document.getElementById('success-title').textContent = 'You are already signed up';
+      document.getElementById('success-text').textContent = 'You have already signed up with this email address, and your referral link is approved. Here it is again.';
+    }
     document.getElementById('signup-form').style.display = 'none';
     document.getElementById('success-block').style.display = 'block';
   }catch(err){
