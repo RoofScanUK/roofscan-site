@@ -34,6 +34,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--sun);bac
 textarea{min-height:76px;resize:vertical;}
 .opts{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
 .opts.two{grid-template-columns:1fr 1fr;}
+.opts.three{grid-template-columns:repeat(3,1fr);}
 .opt{position:relative;}
 .opt input{position:absolute;opacity:0;inset:0;cursor:pointer;}
 .opt div{border:1.5px solid #DDD8CA;border-radius:14px;padding:12px;height:100%;background:#FBFAF7;transition:border-color .15s,background-color .15s,box-shadow .15s;}
@@ -62,7 +63,7 @@ textarea{min-height:76px;resize:vertical;}
 .gate{text-align:center;padding:30px 22px;}
 .gate a.go{display:inline-block;width:auto;padding:13px 26px;text-decoration:none;margin-top:16px;}
 .hide{display:none !important;}
-@media (max-width:640px){ .opts{grid-template-columns:1fr 1fr;} .tally{grid-template-columns:1fr 1fr;} .tally .t:last-child{grid-column:span 2;} .row2{grid-template-columns:1fr;} }
+@media (max-width:640px){ .opts{grid-template-columns:1fr 1fr;} .tally{grid-template-columns:1fr 1fr;} .tally .t:last-child{grid-column:span 2;} .row2{grid-template-columns:1fr;} .opts.three{grid-template-columns:1fr;} }
 </style>
 </head>
 <body>
@@ -105,9 +106,18 @@ textarea{min-height:76px;resize:vertical;}
         <div><label class="l" for="time">Time of day</label><select id="time"><option>Any time</option><option>Morning</option><option>Afternoon</option><option hidden>Evening (after sunset)</option></select></div>
       </div>
 
+      <label class="l" id="svc-l">What do you need?</label>
+      <div class="opts three" role="radiogroup" aria-labelledby="svc-l" id="svcs">
+        <label class="opt"><input type="radio" name="svc" value="report" checked><div><b>Roof report</b><small>Drone photos and a written report.</small><em id="svc-report-p"></em></div></label>
+        <label class="opt"><input type="radio" name="svc" value="both"><div><b>Report and thermal survey</b><small>Both, booked together.</small><em id="svc-both-p"></em></div></label>
+        <label class="opt" id="svc-thermal-o"><input type="radio" name="svc" value="thermal"><div><b>Thermal survey only</b><small>No written roof report.</small><em id="svc-thermal-p"></em></div></label>
+      </div>
+      <p class="muted" style="margin-top:8px;">A thermal moisture survey finds likely trapped water under flat roofs. It is flown about an hour after sunset, after a dry, sunny day.</p>
+
+      <div id="extras">
       <label class="l">Extras</label>
-      <label class="chk"><input type="checkbox" id="thermal"><span><b>Thermal moisture survey</b> <span id="thermal-p"></span><br><span class="muted">Finds likely trapped water under flat roofs. Flown about an hour after sunset, after a dry, sunny day.</span></span></label>
       <label class="chk"><input type="checkbox" id="nextday"><span><b>Next-day report</b> <span id="nextday-p"></span><br><span class="muted">Report within 24 hours of the flight.</span></span></label>
+      </div>
 
       <div class="row2">
         <div><label class="l" for="contact">Site contact (optional)</label><input type="text" id="contact" placeholder="Name and phone"></div>
@@ -135,7 +145,7 @@ textarea{min-height:76px;resize:vertical;}
 var API = 'https://roofscan-api.tiny-voice-ac40.workers.dev';
 var $ = function(id){ return document.getElementById(id); };
 var email = '', token = '', prices = null;
-var BANDS = [['Small','Under 500 m²'],['Medium','500 to 1,500 m²'],['Large','1,500 to 4,000 m²'],['Very large','Over 4,000 m²']];
+var BANDS = [['Small','Under 500 m²'],['Medium','500 to 1,500 m²'],['Large','1,500 to 3,000 m²'],['Very large','Over 3,000 m²']];
 function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
 function money(n){ return '£' + Number(n || 0).toLocaleString('en-GB'); }
 function fmtDate(d){ if (!d) return ''; var x = new Date(d + 'T12:00:00Z'); return x.toLocaleDateString('en-GB', {weekday:'short', day:'numeric', month:'short'}); }
@@ -152,19 +162,29 @@ function renderBands(){
     var p = b[0] === 'Very large' ? 'We quote' : money(prices[b[0]]);
     return '<label class="opt"><input type="radio" name="band" value="' + b[0] + '"' + (i === 1 ? ' checked' : '') + '><div><b>' + b[0] + '</b><small>' + b[1] + '</small><em>' + p + '</em></div></label>';
   }).join('');
+  // An older Worker sends no thermal only prices: then the thermal only choice is hidden rather than booked as a roof report.
+  if (!prices.ThermalOnlyBy) { $('svc-thermal-o').classList.add('hide'); $('svcs').classList.remove('three'); $('svcs').classList.add('two'); }
   thermalLabel();
   $('nextday-p').textContent = '+' + money(prices.NextDay);
-  document.querySelectorAll('input[name=band], input[name=when], #thermal, #nextday').forEach(function(el){ el.addEventListener('change', update); });
+  document.querySelectorAll('input[name=band], input[name=when], input[name=svc], #nextday').forEach(function(el){ el.addEventListener('change', update); });
 }
 function val(name){ var el = document.querySelector('input[name=' + name + ']:checked'); return el ? el.value : ''; }
-// Thermal is priced by roof size (or the account's agreed thermal price, which applies to every size).
+// Thermal follows the band's report price: on its own it is the report price + 200, with a report it adds 400
+// (the Worker sends the figures, including any price agreed in the account's contract).
+function svc(){ return val('svc') || 'report'; }
 function thermalFor(band){ return (prices.ThermalBy && prices.ThermalBy[band]) || prices.Thermal || 0; }
+function thermalOnlyFor(band){ return (prices.ThermalOnlyBy && prices.ThermalOnlyBy[band]) || 0; }
 function thermalLabel(){
-  var band = val('band');
-  $('thermal-p').textContent = band === 'Very large' ? '(quoted with the roof)' : (band ? '+' + money(thermalFor(band)) : 'from +' + money(thermalFor('Small')));
+  var band = val('band') || 'Small', vl = band === 'Very large';
+  $('svc-report-p').textContent = vl ? 'We quote' : money(prices[band]);
+  $('svc-both-p').textContent = vl ? 'We quote' : money(prices[band] + thermalFor(band));
+  $('svc-thermal-p').textContent = vl ? 'We quote' : money(thermalOnlyFor(band));
 }
 function update(){
-  var band = val('band'), when = val('when'), th = $('thermal').checked, sel = $('time');
+  var band = val('band'), when = val('when'), service = svc(), th = service !== 'report', sel = $('time');
+  // Next day is a report option, so it is not offered for a thermal survey on its own.
+  $('extras').classList.toggle('hide', service === 'thermal');
+  if (service === 'thermal') $('nextday').checked = false;
   $('date-row').classList.toggle('hide', when !== 'date');
   // Thermal surveys only work after dark: the time is fixed to the evening.
   sel.value = th ? 'Evening (after sunset)' : (sel.value === 'Evening (after sunset)' ? 'Any time' : sel.value);
@@ -173,7 +193,7 @@ function update(){
   if (flexDesc) flexDesc.textContent = th ? 'Any evening in the next 5 working days, after sunset.' : 'Within the next 5 working days. Usually quickest.';
   if (band === 'Very large') { thermalLabel(); $('price').textContent = 'We quote'; $('price-l').textContent = 'Very large roofs are quoted before flying'; return; }
   thermalLabel();
-  var p = prices[band] + ($('thermal').checked ? thermalFor(band) : 0) + ($('nextday').checked ? prices.NextDay : 0);
+  var p = service === 'thermal' ? thermalOnlyFor(band) : prices[band] + (service === 'both' ? thermalFor(band) : 0) + ($('nextday').checked ? prices.NextDay : 0);
   $('price').textContent = money(p); $('price-l').textContent = 'Added to this month\'s invoice';
 }
 
@@ -215,12 +235,12 @@ async function book(){
   try {
     var r = await fetch(API + '/trade-submit', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
       body: JSON.stringify({ email: email, address: addr, band: val('band'), timing: when, date: $('date').value, time: $('time').value,
-        thermal: $('thermal').checked, nextDay: $('nextday').checked, siteContact: $('contact').value, ref: $('ref').value, notes: $('notes').value }) });
+        service: svc(), thermal: svc() === 'both', nextDay: svc() !== 'thermal' && $('nextday').checked, siteContact: $('contact').value, ref: $('ref').value, notes: $('notes').value }) });
     var d = {}; try { d = await r.json(); } catch(e) {}
     if (!r.ok) { err.textContent = d.error || 'That did not go through. Please try again.'; err.style.display = 'block'; return; }
     ok.textContent = 'Booked. ' + (when === 'flexible' ? 'We will fly it by ' + fmtDate(d.date) + '.' : 'Booked for ' + fmtDate(d.date) + '.') + (d.price == null ? ' We will send you a price before flying.' : ' ' + money(d.price) + ' added to this month\'s invoice.');
     ok.style.display = 'block';
-    ['addr','contact','ref','notes'].forEach(function(id){ $(id).value = ''; }); $('thermal').checked = false; $('nextday').checked = false; update();
+    ['addr','contact','ref','notes'].forEach(function(id){ $(id).value = ''; }); document.querySelector('input[name=svc][value=report]').checked = true; $('nextday').checked = false; update();
     loadAll();
   } catch(e) { err.textContent = 'Connection problem. Please try again.'; err.style.display = 'block'; }
   finally { btn.disabled = false; btn.textContent = 'Book this inspection'; }
