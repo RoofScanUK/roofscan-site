@@ -55,6 +55,12 @@ textarea{min-height:80px;resize:vertical;}
 #card-element{padding:12px;border:1px solid #D8D2C2;border-radius:10px;background:#fff;}
 ul.next{margin:8px 0 0 18px;font-size:14px;} ul.next li{margin-bottom:5px;}
 .hidden{display:none;}
+.oa{margin-top:4px;padding:14px;border:1.5px solid #E6D3A8;border-radius:12px;background:#FCF6E6;font-size:14px;line-height:1.6;color:#1C2B4A;}
+.oa b{display:block;font-size:15px;margin-bottom:2px;}
+.oa-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+.oa-row input{flex:1 1 180px;min-width:0;font-size:16px;background:#fff;}
+.oa-row .btn{flex:0 0 auto;padding:11px 18px;font-size:14px;}
+a.btn{display:inline-block;text-align:center;text-decoration:none;}
 a{color:#1E4080;}
 </style>
 </head>
@@ -72,8 +78,14 @@ a{color:#1E4080;}
 
   <!-- 1. Location -->
   <div class="card step" data-step="1">
-    <h2>Where is the property?</h2>
-    <p class="sub">We check a qualified thermal pilot covers your area.</p>
+    <h2>What do you need?</h2>
+    <div class="choices" id="svcChoices" role="radiogroup" aria-label="What do you need?">
+      <button type="button" class="choice on" id="svc-thermal" role="radio" aria-checked="true" onclick="pickSvc('thermal')"><b>Thermal leak scan</b><small>Flown after dark, for a damp patch or leak you can't trace</small></button>
+      <button type="button" class="choice" id="svc-both" role="radio" aria-checked="false" onclick="pickSvc('both')"><b>Report plus thermal</b><small>Add a roof condition report and save up to 10% on the two</small></button>
+    </div>
+    <p class="sub" style="margin:8px 0 0;">Only need a roof report? <a href="index.html?service=report#book" id="roofOnly">Get a roof report quote</a></p>
+    <h2 style="margin-top:20px;">Where is the property?</h2>
+    <p class="sub">We check a qualified thermal pilot covers your area, then you pick your address from the list.</p>
     <label for="pc">Postcode</label>
     <input id="pc" autocomplete="postal-code" placeholder="e.g. GU1 1AA" oninput="onPostcode()">
     <div class="info" id="pcInfo"></div>
@@ -192,6 +204,10 @@ var AD = [
 ];
 var st = { step:1, postcode:null, lat:null, lng:null, area:null, prop:null, pitch:'flat', counts:{chimneys:0,extensions:0,dormers:0,outbuildings:0}, price:null, addresses:[], areaReq:0 };
 var stripe = null, card = null, piSecret = null, piId = null, paid = false, measuring = null, pcTimer = null, leadId = null, town = '', leadChain = Promise.resolve();
+// Service-first (18 Nov 2026): the first question is thermal on its own or a report plus thermal. The "Add a roof
+// condition report" box in step 2 is the same choice, so the two always agree. addrFill is the address the list put in
+// the details form, so it can be replaced when the address changes but never over something typed by hand.
+var addrFill = '';
 
 function $(id){ return document.getElementById(id); }
 function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
@@ -203,8 +219,18 @@ function init(){
   $('pitchChoices').innerHTML = PITCH.map(function(p){ return '<button type="button" class="choice' + (p.id === st.pitch ? ' on' : '') + '" data-v="' + p.id + '" onclick="pick(\'pitch\',this)"><b>' + p.label + '</b><small>' + p.desc + '</small></button>'; }).join('');
   $('addons').innerHTML = AD.map(function(a){ return '<div class="ctr"><span>' + a.label + ' <small style="color:#6B7A8D;">+£' + a.unit + ' each</small></span><span><button type="button" onclick="count(\'' + a.id + '\',-1)">−</button><span class="n" id="n-' + a.id + '">0</span><button type="button" onclick="count(\'' + a.id + '\',1)">+</button></span></div>'; }).join('');
   $('heating').addEventListener('change', function(){ $('heatNote').classList.toggle('hidden', this.value === 'Yes' || this.value === ''); });
+  var q = {}; try { var u = new URLSearchParams(location.search); q.service = u.get('service') || ''; q.pc = (u.get('pc') || '').trim(); } catch(e) {}
+  pickSvc(q.service === 'both' ? 'both' : 'thermal');
   go(1);
+  // The main quote page sends the postcode across (?pc=) so it is not typed twice.
+  if(q.pc && /^[A-Za-z]{1,2}[0-9][A-Za-z0-9]?\s*[0-9][A-Za-z]{2}$/.test(q.pc)){ $('pc').value = q.pc.toUpperCase(); onPostcode(); }
 }
+function pickSvc(s){
+  ['thermal','both'].forEach(function(k){ var b = $('svc-' + k); if(b){ b.classList.toggle('on', k === s); b.setAttribute('aria-checked', k === s ? 'true' : 'false'); } });
+  $('withRoof').checked = (s === 'both');
+  $('addonWrap').classList.toggle('hidden', s !== 'both');
+}
+function roofLink(pc){ return 'index.html?service=report' + (pc ? '&pc=' + encodeURIComponent(pc) : '') + '#book'; }
 function go(n){
   st.step = n;
   document.querySelectorAll('.step').forEach(function(el){ el.classList.toggle('hidden', Number(el.dataset.step) !== n); });
@@ -220,11 +246,12 @@ function pick(kind, el){
   err(2, '');
 }
 function count(id, d){ var a = AD.filter(function(x){ return x.id === id; })[0]; st.counts[id] = Math.max(0, Math.min(a.max, st.counts[id] + d)); $('n-' + id).textContent = st.counts[id]; }
-function onBundle(){ $('addonWrap').classList.toggle('hidden', !$('withRoof').checked); }
+function onBundle(){ pickSvc($('withRoof').checked ? 'both' : 'thermal'); }
 
 // ── Postcode, coverage, address and roof area (same Worker lookups as the main quote page) ──
 function onPostcode(){
   clearTimeout(pcTimer); st.postcode = null; st.area = null; $('addrWrap').classList.add('hidden'); err(1, '');
+  if(addrFill && $('address').value === addrFill) $('address').value = ''; addrFill = '';
   var v = $('pc').value.trim(); if(!v){ $('pcInfo').textContent = ''; return; }
   $('pcInfo').textContent = 'Checking postcode…';
   pcTimer = setTimeout(function(){ checkPostcode(v); }, 500);
@@ -238,8 +265,18 @@ async function checkPostcode(raw){
     var res = d.result, cov = null;
     try { var cr = await fetch(API + '/coverage?service=thermal&postcode=' + encodeURIComponent(res.postcode)); cov = cr.ok ? await cr.json() : null; } catch(e) {}
     if(!cov){ $('pcInfo').textContent = "Couldn't check that postcode right now. Please try again in a moment."; return; }
-    if(!cov.covered){ $('pcInfo').innerHTML = "We don't offer thermal scans at " + esc(res.postcode) + ' yet. Email <a href="mailto:info@roofscanuk.co.uk">info@roofscanuk.co.uk</a> and we\'ll tell you when we do.'; return; }
-    st.postcode = res.postcode; st.lat = res.latitude; st.lng = res.longitude; town = res.admin_district || '';
+    if(!cov.covered){
+      // No thermal-approved pilot reaches it. Offer the roof report where that is covered, else the waiting list.
+      var roof = null;
+      try { var rr = await fetch(API + '/coverage?postcode=' + encodeURIComponent(res.postcode)); roof = rr.ok ? await rr.json() : null; } catch(e) {}
+      var pcE = esc(res.postcode), box = function(head, body, extra){ return '<div class="oa" id="oaBox"><b>' + head + '</b>' + body + (extra || '') + waitForm(res.postcode, res.admin_district || '') + '</div>'; };
+      $('roofOnly').href = roofLink(res.postcode);
+      if(roof && roof.covered) $('pcInfo').innerHTML = box('Thermal scans are not available in your area yet.', 'We can do a roof report at ' + pcE + ': close-up drone photos of every part of the roof and a written report.',
+        '<div class="row" style="margin-top:12px;"><a class="btn" id="roofInstead" href="' + roofLink(res.postcode) + '">Get a roof report quote</a></div><div style="margin-top:12px;">Or leave your email and we\'ll tell you when thermal scans reach you.</div>');
+      else $('pcInfo').innerHTML = box('Thermal scans are not available in your area yet.', (roof ? 'We don\'t reach ' + pcE + ' yet for any of our services. ' : '') + 'We cover the south of England for now, growing across the UK. Leave your email and we\'ll tell you when we reach you.');
+      return;
+    }
+    st.postcode = res.postcode; st.lat = res.latitude; st.lng = res.longitude; town = res.admin_district || ''; $('roofOnly').href = roofLink(res.postcode);
     $('pcInfo').textContent = res.postcode + (cov.travel > 0 ? ' · +£' + cov.travel + ' mileage' : ' · no mileage charge');
     measure(res.latitude, res.longitude);
     loadAddresses(res.postcode, res.latitude, res.longitude);
@@ -264,8 +301,39 @@ async function loadAddresses(pc, lat, lng){
   } catch(e) {}
 }
 function onAddress(){
-  var v = $('addrSel').value, a = st.addresses[Number(v)];
-  if(a){ measure(a.lat, a.lng); if(!$('address').value) $('address').value = a.label; }
+  var v = $('addrSel').value, a = v === '' || v === 'none' ? null : st.addresses[Number(v)], el = $('address');
+  if(a){
+    measure(a.lat, a.lng);
+    // Fills the property address on the details screen; replaced if they pick another, never over their own typing.
+    if(!el.value.trim() || el.value === addrFill){ el.value = addrFill = tidyAddress(a.label, st.postcode); }
+  } else if(addrFill && el.value === addrFill){ el.value = ''; addrFill = ''; }
+}
+// "12, CHURCH LANE, WORTHING, BN11 1AA" becomes "12, Church Lane, Worthing, BN11 1AA" (words with numbers kept as they are).
+function tidyAddress(label, pc){
+  var t = String(label || '').trim().replace(/\s*,\s*/g, ', ');
+  var p = String(pc || '').trim();
+  if(p) t = t.replace(new RegExp('[,\\s]*' + p.replace(/\s+/g, '\\s*') + '\\s*$', 'i'), '');
+  if(t === t.toUpperCase()) t = t.toLowerCase().replace(/(^|[\s,(-])([a-z])/g, function(m, x, y){ return x + y.toUpperCase(); });
+  t = t.replace(/\b([0-9]+[a-z])\b/g, function(m){ return m.toUpperCase(); });
+  return p ? t + ', ' + p : t;
+}
+// One email box for the waiting list: saved to the Quotes row with the postcode, its area and the service.
+function waitForm(pc, tw){
+  var a = "'" + String(pc).replace(/[^A-Za-z0-9 ]/g, '') + "','" + String(tw).replace(/[^A-Za-z \-]/g, '') + "'";
+  return '<div class="oa-row"><input id="waitEmail" type="email" inputmode="email" autocomplete="email" spellcheck="false" autocapitalize="off" aria-label="Email for updates" placeholder="you@email.com" onkeydown="if(event.key===\'Enter\'){event.preventDefault();joinWait(' + a + ');}">'
+    + '<button type="button" class="btn" id="waitBtn" onclick="joinWait(' + a + ')">Notify me</button></div><div class="err" id="waitErr" role="alert"></div>';
+}
+async function joinWait(pc, tw){
+  var em = ($('waitEmail') ? $('waitEmail').value : '').trim(), b = $('waitBtn');
+  $('waitErr').textContent = '';
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(em)){ $('waitErr').textContent = 'Check your email address, for example you@example.com.'; $('waitEmail').focus(); return; }
+  if(b.disabled) return; b.disabled = true;
+  try {
+    var r = await fetch(API + '/area-waitlist', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ email: em, postcode: pc, town: tw, service: $('withRoof').checked ? 'both' : 'thermal' }) });
+    var d = await r.json().catch(function(){ return {}; });
+    if(!r.ok){ b.disabled = false; $('waitErr').textContent = d.error || 'Please check your email address.'; return; }
+    var row = $('oaBox').querySelector('.oa-row'); if(row) row.outerHTML = '<div style="margin-top:10px;font-weight:600;">Thanks, you\'re on the list. We\'ll email you when it\'s available there.</div>';
+  } catch(e){ b.disabled = false; $('waitErr').textContent = "We couldn't save that just now. Please try again in a moment."; }
 }
 
 function next(n){

@@ -265,6 +265,14 @@ textarea{resize:vertical;}
 .progress-label{font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .progress-label.active{color:var(--navy);font-weight:600;}
 .prop-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px;}
+.svc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:4px;}
+.svc-grid .prop-btn{min-width:0;}
+.oa-box{margin-top:4px;padding:16px;border:1.5px solid #E6D3A8;border-radius:14px;background:#FCF6E6;color:var(--navy);font-size:14px;line-height:1.6;}
+.oa-box b{display:block;font-size:15px;margin-bottom:2px;}
+.oa-row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
+.oa-row input{flex:1 1 180px;min-width:0;padding:12px 13px;border:1px solid var(--line);border-radius:10px;font-family:inherit;font-size:16px;background:#fff;color:var(--navy);}
+.oa-row .btn{flex:0 0 auto;padding:12px 18px;font-size:14px;}
+.oa-ok{margin-top:10px;font-weight:600;}
 .prop-btn{background:var(--white);color:var(--navy);border:1px solid var(--line);border-radius:2px;padding:20px;cursor:pointer;font-family:inherit;text-align:left;transition:border-color .15s,background-color .15s,color .15s,box-shadow .15s,transform .15s;}
 .prop-btn.sel{background:var(--navy);color:var(--paper);border-color:var(--navy);}
 .prop-btn .badge{margin-bottom:12px;}
@@ -1500,8 +1508,17 @@ section[id],#how-it-works{scroll-margin-top:88px;}
         </div>
 
         <div id="book-step-1">
-          <h2 style="font-size:1.15rem;margin:0 0 6px;">Where is the property?</h2>
-          <p class="muted" style="font-size:13px;margin:0 0 22px;line-height:1.6;">Enter the postcode and we'll start working out your exact price in the background while you answer a couple of quick questions.</p>
+          <h2 style="font-size:1.15rem;margin:0 0 6px;">What do you need?</h2>
+          <p class="muted" style="font-size:13px;margin:0 0 16px;line-height:1.6;">Pick one to start.</p>
+          <div class="svc-grid" id="svc-grid" role="radiogroup" aria-label="What do you need?">
+            <button type="button" class="prop-btn svc-btn" id="svc-report" role="radio" aria-checked="false" onclick="pickService('report')"><div class="t">Roof report</div><div class="d">Close-up drone photos of every part of the roof, condition ratings and a written report.</div></button>
+            <button type="button" class="prop-btn svc-btn" id="svc-thermal" role="radio" aria-checked="false" onclick="pickService('thermal')"><div class="t">Thermal leak scan</div><div class="d">For a damp patch or leak you can't trace. Flown after dark, it shows patterns consistent with trapped moisture or heat loss, and works best on flat roofs.</div></button>
+            <button type="button" class="prop-btn svc-btn" id="svc-both" role="radio" aria-checked="false" onclick="pickService('both')"><div class="t">Report plus thermal</div><div class="d">Both reports booked together, and save up to 10% on the two.</div></button>
+          </div>
+          <div id="svc-msg" class="muted" aria-live="polite" style="font-size:13px;margin-top:10px;display:none;"></div>
+          <div id="pc-block" style="display:none;">
+          <h2 style="font-size:1.15rem;margin:22px 0 6px;">Where is the property?</h2>
+          <p class="muted" style="font-size:13px;margin:0 0 18px;line-height:1.6;">Enter the postcode, then pick your address from the list if it shows. We start working out your exact price straight away.</p>
           <div class="town-wrap">
             <input id="postcode-input" name="postcode" aria-label="Postcode" placeholder="e.g. SW1A 1AA" autocomplete="postal-code" autocapitalize="characters" spellcheck="false" style="text-transform:uppercase;" oninput="onPostcodeInput()">
             <button class="town-clear" id="postcode-clear" type="button" aria-label="Clear postcode" style="display:none;" onclick="clearPostcode()">×</button>
@@ -1511,6 +1528,7 @@ section[id],#how-it-works{scroll-margin-top:88px;}
             <label for="address-select" style="display:block;font-size:11px;font-weight:600;color:#6B7A8D;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Select your address</label>
             <select id="address-select" onchange="onAddressSelect()" style="width:100%;padding:11px 14px;border:1px solid var(--line);border-radius:8px;font-size:15px;font-family:inherit;background:var(--paper);color:var(--navy);"></select>
             <div id="address-select-note" class="muted" style="font-size:12px;margin-top:8px;"></div>
+          </div>
           </div>
           <button class="btn full" id="step1-next" onclick="nextFromStep(1)">Next: about your property →</button>
         </div>
@@ -1801,6 +1819,8 @@ window.addEventListener('DOMContentLoaded', ()=>{
   // Region pages link here with ?pc=POSTCODE so the quote starts with it filled in.
   try{ const pc=(new URLSearchParams(location.search).get('pc')||'').trim().toUpperCase();
     if(/^[A-Z]{1,2}[0-9][A-Z0-9]?\s*[0-9][A-Z]{2}$/.test(pc)) startFromHero(pc); }catch(e){}
+  // The thermal quote page links back here with ?service=report when someone wants a roof report instead.
+  try{ if((new URLSearchParams(location.search).get('service')||'') === 'report'){ if(!document.getElementById('page-book').classList.contains('active')) go('book'); pickService('report'); } }catch(e){}
 });
 
 // Gentle scroll-reveal — rewards continued scrolling with a soft fade-in.
@@ -1856,7 +1876,7 @@ const AD=[
   {id:"dormers",label:"Dormer windows",unit:20,max:8,desc:"Each dormer"},
   {id:"outbuildings",label:"Outbuildings / garages",unit:40,max:5,desc:"Separate structures"},
 ];
-const SL=["Location","Property","Features","Details","Your price","Book"];
+const SL=["Start","Property","Features","Details","Your price","Book"];
 const EXPRESS_FEE=99;   // flat express fee, mirrored in the Worker
 // Storm Check: arriving from a Storm Check ad link (?sc=CODE) makes Express free while the code is live.
 // The Worker checks the code again at booking, so this only changes what the page shows.
@@ -1912,20 +1932,9 @@ async function fetchAddressesForPostcode(postcode, centroidLat, centroidLng){
     const data = await res.json();
     return (data.addresses||[]).map((a,i)=>({ id:'addr'+i, label:a.label, lat:a.lat, lng:a.lng }));
   }catch(e){
-    // Inline fallback stub — only reached if the worker itself is unreachable.
-    await new Promise(r=>setTimeout(r, 300 + Math.random()*300));
-    if(Math.random() < 0.1) return [];
-    const count = 4 + Math.floor(Math.random()*8);
-    const list = [];
-    for(let i=1;i<=count;i++){
-      list.push({
-        id: 'addr'+i,
-        label: (i*2-1)+' Example Road, '+postcode,
-        lat: centroidLat + (Math.random()-0.5)*0.0015,
-        lng: centroidLng + (Math.random()-0.5)*0.0015,
-      });
-    }
-    return list;
+    // Lookup failed: no list (18 Nov 2026). It used to make up "Example Road" addresses here, which a customer could
+    // pick and which then filled the details screen. Now the list stays hidden and they type the address.
+    return [];
   }
 }
 
@@ -1939,6 +1948,10 @@ let roofAreaPromise=null, roofAreaInfo=null;
 // picking the exact one (when available) gives the roof-area lookup a much better chance of
 // matching the right building instead of just the postcode's general centroid.
 let addressList=[], selectedAddress=null;
+// Service-first quote (18 Nov 2026): the first question is what the customer wants. A roof report carries on here;
+// a thermal leak scan, or a report plus thermal, is quoted and booked on thermal-quote.html (unchanged prices and
+// booking), which checks thermal coverage right after the postcode. quoteService is null until they pick.
+let quoteService=null, streetAutofill='';
 // True once a manually-entered roof area overrides the automated/fallback estimate, from the
 // "get an exact price" option shown when the automated lookup couldn't confirm the roof.
 let manualAreaM2=null;
@@ -2004,6 +2017,33 @@ function stepCount(id,d,max){
   document.getElementById('plus-'+id).disabled = counts[id]===max;
 }
 
+function pickService(s){
+  formErr('book-step-1','');
+  const msg = document.getElementById('svc-msg');
+  ['report','thermal','both'].forEach(k=>{ const b = document.getElementById('svc-'+k); if(b){ b.classList.toggle('sel', k===s); b.setAttribute('aria-checked', k===s ? 'true' : 'false'); } });
+  if(s === 'thermal' || s === 'both'){
+    // Thermal has its own quote page: carry the service and any postcode already typed across, so nothing is asked twice.
+    const pcv = (document.getElementById('postcode-input').value || '').trim();
+    const url = 'thermal-quote.html?service=' + s + (pcv ? '&pc=' + encodeURIComponent(pcv) : '');
+    if(msg){ msg.textContent = 'Opening the thermal leak scan quote…'; msg.style.display = 'block'; }
+    quoteService = null;
+    location.href = url;
+    return;
+  }
+  quoteService = 'report';
+  if(msg){ msg.textContent = ''; msg.style.display = 'none'; }
+  document.getElementById('pc-block').style.display = 'block';
+  const inp = document.getElementById('postcode-input');
+  // A postcode carried in (hero check, region page link) is checked now if it has not been already.
+  if(inp.value.trim() && !postcodeInfo && !postcodeTimer) onPostcodeInput();
+  else if(!inp.value.trim()) { try{ inp.focus({preventScroll:true}); }catch(e){} }
+}
+// Coming back with the browser's Back button after choosing thermal: clear the "Opening…" note and the thermal tick.
+window.addEventListener('pageshow', function(){
+  if(quoteService === 'report') return;
+  ['thermal','both'].forEach(k=>{ const b = document.getElementById('svc-'+k); if(b){ b.classList.remove('sel'); b.setAttribute('aria-checked','false'); } });
+  const m = document.getElementById('svc-msg'); if(m){ m.textContent = ''; m.style.display = 'none'; }
+});
 function onPostcodeInput(){
   formErr('book-step-1','');
   clearTimeout(postcodeTimer);
@@ -2012,6 +2052,7 @@ function onPostcodeInput(){
   roofAreaPromise = null;
   addressList = [];
   selectedAddress = null;
+  clearStreetAutofill();
   manualAreaM2 = null;
   document.getElementById('address-select-wrap').style.display='none';
   document.getElementById('postcode-clear').style.display='none';
@@ -2052,9 +2093,11 @@ async function checkPostcode(raw){
     }
     if(!cov.covered){
       postcodeInfo = null;
-      info.innerHTML = "We don't cover "+postcode+" yet, but we're growing. Leave your email and we'll tell you as soon as we do."
-        + '<div style="display:flex;gap:8px;margin-top:8px;"><input id="wait-email" type="email" aria-label="Email for coverage updates" autocomplete="email" spellcheck="false" placeholder="you@email.com" style="flex:1;padding:9px 11px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:14px;">'
-        + '<button class="btn" style="flex:none;padding:9px 14px;font-size:13px;" onclick="joinWaitlist(\''+postcode+'\',\''+(admin_district||'').replace(/'/g,'')+'\')">Notify me</button></div>';
+      // Outside the area: one short message and ONE email box, so joining the waiting list is a single tap.
+      const pcSafe = String(postcode).replace(/[^A-Z0-9 ]/gi,''), townSafe = String(admin_district||'').replace(/[^A-Za-z \-]/g,'');
+      info.innerHTML = '<div class="oa-box" id="oa-box"><b>We don\'t reach '+pcSafe+' yet.</b>We cover the south of England for now, growing across the UK. Leave your email and we\'ll tell you when we reach you.'
+        + '<div class="oa-row"><input id="wait-email" type="email" inputmode="email" aria-label="Email for coverage updates" autocomplete="email" spellcheck="false" autocapitalize="off" placeholder="you@email.com" onkeydown="if(event.key===\'Enter\'){event.preventDefault();joinWaitlist(\''+pcSafe+'\',\''+townSafe+'\');}">'
+        + '<button type="button" class="btn" id="wait-btn" onclick="joinWaitlist(\''+pcSafe+'\',\''+townSafe+'\')">Notify me</button></div></div>';
       info.style.display = 'block';
       return;
     }
@@ -2078,14 +2121,18 @@ async function checkPostcode(raw){
   }
 }
 async function joinWaitlist(postcode, town){
-  const el = document.getElementById('wait-email'), info = document.getElementById('postcode-info');
+  const el = document.getElementById('wait-email'), box = document.getElementById('oa-box'), btn = document.getElementById('wait-btn');
   const email = el ? el.value.trim() : '';
+  formErr('book-step-1','');
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)){ formErr('book-step-1', 'Check your email address, for example you@example.com.', 'wait-email'); return; }
+  if(btn){ if(btn.disabled) return; btn.disabled = true; }
   try{
-    const r = await fetch(LM_API_BASE+'/area-waitlist', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email, postcode, town }) });
+    // service is saved on the Quotes row with the postcode area (older Workers ignore it).
+    const r = await fetch(LM_API_BASE+'/area-waitlist', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email, postcode, town, service: 'report' }) });
     const d = await r.json().catch(()=>({}));
-    if(!r.ok){ formErr('book-step-1', d.error || 'Please check your email address.', 'wait-email'); return; }
-    info.textContent = "Thanks. We'll email you as soon as we cover "+postcode+".";
-  }catch(e){ formErr('book-step-1', "We couldn't save that just now. Please try again in a moment.", 'wait-email'); }
+    if(!r.ok){ if(btn) btn.disabled = false; formErr('book-step-1', d.error || 'Please check your email address.', 'wait-email'); return; }
+    if(box) box.innerHTML = '<b>Thanks, you\'re on the list.</b>We\'ll email you when we reach '+postcode+'.';
+  }catch(e){ if(btn) btn.disabled = false; formErr('book-step-1', "We couldn't save that just now. Please try again in a moment.", 'wait-email'); }
 }
 function clearPostcode(){
   postcodeInfo = null;
@@ -2093,6 +2140,7 @@ function clearPostcode(){
   roofAreaPromise = null;
   addressList = [];
   selectedAddress = null;
+  clearStreetAutofill();
   manualAreaM2 = null;
   document.getElementById('address-select-wrap').style.display='none';
   document.getElementById('postcode-input').value='';
@@ -2129,11 +2177,18 @@ async function loadAddressList(postcode, centroidLat, centroidLng){
   }
 }
 
+// Takes away an address the list filled in (never one the customer typed) when the address or postcode changes.
+function clearStreetAutofill(){
+  const el = document.getElementById('c-street');
+  if(el && streetAutofill && el.value === streetAutofill) el.value = '';
+  streetAutofill = '';
+}
 function onAddressSelect(){
   const sel = document.getElementById('address-select');
   const note = document.getElementById('address-select-note');
   if(sel.value === '' || sel.value === '__none__'){
     selectedAddress = null;
+    clearStreetAutofill();
     note.textContent = sel.value === '__none__' ? "No problem, we'll use your postcode's general location." : '';
     return;
   }
@@ -2150,6 +2205,17 @@ function onAddressSelect(){
   roofAreaPromise = fetchRoofFootprintArea(addr.lat, addr.lng).then(areaResult=>{ roofAreaInfo = areaResult; });
 }
 
+// Turns a looked-up address ("12, CHURCH LANE, WORTHING, BN11 1AA") into the street line for the details form:
+// the postcode is dropped (it is shown locked below) and capital-only words get normal capitals. Words with
+// numbers in them (flat 2A, 12B) are left as they are.
+function addressLine(label, postcode){
+  let t = String(label || '').trim();
+  const pc = String(postcode || '').trim();
+  if(pc){ const re = new RegExp('[,\\s]*' + pc.replace(/\s+/g,'\\s*') + '\\s*$', 'i'); t = t.replace(re, ''); }
+  t = t.replace(/\s*,\s*/g, ', ').replace(/,\s*$/,'');
+  if(t === t.toUpperCase()) t = t.toLowerCase().replace(/(^|[\s,(-])([a-z])/g, (m, a, b) => a + b.toUpperCase());
+  return t.replace(/\b([0-9]+[a-z])\b/g, m => m.toUpperCase());
+}
 function checkContactFields(){
   ['c-name','c-email','c-phone','c-street'].forEach(id => { const el = document.getElementById(id); if(el && el.value.trim() && el.getAttribute('aria-invalid')==='true') el.setAttribute('aria-invalid','false'); });
   contact.name = document.getElementById('c-name').value;
@@ -2185,7 +2251,7 @@ function goStep(n){
   for(let i=1;i<=6;i++){ const el=document.getElementById('book-step-'+i); if(el) el.style.display = (i===n?'block':'none'); }
   renderProgress();
   const titles = {
-    1:["Where's the property?","We'll start working out your price the moment you enter your postcode."],
+    1:["What do you need?","Pick a service, then enter the postcode. We start working out your price straight away."],
     2:["Tell us about your property","Answer a few quick questions and see your price instantly, no call, no obligation."],
     3:["Tell us about your property","Answer a few quick questions and see your price instantly, no call, no obligation."],
     4:["Your details","We'll use these to confirm your booking and deliver your report."],
@@ -2208,9 +2274,11 @@ function goStep(n){
     if(pcEl) pcEl.textContent = postcodeInfo ? postcodeInfo.postcode : '—';
     // If they picked a specific address in step 1, prefill the street field with it (still
     // editable, e.g. to add a flat number) rather than making them retype what we already know.
+    // The address picked from the list fills the field. It is replaced if they pick a different address later, but
+    // never over something they typed themselves.
     const streetEl = document.getElementById('c-street');
-    if(streetEl && selectedAddress && !streetEl.value){
-      streetEl.value = selectedAddress.label.replace(', '+postcodeInfo.postcode, '');
+    if(streetEl && selectedAddress && postcodeInfo && (!streetEl.value.trim() || streetEl.value === streetAutofill)){
+      streetEl.value = streetAutofill = addressLine(selectedAddress.label, postcodeInfo.postcode);
     }
     checkContactFields();
   }
@@ -2220,6 +2288,7 @@ function goStep(n){
 
 function nextFromStep(n){
   formErr('book-step-'+n, '');
+  if(n===1 && quoteService!=='report'){ formErr('book-step-1', 'Choose what you need first.', 'svc-grid'); return; }
   if(n===1 && !postcodeInfo){ formErr('book-step-1', 'Enter a full postcode in our area, for example SW1A 1AA.', 'postcode-input'); return; }
   if(n===2 && !prop){ formErr('book-step-2', 'Pick the type of property so we can work out the roof size.', 'prop-grid'); return; }
   if(n===4){
