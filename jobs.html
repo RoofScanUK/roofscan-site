@@ -216,7 +216,7 @@ const queue = () => get(LS.queue, []);
 function enqueue(item){ const q = queue(); q.push(Object.assign({qid: Date.now()+'-'+Math.random().toString(36).slice(2,6)}, item)); put(LS.queue, q); }
 async function sendAction(a){
   const path = { claim:'/contractor/claim', complete:'/contractor/complete', standdown:'/contractor/standdown', reportPass:'/contractor/report-pass' }[a.type];
-  return api(path, 'POST', { jobId:a.jobId, kind:a.kind, both:!!a.both, reason:a.reason, reasonCode:a.reasonCode, link:a.link, conditions:a.conditions, extras:a.extras, extrasNote:a.extrasNote, droneId:a.droneId, siteNotes:a.siteNotes, siteSafe: a.siteSafe === true });
+  return api(path, 'POST', { jobId:a.jobId, kind:a.kind, both:!!a.both, reason:a.reason, reasonCode:a.reasonCode, link:a.link, conditions:a.conditions, extras:a.extras, measure:a.measure, extrasNote:a.extrasNote, droneId:a.droneId, siteNotes:a.siteNotes, siteSafe: a.siteSafe === true });
 }
 async function act(a){
   // apply to the cached board right away so the screen responds even with no signal
@@ -480,7 +480,7 @@ function mineCard(j){
   let html = `<div class="card mine" id="job-${j.id}"><span class="tag ${j.scanMine?'t-scan':'t-rep'}">${j.scanMine?'scan':'report'}</span>${tradeTags(j)}<div class="jt">${esc(j.client)}</div><div class="jm">${esc(j.address)}${j.phone?' · '+esc(j.phone):''}</div>${j.siteContact?`<div class="jm">Site contact: ${esc(j.siteContact)}</div>`:''}<div class="jm">${esc(fmtWhen(j))}</div>`;
   const myPay = j.scanMine ? j.scanPay : j.reportPay;
   if (j.scheduleNote && /moved|stood down/i.test(j.scheduleNote)) html += `<div class="jm" style="color:var(--am,#B26A00);">Latest change: ${esc(j.scheduleNote.replace(/^\S+ \S+ UTC /,''))}</div>`;
-  if (myPay) html += `<div class="jm" style="color:var(--g);font-weight:600;">Your pay for this job: ${money(myPay)}${j.express?' · EXPRESS'+(j.reportMine?': report due within 24 hours of the flight':''):''}</div>`;
+  if (myPay) html += `<div class="jm" style="color:var(--g);font-weight:600;">Your pay for this job: ${money(myPay)}${j.express?' · EXPRESS'+(j.reportMine?': the client gets it within 24 hours of paying the balance, write it as soon as you can':''):''}</div>`;
   if (j.scanReminder && j.scanMine) html += `<div class="banner b-amber" style="margin-top:8px;">Not marked done yet. If it auto-releases you miss out on up to ${money(j.scanAtRisk)}.</div>`;
   if (j.reportReminder && j.reportMine) html += `<div class="banner b-amber" style="margin-top:8px;">Report not marked done yet. If it auto-releases you miss out on up to ${money(j.reportAtRisk)}.</div>`;
   if (j.scanMine && (j.flexible || j.trade)) html += timePanel(j);
@@ -705,6 +705,7 @@ function scanPanel(j){
   ${siteNotesPanel(j.id, st)}
   ${photoBox(j, st)}
   ${extrasPanel(j, st)}
+  ${measurePanel(j, st)}
   <div class="acts">
     <button class="btn" id="scanbtn-${j.id}" ${ready?'':'disabled'} onclick="completeScan('${j.id}')">Mark scan done</button>
     ${blocked?`<button class="btn warn" onclick="standDown('${j.id}')">Unsafe to fly. Stand down</button>`:`<button class="btn ghost" onclick="standDown('${j.id}')">Stand down (unsafe)</button>`}
@@ -735,6 +736,20 @@ function extrasPanel(j, st){
       <input class="inp" type="text" maxlength="300" placeholder="Optional note for RoofScan, e.g. second chimney at the back" value="${esc((st && st.exNote) || '')}" oninput="setExNote('${j.id}',this.value)" style="letter-spacing:0;width:100%;">` : ''}
     <label class="chk" style="margin-top:6px;"><input type="checkbox" ${st && st.exOk ? 'checked' : ''} onchange="setExOk('${j.id}',this.checked)"> <span>I have counted these on site</span></label></div>`;
 }
+// Measured roof (19 Nov 2026): the client booked an ESTIMATE. The pilot records the footprint (the area the building
+// covers on the ground, from the flight) and the roof shape, and RoofScan's system sets the final price from them (never
+// above the most the client was told). Pay is a percentage of the final price.
+function measurePanel(j, st){
+  if (!j.measure) return '';
+  const m = (st && st.ms) || {}, P = [['pitched','Pitched'],['flat','Flat'],['mixed','Mixed']];
+  return `<div style="margin-top:12px;border-top:1px solid var(--br);padding-top:10px;"><div class="jt" style="font-size:13px;">Measured roof</div>
+    <div class="muted" style="font-size:12px;margin:4px 0;">The client was given an estimate for about ${esc(j.measure.footprint)} m²${j.measure.pitch === 'unsure' ? ' (not sure of the roof shape)' : ', ' + esc(j.measure.pitch)}. Enter what you measured: their final price, and your pay, follow it.</div>
+    <label class="muted" style="font-size:12px;" for="msfp-${j.id}">Footprint (m²)</label>
+    <input class="inp" id="msfp-${j.id}" type="number" inputmode="decimal" min="10" max="5000" value="${esc(m.fp || '')}" oninput="setMs('${j.id}','fp',this.value)" style="letter-spacing:0;width:100%;">
+    <div style="display:flex;gap:6px;margin-top:6px;">${P.map(([k, l]) => `<button class="btn ${m.pitch === k ? '' : 'ghost'}" style="flex:1;padding:6px 8px;" onclick="setMs('${j.id}','pitch','${k}')">${l}</button>`).join('')}</div></div>`;
+}
+function setMs(id, k, v){ const c = get(LS.checks, {}); c[id] = c[id] || {}; c[id].ms = Object.assign({}, c[id].ms || {}, { [k]: v }); put(LS.checks, c); if (k === 'pitch') render(); else { const sb = document.getElementById('scanbtn-'+id); if (sb) sb.disabled = !canMarkScan(id); } }
+function msOk(st){ const m = (st && st.ms) || {}, n = Number(m.fp); return isFinite(n) && n >= 10 && n <= 5000 && ['pitched','flat','mixed'].includes(m.pitch); }
 function setEx(id, k, d){
   const j = (board && board.mine || []).find(x => x.id === id) || {}, c = get(LS.checks, {}); c[id] = c[id] || {};
   const cur = exCounts(j, c[id]); c[id].ex = Object.assign({}, cur, { [k]: Math.max(0, Math.min(EXTRA_MAX[k], cur[k] + d)) }); c[id].exOk = false;
@@ -746,6 +761,7 @@ function canMarkScan(id){
   const st = get(LS.checks, {})[id] || {}, p = PH[id];
   const jx = (board && board.mine || []).find(x => x.id === id);
   if (jx && jx.extras && !st.exOk) return false;
+  if (jx && jx.measure && !msOk(st)) return false;
   const fresh = st.checkedAt && (Date.now() - st.checkedAt) < 6*3600*1000;
   const haveMedia = (p && p.count >= MIN_PHOTOS && !p.busy) || okLink(st.link);
   return !!(fresh && st.weather==='ok' && st.airspace==='ok' && st.batteries && st.docs && st.site && board.me.scansAllowed && haveMedia);
@@ -939,7 +955,8 @@ function completeScan(id){
   if (missing.length && !confirm('These are not ticked on your shot list:\n\n' + missing.join('\n') + '\n\nThe report can only cover what is in your photos. Mark the scan done anyway?')) return;
   const extras = job.extras ? exCounts(job, st) : undefined;
   const dr = jobDrone(job);
-  act({type:'complete', jobId:id, kind:'scan', link:st.link, conditions, extras, extrasNote: st.exNote || '', droneId: dr ? dr.id : '', siteNotes: st.siteNotes || {}, siteSafe: st.site === true});
+  const measure = job.measure ? { footprint: Number((st.ms || {}).fp), pitch: (st.ms || {}).pitch } : undefined;
+  act({type:'complete', jobId:id, kind:'scan', link:st.link, conditions, extras, measure, extrasNote: st.exNote || '', droneId: dr ? dr.id : '', siteNotes: st.siteNotes || {}, siteSafe: st.site === true});
 }
 function completeReport(id){ const st = get(LS.checks, {})[id] || {}; act({type:'complete', jobId:id, kind:'report', link:st.rlink}); }
 // The pre-departure check is due once the job is within 24 hours and there has been no check in the last 6 hours.

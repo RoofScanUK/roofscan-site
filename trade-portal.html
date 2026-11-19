@@ -93,8 +93,15 @@ textarea{min-height:76px;resize:vertical;}
       <label class="l" for="addr">Site address, including postcode</label>
       <input type="text" id="addr" autocomplete="off" placeholder="e.g. 12 High Street, Guildford GU1 3AA">
 
-      <label class="l" id="band-l">Roof size</label>
-      <div class="opts" role="radiogroup" aria-labelledby="band-l" id="bands"></div>
+      <label class="l" for="fp">Roof footprint (m²)</label>
+      <input type="number" id="fp" inputmode="decimal" min="10" step="1" placeholder="e.g. 120">
+      <p class="muted" style="margin-top:6px;">The area the building covers on the ground, from plans, an EPC or a map. We add the slope ourselves. Priced by footprint: up to 400 m² the price is fixed; above that we quote before flying.</p>
+      <label class="l" id="pitch-l">Roof shape</label>
+      <div class="opts three" role="radiogroup" aria-labelledby="pitch-l" id="pitches">
+        <label class="opt"><input type="radio" name="pitch" value="pitched" checked><div><b>Pitched</b><small>Sloped roof</small></div></label>
+        <label class="opt"><input type="radio" name="pitch" value="flat"><div><b>Flat</b><small>Flat or near flat</small></div></label>
+        <label class="opt"><input type="radio" name="pitch" value="mixed"><div><b>Mixed</b><small>Pitched with flat parts</small></div></label>
+      </div>
 
       <label class="l" id="when-l">When can it be flown?</label>
       <div class="opts two" role="radiogroup" aria-labelledby="when-l">
@@ -145,7 +152,27 @@ textarea{min-height:76px;resize:vertical;}
 var API = 'https://roofscan-api.tiny-voice-ac40.workers.dev';
 var $ = function(id){ return document.getElementById(id); };
 var email = '', token = '', prices = null;
-var BANDS = [['Small','Under 500 m²'],['Medium','500 to 1,500 m²'],['Large','1,500 to 3,000 m²'],['Very large','Over 3,000 m²']];
+// Trade prices (19 Nov 2026): the home price list at the same footprint less 15%, rounded to the nearest 5, floors 250
+// (report) and 335 (thermal), the same 10% bundle rule. Mirrors the Worker (tradeQuote), which works out the real price.
+// An account's own agreed prices (prices.own) win, by the size band of the footprint.
+var PM = {pitched:1.15, flat:1.0, mixed:1.25};
+function hReport(fp, p){ var a = Math.max(0, Number(fp)||0) * (PM[p]||1.15); var raw = 90 + 2.75*Math.min(a,140) + 2*Math.max(0, Math.min(a,300)-140) + 1.4*Math.max(0, a-300); return Math.min(850, Math.max(255, Math.round(raw))); }
+function hThermal(fp, p){ return Math.min(950, Math.max(350, Math.round(200 + 3 * Math.max(0, Number(fp)||0) * (PM[p]||1.15)))); }
+function r5(n){ return Math.round(n/5)*5; }
+function bandFor(fp){ return fp < 500 ? 'Small' : fp < 1500 ? 'Medium' : fp <= 3000 ? 'Large' : 'Very large'; }
+function bigFrom(fp){ var t = (prices && prices.bigFrom) || [[1000,895],[2000,1295],[3000,1795]]; for (var i = 0; i < t.length; i++) if (fp <= t[i][0]) return t[i][1]; return null; }
+function quoteFor(fp, p, service, nextDay){
+  var own = (prices && prices.own) || {}, band = bandFor(fp), fixed = fp <= 400;
+  var rep = typeof own[band] === 'number' ? own[band] : fixed ? Math.max(250, r5(hReport(fp, p) * 0.85)) : null;
+  var th = typeof own.Thermal === 'number' ? own.Thermal : fixed ? Math.max(335, r5(hThermal(fp, p) * 0.85)) : null;
+  var nd = nextDay && service !== 'thermal' ? (prices.NextDay || 99) : 0;
+  var q = { report: rep, thermal: th, from: fixed ? null : bigFrom(fp), bundle: 0 };
+  if (service === 'thermal') q.total = th;
+  else if (service === 'both') { q.bundle = rep != null && th != null && typeof own.Thermal !== 'number' ? Math.max(0, Math.min(Math.round((rep + th) * 0.10), th - 320)) : 0; q.total = rep != null && th != null ? rep + th - q.bundle + nd : null; }
+  else q.total = rep != null ? rep + nd : null;
+  return q;
+}
+function fpVal(){ var n = Number($('fp').value); return isFinite(n) && n >= 10 ? n : 0; }
 function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
 function money(n){ return '£' + Number(n || 0).toLocaleString('en-GB'); }
 function fmtDate(d){ if (!d) return ''; var x = new Date(d + 'T12:00:00Z'); return x.toLocaleDateString('en-GB', {weekday:'short', day:'numeric', month:'short'}); }
@@ -157,31 +184,26 @@ async function get(path){
   return { ok: r.ok, status: r.status, data: d };
 }
 
+var wired = false;
 function renderBands(){
-  $('bands').innerHTML = BANDS.map(function(b, i){
-    var p = b[0] === 'Very large' ? 'We quote' : money(prices[b[0]]);
-    return '<label class="opt"><input type="radio" name="band" value="' + b[0] + '"' + (i === 1 ? ' checked' : '') + '><div><b>' + b[0] + '</b><small>' + b[1] + '</small><em>' + p + '</em></div></label>';
-  }).join('');
-  // An older Worker sends no thermal only prices: then the thermal only choice is hidden rather than booked as a roof report.
-  if (!prices.ThermalOnlyBy) { $('svc-thermal-o').classList.add('hide'); $('svcs').classList.remove('three'); $('svcs').classList.add('two'); }
+  if (wired) return; wired = true;
   thermalLabel();
   $('nextday-p').textContent = '+' + money(prices.NextDay);
-  document.querySelectorAll('input[name=band], input[name=when], input[name=svc], #nextday').forEach(function(el){ el.addEventListener('change', update); });
+  document.querySelectorAll('input[name=pitch], input[name=when], input[name=svc], #nextday').forEach(function(el){ el.addEventListener('change', update); });
+  $('fp').addEventListener('input', update);
 }
 function val(name){ var el = document.querySelector('input[name=' + name + ']:checked'); return el ? el.value : ''; }
-// Thermal follows the band's report price: on its own it is the report price + 200, with a report it adds 400
-// (the Worker sends the figures, including any price agreed in the account's contract).
 function svc(){ return val('svc') || 'report'; }
-function thermalFor(band){ return (prices.ThermalBy && prices.ThermalBy[band]) || prices.Thermal || 0; }
-function thermalOnlyFor(band){ return (prices.ThermalOnlyBy && prices.ThermalOnlyBy[band]) || 0; }
+function shown(q){ return q.total != null ? money(q.total) : (q.from ? 'From ' + money(q.from) : 'We quote'); }
 function thermalLabel(){
-  var band = val('band') || 'Small', vl = band === 'Very large';
-  $('svc-report-p').textContent = vl ? 'We quote' : money(prices[band]);
-  $('svc-both-p').textContent = vl ? 'We quote' : money(prices[band] + thermalFor(band));
-  $('svc-thermal-p').textContent = vl ? 'We quote' : money(thermalOnlyFor(band));
+  var fp = fpVal(), p = val('pitch') || 'pitched';
+  if (!fp) { $('svc-report-p').textContent = ''; $('svc-both-p').textContent = ''; $('svc-thermal-p').textContent = ''; return; }
+  $('svc-report-p').textContent = shown(quoteFor(fp, p, 'report', false));
+  $('svc-both-p').textContent = shown(quoteFor(fp, p, 'both', false));
+  $('svc-thermal-p').textContent = quoteFor(fp, p, 'thermal', false).total != null ? money(quoteFor(fp, p, 'thermal', false).total) : 'We quote';
 }
 function update(){
-  var band = val('band'), when = val('when'), service = svc(), th = service !== 'report', sel = $('time');
+  var fp = fpVal(), when = val('when'), service = svc(), th = service !== 'report', sel = $('time');
   // Next day is a report option, so it is not offered for a thermal survey on its own.
   $('extras').classList.toggle('hide', service === 'thermal');
   if (service === 'thermal') $('nextday').checked = false;
@@ -191,10 +213,11 @@ function update(){
   sel.disabled = th;
   var flexDesc = document.querySelector('input[name=when][value=flexible] + div small');
   if (flexDesc) flexDesc.textContent = th ? 'Any evening in the next 5 working days, after sunset.' : 'Within the next 5 working days. Usually quickest.';
-  if (band === 'Very large') { thermalLabel(); $('price').textContent = 'We quote'; $('price-l').textContent = 'Very large roofs are quoted before flying'; return; }
   thermalLabel();
-  var p = service === 'thermal' ? thermalOnlyFor(band) : prices[band] + (service === 'both' ? thermalFor(band) : 0) + ($('nextday').checked ? prices.NextDay : 0);
-  $('price').textContent = money(p); $('price-l').textContent = 'Added to this month\'s invoice';
+  if (!fp) { $('price').textContent = '-'; $('price-l').textContent = 'Enter the roof footprint to see the price'; return; }
+  var q = quoteFor(fp, val('pitch') || 'pitched', service, $('nextday').checked);
+  if (q.total == null) { $('price').textContent = q.from ? 'From ' + money(q.from) : 'We quote'; $('price-l').textContent = fp > 3000 ? 'Over 3,000 m²: we quote before flying' : 'Over 400 m²: we confirm the price before flying'; return; }
+  $('price').textContent = money(q.total); $('price-l').textContent = 'Added to this month\'s invoice' + (q.bundle ? ' (£' + q.bundle + ' bundle saving)' : '');
 }
 
 async function loadAll(){
@@ -208,7 +231,7 @@ async function loadAll(){
   $('t-total').textContent = money(a.data.month.total) + (a.data.month.quotesPending ? '+' : '');
   $('t-month').textContent = new Date().toLocaleDateString('en-GB', {month:'long'});
   $('gate').classList.add('hide'); $('app').classList.remove('hide'); $('out').classList.remove('hide');
-  if (!$('bands').children.length) renderBands();
+  renderBands();
   var d = new Date(Date.now() + 2 * 864e5); $('date').min = d.toISOString().slice(0, 10);
   update(); loadJobs();
 }
@@ -230,17 +253,18 @@ async function book(){
   var err = $('err'), ok = $('ok'); err.style.display = 'none'; ok.style.display = 'none';
   var addr = $('addr').value.trim(), when = val('when');
   if (!/\b[A-Z]{1,2}[0-9][A-Z0-9]?\s*[0-9][A-Z]{2}\b/i.test(addr)) { err.textContent = 'Please enter the full site address, including the postcode.'; err.style.display = 'block'; $('addr').focus(); return; }
+  if (!fpVal()) { err.textContent = 'Please enter the roof footprint in m², for example 120.'; err.style.display = 'block'; $('fp').focus(); return; }
   if (when === 'date' && !$('date').value) { err.textContent = 'Please choose a date, or pick Any time.'; err.style.display = 'block'; $('date').focus(); return; }
   var btn = $('book'); btn.disabled = true; btn.textContent = 'Booking…';
   try {
     var r = await fetch(API + '/trade-submit', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-      body: JSON.stringify({ email: email, address: addr, band: val('band'), timing: when, date: $('date').value, time: $('time').value,
+      body: JSON.stringify({ email: email, address: addr, footprint: fpVal(), pitch: val('pitch') || 'pitched', timing: when, date: $('date').value, time: $('time').value,
         service: svc(), thermal: svc() === 'both', nextDay: svc() !== 'thermal' && $('nextday').checked, siteContact: $('contact').value, ref: $('ref').value, notes: $('notes').value }) });
     var d = {}; try { d = await r.json(); } catch(e) {}
     if (!r.ok) { err.textContent = d.error || 'That did not go through. Please try again.'; err.style.display = 'block'; return; }
-    ok.textContent = 'Booked. ' + (when === 'flexible' ? 'We will fly it by ' + fmtDate(d.date) + '.' : 'Booked for ' + fmtDate(d.date) + '.') + (d.price == null ? ' We will send you a price before flying.' : ' ' + money(d.price) + ' added to this month\'s invoice.');
+    ok.textContent = 'Booked. ' + (when === 'flexible' ? 'We will fly it by ' + fmtDate(d.date) + '.' : 'Booked for ' + fmtDate(d.date) + '.') + (d.price == null ? ' We will send you a price before flying' + (d.from ? ' (from ' + money(d.from) + ')' : '') + '.' : ' ' + money(d.price) + ' added to this month\'s invoice.');
     ok.style.display = 'block';
-    ['addr','contact','ref','notes'].forEach(function(id){ $(id).value = ''; }); document.querySelector('input[name=svc][value=report]').checked = true; $('nextday').checked = false; update();
+    ['addr','fp','contact','ref','notes'].forEach(function(id){ $(id).value = ''; }); document.querySelector('input[name=svc][value=report]').checked = true; $('nextday').checked = false; update();
     loadAll();
   } catch(e) { err.textContent = 'Connection problem. Please try again.'; err.style.display = 'block'; }
   finally { btn.disabled = false; btn.textContent = 'Book this inspection'; }

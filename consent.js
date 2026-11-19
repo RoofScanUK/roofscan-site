@@ -64,16 +64,17 @@
     b.id = 'rs-cookie';
     b.setAttribute('role', 'dialog');
     b.setAttribute('aria-label', 'Cookie choice');
-    b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:99999;max-width:560px;margin:0 auto;' +
-      'background:#1C2B4A;color:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 8px 30px rgba(0,0,0,.25);' +
-      'font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding-bottom:calc(16px + env(safe-area-inset-bottom));';
+    // 19 Nov 2026: compact, so it never covers a big part of a phone screen (about 70px tall at 375px wide).
+    b.style.cssText = 'position:fixed;left:8px;right:8px;bottom:8px;z-index:99999;max-width:560px;margin:0 auto;' +
+      'background:#1C2B4A;color:#fff;border-radius:12px;padding:10px 12px;box-shadow:0 6px 24px rgba(0,0,0,.25);' +
+      'font:12.5px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding-bottom:calc(10px + env(safe-area-inset-bottom));' +
+      'display:flex;align-items:center;gap:10px;';
+    var btn = 'padding:8px 12px;border-radius:9px;font-size:13px;cursor:pointer;white-space:nowrap;flex:none;';
     b.innerHTML =
-      '<p style="margin:0 0 12px">We use ' + (PIXEL ? 'Google Ads and Meta (Facebook) cookies' : 'a Google Ads cookie') + ' to see which adverts lead to bookings. ' +
-      'It is only set if you accept. <a href="privacy.html#cookies" style="color:#C9A84C">More info</a></p>' +
-      '<div style="display:flex;gap:10px;flex-wrap:wrap">' +
-      '<button type="button" id="rs-cookie-yes" style="flex:1;min-width:120px;padding:10px 14px;border:0;border-radius:10px;background:#C9A84C;color:#1C2B4A;font-weight:700;font-size:14px;cursor:pointer">Accept</button>' +
-      '<button type="button" id="rs-cookie-no" style="flex:1;min-width:120px;padding:10px 14px;border:1.5px solid rgba(255,255,255,.5);border-radius:10px;background:transparent;color:#fff;font-weight:600;font-size:14px;cursor:pointer">Reject</button>' +
-      '</div>';
+      '<p style="margin:0;flex:1;min-width:0">We use ' + (PIXEL ? 'Google Ads and Meta cookies' : 'a Google Ads cookie') + ' to see which adverts lead to bookings, only if you accept. ' +
+      '<a href="privacy.html#cookies" style="color:#C9A84C">More info</a></p>' +
+      '<button type="button" id="rs-cookie-yes" style="' + btn + 'border:0;background:#C9A84C;color:#1C2B4A;font-weight:700">Accept</button>' +
+      '<button type="button" id="rs-cookie-no" style="' + btn + 'border:1.5px solid rgba(255,255,255,.5);background:transparent;color:#fff;font-weight:600">Reject</button>';
     document.body.appendChild(b);
     document.getElementById('rs-cookie-yes').onclick = function () { save('yes'); removeBanner(); loadTag(); };
     document.getElementById('rs-cookie-no').onclick = function () { save('no'); removeBanner(); };
