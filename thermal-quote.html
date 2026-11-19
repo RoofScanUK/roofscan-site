@@ -75,6 +75,11 @@ a{color:#1E4080;}
 
   <div id="flow">
   <div class="steps" id="steps"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+  <div id="offer-applied" role="status" style="display:none;background:#FFF4D6;border:1px solid #F2B640;border-radius:10px;padding:10px 12px;font-size:13px;line-height:1.6;color:#1C2B4A;margin-bottom:12px;"></div>
+        <details id="offer-code-box" style="font-size:13px;margin:0 0 14px;"><summary style="cursor:pointer;color:#6B7A8D;">Have an offer code?</summary>
+          <div style="display:flex;gap:8px;margin-top:8px;"><input id="offer-code" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="40" aria-label="Offer code" placeholder="e.g. BLACKFRIDAY" style="flex:1;min-width:0;padding:9px 12px;border:1px solid #E3E0D6;border-radius:8px;font-size:16px;font-family:inherit;text-transform:uppercase;"><button type="button" class="btn" style="flex:none;padding:9px 14px;font-size:13px;" onclick="applyOfferCode()">Apply</button></div>
+          <div id="offer-code-msg" aria-live="polite" style="margin-top:6px;"></div></details>
+
 
   <!-- 1. Location -->
   <div class="card step" data-step="1">
@@ -240,6 +245,50 @@ function $(id){ return document.getElementById(id); }
 function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
 function money(n){ return '£' + Number(n || 0).toLocaleString('en-GB'); }
 
+
+// ── Black Friday link and code (19 Nov 2026) ── The offer applies to every direct home booking from 27 to 30 November
+// 2026 by itself. Arriving from the Instagram link (?offer=blackfriday or ?code=BLACKFRIDAY) or typing the code shows it
+// by name and is recorded on the booking (Notes: "Offer source: Instagram link" or "code"). It never changes the price.
+var OFFER_SRC = (function(){
+  var src = '', code = '';
+  try { var u = new URLSearchParams(location.search), o = (u.get('offer') || '').trim(), c = (u.get('code') || '').trim();
+    if (o) { src = 'link'; code = o; } else if (c) { src = 'link'; code = c; }
+    if (src) { sessionStorage.setItem('rs_offer_src', src); sessionStorage.setItem('rs_offer_code', code); }
+    else { src = sessionStorage.getItem('rs_offer_src') || ''; code = sessionStorage.getItem('rs_offer_code') || ''; } } catch(e) {}
+  return { src: src, code: code, status: null };
+})();
+function offerApi(){ return typeof LM_API_BASE !== 'undefined' ? LM_API_BASE : API; }
+function offerReferred(){ try { return typeof referralCode === 'function' ? !!referralCode() : false; } catch(e) { return false; } }
+function renderOfferApplied(){
+  var el = document.getElementById('offer-applied'); if(!el) return;
+  var st = OFFER_SRC.status;
+  if (OFFER_SRC.src && st && st.code && st.code.open && !offerReferred()) {
+    el.innerHTML = '<b>' + String(st.code.name).replace(/[<>&"]/g, '') + ': 20% off applied</b> to home bookings made from 27 to 30 November 2026. One per household. Not with Any time.';
+    el.style.display = 'block';
+  } else el.style.display = 'none';
+}
+function checkOfferSource(){
+  if (!OFFER_SRC.src || !OFFER_SRC.code) return Promise.resolve();
+  return fetch(offerApi() + '/launch-offer?code=' + encodeURIComponent(OFFER_SRC.code)).then(function(r){ return r.ok ? r.json() : null; }).then(function(d){
+    OFFER_SRC.status = d; if (d && d.code && d.code.unknown) { OFFER_SRC.src = ''; try { sessionStorage.removeItem('rs_offer_src'); } catch(e) {} }
+    renderOfferApplied();
+  }).catch(function(){});
+}
+function applyOfferCode(){
+  var inp = document.getElementById('offer-code'), msg = document.getElementById('offer-code-msg'), v = (inp && inp.value || '').trim();
+  if (!v) { msg.textContent = 'Type the code, for example BLACKFRIDAY.'; return; }
+  msg.textContent = 'Checking…';
+  fetch(offerApi() + '/launch-offer?code=' + encodeURIComponent(v)).then(function(r){ if (!r.ok) throw new Error('offer ' + r.status); return r.json(); }).then(function(d){
+    var c = d && d.code;
+    if (!c || c.unknown) { msg.textContent = 'That code is not recognised.'; return; }
+    if (!c.open) { msg.textContent = c.notStarted ? 'This offer runs from 27 to 30 November 2026.' : 'This offer has ended.'; return; }
+    if (offerReferred()) { msg.textContent = 'This offer is for direct bookings, so it does not apply to bookings made through a referral.'; return; }
+    OFFER_SRC.src = 'code'; OFFER_SRC.code = v; OFFER_SRC.status = d;
+    try { sessionStorage.setItem('rs_offer_src', 'code'); sessionStorage.setItem('rs_offer_code', v); } catch(e) {}
+    msg.textContent = 'Code accepted.'; renderOfferApplied();
+  }).catch(function(){ msg.textContent = "We couldn't check that code just now. Please try again in a moment."; });
+}
+document.addEventListener('DOMContentLoaded', checkOfferSource);
 function init(){
   if(!THERMAL_LIVE && !/[?&]preview=1/.test(location.search)){ $('soon').classList.remove('hidden'); $('flow').classList.add('hidden'); return; }
   $('propChoices').innerHTML = PT.map(function(p){ return '<button type="button" class="choice" data-v="' + p.id + '" onclick="pick(\'prop\',this)"><b>' + p.label + '</b><small>' + p.desc + '</small></button>'; }).join('');
@@ -453,8 +502,8 @@ async function loadPrice(){
     $('exactWrap').classList.toggle('hidden', pa.src === 'measured');
     $('exactMsg').textContent = pa.measuredHigh ? 'Our map measured ' + pa.measuredHigh + ' m², which is more than usual for this type of home (it often includes the houses next door), so we have priced a typical one for now. Enter the footprint of your house for an exact price.' : pa.src === 'manual' ? 'Change the footprint if you need to.' : 'Know the footprint of your house? Enter it for an exact price.';
     var L = p.launch && p.launch.off > 0 ? p.launch : null;
-    $('launchBanner').classList.toggle('hidden', !L);
-    if(L) $('launchBanner').innerHTML = '<b>Launch offer: 20% off</b> the first 20 home bookings made from 27 to 30 November 2026. ' + Number(L.placesLeft || 0) + ' of 20 places left. Taken off automatically, one per household.';
+    $('launchBanner').classList.toggle('hidden', !L || !!(OFFER_SRC.src && OFFER_SRC.status && OFFER_SRC.status.code && OFFER_SRC.status.code.open)); renderOfferApplied();
+    if(L) $('launchBanner').innerHTML = '<b>Launch offer: ' + Number(L.pct || 20) + '% off</b> home bookings made from 27 to 30 November 2026. Taken off automatically, one per household.';
     var h = '';
     if(withRoof){
       h += '<div class="price-line"><span>Thermal leak scan</span><span>' + money(p.thermal) + '</span></div>';
@@ -465,7 +514,7 @@ async function loadPrice(){
       h += '<div class="price-line"><span>Thermal leak scan</span><span>' + money(p.thermal) + '</span></div>';
       if(p.travel) h += '<div class="price-line"><span>Mileage</span><span>' + money(p.travel) + '</span></div>';
     }
-    if(L) h += '<div class="price-line disc"><span>Launch offer: 20% off (first 20 bookings, 27 to 30 Nov)</span><span>−' + money(L.off) + '</span></div>';
+    if(L) h += '<div class="price-line disc"><span>Launch offer: ' + Number(L.pct || 20) + '% off (bookings made 27 to 30 Nov)</span><span>−' + money(L.off) + '</span></div>';
     var shownTotal = L ? L.totalAfter : p.total; st.shownTotal = shownTotal;
     var maxTotal = L && typeof L.maxAfter === 'number' ? L.maxAfter : (typeof p.max === 'number' ? p.max : shownTotal);
     st.maxTotal = Math.max(shownTotal, maxTotal);
@@ -509,14 +558,14 @@ async function pay(){
     var withRoof = $('withRoof').checked;
     var r = await fetch(API + '/confirm-booking', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({
       paymentIntentId: piId, flexible: true, surveyType: withRoof ? 'both' : 'thermal', propertyType: st.prop, addons: withRoof ? extrasToSend(priceArea()) : {},
-      postcode: st.postcode, roofAreaM2: priceArea().area, pitchType: st.pitch, contact: contact, thermalNotes: thermalNotes(), areaFlagged: false, termsAccepted: $('termsOk').checked }) });
+      postcode: st.postcode, roofAreaM2: priceArea().area, pitchType: st.pitch, offerSource: OFFER_SRC.src || undefined, offerCode: OFFER_SRC.src ? OFFER_SRC.code : undefined, contact: contact, thermalNotes: thermalNotes(), areaFlagged: false, termsAccepted: $('termsOk').checked }) });
     var d = await r.json(); if(!r.ok){ var be = new Error(d.error || 'booking failed'); be.termsRequired = !!d.termsRequired; throw be; }
     var dl = d.deadline ? new Date(d.deadline + 'T12:00:00Z').toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long' }) : 'the next 5 working days';
     $('paySection').classList.add('hidden'); $('done').classList.remove('hidden');
     $('doneText').textContent = 'Booked. Our thermal pilot will fly on an evening by ' + dl + ', after dark, and we will email you the exact date and time at least 24 hours before.'
       + (withRoof ? ' Your roof condition report is booked too: one visit, with the daylight photos taken first and the thermal scan once it is dark. You will get two reports.' : '')
       + (typeof d.estimate === 'number' && typeof d.maxPrice === 'number' ? ' ' + estimateText(d.estimate, d.maxPrice) : '')
-      + (d.launchRefused ? (d.launchRefused === 'household' ? ' The launch offer was not applied because this home has already used it.' : ' The launch offer places ran out just before your booking, so it was not applied.') : '');
+      + (d.launchRefused ? ' The launch offer was not applied because this home has already used it.' : '');
   } catch(e){
     if(e && e.termsRequired){ termsErr('Please tick the box to agree to the Terms & Conditions, then press the button again (you will not be charged again).'); btn.disabled = false; btn.textContent = 'Try the booking again'; return; }
     $('card-errors').textContent = 'Your deposit was paid, but the booking did not go through. Press the button to try again (you will not be charged again). If it keeps failing, email info@roofscanuk.co.uk with your payment reference: ' + piId;
