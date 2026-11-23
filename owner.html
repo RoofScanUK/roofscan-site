@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" id="rs">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -134,6 +134,7 @@ details.ctr>summary:hover{background:#FAF8F2;}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <link rel="stylesheet" href="portal.css">
+<link rel="stylesheet" href="dash.css">
 </head>
 <body>
 <div id="login" style="display:none;padding:60px 18px;max-width:420px;margin:0 auto;">
@@ -146,20 +147,29 @@ details.ctr>summary:hover{background:#FAF8F2;}
 </div>
 
 <div id="app" style="display:none;">
+ <div class="shell">
+  <aside class="side">
+    <div class="side-mark">RoofScan<span>UK</span></div>
+    <!-- Tabs: Today holds only things that need you; everything else lives in its own tab. Badges show where action is waiting.
+         Grouped (Daily, Business), Settings pinned at the bottom. Only the tab buttons are <button>s in here. -->
+    <nav class="tabs" id="tabs" role="tablist" aria-label="Dashboard sections">
+      <span class="navlbl">Daily</span>
+      <button role="tab" data-tab="today"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M8.5 12.5l2.3 2.3 4.7-5"/></svg>Today<span class="tb" id="tb-today"></span></button>
+      <button role="tab" data-tab="jobs"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>Jobs<span class="tb" id="tb-jobs"></span></button>
+      <span class="navlbl">Business</span>
+      <button role="tab" data-tab="team"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 4.5a3.5 3.5 0 0 1 0 7M21 20c0-2.6-1.6-4.8-4-5.6"/></svg>Team<span class="tb" id="tb-team"></span></button>
+      <button role="tab" data-tab="money"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 6.5A4 4 0 0 0 9 9v9M6 13h7M6 18h11"/></svg>Money<span class="tb" id="tb-money"></span></button>
+      <span class="navgap" aria-hidden="true"></span>
+      <button role="tab" data-tab="settings"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.4-2.3 1a7 7 0 0 0-2.1-1.2L14.2 3h-4.4l-.3 2.7a7 7 0 0 0-2.1 1.2l-2.3-1-2 3.4 2 1.5a7 7 0 0 0 0 2.4l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 2.1 1.2l.3 2.7h4.4l.3-2.7a7 7 0 0 0 2.1-1.2l2.3 1 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z"/></svg><span>Settings<span class="navx">&nbsp;and health</span></span><span class="tb" id="tb-settings"></span></button>
+    </nav>
+  </aside>
+  <div class="main">
   <div class="top"><div class="top-in">
-    <div><div class="eyebrow">RoofScan UK</div><h1>Owner dashboard</h1><div class="sysline" id="sysline"></div></div>
-    <div class="top-actions"><button class="btn sec" onclick="load()">Refresh</button><button class="btn sec" onclick="logout()">Log out</button></div>
+    <div><div class="eyebrow">RoofScan UK</div><h1>Owner dashboard</h1><a class="sysline" id="sysline" href="#settings" title="Open System health"></a></div>
+    <div class="top-actions"><button type="button" class="kbtn" id="kbtn" aria-haspopup="dialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/></svg>Quick actions<kbd>Ctrl K</kbd></button><button class="btn sec" onclick="logout()">Log out</button><button class="btn" onclick="load()">Refresh</button></div>
   </div></div>
   <div class="wrap">
     <div class="metrics" id="stats"></div>
-    <!-- Tabs: Today holds only things that need you; everything else lives in its own tab. Badges show where action is waiting. -->
-    <nav class="tabs" id="tabs" role="tablist">
-      <button role="tab" data-tab="today">Today<span class="tb" id="tb-today"></span></button>
-      <button role="tab" data-tab="team">Team<span class="tb" id="tb-team"></span></button>
-      <button role="tab" data-tab="jobs">Jobs<span class="tb" id="tb-jobs"></span></button>
-      <button role="tab" data-tab="money">Money<span class="tb" id="tb-money"></span></button>
-      <button role="tab" data-tab="settings">Settings<span class="tb" id="tb-settings"></span></button>
-    </nav>
 
     <div class="panel" data-panel="today">
       <div id="allclear" class="box pad" style="display:none;"><b style="color:var(--navy);">All clear.</b> <span class="muted">Nothing is waiting for you right now.</span></div>
@@ -210,15 +220,38 @@ details.ctr>summary:hover{background:#FAF8F2;}
     </div>
 
     <div class="panel" data-panel="settings" hidden>
+      <!-- System health (21 Nov 2026): every check /owner/health returns, one row each, problems first. Read only. -->
+      <section id="syshealth"><div class="lbl"><span>System health</span><span id="sh-sum" class="small"></span></div>
+        <div class="box">
+          <div class="sh-head"><div><div class="sh-big" id="sh-big">Not checked yet</div><div class="small muted" id="sh-at">Opens when you visit this page.</div></div><button type="button" class="btn sec" id="sh-refresh">Refresh</button></div>
+          <div id="sh-list" role="list"></div>
+          <div id="sh-err"></div>
+        </div>
+      </section>
       <div class="grid2">
-        <section><div class="lbl">Weekly booking capacity</div><div class="box pad" id="cap"><span class="muted small">Loading…</span></div></section>
-        <section><div class="lbl">Flight times (sunrise and sunset)</div><div class="box pad" id="dl"><span class="muted small">Loading…</span></div></section>
-        <section><div class="lbl"><span>Booking hours (Cal.com)</span><span id="cal-name" class="small"></span></div><div class="box pad" id="cal"><span class="muted small">Loading…</span></div></section>
-        <section><div class="lbl">Time off (Cal.com out of office)</div><div class="box pad" id="ooo"><span class="muted small">Loading…</span></div></section>
+        <section><details class="fold"><summary><span class="fold-t">Weekly booking capacity</span><span class="fold-s">How many inspections can be booked each week</span></summary><div class="box pad" id="cap"><span class="muted small">Loading…</span></div></details></section>
+        <section><details class="fold"><summary><span class="fold-t">Flight times</span><span class="fold-s">Sunrise and sunset windows for flying</span></summary><div class="box pad" id="dl"><span class="muted small">Loading…</span></div></details></section>
+        <section><details class="fold"><summary><span class="fold-t">Booking hours (Cal.com)</span><span class="fold-s">When clients can book <span id="cal-name" class="small"></span></span></summary><div class="box pad" id="cal"><span class="muted small">Loading…</span></div></details></section>
+        <section><details class="fold"><summary><span class="fold-t">Time off</span><span class="fold-s">Cal.com out of office dates</span></summary><div class="box pad" id="ooo"><span class="muted small">Loading…</span></div></details></section>
       </div>
     </div>
   </div>
+  </div>
+ </div>
 </div>
+<dialog id="kdlg" class="kdlg" aria-label="Quick actions">
+  <input id="kq" type="search" placeholder="Jump to a section or action" autocomplete="off" aria-label="Search quick actions">
+  <div id="klist" class="klist">
+    <button type="button" data-go="today">Today <span>Things waiting on you</span></button>
+    <button type="button" data-go="jobs">Jobs <span>Claimed, stand-downs, missed</span></button>
+    <button type="button" data-go="team">Team <span>Contractors and coverage map</span></button>
+    <button type="button" data-go="money">Money <span>Pay run and trade invoicing</span></button>
+    <button type="button" data-go="settings">Settings <span>Capacity, flight times, booking hours</span></button>
+    <button type="button" data-go="health">System health <span>Every system, one row each</span></button>
+    <button type="button" data-go="refresh">Refresh <span>Reload everything on the dashboard</span></button>
+  </div>
+  <p class="khint">Enter opens the first match. Esc closes.</p>
+</dialog>
 <div id="rv" style="display:none;position:fixed;inset:0;z-index:50;background:rgba(15,25,45,.6);align-items:stretch;justify-content:center;padding:18px;">
   <div style="background:var(--paper);border-radius:8px;display:flex;flex:1;max-width:1500px;overflow:hidden;" class="rvbox">
     <div style="flex:1;min-width:0;display:flex;flex-direction:column;background:#E9E6DD;">
@@ -908,6 +941,61 @@ function refreshBadges(){
   $('sysline').textContent=healthTxt?('System: '+healthTxt):'';
 }
 new MutationObserver(()=>{clearTimeout(_badgeT);_badgeT=setTimeout(refreshBadges,120);}).observe($('app'),{subtree:true,childList:true,characterData:true});
+</script>
+<script>
+// ═══ 21 Nov 2026 redesign additions (read only): System health page and the quick actions box ═══
+// Neither changes any data. System health only calls GET /owner/health (the same call the Today box makes).
+let _shBusy=false;
+async function loadSysHealth(){
+  if(_shBusy||!localStorage.getItem(TK)) return;
+  _shBusy=true;
+  const list=$('sh-list'), big=$('sh-big'), at=$('sh-at'), sum=$('sh-sum'), btn=$('sh-refresh');
+  btn.disabled=true; big.textContent='Checking…'; big.className='sh-big';
+  let r; try{ r=await api('/owner/health'); }catch(e){ r={ok:false,data:{}}; }
+  _shBusy=false; btn.disabled=false;
+  const d=r&&r.data;
+  if(!r||!r.ok||!d||!Array.isArray(d.checks)){
+    big.textContent='Health check not reachable'; big.className='sh-big t-bad';
+    at.textContent='The Worker may be down or the connection dropped. Press Refresh to try again.';
+    sum.textContent=''; list.innerHTML=''; $('sh-err').innerHTML=''; return;
+  }
+  const rank={red:0,amber:1,green:2}, lab={green:'Healthy',amber:'Needs a look',red:'Not working'};
+  const lv=c=>rank[c.level]!=null?c.level:'amber';
+  const checks=d.checks.slice().sort((a,b)=>rank[lv(a)]-rank[lv(b)]);
+  const good=checks.filter(c=>lv(c)==='green').length, ms=Date.parse(d.at||'');
+  const whenLong=isNaN(ms)?'':new Date(ms).toLocaleString('en-GB',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+  const whenShort=isNaN(ms)?'':new Date(ms).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  big.textContent=checks.length?good+' of '+checks.length+' healthy':'No systems returned';
+  big.className='sh-big '+(checks.some(c=>lv(c)==='red')?'t-bad':(good<checks.length||!checks.length?'t-warn':'t-ok'));
+  at.textContent=whenLong?'Checked '+whenLong+'. Problems are listed first.':'Problems are listed first.';
+  sum.textContent=checks.length-good?(checks.length-good)+' to look at':'';
+  list.innerHTML=checks.length?checks.map(c=>{const l=lv(c);return `<div class="sh-row sh-${l}" role="listitem"><span class="sh-dot" aria-hidden="true"></span><div><div class="sh-name">${esc(c.name||c.key||'Unnamed check')}</div><div class="sh-detail">${esc(c.detail||'')}</div></div><div class="sh-meta"><span class="sh-lv">${lab[l]}</span><span class="sh-when">${whenShort?'Checked '+whenShort:''}</span></div></div>`;}).join('')
+    :'<div class="sh-fail">The health check answered but listed no systems.</div>';
+  const errs=Array.isArray(d.errors)?d.errors:[];
+  const eWhen=t=>{const m=Date.parse(t||'');return isNaN(m)?'':new Date(m).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});};
+  $('sh-err').innerHTML=errs.length?`<details class="sh-fold"><summary>Recent Worker errors (${errs.length})</summary>${errs.map(e=>`<div class="small muted sh-e"><span class="mono">${esc(eWhen(e.at))}</span> ${esc(e.path)}: ${esc(e.msg)}</div>`).join('')}</details>`:'';
+}
+$('sh-refresh').addEventListener('click',loadSysHealth);
+document.querySelector('#tabs button[data-tab="settings"]').addEventListener('click',loadSysHealth);
+$('sysline').addEventListener('click',e=>{e.preventDefault();showTab('settings');loadSysHealth();});
+if((location.hash||'')==='#settings') loadSysHealth();
+// Quick actions (Ctrl K or Cmd K): jumps between sections. Only calls showTab and load, which the page already has.
+(function(){
+  const dlg=$('kdlg'), q=$('kq'), list=$('klist'), kbd=document.querySelector('#kbtn kbd');
+  if(/Mac|iPhone|iPad/.test(navigator.platform||navigator.userAgent)) kbd.textContent='⌘K';
+  const items=()=>[...list.querySelectorAll('button')];
+  const filter=()=>{const t=q.value.trim().toLowerCase();items().forEach(b=>{b.hidden=!!t&&!b.textContent.toLowerCase().includes(t);});};
+  const open=()=>{if($('app').style.display==='none')return;q.value='';filter();if(typeof dlg.showModal==='function'){if(!dlg.open)dlg.showModal();}else dlg.setAttribute('open','');q.focus();};
+  const close=()=>{if(typeof dlg.close==='function'&&dlg.open)dlg.close();else dlg.removeAttribute('open');};
+  const go=k=>{close();if(k==='refresh'){load();return;}if(k==='health'){showTab('settings');loadSysHealth();const h=$('syshealth');if(h)h.scrollIntoView({block:'start'});return;}showTab(k);if(k==='settings')loadSysHealth();};
+  $('kbtn').addEventListener('click',open);
+  q.addEventListener('input',filter);
+  q.addEventListener('keydown',e=>{const first=items().find(b=>!b.hidden);if(e.key==='Enter'&&first){e.preventDefault();go(first.dataset.go);}if(e.key==='ArrowDown'&&first){e.preventDefault();first.focus();}});
+  list.addEventListener('keydown',e=>{if(e.key!=='ArrowDown'&&e.key!=='ArrowUp')return;const v=items().filter(b=>!b.hidden),i=v.indexOf(document.activeElement);if(i<0)return;e.preventDefault();(v[i+(e.key==='ArrowDown'?1:-1)]||(e.key==='ArrowUp'?q:v[i])).focus();});
+  list.addEventListener('click',e=>{const b=e.target.closest('button[data-go]');if(b)go(b.dataset.go);});
+  dlg.addEventListener('click',e=>{if(e.target===dlg)close();});
+  document.addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&!e.altKey&&(e.key==='k'||e.key==='K')){e.preventDefault();if(dlg.open)close();else open();}});
+})();
 </script>
 </body>
 </html>

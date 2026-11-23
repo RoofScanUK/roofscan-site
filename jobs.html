@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" id="rs">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -82,6 +82,7 @@ h1{font-size:20px;font-weight:800;}
 </style>
 <link rel="stylesheet" href="theme.css">
 <link rel="stylesheet" href="portal.css">
+<link rel="stylesheet" href="dash.css">
 </head>
 <body>
 <div id="login" style="display:none;">
@@ -112,8 +113,8 @@ h1{font-size:20px;font-weight:800;}
     <div><div class="brand">RoofScan UK</div><h1 id="who">Jobs</h1><div class="sub" id="who-sub"></div><div id="drone-line" class="sub" style="margin-top:2px;"></div></div>
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
       <div style="text-align:right;"><span id="sync" class="s-ok">Synced</span><div class="sub" id="sync-sub" style="margin-top:4px;"></div></div>
-      <button class="btn ghost" onclick="refresh(true)">Refresh</button>
       <button class="btn ghost" onclick="logout()">Log out</button>
+      <button class="btn" onclick="refresh(true)">Refresh</button>
     </div>
   </div></div>
   <div class="wrap">
