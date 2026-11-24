@@ -469,14 +469,14 @@ function next(n){
   err(n, ''); if(n === 4) captureLead('details'); go(n + 1);
 }
 // Saves the enquiry (same Quotes table as the main quote page) so people who don't book can be followed up.
-function captureLead(stage, total){
+function captureLead(stage, total, breakdown){
   var contact = { name: $('name').value.trim(), email: $('email').value.trim(), phone: $('phone').value.trim(), address: $('address').value.trim() };
   if(!contact.email) return;
   if(stage === 'details' && leadId) return;
   // Calls run one after another, so the "quoted" update always lands on the row the "details" call created.
   leadChain = leadChain.then(function(){
     return fetch(API + '/capture-lead', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ stage: stage, propertyType: st.prop, town: town, quoteTotal: total,
-      contact: contact, marketingOptOut: $('optout').checked, existingId: leadId || undefined, service: $('withRoof').checked ? 'both' : 'thermal' }) })
+      contact: contact, marketingOptOut: $('optout').checked, existingId: leadId || undefined, service: $('withRoof').checked ? 'both' : 'thermal', breakdown: stage === 'quoted' && breakdown ? breakdown : undefined }) })
       .then(function(r){ return r.json(); }).then(function(d){ if(d && d.quoteId) leadId = d.quoteId; });
   }).catch(function(){});
 }
@@ -522,7 +522,13 @@ async function loadPrice(){
     h += '<div class="info" id="estNote">' + estimateText(shownTotal, st.maxTotal) + '</div>';
     h += '<div class="info">£50 deposit today. The balance is your final price less the £50, paid after ' + (withRoof ? 'both scans are done' : 'the scan') + ', by a link we email you.</div>';
     $('priceBox').innerHTML = h; $('toPay').disabled = false;
-    captureLead('quoted', shownTotal);
+    // 24 Nov 2026: the same figures, line by line, so the Worker can save a Quote Breakdown with the quote (text only).
+    var bd = null;
+    try { bd = { page: 'thermal', service: withRoof ? 'both' : 'thermal', pitch: st.pitch, area: pa.area != null ? pa.area : p.area, areaSrc: pa.src, measuredHigh: pa.measuredHigh || 0,
+      lookup: pa.src === 'estimate' ? (st.area ? 'low' : 'failed') : '', roof: withRoof ? p.roof - (p.addons || 0) : 0, addons: withRoof ? extrasToSend(pa) : {},
+      thermal: p.thermal, bundle: withRoof ? (p.bundle || 0) : 0, express: false, anytime: false, launchOff: L ? L.off : 0,
+      travel: p.travel || 0, postcode: st.postcode || '', max: st.maxTotal }; } catch(e) { bd = null; }
+    captureLead('quoted', shownTotal, bd);
   } catch(e){ $('priceBox').textContent = 'We could not work out your price just now. Please try again in a moment.'; }
 }
 

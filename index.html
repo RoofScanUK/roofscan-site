@@ -2576,7 +2576,18 @@ function renderPrice(){
   if(!window._rsPriceTracked && window.rsTrack){ window._rsPriceTracked = true; rsTrack('ViewContent', {value: total, currency: 'GBP', content_name: 'Roof report price'}); }
   renderTiers(roofPart, thermalPart + travCharge, expressOn, anyOn);
 
-  captureLead('quoted', total);
+  // 24 Nov 2026: the same figures, line by line, so the Worker can save a Quote Breakdown with the quote (text only, no price change).
+  let bd = null;
+  try { const ri = roofAreaInfo; bd = {
+    page: 'index', service: sv === 'visual' ? 'report' : sv, pitch: pitchType, area: area,
+    areaSrc: manualAreaM2 != null ? 'manual' : (isEstimate ? 'estimate' : 'measured'), measuredHigh: measuredHigh,
+    lookup: manualAreaM2 != null ? '' : (!ri ? 'pending' : (ri.source === 'client-fallback' ? 'failed' : (ri.confidence !== 'high' || typeof ri.areaM2 !== 'number' ? 'low' : 'ok'))),
+    lookupSource: ri && ri.source ? String(ri.source).slice(0, 30) : '',
+    roof: roofPrice, addons: sv === 'thermal' ? {} : Object.assign({}, counts), thermal: thermalPart,
+    express: expressOn, expressFee: expressOn ? expressFee() : 0, expressWhy: expressOn ? (STORM_OFFER ? 'storm' : (expressIncludedOn() ? 'included' : '')) : '',
+    anytime: anyOn, anytimeOff: anyOff, launchOff: lOff, travel: travCharge, postcode: postcodeInfo ? postcodeInfo.postcode : '', max: maxTotal
+  }; } catch(e) { bd = null; }
+  captureLead('quoted', total, bd);
 }
 
 // Three ways to book the same roof report, side by side, so the price difference is easy to see.
@@ -2656,7 +2667,7 @@ async function sendBigRoof(){
 // write to the same Airtable row — the second upgrades the Status on the record created
 // by the first, so nobody is double-counted. Never blocks or interrupts the booking flow.
 let leadRecordId = null;
-function captureLead(stage, total){
+function captureLead(stage, total, breakdown){
   if(!(contact.name && contact.email && contact.phone && contact.address)) return;
   if(stage === 'details' && leadRecordId) return; // already captured this session
   if(stage === 'details' && window.rsTrack) rsTrack('Lead', {content_name: 'Quote details entered'});
@@ -2671,7 +2682,8 @@ function captureLead(stage, total){
       contact,
       marketingOptOut: !!(document.getElementById('c-optout') && document.getElementById('c-optout').checked),
       existingId: leadRecordId,
-      areaFlagged: lastAreaFlagged
+      areaFlagged: lastAreaFlagged,
+      breakdown: stage === 'quoted' && breakdown ? breakdown : undefined
     })
   }).then(async r => {
     const data = await r.json().catch(()=>({}));
