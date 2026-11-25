@@ -179,6 +179,7 @@ details.ctr>summary:hover{background:#FAF8F2;}
         <section data-today="sched"><div class="lbl"><span>Booking changes</span><span id="sched-n" class="small"></span></div><div class="box pad" id="sched"><span class="muted small">Loading…</span></div></section>
         <section data-today="partners"><div class="lbl"><span>Referral partners to approve</span><span id="partners-n" class="small"></span></div><div class="box" id="partners"><div class="empty">Loading…</div></div></section>
         <section data-today="team"><div class="lbl"><span>Team: waiting on you</span><span id="teamact-n" class="small"></span></div><div class="box" id="teamact"></div></section>
+        <section data-today="droneaudit"><div class="lbl"><span>Drones approved automatically</span><span id="da-n" class="small"></span></div><div class="box" id="droneaudit"></div></section>
         <section data-today="needs"><div class="lbl"><span>Contractor documents</span><span id="needs-n" class="small"></span></div><div id="needs"></div></section>
         <section data-today="storm"><div class="lbl"><span>Storm alerts</span><span id="storm-n" class="small"></span></div><div class="box pad" id="storm"><span class="muted small">Loading…</span></div></section>
         <section data-today="suggest"><div class="lbl"><span>Suggestions from contractors</span><span id="sug-n"></span></div><div class="box" id="suggest"><div class="empty">Loading…</div></div></section>
@@ -321,6 +322,7 @@ async function load(){
   window._teamYou=teamYou.length;
   $('teamact-n').textContent=teamYou.length?teamYou.length+' to do':'';
   $('teamact').innerHTML=teamYou.map(c=>`<div class="item" style="cursor:pointer;" onclick="openCtr('${c.id}')"><b style="color:var(--navy);">${esc(c.name)}</b> <span class="muted small">${esc(c.role)}</span><div class="small" style="margin-top:2px;">${todo(c).you.map(esc).join(' · ')}</div></div>`).join('');
+  drawDroneAudit();
   window._missed=(data.misses||[]).length;
   const team=data.contractors.filter(isTeam).sort((a,b)=>rank(a)-rank(b)||a.name.localeCompare(b.name));
   const STAGE_ORDER=['4. Call booked','3. Waiting on them','2. Contacted','1. Applied','On hold (needs commercial insurance)','Reserve list','Not right now'];
@@ -346,7 +348,7 @@ async function load(){
       <div class="ctr-line">${flyer?doc('Insurance',ct.insuranceExpiry,'insuranceExpiry')+doc('Operator ID',ct.operatorIdExpiry,'operatorIdExpiry'):'<span class="muted small" style="align-self:center;">No drone documents needed</span>'}
         ${flyer?`<div class="ctr-doc"><div class="ctr-lbl">Base postcode</div><input class="dt" id="bpc-${ct.id}" value="${esc(ct.basePostcode)}" placeholder="BN1 1AA" style="width:110px;text-transform:uppercase;" onchange="upd('${ct.id}',{basePostcode:this.value,travelRange:Number($('rng-${ct.id}').value)})" title="Where this flyer travels from"></div>
         <div class="ctr-doc"><div class="ctr-lbl">Travels up to</div><select class="dt" id="rng-${ct.id}" onchange="${ct.hasBase?`upd('${ct.id}',{travelRange:Number(this.value)})`:''}">${[...new Set([10,15,20,25,30,35,40,45,50,ct.travelRange||30])].sort((a,b)=>a-b).map(m=>`<option value="${m}" ${(ct.travelRange||30)===m?'selected':''}>${m} miles</option>`).join('')}</select></div>`:''}
-        ${flyer&&(ct.otherDrones||[]).length?`<div style="flex-basis:100%;margin-top:6px;"><div class="ctr-lbl">Other drones</div>${ct.otherDrones.map(d=>`<div class="small" style="margin-top:3px;">${esc(d.model)}${d.serial?' · '+esc(d.serial):''} · ${d.wind} m/s${d.thermal?' · thermal':''} ${d.approved?'<span class="pill ok">Approved</span>':'<span class="pill warn">To check</span>'} <button class="btn text" onclick="upd('${ct.id}',{extraDrone:{id:'${esc(d.id)}',approved:${!d.approved}}})">${d.approved?'Revoke':'Approve'}</button></div>`).join('')}</div>`:''}
+        ${flyer&&(ct.otherDrones||[]).length?`<div style="flex-basis:100%;margin-top:6px;"><div class="ctr-lbl">Other drones</div>${ct.otherDrones.map(d=>`<div class="small" style="margin-top:3px;">${esc(d.model)}${d.serial?' · '+esc(d.serial):''} · ${d.wind} m/s${d.thermal?' · thermal':''} ${d.approved?`<span class="pill ok">${d.coverChecked?(d.approvedBy==='owner'?'Approved by you':'Approved automatically'):'Approved'}</span>${d.coverChecked&&d.coverStatus==='starts'?' <span class="pill warn">Cover starts '+esc(coverDay(d.cover.start))+'</span>':''}`:(d.coverChecked&&d.coverStatus==='ended'?'<span class="pill mut">Cover ended</span>':'<span class="pill warn">To check</span>')} <button class="btn text" onclick="upd('${ct.id}',{extraDrone:{id:'${esc(d.id)}',approved:${!d.approved}}})">${d.approved?'Revoke':'Approve'}</button>${d.coverChecked?droneCoverHtml(ct.id,d):''}</div>`).join('')}</div>`:''}
         <div class="ctr-acts">${flyer?`<button class="btn sec" onclick="upd('${ct.id}',{approved:${!ct.approved}})"${!ct.approved&&thermAuto(ct)?' title="They have a thermal drone, so this also approves thermal flying"':''}>${ct.approved?'Revoke drone':(thermAuto(ct)?'Approve drone and thermal':'Approve drone')}</button>`:''}${(flyer&&ct.thermal)||ct.thermalWriter?`<button class="btn sec" onclick="upd('${ct.id}',{thermalApproved:${!ct.thermalApproved}})" title="Check their thermography certificate (and for flyers, that their thermal drone records temperature data) first">${ct.thermalApproved?'Revoke thermal':'Approve thermal'}</button>`:''}<button class="btn text ${ct.active?'danger':''}" onclick="upd('${ct.id}',{active:${!ct.active}})">${ct.active?'Switch off':'Switch on'}</button></div></div>
       ${ct.wantsBoth?`<div class="ctr-line"><span class="muted small" style="align-self:center;">Asked to do both flying and report writing (details added through their update link).</span><button class="btn sec" onclick="upd('${ct.id}',{role:'Both'})">Make both</button></div>`:''}
       ${(()=>{const twins=ct.role==='Both'?[]:data.contractors.filter(o=>o.id!==ct.id&&o.role!==ct.role&&o.role!=='Both'&&!/^Combined into/.test(o.nextStep||'')&&o.name.trim().toLowerCase()===ct.name.trim().toLowerCase());
@@ -923,6 +925,30 @@ function showTab(name){
 }
 document.querySelectorAll('#tabs button').forEach(b=>b.addEventListener('click',()=>showTab(b.dataset.tab)));
 showTab((location.hash||'').slice(1));
+// Per-drone cover (24 Nov 2026): what the pilot typed, what the automatic check found, and the saved document.
+const gbp=n=>'£'+Number(n||0).toLocaleString('en-GB');
+// Cover dates as 2 Dec 2026 (25 Nov 2026).
+const coverDay=v=>/^\d{4}-\d{2}-\d{2}$/.test(String(v||''))?new Date(v+'T12:00:00Z').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'}):String(v||'');
+function droneCoverLine(d){const c=d.cover||{};return `${c.rented?'Rented or borrowed · ':''}${esc(c.insurer)} · policy ${esc(c.policy)} · ${esc(coverDay(c.start))} to ${esc(coverDay(c.end))} · ${gbp(c.liability)} liability · ${c.commercial?'commercial use':'NOT commercial'}`;}
+function droneCoverHtml(cid,d){const c=d.cover||{};
+  const res=(d.results||[]).map(r=>`<li style="color:${r.ok?'inherit':'var(--bad)'};">${r.ok?'Pass':'Fail'}: ${esc(r.label)}${!r.ok&&r.detail?' ('+esc(r.detail)+')':''}</li>`).join('');
+  return `<div style="margin:2px 0 6px 10px;"><div>${droneCoverLine(d)}</div>
+    <div>${c.hasDoc?`<button class="btn text" onclick="openDroneDoc('${cid}','${esc(d.id)}','doc')">Open cover document${c.docName?' ('+esc(c.docName)+')':''}</button>`:'No document saved'}${c.hasPhoto?` · <button class="btn text" onclick="openDroneDoc('${cid}','${esc(d.id)}','photo')">Open serial label photo</button>`:''}${d.checkedAt?' · checked '+esc(String(d.checkedAt).slice(0,10)):''}</div>
+    <details><summary class="muted">Check results</summary><ul style="margin:4px 0 0 16px;padding:0;">${res}</ul></details></div>`;}
+async function openDroneDoc(cid,did,which){
+  const w=window.open('','_blank');
+  try{const r=await fetch(API+'/owner/drone-doc?id='+encodeURIComponent(cid)+'&drone='+encodeURIComponent(did)+'&which='+which,{headers:{Authorization:'Bearer '+localStorage.getItem(TK)}});
+    if(!r.ok){if(w)w.close();alert('Could not open the document.');return;}
+    const u=URL.createObjectURL(await r.blob());if(w)w.location=u;else location.href=u;
+  }catch(e){if(w)w.close();alert('Could not open the document.');}
+}
+function drawDroneAudit(){
+  const list=(data&&data.droneAudit)||[];
+  $('da-n').textContent=list.length?list.length+' to look over':'';
+  $('droneaudit').innerHTML=list.map(d=>`<div class="item"><b style="color:var(--navy);cursor:pointer;" onclick="openCtr('${d.contractorId}')">${esc(d.name)}</b> <span class="small">${esc(d.model)} · serial ${esc(d.serial)} · approved automatically${d.status==='starts'?' · <b>cover starts '+esc(coverDay((d.cover||{}).start))+'</b>':''}</span>
+    <div class="small" style="margin-top:2px;">${droneCoverLine(d)}</div>
+    <div class="small">${(d.results||[]).filter(r=>r.ok).length} of ${(d.results||[]).length} checks passed${(d.cover||{}).hasDoc?` · <button class="btn text" onclick="openDroneDoc('${d.contractorId}','${esc(d.id)}','doc')">Open document</button>`:''} · <button class="btn text" onclick="upd('${d.contractorId}',{auditDrone:{id:'${esc(d.id)}'}})">Mark checked</button> · <button class="btn text danger" onclick="upd('${d.contractorId}',{extraDrone:{id:'${esc(d.id)}',approved:false}})">Revoke</button></div></div>`).join('');
+}
 function openCtr(id){showTab('team');window._ctrOpen=window._ctrOpen||{};window._ctrOpen[id]=true;const d=document.querySelector('details.ctr[data-id="'+id+'"]');if(d){d.open=true;setTimeout(()=>{d.scrollIntoView({behavior:'smooth',block:'center'});d.classList.add('flash');setTimeout(()=>d.classList.remove('flash'),1600);},80);}}
 const numIn=id=>{const el=$(id);if(!el)return 0;const m=(el.textContent||'').match(/\d+/);return m?Number(m[0]):((el.textContent||'').trim()?1:0);};
 function setBadge(id,n){const el=$(id);if(!el)return;el.textContent=n>0?String(n):'';el.classList.toggle('on',n>0);}
@@ -930,7 +956,7 @@ let _badgeT=null;
 function refreshBadges(){
   const healthTxt=($('health-n')&&$('health-n').textContent||'').trim();
   const healthBad=healthTxt&&!/All good/i.test(healthTxt)?1:0;
-  const counts={team:numIn('teamact-n'),reviews:numIn('rev-n'),extras:numIn('ex-n'),sched:numIn('sched-n'),needs:numIn('needs-n'),storm:numIn('storm-n'),suggest:numIn('sug-n'),partners:numIn('partners-n'),health:healthBad};
+  const counts={team:numIn('teamact-n'),reviews:numIn('rev-n'),extras:numIn('ex-n'),sched:numIn('sched-n'),needs:numIn('needs-n'),storm:numIn('storm-n'),suggest:numIn('sug-n'),partners:numIn('partners-n'),droneaudit:numIn('da-n'),health:healthBad};
   let total=0;
   document.querySelectorAll('[data-today]').forEach(sec=>{const n=counts[sec.dataset.today]||0; sec.style.display=n?'':'none'; total+=n;});
   $('allclear').style.display=total?'none':'';

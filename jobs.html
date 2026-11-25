@@ -130,6 +130,7 @@ h1{font-size:20px;font-weight:800;}
     </div>
     <div id="notices" style="position:sticky;top:0;z-index:50;"></div>
     <div id="lock-box"></div>
+    <div id="mydrones-wrap" style="display:none;"><div style="text-align:right;margin:-4px 0 8px;"><button class="btn ghost" id="mydrones-btn" style="padding:4px 10px;font-size:13px;" onclick="toggleMyDrones()">My drones</button></div><div id="mydrones"></div></div>
     <div class="stats" id="stats"></div>
     <div class="cols">
       <div>
@@ -332,17 +333,93 @@ function windLine(){
   return m.droneModel ? `Your drone: ${esc(m.droneModel)} · your wind limit ${m.windLimit} m/s (80% of the rated ${m.ratedWind} m/s)` : 'No drone on file yet.';
 }
 // Which drone is flying this job: the pilot's pick, else a thermal drone for thermal jobs, else their first approved drone.
+// The day a job is flown (its set time, else its date), and whether a drone's own cover covers that day (24 Nov 2026).
+// Drones without their own cover (the main drone) are always offered. The Worker checks again when you claim and finish.
+function jobDay(j){ if (j.start) { const t = new Date(j.start); if (!isNaN(t)) return t.toLocaleDateString('en-CA', { timeZone:'Europe/London' }); } return String(j.date || '').slice(0, 10); }
+function droneCovers(d, j){ if (!d.coverChecked) return true; const day = jobDay(j); return !!day && d.coverStart <= day && d.coverEnd >= day; }
+function jobDrones(j){ return (board.me.drones || []).filter(d => droneCovers(d, j)); }
 function jobDrone(j){
-  const ds = (board.me.drones || []); if (!ds.length) return null;
+  const ds = jobDrones(j); if (!ds.length) return null;
   const st = get(LS.checks, {})[j.id] || {};
   return ds.find(d => d.id === st.droneId) || (j.thermal ? ds.find(d => d.thermal) : null) || ds[0];
 }
 function setJobDrone(id, droneId){ const c = get(LS.checks, {}); c[id] = c[id] || {}; c[id].droneId = droneId; delete c[id].weather; delete c[id].weatherMsg; delete c[id].checkedAt; put(LS.checks, c); render(); }
 function dronePicker(j){
-  const ds = board.me.drones || []; if (ds.length < 2) return '';
+  const all = board.me.drones || [], ds = jobDrones(j);
+  const off = all.filter(d => !droneCovers(d, j));
+  const offNote = off.length ? `<div class="muted" style="font-size:12px;margin-top:4px;">Not covered on ${esc(fmtDate(jobDay(j)) || 'this date')}: ${off.map(d => esc(d.model) + (d.serial ? ' (' + esc(d.serial) + ')' : '') + ', cover ' + esc(fmtDate(d.coverStart)) + ' to ' + esc(fmtDate(d.coverEnd))).join('; ')}.</div>` : '';
+  if (ds.length < 2) return offNote ? `<div style="margin:8px 0;">${offNote}</div>` : '';
   const cur = jobDrone(j);
   const warn = j.thermal && cur && !cur.thermal ? '<div class="banner b-amber" style="margin:6px 0;">This is a thermal job. Pick a drone with a thermal camera.</div>' : '';
-  return `<div style="margin:8px 0;"><label class="muted" style="font-size:12px;">Drone for this job</label><br><select onchange="setJobDrone('${j.id}', this.value)" style="padding:6px;border-radius:4px;border:1px solid var(--br);font-family:inherit;">${ds.map(d => `<option value="${esc(d.id)}" ${cur && cur.id===d.id?'selected':''}>${esc(d.model)}${d.serial?' ('+esc(d.serial)+')':''}${d.thermal?' · thermal':''} · limit ${d.windLimit} m/s</option>`).join('')}</select>${warn}</div>`;
+  return `<div style="margin:8px 0;"><label class="muted" style="font-size:12px;">Drone for this job</label><br><select onchange="setJobDrone('${j.id}', this.value)" style="padding:6px;border-radius:4px;border:1px solid var(--br);font-family:inherit;max-width:100%;">${ds.map(d => `<option value="${esc(d.id)}" ${cur && cur.id===d.id?'selected':''}>${esc(d.model)}${d.serial?' ('+esc(d.serial)+')':''}${d.thermal?' · thermal':''}${d.coverChecked?' · covered '+(d.coverStatus==='starts'?esc(fmtDate(d.coverStart))+' to ':'to ')+esc(fmtDate(d.coverEnd)):''} · limit ${d.windLimit} m/s</option>`).join('')}</select>${warn}${offNote}</div>`;
+}
+
+// ── My drones: add a drone with its own cover (rented, borrowed or pay-as-you-fly) ──
+let myDronesOpen = false, droneFormFor = null;
+const DRONE_STATUS = { auto:['ok','Approved'], owner:['ok','Approved by RoofScan'], starts:['ok','Approved'], pending:['amber','Waiting for RoofScan to check'], ended:['red','Cover ended'] };
+function toggleMyDrones(){ myDronesOpen = !myDronesOpen; droneFormFor = null; drawMyDrones(); }
+function drawMyDrones(){
+  const box = $('mydrones'); if (!box) return;
+  if (!myDronesOpen || !board) { box.innerHTML = ''; return; }
+  const m = board.me, list = m.myDrones || [];
+  const row = d => { let st = d.coverChecked ? (DRONE_STATUS[d.coverStatus] || DRONE_STATUS.pending) : (d.approved ? ['ok','Approved'] : ['amber','Waiting for RoofScan to check']);
+    const c = d.cover || {};
+    // 25 Nov 2026: cover booked for later is approved straight away; say when it starts.
+    if (d.coverStatus === 'starts') st = ['ok', 'Approved, cover starts ' + fmtDate(c.start)];
+    return `<div style="border-top:1px solid var(--br);padding:8px 0;"><div><strong>${esc(d.model)}</strong>${d.serial?' · '+esc(d.serial):''}${d.thermal?' · thermal':''} <span class="banner b-${st[0] === 'ok' ? 'green' : st[0]}" style="display:inline-block;padding:1px 8px;margin:0;font-size:12px;">${esc(st[1])}</span></div>
+      ${d.coverChecked ? `<div class="muted" style="font-size:13px;">${c.rented?'Rented or borrowed · ':''}${esc(c.insurer)}, policy ${esc(c.policy)} · ${esc(fmtDate(c.start))} to ${esc(fmtDate(c.end))} · £${Number(c.liability||0).toLocaleString('en-GB')} liability</div>` : '<div class="muted" style="font-size:13px;">Covered by your main insurance.</div>'}
+      ${(d.reasons||[]).length ? `<div style="font-size:13px;margin-top:2px;">Why: ${d.reasons.map(esc).join('; ')}</div>` : ''}
+      <button class="btn ghost" style="padding:3px 10px;font-size:13px;margin-top:4px;" onclick="openDroneForm('${esc(d.id)}')">${d.coverChecked ? 'Update cover' : 'Add its own cover'}</button></div>`; };
+  const form = droneFormFor !== null ? droneFormHtml(list.find(x => x.id === droneFormFor) || null) : '';
+  box.innerHTML = `<div class="card"><div style="font-weight:700;">My drones</div>
+    <div class="muted" style="font-size:13px;">Main drone: ${esc(m.droneModel || 'none on file')} (covered by your main insurance).</div>
+    ${list.map(row).join('') || '<div class="muted" style="font-size:13px;margin-top:6px;">No other drones yet.</div>'}
+    ${form || `<button class="btn" style="margin-top:8px;" onclick="openDroneForm('')">Add a drone with its own cover</button>`}
+    <div class="muted" style="font-size:12px;margin-top:8px;">For a rented or borrowed drone, or cover booked per flight: add it here with its cover schedule. If everything on the document matches, it is approved straight away for the dates of the cover. Otherwise RoofScan checks it by hand.</div></div>`;
+}
+function openDroneForm(id){ droneFormFor = id; drawMyDrones(); const el = $('dr-model'); if (el) el.focus(); }
+function droneFormHtml(d){
+  const c = (d && d.cover) || {}, v = s => esc(s == null ? '' : s);
+  const yn = (name, val) => `<label style="margin-right:14px;"><input type="radio" name="${name}" value="yes" ${val===true?'checked':''}> Yes</label><label><input type="radio" name="${name}" value="no" ${val===false?'checked':''}> No</label>`;
+  const f = (id, label, html) => `<div style="margin-top:8px;"><label class="muted" for="${id}" style="font-size:12px;">${label}</label><br>${html}</div>`;
+  const inp = (id, val, type, extra) => `<input class="inp" id="${id}" ${type?'type="'+type+'"':''} value="${v(val)}" ${extra||''} style="width:100%;letter-spacing:0;">`;
+  return `<div id="dr-form" style="border-top:1px solid var(--br);margin-top:8px;padding-top:4px;">
+    <div style="font-weight:600;margin-top:6px;">${d ? 'Update the cover for your ' + v(d.model) : 'Add a drone'}</div>
+    ${f('dr-model','Drone model', inp('dr-model', d ? d.model : '', '', 'placeholder="e.g. DJI Mavic 3 Thermal"'))}
+    ${f('dr-serial','Serial number (as on the drone)', inp('dr-serial', d ? d.serial : '', '', 'autocapitalize="characters"'))}
+    ${f('dr-wind','Maximum wind rating (m/s)', inp('dr-wind', d ? d.wind : '', 'number', 'inputmode="decimal" min="3" max="25" step="0.1"'))}
+    <div style="margin-top:8px;"><label><input type="checkbox" id="dr-thermal" ${d && d.thermal?'checked':''}> It has a thermal camera</label></div>
+    ${f('dr-rented','Is it rented or borrowed?', yn('dr-rented', c.rented === undefined ? undefined : !!c.rented))}
+    ${f('dr-insurer','Insurer', inp('dr-insurer', c.insurer, '', 'placeholder="e.g. Coverdrone or FlyCovered"'))}
+    ${f('dr-policy','Policy number', inp('dr-policy', c.policy))}
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">${f('dr-start','Cover starts', inp('dr-start', c.start, 'date'))}${f('dr-end','Cover ends', inp('dr-end', c.end, 'date'))}</div>
+    ${f('dr-commercial','Is the cover for commercial use?', yn('dr-commercial', c.commercial === undefined ? undefined : !!c.commercial))}
+    ${f('dr-liab','Public liability limit in pounds', inp('dr-liab', c.liability || '', 'number', 'inputmode="numeric" min="0" step="1" placeholder="1000000"'))}
+    ${f('dr-doc','Cover schedule or certificate (PDF or photo)' + (c.docName ? ', or leave empty to keep ' + v(c.docName) : ''), '<input id="dr-doc" type="file" accept="application/pdf,image/*" style="max-width:100%;">')}
+    ${f('dr-photo','Photo of the serial number label (needed if the serial is not on the document)', '<input id="dr-photo" type="file" accept="image/*" style="max-width:100%;">')}
+    <div id="dr-msg" style="margin-top:8px;"></div>
+    <div class="acts" style="margin-top:8px;"><button class="btn" id="dr-save" onclick="saveDrone()">Save and check</button><button class="btn ghost" onclick="droneFormFor=null;drawMyDrones()">Cancel</button></div></div>`;
+}
+function fileB64(input){ return new Promise((res, rej) => { const f = input && input.files && input.files[0]; if (!f) return res(null);
+  if (f.size > 5 * 1024 * 1024) return rej(new Error('Please keep each file under 5 MB.'));
+  const r = new FileReader(); r.onload = () => res({ contentType: f.type || (/\.pdf$/i.test(f.name) ? 'application/pdf' : ''), data: String(r.result).replace(/^data:[^;]+;base64,/, ''), filename: f.name }); r.onerror = () => rej(new Error('That file could not be read.')); r.readAsDataURL(f); }); }
+async function saveDrone(){
+  const msg = $('dr-msg'), btn = $('dr-save'), val = id => ($(id) ? $(id).value.trim() : '');
+  const radio = n => { const x = document.querySelector('input[name="' + n + '"]:checked'); return x ? x.value === 'yes' : null; };
+  const show = (t, kind) => { msg.innerHTML = `<div class="banner b-${kind}">${esc(t)}</div>`; };
+  let doc = null, photo = null;
+  try { doc = await fileB64($('dr-doc')); photo = await fileB64($('dr-photo')); } catch(e) { show(e.message, 'red'); return; }
+  const body = { droneId: droneFormFor || undefined, model: val('dr-model'), serial: val('dr-serial'), wind: Number(val('dr-wind')), thermal: !!($('dr-thermal') && $('dr-thermal').checked),
+    cover: { insurer: val('dr-insurer'), policy: val('dr-policy'), start: val('dr-start'), end: val('dr-end'), commercial: radio('dr-commercial'), liability: val('dr-liab'), rented: radio('dr-rented') } };
+  if (doc) body.doc = doc; if (photo) body.serialPhoto = photo;
+  if (!navigator.onLine) { show('You need to be online to add a drone.', 'red'); return; }
+  btn.disabled = true; btn.textContent = 'Checking…'; show('Saving and reading your cover document. This can take up to half a minute.', 'amber');
+  try {
+    const r = await api('/contractor/drone-save', 'POST', body);
+    if (!r.ok) { show(r.data.error || 'That did not save. Please try again.', 'red'); btn.disabled = false; btn.textContent = 'Save and check'; return; }
+    droneFormFor = null; notice(r.data.message, r.data.status === 'auto' || r.data.status === 'starts' ? 'green' : 'amber');
+    await refresh(false); drawMyDrones();
+  } catch(e) { if (e.message !== 'auth') { show('Could not connect. Check your signal and try again.', 'red'); btn.disabled = false; btn.textContent = 'Save and check'; } }
 }
 function render(){
   if (!board || sliding) return;
@@ -378,6 +455,10 @@ function render(){
   $('lock-box').innerHTML = agreeBanner + bankBanner + ((m.role !== 'Report Writer' && !m.scansAllowed) ? `<div class="banner b-red"><strong>Scans are switched off.</strong> ${esc(m.scansBlockedReason)}</div>` : '') +
     notes.map(n => `<div class="banner b-amber" style="display:flex;gap:10px;align-items:flex-start;"><span style="flex:1;"><strong>Booking change.</strong> ${esc(n.msg)}</span><button class="btn ghost" style="padding:4px 10px;" onclick="seenNotice('${esc(n.at)}')">OK</button></div>`).join('');
   if (myPayHtml && $('mypay')) $('mypay').innerHTML = myPayHtml;
+  // Drone cover that has ended: the drone is off the picker, and the pilot is told why.
+  if (m.role !== 'Report Writer' && (m.droneNotices || []).length) $('lock-box').innerHTML += m.droneNotices.map(t => `<div class="banner b-amber">${esc(t)}</div>`).join('');
+  $('mydrones-wrap').style.display = m.role !== 'Report Writer' ? '' : 'none';
+  if (droneFormFor === null) drawMyDrones();   // never redraw an open drone form (it would clear what is typed)
   const pass = get(LS.pass, {});
   // mine
   const mineSorted = board.mine.slice().sort((x,y) => String(x.date||'').localeCompare(String(y.date||'')));
@@ -444,7 +525,7 @@ function poolCard(j, kind){
   const prio = kind === 'report' && j.priorityUntil ? `<div class="banner b-green" style="margin-top:8px;">You flew this one, so it is yours first until ${new Date(j.priorityUntil).toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' })}. Write it yourself, or pass it on. After that it opens to every writer.</div>` : '';
   const bothSlide = pair && !locked ? `<div class="slide" data-id="${j.id}" data-kind="scan" data-both="1" tabindex="0" role="button" aria-label="Slide right to claim both scans for this booking" style="margin-top:8px;"><div class="slide-t">Slide to claim both (${money((pay||0) + (pair.scanPay||0) - Math.min(parts.mileage||0, (pair.scanParts||{}).mileage||0))})</div><div class="slide-h">&rarr;</div></div>` : '';
   return `<div class="card pool"><div class="row"><div><span class="tag ${kind==='scan'?'t-scan':'t-rep'}">${kind}</span>${exp}${tradeTags(j)}<div class="jt">${esc(j.area)} · ${esc(j.propertyType)||'Property'}</div><div class="jm">${esc(fmtWhen(j))}</div>${bits.length?`<div class="jm" style="color:var(--g);">${bits.join(' · ')}</div>`:''}${pairNote}</div><div class="pay">${money(pay)}</div></div>
-  ${prio}<div class="acts"><div class="slide${locked?' dis':''}" data-id="${j.id}" data-kind="${kind}" tabindex="0" role="button" aria-label="Slide right to claim this ${kind}"><div class="slide-t">${locked?'Scans switched off':(prio?'Slide to write it yourself':'Slide to claim '+(pair?'this one only':kind))}</div><div class="slide-h">&rarr;</div></div>${prio?`<button class="btn ghost" onclick="passReport('${j.id}')">Pass to another writer</button>`:`<button class="btn ghost" onclick="passJob('${j.id}')">Not for me</button>`}</div>${bothSlide}</div>`;
+  ${kind === 'scan' && !locked ? dronePicker(j) : ''}${prio}<div class="acts"><div class="slide${locked?' dis':''}" data-id="${j.id}" data-kind="${kind}" tabindex="0" role="button" aria-label="Slide right to claim this ${kind}"><div class="slide-t">${locked?'Scans switched off':(prio?'Slide to write it yourself':'Slide to claim '+(pair?'this one only':kind))}</div><div class="slide-h">&rarr;</div></div>${prio?`<button class="btn ghost" onclick="passReport('${j.id}')">Pass to another writer</button>`:`<button class="btn ghost" onclick="passJob('${j.id}')">Not for me</button>`}</div>${bothSlide}</div>`;
 }
 function coverCard(j){
   const m = n => '£' + (n >= 1000000 ? (Math.round(n/100000)/10) + 'm' : Number(n||0).toLocaleString('en-GB'));
@@ -475,7 +556,8 @@ document.addEventListener('pointerdown', e => {
 });
 // keyboard fallback: focus the slider and press Right Arrow (needs three presses so it is still deliberate)
 document.addEventListener('keydown', e => { const b = e.target.classList && e.target.classList.contains('slide') ? e.target : null; if (!b || e.key !== 'ArrowRight') return; b._k = (b._k||0)+1; if (b._k >= 3) { b._k = 0; claim(b.dataset.id, b.dataset.kind, b.dataset.both === '1'); } });
-function claim(id, kind, both){ flashId = id; act({type:'claim', jobId:id, kind, both: !!both}); }
+// The drone picked for the job goes with the claim, so the Worker can check its cover covers the job's date.
+function claim(id, kind, both){ flashId = id; let droneId; if (kind === 'scan' && board) { const j = (board.scans || []).find(x => x.id === id); const d = j ? jobDrone(j) : null; if (d) droneId = d.id; } act({type:'claim', jobId:id, kind, both: !!both, droneId}); }
 
 function mineCard(j){
   let html = `<div class="card mine" id="job-${j.id}"><span class="tag ${j.scanMine?'t-scan':'t-rep'}">${j.scanMine?'scan':'report'}</span>${tradeTags(j)}<div class="jt">${esc(j.client)}</div><div class="jm">${esc(j.address)}${j.phone?' · '+esc(j.phone):''}</div>${j.siteContact?`<div class="jm">Site contact: ${esc(j.siteContact)}</div>`:''}<div class="jm">${esc(fmtWhen(j))}</div>`;
