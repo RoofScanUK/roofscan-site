@@ -216,6 +216,7 @@ details.ctr>summary:hover{background:#FAF8F2;}
     <div class="panel" data-panel="money" hidden>
       <div class="grid2">
         <section><div class="lbl"><span>Pay run: who you owe</span><span id="pr-n" class="small"></span></div><div class="box pad" id="payrun"><span class="muted small">Loading…</span></div></section>
+        <section><div class="lbl"><span>Trade accounts: automatic invoices (Stripe)</span></div><div class="box pad" id="trade-auto"><span class="muted small">Loading…</span></div></section>
         <section><div class="lbl"><span>Trade accounts: monthly invoicing</span><span class="small"><input type="month" id="tm-month" class="dt" onchange="loadTradeMonth()" aria-label="Month to show"></span></div><div class="box pad" id="trade-month"><span class="muted small">Loading…</span></div></section>
       </div>
     </div>
@@ -298,7 +299,7 @@ async function load(){
   if(!localStorage.getItem(TK)){showLogin();return;}
   const r=await api('/owner/overview');if(!r.ok){if(r.status!==401)showLogin('Could not load. Try again.');return;}
   data=r.data;$('login').style.display='none';$('app').style.display='block';
-  loadExtras();loadCap();loadDaylight();loadHome();loadPayRun();loadTradeMonth();loadCovMap();loadStorm();loadSched();loadHealth();loadSeats();loadReviews();loadSuggestions();loadCal();loadOoo();loadPartners();
+  loadExtras();loadCap();loadDaylight();loadHome();loadPayRun();loadTradeAuto();loadTradeMonth();loadCovMap();loadStorm();loadSched();loadHealth();loadSeats();loadReviews();loadSuggestions();loadCal();loadOoo();loadPartners();
   const c=data.counts;
   $('stats').innerHTML=[['Scans open',c.scansOpen],['Reports open',c.reportsOpen],['Scans claimed',c.scansClaimed],['Reports claimed',c.reportsClaimed]].map(x=>`<div class="metric"><div class="n">${x[1]}</div><div class="t">${x[0]}</div></div>`).join('');
   $('needs-n').textContent=data.needsYou.length?data.needsYou.length+' to sort':'';
@@ -736,10 +737,11 @@ async function loadStorm(){
     return `<div style="border-left:4px solid ${col};padding:6px 10px;margin:8px 0;background:#FAFBFC;">
       <div><b style="color:${col};text-transform:capitalize;">${esc(a.level||'Wind')}</b> ${esc(a.title)}</div>
       <div class="small muted">${esc(a.regionName)} · ${esc(String(a.issued).slice(0,22))}${a.link?` · <a href="${esc(a.link)}" target="_blank" rel="noopener">Met Office</a>`:''}</div>
-      <div class="small" style="margin:4px 0;">${who}</div>
+      <div class="small" style="margin:4px 0;">${who}</div>${stormStateLine(a.storm,d.autoSend)}
       <div>${left>0?`<button class="btn" onclick="stormSend('${a.id}',${left})" ${d.emailReady?'':'disabled title="Storm email Zap not connected yet"'}>Email ${left} client${left===1?'':'s'}</button>`:''}
       <button class="btn text" onclick="stormDismiss('${a.id}')">Dismiss</button></div></div>`;}).join('');
-  el.innerHTML=promo+(items||'<div class="small muted">No wind warnings in your areas.</div>')+
+  const auto=`<div class="small" style="margin-bottom:8px;padding:8px 10px;border-radius:8px;background:${d.autoSend?'#E8F5EC':'#F3F4F6'};">Automatic storm emails: <b>${d.autoSend?'On':'Off'}</b>. ${d.autoSend?'Past clients in the region are emailed once per storm from 9am the morning after it ends, and you get a summary.':'Nothing is sent unless you press Email clients.'} <button class="btn text" onclick="stormAutoToggle(${d.autoSend?'false':'true'})">${d.autoSend?'Turn off':'Turn on'}</button></div>`;
+  el.innerHTML=promo+auto+(items||'<div class="small muted">No wind warnings in your areas.</div>')+
     `<div class="small muted" style="margin-top:8px;">${last} <button class="btn text" onclick="stormScan()">Check now</button></div>`+
     `<div class="small muted">Send once the storm has passed, so the email lands when people are checking their roofs.${d.emailReady?'':' The client email Zap is not connected yet.'}</div>`+
     `<div id="sc-links" style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line,#E5E7EB);"><span class="small muted">Loading Storm Check links…</span></div>`;
@@ -767,6 +769,19 @@ async function stormMetaToggle(on){ if(!confirm(on?'Turn free Express back on fo
 async function stormOfferEnd(code){ if(!confirm('End this Storm Check link now? People using it will pay for Express again.')) return; await api('/owner/storm-offer-end','POST',{code}); loadStormOffers(); }
 async function stormScan(){ const r=await api('/owner/storm-scan','POST'); if(!r.ok) alert('Could not check the Met Office feed.'); else if(r.data.errors&&r.data.errors.length) alert('Feed problem: '+r.data.errors.join(', ')); loadStorm(); }
 async function stormDismiss(id){ await api('/owner/storm-dismiss','POST',{id}); loadStorm(); }
+function stormStateLine(s,on){
+  if(!s) return '';
+  const when=v=>v?new Date(v).toLocaleString('en-GB',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
+  const t={active:'Storm still in force.',waiting:on?`Storm ended ${when(s.end)}. Automatic email from ${when(s.sendAfter)}.`:`Storm ended ${when(s.end)}. Automatic emails are off.`,
+    sending:`Automatic email going out (${s.sentTotal} sent so far).`,done:`Storm email done (${s.sentTotal} sent automatically).`,expired:`Storm ended ${when(s.end)}. Not sent automatically.`}[s.status]||'';
+  return t?`<div class="small muted" style="margin:2px 0 4px;">${esc(t)}</div>`:'';
+}
+async function stormAutoToggle(on){
+  if(!confirm(on?'Turn on automatic storm emails? From 9am the morning after a storm ends, every past client in that region who has not unsubscribed gets ONE storm email per storm, in batches of 40 an hour. You get a summary email.':'Turn off automatic storm emails? Nothing will be sent unless you press Email clients.')) return;
+  const r=await api('/owner/storm-auto','POST',{on});
+  if(!r.ok){alert('Could not change the setting.');return;}
+  loadStorm();
+}
 async function stormSend(id,n){
   if(!confirm(`Send the storm email to ${n} past client${n===1?'':'s'} in this region? Each person gets it once. Anyone who unsubscribed is left out.`)) return;
   const r=await api('/owner/storm-send','POST',{id});
@@ -842,6 +857,37 @@ $('email').addEventListener('keydown',e=>{if(e.key==='Enter')sendCode();});
 $('otp').addEventListener('keydown',e=>{if(e.key==='Enter')verifyCode();});
 load();
 
+// Trade accounts: automatic monthly Stripe invoices (off until switched on) and a preview that creates nothing.
+async function loadTradeAuto(){
+  const box=$('trade-auto'); const r=await api('/owner/trade-auto');
+  if(!r.ok){box.innerHTML='<span class="muted small">Could not load the invoicing setting.</span>';return;}
+  const d=r.data, lr=d.lastRun;
+  box.innerHTML=`<div class="small" style="margin-bottom:8px;padding:8px 10px;border-radius:8px;background:${d.on?'#E8F5EC':'#F3F4F6'};">Automatic trade invoices: <b>${d.on?'On':'Off'}</b>. ${d.on?'On the 1st of each month Stripe emails each trade account one invoice for last month\'s finished, priced jobs (14 days to pay). Jobs are set to Invoiced, then Paid when Stripe says it is paid.':'Nothing is invoiced automatically.'} <button class="btn text" onclick="tradeAutoToggle(${d.on?'false':'true'})">${d.on?'Turn off':'Turn on'}</button></div>`+
+    (lr?`<div class="small muted" style="margin-bottom:6px;">Last run (${esc(lr.month)}): ${lr.done.length} invoice${lr.done.length===1?'':'s'} sent${lr.errors.length?`, <b style="color:var(--bad);">${lr.errors.length} failed</b>`:''}.</div>`:'')+
+    `<div class="small muted" style="margin-bottom:8px;">${d.open} trade invoice${d.open===1?'':'s'} waiting for payment.${d.webhookSet?'':' Stripe payment webhook not set up yet: payments are still picked up by the hourly check.'}</div>`+
+    `<button class="btn sec" onclick="tradePreview(this)">Preview this month</button><div id="trade-preview" style="margin-top:8px;"></div>`;
+}
+async function tradeAutoToggle(on){
+  if(!confirm(on?'Turn on automatic trade invoices? On the 1st of each month Stripe will email each trade account an invoice for last month\'s finished, priced jobs. Press Preview this month first to check what it would send.':'Turn off automatic trade invoices?')) return;
+  const r=await api('/owner/trade-auto','POST',{on});
+  if(!r.ok){alert('Could not change the setting.');return;}
+  loadTradeAuto();
+}
+async function tradePreview(btn){
+  const el=$('trade-preview'); btn.disabled=true; el.innerHTML='<span class="muted small">Working out the invoices…</span>';
+  const r=await api('/owner/trade-invoice-preview'); btn.disabled=false;
+  if(!r.ok){el.innerHTML='<span class="muted small">Could not build the preview.</span>';return;}
+  const p=r.data, gbp=v=>'£'+Number(v).toFixed(2), runs=new Date(p.runsOn+'T12:00:00Z').toLocaleDateString('en-GB',{day:'numeric',month:'long'});
+  const line=j=>`${esc(j.date?new Date(j.date+'T12:00:00Z').toLocaleDateString('en-GB',{day:'numeric',month:'short'}):'no date')}, ${esc(j.address)}${j.clientRef?' (ref '+esc(j.clientRef)+')':''}`;
+  let h=`<div class="small" style="margin-bottom:6px;"><b>Preview only, nothing has been created.</b> If it ran on ${esc(runs)} with the jobs as they are now:</div>`;
+  h+=p.accounts.length?p.accounts.map(a=>`<div class="item"><div class="ch"><span class="name">${esc(a.company)}</span><span class="chip">${a.jobs.length} job${a.jobs.length===1?'':'s'} &middot; ${gbp(a.total)}</span></div><div class="muted small" style="margin:4px 0;">To ${esc(a.email)}${a.state==='done'?' (already invoiced)':''}</div><div class="muted small">${a.jobs.map(j=>line(j)+': '+gbp(j.price)).join('<br>')}</div></div>`).join(''):'<div class="small muted">No invoices would be sent.</div>';
+  const left=(t,arr,why)=>arr.length?`<div class="small" style="margin-top:8px;"><b>${t} (${arr.length}):</b><br>${arr.map(j=>esc(j.company||j.account||'')+', '+line(j)+(why?' ('+esc(why(j))+')':'')).join('<br>')}</div>`:'';
+  h+=left('Left out, no price: add a Quote Total',p.unpriced);
+  h+=left('Not finished yet: invoiced once Complete',p.notFinished,j=>j.status);
+  h+=left('Left out, no Trade Account linked',p.noAccount);
+  h+=left('Left out, account has no email',p.noEmail);
+  el.innerHTML=h;
+}
 // Trade accounts: what each business has booked this month, ready to invoice at month end.
 let tmData=null;
 async function loadTradeMonth(){
